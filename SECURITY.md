@@ -9,7 +9,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please send an e-mail to security@example.com based on the project maintainer.
+If you discover a security vulnerability, please send an e-mail to anduong1200@gmail.com based on the project maintainer.
 
 ## Important Security Notes
 
