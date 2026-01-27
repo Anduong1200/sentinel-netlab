@@ -1,5 +1,5 @@
 # Sentinel NetLab 🛡️
-> **Enterprise-Grade Wireless Intrusion Detection System (WIDS)**
+> **Wireless Intrusion Detection System (WIDS)**
 
 [![Release](https://img.shields.io/github/v/release/sentinel-netlab/core?label=latest)](https://github.com/sentinel-netlab/core)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -117,4 +117,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - Coding Standards (PEP 8)
 
 ---
-**Sentinel NetLab** © 2024-2026. All Rights Reserved.
+**Security Research Club** © 2024-2026. All Rights Reserved.
