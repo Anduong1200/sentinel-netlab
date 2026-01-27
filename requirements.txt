@@ -1,4 +1,4 @@
-aircrack-ng>=1.7
+# System deps (install via apt): tshark, aircrack-ng
 scapy>=2.5.0
 flask>=3.0.0
 requests>=2.31.0

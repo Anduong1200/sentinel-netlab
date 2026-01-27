@@ -24,10 +24,10 @@ jobs:
           pip install flake8 pytest pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Install System Deps (Tshark)
+      - name: Install System Deps (Tshark, Aircrack-ng)
         run: |
           sudo apt-get update
-          sudo apt-get install -y tshark
+          sudo apt-get install -y tshark aircrack-ng
 
       - name: Lint with flake8
         run: |
