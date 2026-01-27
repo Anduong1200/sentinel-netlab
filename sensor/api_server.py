@@ -17,6 +17,8 @@ from capture import CaptureEngine, check_monitor_support
 from parser import WiFiParser
 from storage import WiFiStorage, MemoryStorage
 from risk import RiskScorer, calculate_risk_score
+from attacks import AttackEngine
+from forensics import ForensicAnalyzer, analyze_pcap
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +34,7 @@ if not API_KEY:
     logger.warning("WIFI_SCANNER_API_KEY not set! Using insecure default for PoC.")
     API_KEY = "student-project-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
+ALLOW_ACTIVE_ATTACKS = os.environ.get("ALLOW_ACTIVE_ATTACKS", "false").lower() == "true"
 
 # Initialize components
 capture_engine = CaptureEngine(interface=INTERFACE)
@@ -39,6 +42,7 @@ parser = WiFiParser()
 storage = WiFiStorage()  # Uses default paths
 memory_storage = MemoryStorage()
 risk_scorer = RiskScorer()
+attack_engine = AttackEngine(interface=INTERFACE)
 
 
 @app.before_request
@@ -223,6 +227,115 @@ def export_json():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/attack/deauth', methods=['POST'])
+def attack_deauth():
+    """
+    Perform Deauthentication Attack.
+    Requires ALLOW_ACTIVE_ATTACKS=true
+    """
+    if not ALLOW_ACTIVE_ATTACKS:
+        return jsonify({"error": "Active attacks disabled by configuration"}), 403
+        
+    try:
+        data = request.get_json()
+        target_bssid = data.get('bssid')
+        client_mac = data.get('client', 'FF:FF:FF:FF:FF:FF')
+        count = int(data.get('count', 10))
+        
+        if not target_bssid:
+            return jsonify({"error": "Missing target_bssid"}), 400
+            
+        success = attack_engine.deauth(target_bssid, client_mac, count)
+        if success:
+            return jsonify({
+                "status": "success", 
+                "message": f"Deauth sent to {target_bssid} ({count} frames)"
+            })
+        else:
+            return jsonify({"error": "Attack failed"}), 500
+            
+    except Exception as e:
+        logger.error(f"Deauth error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/attack/fakeap', methods=['POST'])
+def attack_fakeap():
+    """
+    Perform Fake AP (Beacon Flood) Attack.
+    Requires ALLOW_ACTIVE_ATTACKS=true
+    """
+    if not ALLOW_ACTIVE_ATTACKS:
+        return jsonify({"error": "Active attacks disabled by configuration"}), 403
+        
+    try:
+        data = request.get_json()
+        ssids = data.get('ssids', [])
+        count = int(data.get('count', 100))
+        
+        if not ssids:
+            return jsonify({"error": "Missing ssids list"}), 400
+            
+        success = attack_engine.beacon_flood(ssids, count)
+        if success:
+            return jsonify({
+                "status": "success", 
+                "message": f"Beacon flood sent ({len(ssids)} SSIDs, {count} frames)"
+            })
+        else:
+            return jsonify({"error": "Attack failed"}), 500
+            
+    except Exception as e:
+        logger.error(f"FakeAP error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/forensics/events')
+def get_security_events():
+    """Get realtime security events (Deauth detections, etc.)"""
+    try:
+        return jsonify({
+            "status": "success",
+            "events": parser.security_events[-100:]  # Last 100 events
+        })
+    except Exception as e:
+        logger.error(f"Error getting events: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/forensics/report/<scan_id>')
+def forensics_report(scan_id):
+    """
+    Generate forensic report for a specific scan.
+    Analyzes the PCAP file for attack signatures.
+    """
+    try:
+        # Get PCAP path from storage
+        pcap_path = storage.get_pcap_path(scan_id)
+        if not pcap_path or not os.path.exists(pcap_path):
+            return jsonify({"error": f"PCAP not found for scan_id: {scan_id}"}), 404
+        
+        # Get known networks for Evil Twin detection
+        known_networks = {}
+        for net in parser.networks.values():
+            if net.get("ssid"):
+                known_networks[net["ssid"]] = {
+                    "bssid": net.get("bssid"),
+                    "encryption": net.get("encryption")
+                }
+        
+        # Run forensic analysis
+        report = analyze_pcap(pcap_path, known_networks)
+        return jsonify({
+            "status": "success",
+            "scan_id": scan_id,
+            "report": report
+        })
+        
+    except Exception as e:
+        logger.error(f"Forensics error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     print("=" * 50)
     print("WiFi Scanner API Server (Integrated)")
@@ -236,6 +349,10 @@ if __name__ == '__main__':
     print("  GET /history - Get scan history")
     print("  GET /export/csv  - Export CSV")
     print("  GET /export/json - Export JSON")
+    print("  POST /attack/deauth - Deauth attack")
+    print("  POST /attack/fakeap - Fake AP attack")
+    print("  GET /forensics/events - Security events")
+    print("  GET /forensics/report/<id> - Forensic report")
     print("=" * 50)
     
     app.run(host='0.0.0.0', port=5000, debug=False)

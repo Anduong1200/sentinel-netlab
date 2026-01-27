@@ -7,7 +7,7 @@ Parses Beacon and Probe Response frames to extract network information
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-from scapy.all import Dot11, Dot11Beacon, Dot11ProbeResp, Dot11Elt, RadioTap
+from scapy.all import Dot11, Dot11Beacon, Dot11ProbeResp, Dot11Elt, RadioTap, Dot11Deauth
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -87,6 +87,7 @@ class WiFiParser:
     def __init__(self):
         """Initialize the parser with an empty networks dictionary."""
         self.networks: Dict[str, Dict[str, Any]] = {}
+        self.security_events: List[Dict[str, Any]] = []  # Deauth, Evil Twin events
         self.packet_count = 0
         self.last_update = datetime.now()
     
@@ -191,6 +192,41 @@ class WiFiParser:
             except:
                 pass
         return -100  # Default weak signal
+    def parse_deauth(self, packet) -> Optional[Dict[str, Any]]:
+        """
+        Parse Deauthentication frame to detect potential attack.
+        
+        Args:
+            packet: Scapy packet with Dot11Deauth layer
+            
+        Returns:
+            Security event dictionary if Deauth detected
+        """
+        if not packet.haslayer(Dot11Deauth):
+            return None
+            
+        try:
+            reason = packet[Dot11Deauth].reason
+            sender = packet.addr2  # Usually AP or Attacker spoofing AP
+            target = packet.addr1  # Victim
+            bssid = packet.addr3   # AP
+            
+            # Common attack reasons: 7 (Class 3 frame from nonassociated STA)
+            is_suspicious = reason in [7, 1, 4, 5, 6, 8]
+            
+            event = {
+                "type": "deauth_detected",
+                "sender": sender,
+                "target": target,
+                "bssid": bssid,
+                "reason_code": reason,
+                "timestamp": datetime.now().isoformat(),
+                "severity": "HIGH" if is_suspicious else "INFO"
+            }
+            return event
+        except Exception as e:
+            logger.debug(f"Error parsing deauth: {e}")
+            return None
     
     def process_packet(self, packet) -> Optional[Dict[str, Any]]:
         """
@@ -204,10 +240,32 @@ class WiFiParser:
         """
         self.packet_count += 1
         
-        # Only process management frames (Beacon or Probe Response)
         if not packet.haslayer(Dot11):
             return None
+
+        # Check for Deauthentication (Management frame subtype 12)
+        if packet.type == 0 and packet.subtype == 12:
+            deauth_event = self.parse_deauth(packet)
+            if deauth_event:
+                self.security_events.append(deauth_event)
+                logger.warning(f"Deauth detected: {deauth_event['sender']} -> {deauth_event['target']}")
+                return deauth_event
+
+        # Check for EAPOL (Handshake)
+        # 0x888e is EAPOL. Scapy usually decodes content as EAPOL layer.
+        if packet.type == 2 and packet.haslayer("EAPOL"):
+            try:
+                # For EAPOL, addr3 is usually BSSID in infrastructure mode
+                bssid = packet.addr3
+                if bssid and bssid in self.networks:
+                    self.networks[bssid]["handshake_captured"] = True
+                    logger.info(f"Handshake captured for {self.networks[bssid]['ssid']}")
+                    return self.networks[bssid]
+            except Exception as e:
+                pass
+            return None
         
+        # Only parse Beacons/ProbeResp for network discovery
         if not (packet.haslayer(Dot11Beacon) or packet.haslayer(Dot11ProbeResp)):
             return None
         
@@ -222,13 +280,21 @@ class WiFiParser:
             # Extract SSID
             ssid = ""
             elt = packet.getlayer(Dot11Elt)
+            wps_present = False
+            
             while elt:
-                if elt.ID == 0:  # SSID
+                # SSID
+                if elt.ID == 0:
                     try:
                         ssid = elt.info.decode('utf-8', errors='ignore').strip('\x00')
                     except:
                         ssid = ""
-                    break
+                
+                # Check for WPS (Vendor Specific ID 221 + Microsoft OUI \x00\x50\xf2\x04)
+                elif elt.ID == 221:
+                    if elt.info.startswith(b'\x00\x50\xf2\x04'):
+                        wps_present = True
+                
                 elt = elt.payload.getlayer(Dot11Elt)
             
             # Extract other info
@@ -244,8 +310,9 @@ class WiFiParser:
                 network = self.networks[bssid]
                 network["last_seen"] = now.isoformat()
                 network["beacon_count"] = network.get("beacon_count", 0) + 1
-                network["rssi"] = rssi  # Update with latest
-                # Keep other fields as-is unless changed
+                network["rssi"] = rssi
+                if wps_present: 
+                    network["wps"] = True
                 if channel > 0:
                     network["channel"] = channel
             else:
@@ -258,7 +325,9 @@ class WiFiParser:
                     "vendor": vendor,
                     "first_seen": now.isoformat(),
                     "last_seen": now.isoformat(),
-                    "beacon_count": 1
+                    "beacon_count": 1,
+                    "wps": wps_present,
+                    "handshake_captured": False
                 }
                 self.networks[bssid] = network
             
@@ -290,9 +359,11 @@ class WiFiParser:
     
     def get_stats(self) -> Dict[str, Any]:
         """Get parser statistics."""
+        handshake_count = sum(1 for n in self.networks.values() if n.get("handshake_captured"))
         return {
             "network_count": len(self.networks),
             "packet_count": self.packet_count,
+            "handshake_count": handshake_count,
             "last_update": self.last_update.isoformat(),
             "encryption_summary": self._get_encryption_summary()
         }

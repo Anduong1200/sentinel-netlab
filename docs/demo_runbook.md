@@ -1,76 +1,293 @@
-# Demo Runbook - Kịch Bản Trình Diễn
+# Demo Runbook
 
-> **Mục tiêu:** Đảm bảo buổi demo diễn ra suôn sẻ, giảm thiểu rủi ro lỗi kỹ thuật Live.
-> **Thời lượng:** 3-5 phút thực hiện + 5 phút Q&A.
-
-## 1. Chuẩn Bị Trước Giờ G (Pre-Demo Checklist)
-
-### Phần cứng
-- [ ] Laptop Windows (Host) đã sạc đầy.
-- [ ] USB WiFi Adapter (TL-WN722N / Alfa) + 1 cái dự phòng.
-- [ ] Dây mạng LAN (nếu WiFi hội trường chập chờn).
-- [ ] Kiểm tra kết nối USB Passthrough vào VM lần cuối.
-
-### Phần mềm & Dữ liệu
-- [ ] **VM Snapshot:** Revert về snapshot "Ready-for-Demo" (sạch sẽ, đã cài đủ deps).
-- [ ] **Service:** Đảm bảo `wifi-scanner` service đang chạy (`systemctl status wifi-scanner`).
-- [ ] **Connectivity:** Ping thông nhau giữa Host (Windows) và VM (Linux).
-- [ ] **Clean State:** Xóa bớt lịch sử scan cũ trong DB (để demo thấy data mới nhảy vào).
-- [ ] **Backup:** Video demo (`demo.mp4`) đã copy ra Desktop để sẵn sàng bật nếu live fail.
-- [ ] **Artifacts:** File `poc.json` (Mock data) sẵn sàng để fallback.
+> Step-by-step guide for demonstrating Sentinel NetLab
 
 ---
 
-## 2. Kịch Bản Demo (Live Script)
+## 🎯 Demo Objectives
 
-### Bước 1: Giới thiệu & Setup (1 phút)
-1.  Show cấu hình VM (VirtualBox/VMware) đang chạy.
-2.  Cắm USB Adapter vào máy.
-3.  Trên VM: Chạy `sudo python3 check_driver.py`.
-    *   *Nói:* "Hệ thống tự động kiểm tra driver và firmware. Kết quả OK, Monitor mode sẵn sàng."
-
-### Bước 2: Thực hiện Scan (2 phút)
-1.  Mở **Windows Controller GUI**.
-2.  Bấm **Connect**.
-    *   *Nói:* "Controller kết nối tới Sensor qua REST API bảo mật với API Key."
-3.  Bấm **Start Scan**.
-    *   *Quan sát:* List mạng WiFi hiện ra, nhảy số lượng realtime.
-    *   *Chỉ vào:* Cột **Risk Score** (Màu Đỏ/Vàng/Xanh).
-    *   *Giải thích:* "Hệ thống đang channel hopping và phân tích rủi ro dựa trên Encryption, Vendor, Signal..."
-
-### Bước 3: Export & Forensics (1 phút)
-1.  Chọn 1 mạng có rủi ro cao (VD: Open/WEP).
-2.  Bấm **Stop Scan**.
-3.  Bấm **Export CSV**. Show file CSV vừa tạo.
-4.  Bấm **Export Report**. Show report ngắn gọn.
-    *   *Nói:* "Dữ liệu được lưu trữ xuống SQLite và file PCAP để phục vụ điều tra số (forensics) sau này."
+1. Show sensor capturing WiFi networks
+2. Demonstrate controller GUI functionality
+3. Display risk scoring in action
+4. Export and verify data
+5. (Optional) Show active attack capabilities
 
 ---
 
-## 3. Plan B: Xử Lý Sự Cố (Troubleshooting Live)
-
-### Tình huống 1: USB không nhận / Driver lỗi
-*   **Hành động:** Chuyển ngay sang **Mock Mode**.
-*   **Thao tác:** Restart API với flag `--mock` (hoặc cấu hình trong GUI chọn "Demo Mode").
-*   **Lời thoại:** "Do điều kiện sóng vô tuyến tại hội trường nhiễu cao/hạn chế phần cứng, em xin phép chuyển sang chế độ Demo với dữ liệu mẫu đã thu thập trước đó."
-
-### Tình huống 2: GUI không kết nối được VM
-*   **Hành động:** Kiểm tra IP VM. Nếu mất thời gian (> 30s) -> Bật **Video Demo**.
-*   **Lời thoại:** "Có vẻ kết nối mạng nội bộ VM đang gặp trục trặc. Để tiết kiệm thời gian, em xin phép chiếu video demo quy trình đã ghi hình trước đó."
-
-### Tình huống 3: Không quét thấy mạng nào
-*   **Hành động:** Kiểm tra ăng-ten. Nếu vẫn không thấy -> Show **History** (Dữ liệu cũ trong DB).
-*   **Lời thoại:** "Hiện tại không bắt được gói tin beacon nào (có thể do lồng Faraday/nhiễu). Đây là dữ liệu lịch sử hệ thống đã quét được tại Lab."
+## ⏱️ Estimated Time: 10-15 minutes
 
 ---
 
-## 4. Q&A Cheat Sheet (Câu hỏi thường gặp)
+## 📋 Pre-Demo Checklist
 
-**Q: Tại sao phải dùng VM mà không dùng WSL2?**
-A: WSL2 hiện tại chưa hỗ trợ tốt monitor mode và USB passthrough cho các dòng chip Atheros/Realtek cũ. Dùng VM đảm bảo độ ổn định cao nhất cho driver Linux gốc.
+### Hardware
+- [ ] Laptop with VM ready
+- [ ] USB WiFi adapter (AR9271 recommended)
+- [ ] Power adapter connected
 
-**Q: Hệ thống tính điểm rủi ro (Risk Score) như thế nào?**
-A: Dựa trên trọng số: Encryption (45%), Signal (20%), SSID Pattern (15%), Vendor (10%)... Ví dụ mạng Open sẽ bị 100 điểm (Critical).
+### Software
+- [ ] VM booted and sensor installed
+- [ ] Controller GUI ready on Windows
+- [ ] Terminal windows open
+- [ ] Wireshark installed
 
-**Q: Làm sao để mở rộng hệ thống này?**
-A: Kiến trúc REST API cho phép deploy nhiều sensor (Raspberry Pi) và gom log về 1 server trung tâm (SIEM/Elasticsearch) để vẽ bản đồ nhiệt WiFi.
+### Environment
+- [ ] WiFi networks visible in area (at least 3-5)
+- [ ] No security restrictions blocking monitor mode
+- [ ] Network owner consent (if in office/lab)
+
+---
+
+## 🚀 Demo Steps
+
+### Step 1: Verify Environment (2 min)
+
+```bash
+# On Linux VM
+
+# 1. Check USB adapter connection
+lsusb | grep -i wireless
+# Expected: Shows adapter (e.g., "Atheros Communications")
+
+# 2. Check interface
+iw dev
+# Expected: Shows wlan0 or similar
+
+# 3. Run driver check
+python scripts/check_driver.py
+# Expected: All checks PASS
+```
+
+**Script output to show**:
+```
+✅ Interface wlan0 found
+✅ Monitor mode supported
+✅ Injection supported
+```
+
+---
+
+### Step 2: Start Sensor (2 min)
+
+```bash
+# Option A: Using CLI
+cd /opt/sentinel-netlab/sensor
+sudo python sensor_cli.py \
+    --engine tshark \
+    --buffered-storage \
+    --api \
+    --verbose
+
+# Option B: Using systemd
+sudo systemctl start sentinel-sensor
+sudo systemctl status sentinel-sensor
+```
+
+**Expected output**:
+```
+==========================================================
+  Sentinel NetLab - Sensor CLI
+==========================================================
+Interface: wlan0
+Engine: tshark
+API server started on http://0.0.0.0:5000
+----------------------------------------------------------
+📶 NetworkA              | AA:BB:CC:DD:EE:FF | Risk: 45
+📶 CoffeeShop_WiFi       | 11:22:33:44:55:66 | Risk: 72
+...
+```
+
+---
+
+### Step 3: Verify API (1 min)
+
+```bash
+# Health check
+curl http://localhost:5000/health
+# {"status": "ok"}
+
+# Get networks
+curl http://localhost:5000/networks | python -m json.tool
+# Shows JSON with detected networks
+
+# Get status
+curl http://localhost:5000/status | python -m json.tool
+# Shows sensor status
+```
+
+---
+
+### Step 4: Launch Controller GUI (2 min)
+
+```powershell
+# On Windows host
+cd D:\hod_lab\controller
+python scanner_gui.py
+```
+
+**GUI Demo Points**:
+1. Show connection to sensor (green status)
+2. Click "Start Scan" - networks populate
+3. Sort by Risk Score column
+4. Select high-risk network - show details
+5. Click "Risk Report" - show popup
+
+---
+
+### Step 5: Export Data (1 min)
+
+1. In GUI, click "Export CSV"
+2. Save file
+3. Open in Excel/Notepad - show columns:
+   - SSID, BSSID, Channel, RSSI, Encryption, Risk Score
+
+```powershell
+# Verify CSV
+type networks_export.csv
+```
+
+---
+
+### Step 6: Show PCAP in Wireshark (2 min)
+
+```bash
+# On Linux VM
+ls -la /tmp/captures/
+# Show PCAP files with rotation
+
+# Open in Wireshark (if GUI available)
+wireshark /tmp/captures/latest.pcap &
+```
+
+**Wireshark Demo Points**:
+1. Show Beacon frames
+2. Show Probe Requests
+3. Filter: `wlan.fc.type_subtype == 8` (Beacons)
+4. Point out SSID, BSSID, Channel fields
+
+---
+
+### Step 7: Run Evaluation Tests (3 min)
+
+```bash
+# Recall test (pre-recorded)
+python tests/compare_recall.py \
+    artifacts/gt_output.csv \
+    artifacts/poc.json
+
+# Show results
+cat artifacts/recall_report.txt
+# Expected: Recall >= 80%
+
+# Latency test (quick)
+python tests/test_latency.py -n 10
+
+# Show results
+# Expected: avg < 1000ms
+```
+
+---
+
+### Step 8: (Optional) Active Attack Demo (3 min)
+
+⚠️ **Only in authorized lab environment**
+
+```bash
+# Enable active attacks
+export ALLOW_ACTIVE_ATTACKS=true
+
+# Deauth test (single packet)
+curl -X POST http://localhost:5000/attack/deauth \
+    -H "X-API-Key: $API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"bssid": "AA:BB:CC:DD:EE:FF", "count": 1}'
+
+# Show forensics events
+curl http://localhost:5000/forensics/events
+```
+
+---
+
+## 🎥 Video Recording Tips
+
+If recording demo video:
+
+1. **Resolution**: 1920x1080 minimum
+2. **Duration**: Max 5 minutes
+3. **Audio**: Narrate each step
+4. **Terminal**: Increase font size
+5. **Highlight**: Use mouse pointer to highlight
+
+### Recording Script (Linux)
+
+```bash
+# Install recordmydesktop or OBS
+# Start recording before demo
+recordmydesktop --no-sound -o demo.ogv
+
+# After demo, convert to MP4
+ffmpeg -i demo.ogv -c:v libx264 demo_video.mp4
+```
+
+---
+
+## ❓ Common Demo Issues & Solutions
+
+### "No networks found"
+
+```bash
+# Check monitor mode
+iw dev wlan0 info | grep type
+# Should show: type monitor
+
+# Re-enable monitor mode
+sudo ip link set wlan0 down
+sudo iw dev wlan0 set type monitor
+sudo ip link set wlan0 up
+```
+
+### "Connection refused" on API
+
+```bash
+# Check if sensor is running
+ps aux | grep sensor
+
+# Check port
+netstat -tlnp | grep 5000
+```
+
+### "USB adapter disconnected"
+
+```bash
+# Check USB
+lsusb
+
+# Reload driver
+sudo modprobe -r ath9k_htc
+sudo modprobe ath9k_htc
+```
+
+---
+
+## 📊 Demo Metrics to Highlight
+
+| Metric | Target | Your Value |
+|--------|--------|------------|
+| Networks detected | ≥5 | ____ |
+| Recall | ≥80% | ____% |
+| API latency | <1s | ____ms |
+| Memory usage | <500MB | ____MB |
+| Capture engine | tshark | ✓ |
+
+---
+
+## 🏁 Post-Demo
+
+1. Stop sensor: `Ctrl+C` or `sudo systemctl stop sentinel-sensor`
+2. Save any generated files
+3. Take screenshots for report
+4. Answer Q&A
+
+---
+
+*Good luck with your demo!*

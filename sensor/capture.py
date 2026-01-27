@@ -211,7 +211,7 @@ class CaptureEngine:
                 iface=self.interface,
                 prn=packet_callback,
                 store=False,
-                filter="type mgt"  # Only management frames
+                filter="type mgt or (wlan type data and ether proto 0x888e)"  # Mgt + EAPOL (Handshake)
             )
             self.sniffer.start()
             self.is_capturing = True
@@ -250,6 +250,28 @@ class CaptureEngine:
         
         logger.info("Capture stopped")
     
+    def get_current_channel(self) -> int:
+        """Get the current channel."""
+        return self.current_channel
+
+    def inject_frame(self, packet) -> bool:
+        """
+        Inject a raw frame into the interface.
+        
+        Args:
+            packet: Scapy packet to send
+            
+        Returns:
+            True if sent successfully
+        """
+        try:
+            from scapy.all import sendp
+            sendp(packet, iface=self.interface, verbose=False)
+            return True
+        except Exception as e:
+            logger.error(f"Injection failed: {e}")
+            return False
+
     def get_status(self) -> dict:
         """Get current capture status."""
         return {

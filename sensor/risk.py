@@ -39,11 +39,12 @@ class RiskScorer:
     
     # Weight distribution (should sum to 1.0)
     WEIGHTS = {
-        "encryption": 0.45,      # Most important
-        "signal_strength": 0.20, # Proximity indicator
-        "ssid_analysis": 0.15,   # Hidden/suspicious names
-        "vendor": 0.10,          # Known vulnerable vendors
-        "channel": 0.10,         # Channel congestion/unusual
+        "encryption": 0.40,      # Encryption strength
+        "wps": 0.20,             # WPS Vulnerability
+        "traffic": 0.15,         # Active traffic/Handshake
+        "ssid_analysis": 0.10,   # Suspicious names
+        "signal_strength": 0.10, # Proximity
+        "vendor": 0.05,          # Vendor reputation
     }
     
     # Encryption risk scores (higher = more risky)
@@ -55,8 +56,10 @@ class RiskScorer:
         "WPA": 60,
         "WPA-TKIP": 55,
         "WPA-PSK": 50,
-        "WPA2": 25,
-        "WPA2-PSK": 20,
+        "WPA2": 20,          # Standard
+        "WPA2-CCMP": 20,     # Standard
+        "WPA2-TKIP": 40,     # Weak cipher
+        "WPA2-PSK2": 20,
         "WPA2-802.1X": 15,
         "WPA3": 10,
         "WPA3-SAE": 5,
@@ -86,6 +89,56 @@ class RiskScorer:
     def __init__(self):
         """Initialize the risk scorer."""
         pass
+
+    def calculate_wps_score(self, wps_enabled: bool) -> RiskFactor:
+        """
+        Calculate risk based on WPS status.
+        WPS is vulnerable to brute-force and Pixie Dust attacks.
+        
+        Args:
+            wps_enabled: True if WPS is detected
+            
+        Returns:
+            RiskFactor
+        """
+        if wps_enabled:
+            return RiskFactor(
+                name="wps",
+                weight=self.WEIGHTS["wps"],
+                score=100,  # Critical vulnerability (High Factor Score)
+                description="WPS Enabled (Vulnerable to Pixie Dust/Brute Force)"
+            )
+        return RiskFactor(
+            name="wps",
+            weight=self.WEIGHTS["wps"],
+            score=0,
+            description="WPS Disabled/Not Detected"
+        )
+        
+    def calculate_traffic_score(self, handshake_captured: bool) -> RiskFactor:
+        """
+        Calculate risk based on captured traffic/handshakes.
+        Captured handshake = vulnerable to offline cracking.
+        
+        Args:
+            handshake_captured: True if EAPOL handshake captured
+            
+        Returns:
+            RiskFactor
+        """
+        if handshake_captured:
+            return RiskFactor(
+                name="traffic",
+                weight=self.WEIGHTS["traffic"],
+                score=100, # Critical: Handshake captured
+                description="Handshake Captured (Vulnerable to Offline Cracking)"
+            )
+        return RiskFactor(
+            name="traffic",
+            weight=self.WEIGHTS["traffic"],
+            score=0,
+            description="No sensitive traffic captured"
+        )
     
     def calculate_encryption_score(self, encryption: str) -> RiskFactor:
         """
@@ -99,6 +152,12 @@ class RiskScorer:
         """
         enc_upper = encryption.upper() if encryption else "UNKNOWN"
         
+        # Check specific weak ciphers first
+        if "TKIP" in enc_upper and "WPA2" in enc_upper:
+            score = self.ENCRYPTION_SCORES["WPA2-TKIP"]
+            description = f"Encryption: {encryption} (Weak Cipher)"
+            return RiskFactor(name="encryption", weight=self.WEIGHTS["encryption"], score=score, description=description)
+            
         # Try exact match first
         for key, score in self.ENCRYPTION_SCORES.items():
             if key.upper() in enc_upper:
@@ -260,12 +319,14 @@ class RiskScorer:
             score = 40
             description = f"Channel {channel} (unusual)"
         
-        return RiskFactor(
-            name="channel",
-            weight=self.WEIGHTS["channel"],
-            score=score,
-            description=description
-        )
+        # Note: Channel is now incorporated into Signal/General context or ignored as primary weight
+        # Based on new weights, channel is not explicit, but we can keep method for reference or low weight
+        # New weights didn't list Channel. It listed Vendor.
+        # I will return a 0-weight factor if not in WEIGHTS, or just skip it.
+        # WEIGHTS keys: encryption, wps, traffic, ssid_analysis, signal_strength, vendor.
+        # Channel is NOT in new WEIGHTS. So I will deprecate it from calculation.
+        return RiskFactor(name="channel", weight=0, score=score, description=description)
+
     
     def calculate_risk(self, network: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -292,12 +353,17 @@ class RiskScorer:
         factors.append(self.calculate_vendor_score(
             network.get("vendor", "Unknown")
         ))
-        factors.append(self.calculate_channel_score(
-            network.get("channel", 0)
+        
+        # New Factors
+        factors.append(self.calculate_wps_score(
+            network.get("wps", False)
+        ))
+        factors.append(self.calculate_traffic_score(
+            network.get("handshake_captured", False)
         ))
         
-        # Calculate weighted score
-        total_score = sum(f.weight * f.score for f in factors)
+        # Calculate weighted score (Using only factors present in WEIGHTS)
+        total_score = sum(f.weight * f.score for f in factors if f.weight > 0)
         risk_score = int(round(total_score))
         
         # Determine risk level

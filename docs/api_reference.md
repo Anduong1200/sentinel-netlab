@@ -1,110 +1,157 @@
-# API Reference - WiFi Scanner Sensor
+# Sentinel NetLab API Reference
 
-## Overview
+> Complete documentation for the Sentinel Sensor REST API.
 
-RESTful API cho WiFi Scanner Sensor chạy trên Linux VM.
+## 🔑 Authentication
 
-**Base URL:** `http://<VM_IP>:5000`  
-**Authentication:** Header `X-API-Key`
+All API requests (except `/health`) require an API key passed in the header.
+
+**Header:**
+`X-API-Key: <your_api_key>`
+
+Default key: `sentinel-2024` (Change this in production!)
 
 ---
 
-## Endpoints
+## 📡 Core Endpoints
 
-### GET /health
+### 1. Health Check
+Check if the API server is running. No auth required.
 
-Health check endpoint (không yêu cầu authentication).
+- **GET** `/health`
 
 **Response:**
 ```json
 {
   "status": "ok",
-  "timestamp": "2026-01-27T10:00:00.000000",
-  "interface": "wlan0"
+  "timestamp": "2024-01-27T12:00:00"
+}
+```
+
+### 2. Sensor Status
+Get current operation status of the sensor.
+
+- **GET** `/status`
+
+**Response:**
+```json
+{
+  "status": "running",
+  "interface": "wlan0",
+  "channel": 6,
+  "engine": "tshark",
+  "networks_detected": 15,
+  "packets_captured": 10240,
+  "uptime_seconds": 3600
 }
 ```
 
 ---
 
-### GET /status
+## 📶 Network Data
 
-Sensor status với thông tin interface và capture state.
+### 3. Get Detected Networks
+Retrieve list of all unique networks detected.
 
-**Response:**
-```json
-{
-  "interface": {
-    "interface": "wlan0",
-    "exists": true,
-    "mode": "managed",
-    "monitor_capable": true
-  },
-  "capture": {
-    "is_running": false,
-    "total_packets": 0
-  },
-  "storage": {
-    "network_count": 15,
-    "pcap_stats": {"count": 3, "total_size_mb": 12.5}
-  }
-}
-```
+- **GET** `/networks`
 
----
-
-### GET /scan
-
-Trigger WiFi scan và trả về kết quả.
-
-**Headers:**
-| Header | Value |
-|--------|-------|
-| `X-API-Key` | `student-project-2024` |
-
-**Rate Limit:** 10 requests/minute
+**Parameters:**
+- `sort_by` (optional): `rssi` | `risk` | `ssid` (default: `risk`)
+- `limit` (optional): Number of results (default: 100)
 
 **Response:**
 ```json
 {
-  "status": "success",
-  "timestamp": "2026-01-27T10:00:00.000000",
-  "count": 5,
+  "count": 2,
   "networks": [
     {
-      "ssid": "Home_Network",
-      "bssid": "AA:BB:CC:11:22:33",
-      "signal": -55,
-      "channel": 6,
-      "encryption": "WPA2-PSK",
-      "vendor": "TP-Link",
-      "risk_score": 45,
-      "risk_level": "medium"
-    }
-  ]
-}
-```
-
----
-
-### GET /history
-
-Lấy lịch sử scan (50 networks gần nhất).
-
-**Headers:** `X-API-Key`
-
-**Response:**
-```json
-{
-  "networks": [
+      "bssid": "AA:BB:CC:DD:EE:FF",
+      "ssid": "Suspicious_WiFi",
+      "channel": 11,
+      "rssi": -45,
+      "encryption": "Open",
+      "risk_score": 90,
+      "risk_details": ["Open Network", "High Signal Anomaly"],
+      "last_seen": "2024-01-27T12:05:00"
+    },
     {
-      "ssid": "...",
-      "bssid": "...",
-      "first_seen": "2026-01-27T09:00:00",
-      "last_seen": "2026-01-27T10:00:00",
-      "signal": -60,
+      "bssid": "11:22:33:44:55:66",
+      "ssid": "CoffeeShop",
       "channel": 1,
+      "rssi": -70,
       "encryption": "WPA2",
-      "risk_score": 50
+      "risk_score": 10,
+      "risk_details": [],
+      "last_seen": "2024-01-27T12:04:55"
+    }
+  ]
+}
+```
+
+### 4. Get Data Export
+Export data in standard formats.
+
+- **GET** `/export/<format>`
+- **Format options**: `csv` | `json`
+
+**Response (CSV):**
+File download: `sensor_export_20240127.csv`
+
+---
+
+## ⚔️ Active Defense (Requires Permission)
+
+> **⚠️ Warning**: These endpoints perform active packet injection.
+> Requires `ALLOW_ACTIVE_ATTACKS=true` environment variable.
+
+### 5. Deauthentication Attack
+Send deauth frames to disconnect clients (for testing WIDS reaction).
+
+- **POST** `/attack/deauth`
+
+**Body:**
+```json
+{
+  "bssid": "AA:BB:CC:DD:EE:FF",
+  "count": 5,      // Number of packets (default: 1)
+  "client": "FF:FF:FF:FF:FF:FF" // Target (default: Broadcast)
+}
+```
+
+**Response:**
+```json
+{
+  "status": "initiated",
+  "target": "AA:BB:CC:DD:EE:FF",
+  "type": "deauth",
+  "cooldown": 10
+}
+```
+
+---
+
+## 🔍 Forensics & Logs
+
+### 6. Get Security Events
+Retrieve log of security incidents.
+
+- **GET** `/forensics/events`
+
+**Response:**
+```json
+{
+  "events": [
+    {
+      "timestamp": "2024-01-27T12:01:00",
+      "type": "EVIL_TWIN",
+      "severity": "HIGH",
+      "message": "Possible Evil Twin detected for SSID 'Corporate_WiFi'"
+    },
+    {
+      "timestamp": "2024-01-27T11:55:00",
+      "type": "DEAUTH_FLOOD",
+      "severity": "MEDIUM",
+      "message": "Deauth flood detected on Channel 6"
     }
   ]
 }
@@ -112,66 +159,32 @@ Lấy lịch sử scan (50 networks gần nhất).
 
 ---
 
-### GET /export/csv
-
-Export data dạng CSV file.
-
-**Headers:** `X-API-Key`
-
-**Response:** CSV file download
-
-```
-SSID,BSSID,Signal,Channel,Encryption,Risk Score
-Home_Network,AA:BB:CC:11:22:33,-55,6,WPA2,45
-```
-
----
-
-### GET /export/json
-
-Export data dạng JSON file.
-
-**Headers:** `X-API-Key`
-
-**Response:** JSON file download
-
----
-
-## Error Responses
-
-| Code | Meaning |
-|------|---------|
-| 401 | Unauthorized - Invalid or missing API key |
-| 429 | Too Many Requests - Rate limit exceeded |
-| 500 | Internal Server Error |
-
-**Error Response Format:**
-```json
-{
-  "error": "Unauthorized"
-}
-```
-
----
-
-## Client Example (Python)
+## 🐍 Python Client Example
 
 ```python
 import requests
 
-API_URL = "http://192.168.56.101:5000"
-API_KEY = "student-project-2024"
+API_URL = "http://localhost:5000"
+HEADERS = {"X-API-Key": "sentinel-2024"}
 
-headers = {"X-API-Key": API_KEY}
+def get_risky_networks():
+    try:
+        resp = requests.get(f"{API_URL}/networks", headers=HEADERS)
+        data = resp.json()
+        
+        # Filter high risk
+        risky = [n for n in data['networks'] if n['risk_score'] > 70]
+        return risky
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
 
-# Scan
-response = requests.get(f"{API_URL}/scan", headers=headers, timeout=30)
-data = response.json()
-print(f"Found {data['count']} networks")
+# Usage
+risky_nets = get_risky_networks()
+for net in risky_nets:
+    print(f"ALERT: {net['ssid']} (Risk: {net['risk_score']})")
 ```
 
-## Client Example (cURL)
+---
 
-```bash
-curl -H "X-API-Key: student-project-2024" http://VM_IP:5000/scan
-```
+*Last updated: January 2024*

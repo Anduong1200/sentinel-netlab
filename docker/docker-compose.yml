@@ -1,0 +1,57 @@
+# ============================================================
+# Sentinel NetLab - Docker Compose
+# ============================================================
+
+version: '3.8'
+
+services:
+  # Ultra-lightweight Alpine sensor
+  sensor-alpine:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.alpine
+    container_name: sentinel-sensor
+    privileged: true  # Required for monitor mode
+    network_mode: host  # Required for wireless access
+    restart: unless-stopped
+    environment:
+      - WIFI_SCANNER_INTERFACE=wlan0
+      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-2024}
+      - ALLOW_ACTIVE_ATTACKS=${ALLOW_ATTACKS:-false}
+      - CAPTURE_ENGINE=tshark
+    volumes:
+      - sensor_data:/opt/sensor/data
+      - ./captures:/opt/sensor/captures
+    # For USB passthrough in Docker
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: ["--engine", "tshark", "--buffered-storage", "--watchdog", "--api"]
+
+  # Debian-based sensor (more compatible)
+  sensor-debian:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.debian
+    container_name: sentinel-sensor-debian
+    privileged: true
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      - WIFI_SCANNER_INTERFACE=wlan0
+      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-2024}
+      - ALLOW_ACTIVE_ATTACKS=${ALLOW_ATTACKS:-false}
+    volumes:
+      - sensor_data:/opt/sensor/data
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    profiles:
+      - debian  # Use: docker compose --profile debian up
+
+volumes:
+  sensor_data:

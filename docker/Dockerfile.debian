@@ -1,0 +1,67 @@
+# ============================================================
+# Sentinel NetLab - Debian Docker Image
+# Lightweight but compatible: ~200MB RAM, ~500MB disk
+# ============================================================
+
+FROM debian:12-slim
+
+LABEL maintainer="Sentinel NetLab"
+LABEL description="Lightweight WiFi sensor (Debian-based)"
+LABEL version="1.0"
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ============================================================
+# Install dependencies
+# ============================================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    tshark \
+    tcpdump \
+    iw \
+    wireless-tools \
+    aircrack-ng \
+    libpcap-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Setup Python environment
+# ============================================================
+WORKDIR /opt/sensor
+
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ============================================================
+# Copy sensor code
+# ============================================================
+COPY sensor/ ./sensor/
+COPY scripts/entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+# ============================================================
+# Configuration
+# ============================================================
+ENV WIFI_SCANNER_INTERFACE=wlan0
+ENV WIFI_SCANNER_API_KEY=sentinel-2024
+ENV ALLOW_ACTIVE_ATTACKS=false
+ENV CAPTURE_ENGINE=tshark
+
+EXPOSE 5000
+
+# ============================================================
+# Entrypoint
+# ============================================================
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["--engine", "tshark", "--buffered-storage", "--api"]
