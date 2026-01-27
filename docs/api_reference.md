@@ -1,190 +1,238 @@
-# Sentinel NetLab API Reference
+# API Reference
 
-> Complete documentation for the Sentinel Sensor REST API.
-
-## 🔑 Authentication
-
-All API requests (except `/health`) require an API key passed in the header.
-
-**Header:**
-`X-API-Key: <your_api_key>`
-
-Default key: `sentinel-2024` (Change this in production!)
+> Complete REST API documentation for Sentinel NetLab Sensor
 
 ---
 
-## 📡 Core Endpoints
+## Base URL
 
-### 1. Health Check
-Check if the API server is running. No auth required.
+```
+http://<sensor-ip>:5000
+```
 
-- **GET** `/health`
+## Authentication
+
+All endpoints except `/health` and `/metrics` require API key authentication.
+
+**Header:**
+```
+X-API-Key: <your-api-key>
+```
+
+**Default Key:** `sentinel-dev-2024` (change in production)
+
+---
+
+## Endpoints Overview
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | ❌ | Health check |
+| GET | `/status` | ❌ | Sensor status |
+| GET | `/metrics` | ❌ | Prometheus metrics |
+| GET | `/scan` | ✅ | Scan networks |
+| GET | `/history` | ✅ | Historical data |
+| GET | `/export/csv` | ✅ | Export CSV |
+| GET | `/export/json` | ✅ | Export JSON |
+| GET | `/forensics/events` | ✅ | Security events |
+| POST | `/attack/deauth` | ✅ | Deauth attack |
+| POST | `/attack/fakeap` | ✅ | Fake AP beacon |
+
+---
+
+## Core Endpoints
+
+### GET `/health`
+
+Health check endpoint. No authentication required.
 
 **Response:**
 ```json
 {
   "status": "ok",
-  "timestamp": "2024-01-27T12:00:00"
-}
-```
-
-### 2. Sensor Status
-Get current operation status of the sensor.
-
-- **GET** `/status`
-
-**Response:**
-```json
-{
-  "status": "running",
+  "timestamp": "2026-01-27T12:00:00",
   "interface": "wlan0",
-  "channel": 6,
-  "engine": "tshark",
-  "networks_detected": 15,
-  "packets_captured": 10240,
-  "uptime_seconds": 3600
+  "metrics_url": "/metrics"
 }
 ```
 
 ---
 
-## 📶 Network Data
+### GET `/status`
 
-### 3. Get Detected Networks
-Retrieve list of all unique networks detected.
-
-- **GET** `/networks`
-
-**Parameters:**
-- `sort_by` (optional): `rssi` | `risk` | `ssid` (default: `risk`)
-- `limit` (optional): Number of results (default: 100)
+Get current sensor status and statistics.
 
 **Response:**
 ```json
 {
+  "interface": {
+    "name": "wlan0",
+    "mode": "monitor",
+    "channel": 6
+  },
+  "capture": {
+    "running": true,
+    "packets": 15420,
+    "uptime": 3600
+  },
+  "storage": {
+    "network_count": 25,
+    "pcap_stats": {"files": 5, "size_mb": 128}
+  }
+}
+```
+
+---
+
+### GET `/scan`
+
+Perform network scan and return detected networks with risk scores.
+
+**Rate Limit:** 10 requests per minute
+
+**Response:**
+```json
+{
+  "status": "success",
+  "timestamp": "2026-01-27T12:05:00",
   "count": 2,
+  "scan_duration": 4.5,
   "networks": [
     {
+      "ssid": "Free_WiFi",
       "bssid": "AA:BB:CC:DD:EE:FF",
-      "ssid": "Suspicious_WiFi",
-      "channel": 11,
-      "rssi": -45,
+      "signal": -45,
+      "channel": 6,
       "encryption": "Open",
-      "risk_score": 90,
-      "risk_details": ["Open Network", "High Signal Anomaly"],
-      "last_seen": "2024-01-27T12:05:00"
-    },
-    {
-      "bssid": "11:22:33:44:55:66",
-      "ssid": "CoffeeShop",
-      "channel": 1,
-      "rssi": -70,
-      "encryption": "WPA2",
-      "risk_score": 10,
-      "risk_details": [],
-      "last_seen": "2024-01-27T12:04:55"
+      "vendor": "TP-Link",
+      "risk_score": 85,
+      "risk_level": "High",
+      "confidence": 0.92,
+      "explain": {
+        "encryption": 40.0,
+        "signal": 12.0,
+        "ssid_suspicion": 8.0
+      }
     }
   ]
 }
 ```
 
-### 4. Get Data Export
-Export data in standard formats.
+---
 
-- **GET** `/export/<format>`
-- **Format options**: `csv` | `json`
+### GET `/export/csv`
 
-**Response (CSV):**
-File download: `sensor_export_20240127.csv`
+Export scan data as CSV file.
+
+**Response:** File download (`wifi_scan.csv`)
+
+```csv
+ssid,bssid,signal,channel,encryption,risk_score,risk_level
+Free_WiFi,AA:BB:CC:DD:EE:FF,-45,6,Open,85,High
+```
 
 ---
 
-## ⚔️ Active Defense (Requires Permission)
+### GET `/export/json`
 
-> **⚠️ Warning**: These endpoints perform active packet injection.
-> Requires `ALLOW_ACTIVE_ATTACKS=true` environment variable.
+Export scan data as JSON file.
 
-### 5. Deauthentication Attack
-Send deauth frames to disconnect clients (for testing WIDS reaction).
+**Response:** File download (`wifi_scan.json`)
 
-- **POST** `/attack/deauth`
+---
 
-**Body:**
+## Forensics Endpoints
+
+### GET `/forensics/events`
+
+Get security events (deauth detections, evil twins, etc).
+
+**Response:**
+```json
+{
+  "status": "success",
+  "events": [
+    {
+      "timestamp": "2026-01-27T12:01:00",
+      "type": "DEAUTH_FLOOD",
+      "severity": "HIGH",
+      "bssid": "AA:BB:CC:DD:EE:FF",
+      "message": "15 deauth frames in 5 seconds"
+    }
+  ]
+}
+```
+
+---
+
+## Attack Endpoints
+
+> ⚠️ **Warning:** Requires `ALLOW_ACTIVE_ATTACKS=true` environment variable.
+
+### POST `/attack/deauth`
+
+Send deauthentication frames for testing.
+
+**Request:**
 ```json
 {
   "bssid": "AA:BB:CC:DD:EE:FF",
-  "count": 5,      // Number of packets (default: 1)
-  "client": "FF:FF:FF:FF:FF:FF" // Target (default: Broadcast)
+  "client": "FF:FF:FF:FF:FF:FF",
+  "count": 10
 }
 ```
 
 **Response:**
 ```json
 {
-  "status": "initiated",
-  "target": "AA:BB:CC:DD:EE:FF",
-  "type": "deauth",
-  "cooldown": 10
+  "status": "success",
+  "message": "Deauth sent to AA:BB:CC:DD:EE:FF (10 frames)"
 }
 ```
 
 ---
 
-## 🔍 Forensics & Logs
+## Error Responses
 
-### 6. Get Security Events
-Retrieve log of security incidents.
+| Code | Description |
+|------|-------------|
+| 401 | Unauthorized - Invalid or missing API key |
+| 403 | Forbidden - Active attacks disabled |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error |
 
-- **GET** `/forensics/events`
-
-**Response:**
+**Error Format:**
 ```json
 {
-  "events": [
-    {
-      "timestamp": "2024-01-27T12:01:00",
-      "type": "EVIL_TWIN",
-      "severity": "HIGH",
-      "message": "Possible Evil Twin detected for SSID 'Corporate_WiFi'"
-    },
-    {
-      "timestamp": "2024-01-27T11:55:00",
-      "type": "DEAUTH_FLOOD",
-      "severity": "MEDIUM",
-      "message": "Deauth flood detected on Channel 6"
-    }
-  ]
+  "error": "Unauthorized"
 }
 ```
 
 ---
 
-## 🐍 Python Client Example
+## Python Client Example
 
 ```python
 import requests
 
-API_URL = "http://localhost:5000"
-HEADERS = {"X-API-Key": "sentinel-2024"}
+API_URL = "http://192.168.56.101:5000"
+API_KEY = "sentinel-dev-2024"
 
-def get_risky_networks():
-    try:
-        resp = requests.get(f"{API_URL}/networks", headers=HEADERS)
-        data = resp.json()
-        
-        # Filter high risk
-        risky = [n for n in data['networks'] if n['risk_score'] > 70]
-        return risky
-    except Exception as e:
-        print(f"Error: {e}")
-        return []
+def get_networks():
+    response = requests.get(
+        f"{API_URL}/scan",
+        headers={"X-API-Key": API_KEY}
+    )
+    data = response.json()
+    
+    for net in data["networks"]:
+        if net["risk_score"] >= 70:
+            print(f"⚠️ HIGH RISK: {net['ssid']} ({net['risk_score']})")
 
-# Usage
-risky_nets = get_risky_networks()
-for net in risky_nets:
-    print(f"ALERT: {net['ssid']} (Risk: {net['risk_score']})")
+if __name__ == "__main__":
+    get_networks()
 ```
 
 ---
 
-*Last updated: January 2024*
+*Last Updated: January 2026*

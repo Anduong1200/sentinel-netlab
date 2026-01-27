@@ -1,0 +1,254 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Sentinel NetLab Alert",
+    "description": "Security alert with evidence and MITRE ATT&CK mapping",
+    "type": "object",
+    "required": [
+        "alert_id",
+        "timestamp",
+        "rule_id",
+        "severity",
+        "status",
+        "sensor_id"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "alert_id": {
+            "type": "string",
+            "pattern": "^[A-Z]{2,4}-[0-9]{14}-[0-9]{4}$",
+            "description": "Unique alert identifier (format: TYPE-TIMESTAMP-SEQ)"
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 UTC timestamp when alert was generated"
+        },
+        "rule_id": {
+            "type": "string",
+            "description": "ID of the detection rule that triggered this alert"
+        },
+        "rule_name": {
+            "type": "string",
+            "description": "Human-readable rule name"
+        },
+        "severity": {
+            "type": "string",
+            "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "info"
+            ],
+            "description": "Alert severity level"
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "open",
+                "acknowledged",
+                "resolved",
+                "false_positive"
+            ],
+            "default": "open",
+            "description": "Current alert status"
+        },
+        "sensor_id": {
+            "type": "string",
+            "description": "ID of the sensor that generated this alert"
+        },
+        "bssid": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+            "description": "BSSID of the network involved (if applicable)"
+        },
+        "ssid": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "SSID of the network involved (if applicable)"
+        },
+        "description": {
+            "type": "string",
+            "description": "Detailed description of the alert"
+        },
+        "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Risk score (0-100)"
+        },
+        "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Detection confidence (0.0-1.0)"
+        },
+        "evidence": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/evidence"
+            },
+            "description": "Supporting evidence for this alert"
+        },
+        "mitre_attack": {
+            "$ref": "#/definitions/mitre_attack",
+            "description": "MITRE ATT&CK mapping"
+        },
+        "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the triggering activity was first observed"
+        },
+        "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the triggering activity was last observed"
+        },
+        "count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of occurrences if aggregated"
+        },
+        "acknowledged_by": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "User who acknowledged (if applicable)"
+        },
+        "acknowledged_at": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "format": "date-time",
+            "description": "When alert was acknowledged"
+        },
+        "resolved_by": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "description": "User who resolved (if applicable)"
+        },
+        "resolved_at": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "format": "date-time",
+            "description": "When alert was resolved"
+        },
+        "notes": {
+            "type": "string",
+            "description": "Analyst notes"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Tags for categorization"
+        },
+        "related_alerts": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "IDs of related alerts"
+        }
+    },
+    "definitions": {
+        "evidence": {
+            "type": "object",
+            "required": [
+                "type",
+                "timestamp",
+                "data"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "frame",
+                        "network",
+                        "metric",
+                        "correlation",
+                        "trigger_data",
+                        "baseline_deviation"
+                    ],
+                    "description": "Type of evidence"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "When evidence was captured"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Evidence payload (structure depends on type)"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable description of this evidence"
+                }
+            }
+        },
+        "mitre_attack": {
+            "type": "object",
+            "required": [
+                "technique_id",
+                "technique_name"
+            ],
+            "properties": {
+                "technique_id": {
+                    "type": "string",
+                    "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$",
+                    "description": "MITRE ATT&CK technique ID (e.g., T1557, T1557.002)"
+                },
+                "technique_name": {
+                    "type": "string",
+                    "description": "Technique name"
+                },
+                "tactic": {
+                    "type": "string",
+                    "enum": [
+                        "Reconnaissance",
+                        "Resource Development",
+                        "Initial Access",
+                        "Execution",
+                        "Persistence",
+                        "Privilege Escalation",
+                        "Defense Evasion",
+                        "Credential Access",
+                        "Discovery",
+                        "Lateral Movement",
+                        "Collection",
+                        "Command and Control",
+                        "Exfiltration",
+                        "Impact"
+                    ],
+                    "description": "ATT&CK Tactic"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Link to MITRE ATT&CK page"
+                },
+                "sub_techniques": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Related sub-techniques"
+                }
+            }
+        }
+    }
+}

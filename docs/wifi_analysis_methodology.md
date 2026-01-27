@@ -14,36 +14,42 @@ This process operates on two mechanisms:
 
 Sentinel NetLab primarily utilizes **Passive Scanning** to minimize detection footprint.
 
-### Data Extraction & Analysis
+### Comprehensive Data Extraction & Analysis
 
-The following table details the key metadata extracted from Management Frames and their security significance:
+The following table details the critical data points extracted from 802.11 Management Frames, their source, and their role in network footprinting.
 
-| Information Element | Primary Source | Analysis Goal & Security Significance |
-|---------------------|----------------|---------------------------------------|
-| **SSID** (Network Name) | Beacon, Probe Response | Identifies the network. Detecting **Hidden SSIDs** (revealed in Probe Responses) or "Evil Twin" spoofing attempts. |
-| **BSSID** (MAC Address) | All Frames | Unique identifier for the AP. Used for **location mapping**, differentiating multiple APs broadcasting the same SSID, and detecting spoofing (MAC cloning). |
-| **RSSI** (Signal Strength) | RadioTap Header | Physical proximity indicator. Used for **heatmap generation**, defining "Safe Zones", and detecting potential leakage of signals outside secure areas. |
-| **OUI** (Vendor ID) | BSSID (First 3 bytes) | Device fingerprinting. Helps identify **Rogue APs** (e.g., a consumer TP-Link Router appearing in a strictly Cisco Enterprise environment). |
-| **Channel & Bandwidth** | Beacon (DS Parameter) | Network configuration analysis. Detects **channel overlapping** (DoS/Interference) or APs operating on unauthorized channels to evade detection. |
-| **Security Capabilities** | Beacon (RSN IE) | Identifies encryption standards (Open, WEP, WPA2/3, Enterprise). **Critical**: Flags "Open" or "WEP" networks as high-risk vulnerabilities. |
-| **Supported Rates / Std** | Beacon (HT/VHT/HE Caps) | Fingerprints AP capabilities (802.11n/ac/ax). Detecting legacy-only APs which may be vulnerable outdated hardware. |
+| Data Point | Relevant Frame Types | Purpose / What It Reveals |
+| :--- | :--- | :--- |
+| **SSID** | Beacon, Probe Response | Identifies WLAN. **Hidden SSIDs** are revealed in Association or active Probe Requests. |
+| **BSSID** | All Management Frames | Unique AP MAC address. Crucial for **tracking**, **rogue AP detection**, and differentiating APs with same SSID. |
+| **RSSI** | RadioTap Header | Estimates physical distance/coverage. Multi-point RSSI enables **triangulation** and physical heatmapping. |
+| **Vendor / OUI** | Deduced from BSSID | Infers device type (e.g., Enterprise Cisco vs Consumer TP-Link), hinting at the network's purpose or legitimacy. |
+| **Channel / Band** | Beacon, Probe Response | Shows operating frequency (2.4/5/6 GHz). Reveals channel planning quality or **interference**. |
+| **Channel Hopping** | Deduced (Sequential) | Observing frequent channel changes can identify **misconfigured DFS** or evasive monitoring devices. |
+| **Security (RSN IE)** | Beacon, Probe Response | Assesses security posture (WPA2/3 vs WEP). Weak protocols indicate high risk. |
+| **Data Rates** | Beacon (HT/VHT/HE) | Infers AP generation (802.11n/ac/ax). Mandatory rates affect old client compatibility. |
+| **Network Load** | Beacon (BSS Load IE) | Estimates station count and channel utilization (QBSS) for capacity and health analysis. |
 
 ---
 
-## 🎓 2. Academic Context & Research Trends
+## 🎓 2. Academic Context & Primary Sources
 
-Wireless analysis has evolved from simple "War Driving" to sophisticated behavioral analytics.
+To build a rigorous research foundation, we rely on authoritative standards and peer-reviewed technical guides.
 
-### Behavioral Analysis
-Modern research moves beyond static signature matching. By analyzing the *timing* and *sequence* of frames, we can detect anomalies that encryption cannot hide.
-*   **Example**: "Channel Hopping Behavior". Legitimate APs rarely change channels frequently. A device rapidly switching channels and sending Deauth packets is likely a **WIDS Sensor** or an **Attacker**.
-*   **Case Study**: Researchers at Northeastern University recently uncovered vulnerabilities in **MU-MIMO** (Wi-Fi 5+) by analyzing MAC/PHY layer interactions, proving that protocol-level analysis remains a fertile ground for discovering new attack vectors.
+### 📚 Key Technical & Academic Sources
 
-### Fingerprinting & Geolocation
-Combining **RSSI multilateration** with **Clock Skew analysis** (from Beacon timestamps) allows for highly accurate device identification and location tracking, even if MAC addresses are randomized.
+1.  **Official IEEE Standards**:
+    *   **IEEE 802.11-2020**: The definitive specification for frame formats (Beacon, Probe, Auth).
+    *   **IEEE 802.11bf** (Upcoming): Standards for WLAN Sensing, relevant for future behavioral analysis.
+    *   *Source*: IEEE 802.11 Working Group & Standards Association.
 
-### Automation & Machine Learning (The Sentinel Approach)
-Sentinel NetLab aligns with the trend of **Automated Triage**. Instead of manually analyzing PCAP files in Wireshark, the system parses metadata in real-time and applies a **Risk Scoring Algorithm** (heuristic today, ML-ready for tomorrow) to surface only relevant threats to the operator.
+2.  **Technical Analysis Guides**:
+    *   **Cisco Wireless Security**: Deep dives into frame roles and RSN Information Elements.
+    *   **CWNA/CWAP**: Certified Wireless Network Admin guides provide practical breakdown of IEs.
+
+3.  **Research Applications**:
+    *   **Topology Mapping**: Correlating BSSID + RSSI + Channel to map physical footprints.
+    *   **Threat Detection**: Flagging deprecated security (WEP/TKIP) and detecting Rogue APs via OUI/SSID mismatches.
 
 ---
 

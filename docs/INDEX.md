@@ -1,66 +1,42 @@
-# 📚 Documentation Index
+# Sentinel NetLab Documentation
 
-> **Central Navigation** for Sentinel NetLab documentation.
+## Quick Links
 
----
-
-## 📋 Core Technical Docs
-
-| Document | Purpose |
-| :--- | :--- |
-| [IEEE Technical Report](IEEE_Sentinel_NetLab_Report.md) | Main academic paper (IEEE format) |
-| [System Design & Flowchart](SYSTEM_DESIGN.md) | Architecture diagrams (Mermaid) |
-| [API Reference](api_reference.md) | REST API endpoints & examples |
-| [WiFi Analysis Methodology](wifi_analysis_methodology.md) | Theoretical framework & techniques |
-| [WiFi Security & Attack Analysis](wifi_security_analysis.md) | Protocol risks (WEP/WPA3), Evil Twin, Downgrade |
-| [Behavioral Risk Analysis](behavioral_risk_analysis.md) | Anomaly detection, Signal Leakage, Rogue APs |
+| Document | Description |
+|----------|-------------|
+| [Install Guide](install_guide.md) | Setup instructions |
+| [API Reference](api_reference.md) | REST API documentation |
+| [System Design](SYSTEM_DESIGN.md) | Architecture diagrams |
 
 ---
 
-## 🛡️ Defense & Presentation
+## 📁 Documentation Index
 
-| Document | Purpose |
-| :--- | :--- |
-| [Defense Script](defense_script.md) | Q&A preparation for thesis board |
-| [Presentation Slides](presentation_slides.md) | Slide deck content |
-| [Killer Q&A](killer_qa.json) | Quick-access JSON for objections |
+### Core Documentation
+- [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md) - Architecture & data flow diagrams
+- [install_guide.md](install_guide.md) - Installation & setup
+- [api_reference.md](api_reference.md) - API endpoints & examples
+- [demo_runbook.md](demo_runbook.md) - Demo script for presentations
 
----
+### Technical Documentation
+- [risk_scoring_model.md](risk_scoring_model.md) - Risk scoring algorithm
+- [wifi_analysis_methodology.md](wifi_analysis_methodology.md) - 802.11 analysis approach
+- [wifi_security_analysis.md](wifi_security_analysis.md) - Security assessment
+- [behavioral_risk_analysis.md](behavioral_risk_analysis.md) - Behavioral patterns
 
-## 📊 Critical Analysis
+### Operations
+- [hardware_requirements.md](hardware_requirements.md) - Hardware specs & adapters
+- [performance_tuning.md](performance_tuning.md) - Optimization guide
+- [metrics_guide.md](metrics_guide.md) - Prometheus metrics
 
-| Document | Purpose |
-| :--- | :--- |
-| [Technical Critique](technical_critique.md) | Honest architectural weaknesses |
-| [Strategic Gap Analysis](strategic_gap_analysis.md) | Market fit vs. industry trends |
-| [Market Fit Analysis](market_fit_analysis.md) | Target audience suitability |
-| [Technical Gap Analysis](technical_gap_analysis.md) | Improvement checklist |
-| [Improvement Roadmap](technical_improvement_roadmap.md) | Short/Long-term engineering plans |
+### Governance
+- [risk_management.md](risk_management.md) - Risk assessment
+- [legal_ethics.md](legal_ethics.md) - Legal compliance
 
----
-
-## 🚀 Operations & Deployment
-
-| Document | Purpose |
-| :--- | :--- |
-| [Install Guide](install_guide.md) | Step-by-step deployment |
-| [Demo Runbook](demo_runbook.md) | Live demo execution script |
-| [Hardware Requirements](hardware_requirements.md) | Recommended adapters |
-| [OS Tuning Guide](os_tuning_guide.md) | Linux kernel optimizations |
-| [Lightweight Deployment](lightweight_deployment.md) | Minimal footprint options |
-| [Performance Tuning](performance_tuning.md) | Optimization strategies |
-| [Metrics Guide](metrics_guide.md) | Prometheus/Grafana setup |
+### Academic
+- [IEEE_Sentinel_NetLab_Report.md](IEEE_Sentinel_NetLab_Report.md) - IEEE format paper
+- [defense_script.md](defense_script.md) - Thesis defense script
 
 ---
 
-## 📜 Compliance & Business
-
-| Document | Purpose |
-| :--- | :--- |
-| [Legal & Ethics](legal_ethics.md) | Ethical hacking guidelines |
-| [Risk Management](risk_management.md) | Project risk register |
-| [ROI Analysis](roi_analysis.md) | Cost-benefit analysis |
-
----
-
-*22 documents total • Last Updated: January 27, 2026*
+**Total: 16 documents**

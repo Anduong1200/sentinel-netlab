@@ -1,0 +1,240 @@
+{
+    "version": "1.0",
+    "description": "Sentinel NetLab Detection Rules - WIDS Core",
+    "rules": [
+        {
+            "rule_id": "WIDS-001",
+            "name": "Open Network Detected",
+            "description": "Unencrypted wireless network detected. Open networks expose all traffic to passive eavesdropping by any nearby attacker.",
+            "severity": "high",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "security",
+                    "op": "eq",
+                    "value": "Open"
+                }
+            ],
+            "mitre_technique_id": "T1557",
+            "mitre_technique_name": "Adversary-in-the-Middle",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 3600,
+            "tags": [
+                "encryption",
+                "configuration"
+            ]
+        },
+        {
+            "rule_id": "WIDS-002",
+            "name": "WEP Encryption Detected",
+            "description": "Network using deprecated WEP encryption. WEP can be cracked in minutes using freely available tools (aircrack-ng).",
+            "severity": "critical",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "security",
+                    "op": "contains",
+                    "value": "WEP"
+                }
+            ],
+            "mitre_technique_id": "T1040",
+            "mitre_technique_name": "Network Sniffing",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 3600,
+            "tags": [
+                "encryption",
+                "deprecated"
+            ]
+        },
+        {
+            "rule_id": "WIDS-003",
+            "name": "WPS Enabled",
+            "description": "WiFi Protected Setup (WPS) is enabled. WPS PIN can be brute-forced in hours using Reaver or Bully, revealing the WPA passphrase.",
+            "severity": "medium",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "capabilities.wps",
+                    "op": "eq",
+                    "value": true
+                }
+            ],
+            "mitre_technique_id": "T1110",
+            "mitre_technique_name": "Brute Force",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 3600,
+            "tags": [
+                "wps",
+                "brute-force"
+            ]
+        },
+        {
+            "rule_id": "WIDS-004",
+            "name": "Suspicious Open Network SSID",
+            "description": "Open network with SSID matching common phishing patterns (FREE, GUEST, brand names). May indicate rogue AP or evil twin.",
+            "severity": "high",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "security",
+                    "op": "eq",
+                    "value": "Open"
+                },
+                {
+                    "field": "ssid",
+                    "op": "regex",
+                    "value": "(?i)(free|guest|xfinity|starbucks|mcdonalds|airport|hotel)"
+                }
+            ],
+            "mitre_technique_id": "T1557.002",
+            "mitre_technique_name": "ARP Cache Poisoning",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 1800,
+            "tags": [
+                "rogue-ap",
+                "phishing"
+            ]
+        },
+        {
+            "rule_id": "WIDS-005",
+            "name": "Unusually Strong Signal",
+            "description": "Signal strength >= -30 dBm indicates AP may be unusually close or using high TX power. Could indicate rogue AP positioned for attack.",
+            "severity": "low",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "rssi_dbm",
+                    "op": ">=",
+                    "value": -30
+                }
+            ],
+            "mitre_technique_id": "T1200",
+            "mitre_technique_name": "Hardware Additions",
+            "mitre_tactic": "Initial Access",
+            "cooldown_seconds": 900,
+            "tags": [
+                "signal",
+                "rogue-ap"
+            ]
+        },
+        {
+            "rule_id": "WIDS-006",
+            "name": "Hidden SSID Network",
+            "description": "Network with hidden SSID detected. While not inherently dangerous, hidden SSIDs can indicate attempts to obscure network presence.",
+            "severity": "info",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "ssid",
+                    "op": "eq",
+                    "value": null
+                }
+            ],
+            "mitre_technique_id": "T1071",
+            "mitre_technique_name": "Application Layer Protocol",
+            "mitre_tactic": "Command and Control",
+            "cooldown_seconds": 7200,
+            "tags": [
+                "hidden",
+                "stealth"
+            ]
+        },
+        {
+            "rule_id": "WIDS-007",
+            "name": "Default Router SSID",
+            "description": "SSID matches common default router naming patterns, indicating potentially unconfigured or factory-reset device.",
+            "severity": "low",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "ssid",
+                    "op": "regex",
+                    "value": "^(linksys|netgear|dlink|tplink|asus|belkin|default|setup|router)[_-]?"
+                }
+            ],
+            "mitre_technique_id": "T1078",
+            "mitre_technique_name": "Valid Accounts",
+            "mitre_tactic": "Persistence",
+            "cooldown_seconds": 7200,
+            "tags": [
+                "default",
+                "misconfiguration"
+            ]
+        },
+        {
+            "rule_id": "WIDS-008",
+            "name": "Locally Administered MAC",
+            "description": "BSSID uses locally administered MAC address (bit 1 of first octet set). Common for virtual APs and MAC spoofing.",
+            "severity": "medium",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "bssid",
+                    "op": "regex",
+                    "value": "^[0-9A-Fa-f][26AaEe]:"
+                }
+            ],
+            "mitre_technique_id": "T1036",
+            "mitre_technique_name": "Masquerading",
+            "mitre_tactic": "Defense Evasion",
+            "cooldown_seconds": 1800,
+            "tags": [
+                "mac-spoofing",
+                "evasion"
+            ]
+        },
+        {
+            "rule_id": "WIDS-009",
+            "name": "PMF Not Enabled",
+            "description": "WPA2/WPA3 network without Protected Management Frames (802.11w). Vulnerable to deauthentication attacks.",
+            "severity": "low",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "security",
+                    "op": "regex",
+                    "value": "WPA[23]"
+                },
+                {
+                    "field": "capabilities.pmf",
+                    "op": "eq",
+                    "value": false
+                }
+            ],
+            "mitre_technique_id": "T1499",
+            "mitre_technique_name": "Endpoint Denial of Service",
+            "mitre_tactic": "Impact",
+            "cooldown_seconds": 7200,
+            "tags": [
+                "pmf",
+                "deauth"
+            ]
+        },
+        {
+            "rule_id": "WIDS-010",
+            "name": "Non-Standard Beacon Interval",
+            "description": "Beacon interval significantly deviates from standard 100ms. May indicate poorly configured or malicious AP.",
+            "severity": "info",
+            "enabled": true,
+            "conditions": [
+                {
+                    "field": "beacon_interval_ms",
+                    "op": "not_in",
+                    "value": [
+                        100,
+                        102,
+                        103
+                    ]
+                }
+            ],
+            "mitre_technique_id": "T1071",
+            "mitre_technique_name": "Application Layer Protocol",
+            "mitre_tactic": "Command and Control",
+            "cooldown_seconds": 3600,
+            "tags": [
+                "beacon",
+                "anomaly"
+            ]
+        }
+    ]
+}

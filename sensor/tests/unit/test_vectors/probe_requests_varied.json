@@ -1,0 +1,61 @@
+{
+    "description": "Test vectors for probe_requests_varied.pcap - client probe requests, privacy, encoding",
+    "pcap": "probe_requests_varied.pcap",
+    "matching_rules": {
+        "timestamp_tolerance_ms": 500,
+        "rssi_tolerance_db": 3
+    },
+    "privacy_note": "Probe requests with specific SSIDs are privacy-sensitive. Normalizer may anonymize if configured.",
+    "vectors": [
+        {
+            "id": "probe_4.1",
+            "note": "Wildcard probe request (no SSID) - ssid should be null",
+            "expected": {
+                "frame_type": "probe_req",
+                "bssid": null,
+                "ssid": null,
+                "rssi_dbm": -48,
+                "channel": 6,
+                "frequency_mhz": 2437,
+                "capabilities": {
+                    "ies_present": []
+                }
+            }
+        },
+        {
+            "id": "probe_4.2",
+            "note": "Probe request revealing previously connected SSID (privacy leak)",
+            "expected": {
+                "frame_type": "probe_req",
+                "bssid": "66:55:44:33:22:11",
+                "ssid": "OfficeNet",
+                "rssi_dbm": -75,
+                "channel": 1,
+                "frequency_mhz": 2412,
+                "vendor_oui": "66:55:44",
+                "capabilities": {
+                    "ies_present": []
+                }
+            },
+            "anonymize_test": {
+                "note": "If sensor config 'anonymize_ssid' true => ssid should be hashed placeholder",
+                "expected_pattern": "ANON_sha256:.*"
+            }
+        },
+        {
+            "id": "probe_4.3",
+            "note": "Probe request with non-UTF8 SSID - parser must not crash",
+            "expected": {
+                "frame_type": "probe_req",
+                "ssid": null,
+                "parse_error": false
+            },
+            "robustness": "Parser must survive non-UTF8 bytes and set ssid=null or ssid_decoding_error flag"
+        }
+    ],
+    "meta_expectations": {
+        "min_probe_req_frames": 30,
+        "min_distinct_ssids": 3,
+        "wildcard_probe_count": 5
+    }
+}

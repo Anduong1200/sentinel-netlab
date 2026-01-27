@@ -8,62 +8,66 @@
 
 The following table evaluates common WiFi configurations against modern attack vectors like **Evil Twin** and **Downgrade Attacks**.
 
-| Protocol / Config | Risk Level | Primary Attack Vector & Mechanism | Mitigation & Trends |
+## 📊 1. Comprehensive Security Risk Matrix
+
+The following table synthesizes risk levels based on IEEE standards and modern attack vectors.
+
+| Protocol / Standard | Risk Level | Primary Vulnerability & Mechanic | Academic Context / Mitigation |
 | :--- | :--- | :--- | :--- |
-| **Open** | **Critical** | **Sniffing / Evil Twin**: Traffic is unencrypted (plaintext). Attackers can easily intercept data or clone the AP. | Use **OWE (Opportunistic Wireless Encryption)** or VPN overlay. |
-| **WEP / WPA-TKIP** | **Critical** | **Cracking**: Outdated encryption algorithms (RC4) broken since ~2001. Keys recovered in minutes via IV analysis. | **End-of-Life**. Must be disabled immediately to prevent forced downgrade. |
-| **WPA2 (PSK)** | **High** | **Brute-Force / KRACK**: Vulnerable to 4-way handshake capture (offline dictionary attacks) and Key Reinstallation Attacks. | Use complex passwords (>12 chars). Patch firmware for KRACK. |
-| **WPA2 (Enterprise)** | **Low** | **Rogue AP**: Harder to clone due to RADIUS authentication, but vulnerable to misconfigured clients trusting fake certs. | Standard for corporate environments. Enforce certificate validation. |
-| **WPA3 (SAE)** | **Low** | **Resilient**: Uses dragonfly handshake (SAE) to prevent offline dictionary attacks. **PMF (Protected Management Frames)** is mandatory. | Current gold standard. Prevents most legacy attacks. |
-| **Hidden SSID** | **Medium** | **False Security**: Network still broadcasts data; clients "probe" constantly, leaking location history. | **Not a security feature**. Should be disabled. |
-| **PMF Disabled** | **Medium** | **Deauth / Disassociation**: Management frames are unencrypted, allowing attackers to disconnect users at will (DoS). | Enable **802.11w**. Essential for preventing forced disconnections used in Evil Twin setup. |
-| **Legacy Mode** | **Critical** | **Downgrade Attack**: Allowing WPA/WEP enables attackers to force clients to use weaker protocols. | Disable "b/g" modes if possible; block WEP/WPA connections. |
+| **Open (No Encryption)** | **Critical** | **Eavesdropping / ARP Poisoning**: Plaintext transmission allows trivial MITM. | **OWE (RFC 8110)** encrypts open networks. |
+| **WEP / WPA-TKIP** | **Critical** | **IV Collision / Beck-Tews**: RC4 stream cipher flaws allow key recovery in minutes (aircrack-ng). | **Deprecated (2004)**. Must be disabled to prevent downgrade. |
+| **WPA2-PSK (Weak Pwd)** | **High** | **Dictionary Attack**: 4-Way Handshake capture allows offline cracking of the PMK. | **KRACK (2017)**: Key Reinstallation Attack exploits handshake state machine. |
+| **WPA2 (Enterprise)** | **Low** | **Rogue AP**: Vulnerable if clients accept invalid server certificates (EAP-PEAP). | **EAP-TLS**: Client-side certificates mitigate Rogue AP risks. |
+| **WPA3-SAE** | **Low** | **Side-Channel**: Early implementations vulnerable to **Dragonblood** (cache-timing). | **SAE (Dragonfly)**: Resistant to offline decoding. **PMF** prevents deauth floods. |
+| **Hidden SSID** | **Medium** | **False Security**: Clients probe constantly, leaking PII (location history). | **Security through Obscurity**: Ineffective against probe sniffing. |
+| **PMF Disabled** | **High** | **Deauth Flooding**: Management frames disjoint from encryption, allowing DoS. | **802.11w**: Cryptographically protects deauth frames. Mandatory in WPA3. |
+| **Legacy Compatibility** | **Critical** | **Downgrade Attack**: Protocol negotiation manipulation (see MITRE T1562.010). | **Disable "b/g" modes**. Force WPA2/3-only Mode. |
 
 ---
 
-## ⚔️ 2. Attack Mechanisms Explained
+## ⚔️ 2. Advanced Attack Analysis
 
-### 👾 Evil Twin Attack
-**Concept**: An attacker creates a rogue Access Point with the same **SSID** (and often BSSID) as the legitimate network.
-**Mechanism**: 
-1.  Attacker jams/deauthenticates the real AP (using DoS).
-2.  Victim disconnects and auto-reconnects to the stronger signal (the Evil Twin).
-3.  Attacker intercepts traffic (Man-in-the-Middle) or presents a fake "Firmware Update" / "Login Page" to steal credentials.
+### 🐉 WPA3 & Dragonblood Side-Channels
+While WPA3 uses the **Simultaneous Authentication of Equals (SAE)** handshake to prevent dictionary attacks, it is not immune to side-channel analysis.
+*   **Mechanism**: The *Dragonfly* handshake involves complex ECC operations. Early implementations leaked timing information or cache access patterns, allowing attackers to infer the password (so-called **Dragonblood** vulnerabilities).
+*   **Defense**: Implementation patching (constant-time execution).
 
-> **Academic Insight**: *Development of a Client-Side Evil Twin Attack Detection System* (Nova SE Univ, 2018) proposes analyzing timing and signal variances to detect this from the client side.
+### 🛡️ Protected Management Frames (PMF / 802.11w)
+Classic WiFi attacks rely on sending forged `Deauthentication` frames to disconnect a user. This is a prerequisite for:
+1.  Capturing a WPA2 Handshake (when user reconnects).
+2.  Forcing migration to an Evil Twin (automigration).
+*   **Impact**: If PMF is **Disabled**, detection systems will see valid deauth frames but cannot verify their specific authenticity.
+*   **Status**: Mandatory for WPA3 certification.
 
-### 📉 Downgrade Attack
-**Concept**: Forcing a modern client to abandon robust protocols (WPA3/WPA2) for weaker ones (WPA/WEP) or weaker ciphers.
-**Mechanism**:
-1.  Attacker interferes with the handshake negotiation.
-2.  Client/AP "agree" to fall back to a legacy protocol for compatibility.
-3.  Attacker exploits the known vulnerabilities of the legacy protocol.
-
-> **MITRE ATT&CK T1562.010**: Defines this tactic as manipulating the environment to reduce security posture.
+### 📉 Downgrade Attacks (Protocol Rolling)
+Attackers actively interfere with the association process to block WPA2/3 advertisements.
+*   **Goal**: Force client to use WEP or WPA-TKIP.
+*   **Vector**: Jamming 802.11n/ac beacons or falsifying capabilities.
 
 ---
 
 ## 🔬 3. Practical Assessment Methodology
 
-To audit a network for these specific vulnerabilities using Sentinel NetLab:
+### Toolchain Reference
+*   **Standard**: `airodump-ng`, `wireshark`
+*   **Advanced**:
+    *   `hostapd-mana`: Advanced Rogue AP for Evil Twin simulation.
+    *   `krackattacks-scripts`: Vanhoef's suite for testing Key Reinstallation vulnerabilities.
+    *   `dragonslayer`: Specialized tool for WPA3 SAE analysis.
 
-### Reconnaissance
-Use `airodump-ng` or Sentinel's `sensor` to capture Beacons. Analyze:
-*   **Auth**: Is it PSK or MGT (Enterprise)?
-*   **Cipher**: Is it CCMP (AES) or TKIP (Weak)?
-*   **PMF**: Check RSN Capabilities field for `MFP Required` or `MFP Capable`.
+### Reconnaissance Checklist
+1.  **PMF Check**: Look for `RSN Capabilities: MFP Required` in Beacon frames.
+2.  **Cipher Check**: Flag any `GROUP CIPHER: TKIP` or `BSS Basic Rates` containing legacy speeds (1, 2, 5.5, 11 Mbps).
+3.  **WPS Status**: Check if **WiFi Protected Setup (WPS)** is unlocked (vulnerable to Pixie Dust).
 
 ### Active Testing (Authorized Only)
-1.  **Downgrade Test**: Can a client connect if the AP only offers WPA1? (Simulate legacy AP).
-2.  **Deauth Test**: Send deauth frames to a client. 
-    *   *Result*: If client disconnects immediately -> **PMF Disabled** (Vulnerable).
-    *   *Result*: If client ignores frames -> **PMF Enabled** (Secure).
-
-### Evil Twin Simulation
-1.  Set up a monitoring interface.
-2.  Broadcast beacon frames with target SSID (using Scapy/mdk3).
-3.  Monitor for client Probe Requests directed at the fake AP.
-4.  **Note**: This effectively simulates the pre-conditions for an Evil Twin without executing the full attack.
+1.  **Deauth Resilience**:
+    *   Send 10 deauth frames.
+    *   *Secure*: Client stays connected (PMF Active).
+    *   *Insecure*: Client disconnects instantly.
+2.  **Downgrade Simulation**:
+    *   Set up AP with same SSID but WPA1-only.
+    *   Verify if clients auto-connect (Risk mitigation: Client should prefer WPA2).
 
 ---
 

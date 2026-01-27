@@ -1,0 +1,207 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Sentinel NetLab Sensor Telemetry",
+    "description": "Canonical telemetry JSON emitted by a Sentinel NetLab sensor for each captured 802.11 management frame (or as part of a batched upload).",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "sensor_id",
+        "timestamp_utc",
+        "sequence_id",
+        "capture_method",
+        "frame_type",
+        "bssid",
+        "rssi_dbm",
+        "channel",
+        "frequency_mhz",
+        "local_iface",
+        "local_uptime_seconds"
+    ],
+    "properties": {
+        "sensor_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique ID for the sensor (configured)."
+        },
+        "sensor_ip": {
+            "type": "string",
+            "format": "ipv4",
+            "description": "Optional local IP of the sensor for debug/ops."
+        },
+        "timestamp_utc": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 UTC timestamp when the frame was processed/normalized."
+        },
+        "sequence_id": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Monotonic integer sequence per sensor to help ordering."
+        },
+        "capture_method": {
+            "type": "string",
+            "enum": [
+                "pcap",
+                "radiotap",
+                "iw",
+                "raw"
+            ],
+            "description": "Method used to capture the raw frame."
+        },
+        "batch_id": {
+            "type": "string",
+            "description": "Optional batch identifier assigned by BufferManager when batching for upload."
+        },
+        "frame_type": {
+            "type": "string",
+            "enum": [
+                "beacon",
+                "probe_req",
+                "probe_resp",
+                "auth",
+                "assoc_req",
+                "assoc_resp",
+                "disassoc",
+                "other_management",
+                "data"
+            ],
+            "description": "High-level 802.11 frame classification."
+        },
+        "bssid": {
+            "type": "string",
+            "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+            "description": "BSSID / MAC address of the AP (xx:xx:xx:xx:xx:xx)."
+        },
+        "ssid": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "maxLength": 32,
+            "description": "Decoded SSID if present; null if hidden. May be anonymized depending on config."
+        },
+        "rssi_dbm": {
+            "type": "integer",
+            "minimum": -120,
+            "maximum": 20,
+            "description": "Signal strength in dBm measured by this sensor."
+        },
+        "channel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 196,
+            "description": "802.11 channel number."
+        },
+        "frequency_mhz": {
+            "type": "integer",
+            "description": "Radio frequency in MHz corresponding to channel (e.g., 2412, 5180)."
+        },
+        "vendor_oui": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}$",
+            "description": "Optional OUI (first 3 octets) derived from BSSID, format xx:xx:xx."
+        },
+        "capabilities": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Parsed capability flags from the management frame.",
+            "properties": {
+                "privacy": {
+                    "type": "boolean",
+                    "description": "Whether privacy (encryption) flag is present."
+                },
+                "ht": {
+                    "type": "boolean",
+                    "description": "High Throughput (802.11n) capability."
+                },
+                "vht": {
+                    "type": "boolean",
+                    "description": "Very High Throughput (802.11ac) capability."
+                },
+                "pmf": {
+                    "type": "boolean",
+                    "description": "Protected Management Frames (802.11w) support."
+                },
+                "short_gi": {
+                    "type": "boolean",
+                    "description": "Short GI capability."
+                },
+                "wps": {
+                    "type": "boolean",
+                    "description": "WPS IE present."
+                },
+                "hidden_ssid": {
+                    "type": "boolean",
+                    "description": "Whether SSID is hidden (broadcast suppressed)."
+                },
+                "ies_present": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "List of IE short-names present (e.g., RSN, WPA, WPS, HT, VHT)."
+                }
+            }
+        },
+        "ie": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Parsed Information Elements (IE). Keys may include 'rsn', 'wpa', 'wps', 'vendor_specific' etc. Values are IE-specific objects or booleans. This field is intentionally flexible for future extensions."
+        },
+        "raw_radiotap_meta": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9+/]+=*$",
+            "description": "Optional base64-encoded radiotap metadata if retained. Omit by default to save bandwidth."
+        },
+        "local_iface": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Local interface name used to capture (e.g., wlan0mon)."
+        },
+        "local_uptime_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sensor local uptime in seconds at time of capture (monotonic)."
+        },
+        "gps": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional GPS fix data when available (for wardriving).",
+            "properties": {
+                "lat": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                },
+                "lon": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                },
+                "alt": {
+                    "type": "number"
+                },
+                "accuracy_m": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "gps_timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "time_sync": {
+            "type": "boolean",
+            "description": "True if sensor clock is believed to be NTP/GPS synced at capture time."
+        },
+        "note": {
+            "type": "string",
+            "maxLength": 1024,
+            "description": "Optional human-readable note (used for debugging; do not store PII in production)."
+        }
+    }
+}

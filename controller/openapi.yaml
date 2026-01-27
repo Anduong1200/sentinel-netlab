@@ -1,0 +1,765 @@
+openapi: 3.0.3
+info:
+  title: Sentinel NetLab API
+  description: |
+    REST API for Sentinel NetLab Wireless Intrusion Detection System.
+
+    ## Authentication
+    All endpoints require Bearer token authentication:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Rate Limiting
+    - 100 requests/minute for read operations
+    - 20 requests/minute for write operations
+
+  version: 1.0.0
+  contact:
+    name: Sentinel NetLab
+    url: https://github.com/Anduong1200/sentinel-netlab
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Development server
+  - url: https://controller.example.com/api/v1
+    description: Production server
+
+tags:
+  - name: Telemetry
+    description: Sensor telemetry ingestion
+  - name: Networks
+    description: Discovered network management
+  - name: Alerts
+    description: Security alerts
+  - name: Sensors
+    description: Sensor management
+  - name: Reports
+    description: Report generation
+  - name: Health
+    description: System health
+
+paths:
+  # ============================================================================
+  # TELEMETRY
+  # ============================================================================
+  /telemetry:
+    post:
+      tags:
+        - Telemetry
+      summary: Ingest telemetry batch
+      description: Accept batch of telemetry records from sensor
+      operationId: ingestTelemetry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelemetryBatch"
+      responses:
+        "200":
+          description: Batch accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  # ============================================================================
+  # NETWORKS
+  # ============================================================================
+  /networks:
+    get:
+      tags:
+        - Networks
+      summary: List discovered networks
+      operationId: listNetworks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: risk_level
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low, info]
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Network list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkList"
+
+  /networks/{bssid}:
+    get:
+      tags:
+        - Networks
+      summary: Get network details
+      operationId: getNetwork
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bssid
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+      responses:
+        "200":
+          description: Network details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /networks/{bssid}/whitelist:
+    post:
+      tags:
+        - Networks
+      summary: Add network to whitelist
+      operationId: whitelistNetwork
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bssid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                expires:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Network whitelisted
+
+  # ============================================================================
+  # ALERTS
+  # ============================================================================
+  /alerts:
+    get:
+      tags:
+        - Alerts
+      summary: List security alerts
+      operationId: listAlerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, acknowledged, resolved, false_positive]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertList"
+
+  /alerts/{alert_id}:
+    get:
+      tags:
+        - Alerts
+      summary: Get alert details
+      operationId: getAlert
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+    patch:
+      tags:
+        - Alerts
+      summary: Update alert status
+      operationId: updateAlert
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [acknowledged, resolved, false_positive]
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Alert updated
+
+  # ============================================================================
+  # SENSORS
+  # ============================================================================
+  /sensors:
+    get:
+      tags:
+        - Sensors
+      summary: List registered sensors
+      operationId: listSensors
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sensor list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SensorList"
+
+  /sensors/{sensor_id}:
+    get:
+      tags:
+        - Sensors
+      summary: Get sensor details
+      operationId: getSensor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sensor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sensor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sensor"
+
+  /sensors/{sensor_id}/command:
+    post:
+      tags:
+        - Sensors
+      summary: Send command to sensor
+      operationId: sendCommand
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sensor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  enum: [restart, update_config, set_channels]
+                params:
+                  type: object
+      responses:
+        "202":
+          description: Command queued
+
+  # ============================================================================
+  # REPORTS
+  # ============================================================================
+  /reports:
+    get:
+      tags:
+        - Reports
+      summary: List generated reports
+      operationId: listReports
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Report list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportMeta"
+
+    post:
+      tags:
+        - Reports
+      summary: Generate new report
+      operationId: generateReport
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - format
+              properties:
+                type:
+                  type: string
+                  enum: [security_assessment, incident, audit, executive]
+                format:
+                  type: string
+                  enum: [html, pdf, json]
+                date_range:
+                  type: object
+                  properties:
+                    start:
+                      type: string
+                      format: date-time
+                    end:
+                      type: string
+                      format: date-time
+      responses:
+        "202":
+          description: Report generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report_id:
+                    type: string
+                  status:
+                    type: string
+
+  /reports/{report_id}:
+    get:
+      tags:
+        - Reports
+      summary: Get report status or download
+      operationId: getReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportMeta"
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+
+  # ============================================================================
+  # HEALTH
+  # ============================================================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /metrics:
+    get:
+      tags:
+        - Health
+      summary: Prometheus metrics
+      operationId: getMetrics
+      responses:
+        "200":
+          description: Prometheus format metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    # --------------------------------------------------------------------------
+    # Telemetry
+    # --------------------------------------------------------------------------
+    TelemetryRecord:
+      type: object
+      required:
+        - sensor_id
+        - timestamp_utc
+        - sequence_id
+        - frame_type
+        - bssid
+        - rssi_dbm
+        - channel
+      properties:
+        sensor_id:
+          type: string
+        timestamp_utc:
+          type: string
+          format: date-time
+        sequence_id:
+          type: integer
+        frame_type:
+          type: string
+          enum: [beacon, probe_req, probe_resp, auth, assoc_req, deauth]
+        bssid:
+          type: string
+          pattern: "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+        ssid:
+          type: string
+          nullable: true
+        rssi_dbm:
+          type: integer
+        channel:
+          type: integer
+        capabilities:
+          type: object
+
+    TelemetryBatch:
+      type: object
+      required:
+        - batch_id
+        - sensor_id
+        - records
+      properties:
+        batch_id:
+          type: string
+        sensor_id:
+          type: string
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TelemetryRecord"
+
+    IngestResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        accepted:
+          type: integer
+        rejected:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+
+    # --------------------------------------------------------------------------
+    # Networks
+    # --------------------------------------------------------------------------
+    Network:
+      type: object
+      properties:
+        bssid:
+          type: string
+        ssid:
+          type: string
+          nullable: true
+        channel:
+          type: integer
+        security:
+          type: string
+        risk_score:
+          type: integer
+        risk_level:
+          type: string
+          enum: [critical, high, medium, low, info]
+        first_seen:
+          type: string
+          format: date-time
+        last_seen:
+          type: string
+          format: date-time
+        vendor:
+          type: string
+          nullable: true
+
+    NetworkDetail:
+      allOf:
+        - $ref: "#/components/schemas/Network"
+        - type: object
+          properties:
+            observations:
+              type: integer
+            sensors:
+              type: array
+              items:
+                type: string
+            risk_explain:
+              type: object
+            alerts:
+              type: array
+              items:
+                $ref: "#/components/schemas/Alert"
+
+    NetworkList:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Network"
+
+    # --------------------------------------------------------------------------
+    # Alerts
+    # --------------------------------------------------------------------------
+    Alert:
+      type: object
+      properties:
+        alert_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        rule_id:
+          type: string
+        rule_name:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        status:
+          type: string
+          enum: [open, acknowledged, resolved, false_positive]
+        bssid:
+          type: string
+        ssid:
+          type: string
+          nullable: true
+        description:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: object
+        mitre_attack:
+          type: object
+          properties:
+            technique_id:
+              type: string
+            technique_name:
+              type: string
+
+    AlertList:
+      type: object
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+
+    # --------------------------------------------------------------------------
+    # Sensors
+    # --------------------------------------------------------------------------
+    Sensor:
+      type: object
+      properties:
+        sensor_id:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, degraded]
+        last_seen:
+          type: string
+          format: date-time
+        interface:
+          type: string
+        channels:
+          type: array
+          items:
+            type: integer
+        version:
+          type: string
+        uptime_seconds:
+          type: number
+        frames_captured:
+          type: integer
+
+    SensorList:
+      type: object
+      properties:
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sensor"
+
+    # --------------------------------------------------------------------------
+    # Reports
+    # --------------------------------------------------------------------------
+    ReportMeta:
+      type: object
+      properties:
+        report_id:
+          type: string
+        type:
+          type: string
+        format:
+          type: string
+        status:
+          type: string
+          enum: [pending, generating, ready, failed]
+        created_at:
+          type: string
+          format: date-time
+        download_url:
+          type: string
+          nullable: true
+
+    # --------------------------------------------------------------------------
+    # Health
+    # --------------------------------------------------------------------------
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime_seconds:
+          type: number
+        sensors_online:
+          type: integer
+        sensors_total:
+          type: integer
+        alerts_open:
+          type: integer
+
+    # --------------------------------------------------------------------------
+    # Error
+    # --------------------------------------------------------------------------
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

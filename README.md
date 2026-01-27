@@ -1,154 +1,275 @@
-# Sentinel NetLab 🛡️
->**Wireless Intrusion Detection System (WIDS)**
+<p align="center">
+  <img src="docs/images/logo.png" alt="Sentinel NetLab" width="200" height="200">
+</p>
 
-[![CI](https://github.com/Anduong1200/sentinel-netlab/actions/workflows/main.yml/badge.svg)](https://github.com/Anduong1200/sentinel-netlab/actions)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
+<h1 align="center">Sentinel NetLab</h1>
 
-**Sentinel NetLab** is a **Lightweight Hybrid Wireless Monitoring System** designed for **resource-constrained environments**. It combines a high-performance C-based capture engine (Tshark) with a flexible Python analysis core.
+<p align="center">
+  <strong>Lightweight Hybrid Wireless Intrusion Detection System</strong>
+</p>
 
-> **Note:** This project targets **Education, Research, and Tactical Monitoring**.
+<p align="center">
+  <a href="https://github.com/Anduong1200/sentinel-netlab/actions"><img src="https://img.shields.io/github/actions/workflow/status/Anduong1200/sentinel-netlab/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%2B-blue.svg?style=flat-square" alt="Python"></a>
+  <a href="ETHICS.md"><img src="https://img.shields.io/badge/use-authorized%20only-red.svg?style=flat-square" alt="Ethics"></a>
+</p>
+
+<p align="center">
+  A research-focused WiFi security monitoring platform combining signature-based detection with ML-enhanced anomaly analysis for educational and authorized security testing environments.
+</p>
 
 ---
 
-## 🎯 Target Audience
+## 🎯 Overview
 
-| Audience | Fit | Verdict |
-|----------|-----|---------|
-| 🎓 **Student / Lab** | ⭐⭐⭐⭐⭐ | **Perfect**. Ideal for learning 802.11 security. |
-| 🔬 **Researcher** | ⭐⭐⭐⭐ | **Strong**. Modular framework for testing algorithms. |
-| 🏢 **Enterprise** | ⭐ | **Weak**. Use commercial WIPS for production. |
+Sentinel NetLab is a distributed wireless intrusion detection system designed for:
+
+- **Security Research** — Study WiFi attack patterns and defensive techniques
+- **Lab Environments** — Train security professionals in controlled settings
+- **Network Auditing** — Assess wireless security posture (with authorization)
+- **Academic Projects** — Support thesis research on WiFi security
+
+### Key Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Capture** | 802.11 management frame sniffing with channel hopping |
+| **Evil Twin Detection** | Identify rogue APs impersonating legitimate networks |
+| **Deauth Flood Detection** | Alert on denial-of-service attacks |
+| **Risk Scoring** | Weighted threat assessment with explainability |
+| **Distributed Architecture** | Multiple sensors → centralized controller |
+| **ML Integration** | Export labeled data for machine learning workflows |
 
 ---
 
-## 🎯 Key Objectives
+## 📁 Project Structure
 
-| Objective | Description |
-|-----------|-------------|
-| **Real-time Monitoring** | Capture and analyze 802.11 frames in real-time using Tshark/Scapy |
-| **Threat Detection** | Identify Rogue APs, Evil Twin attacks, and suspicious networks |
-| **Risk Scoring** | Weighted algorithm (v2) scoring encryption, SSID patterns, signal anomalies |
-| **Alerting** | REST API for integration with dashboards, SIEM, or custom alerting |
-| **Forensics** | PCAP capture with rotation for post-incident analysis |
-| **GUI Control** | Windows-based controller for remote sensor management |
+```
+sentinel-netlab/
+├── sensor/                     # 🔊 Capture Agent
+│   ├── cli.py                 # Entry point & CLI
+│   ├── sensor_controller.py   # Main orchestrator
+│   ├── capture_driver.py      # Monitor mode driver
+│   ├── frame_parser.py        # 802.11 frame decoder
+│   ├── normalizer.py          # Telemetry normalization
+│   ├── buffer_manager.py      # Ring buffer + journal
+│   ├── transport_client.py    # Upload with retry
+│   ├── detection.py           # Threat detection logic
+│   ├── risk.py                # Risk scoring engine
+│   ├── utils/                 # OUI lookup, time sync
+│   ├── schema/                # JSON schemas
+│   └── tests/                 # Unit & integration tests
+│
+├── controller/                 # 🖥️ Central Server
+│   └── (Flask API - planned)
+│
+├── docs/                       # 📚 Documentation
+│   ├── getting-started/       # Installation & quickstart
+│   ├── architecture/          # System design & diagrams
+│   ├── operations/            # Deployment & monitoring
+│   └── research/              # Academic materials
+│
+├── ops/                        # ⚙️ Operations
+│   └── systemd/               # Service files
+│
+├── scripts/                    # 🔧 Utilities
+│   ├── setup.sh               # Installation script
+│   └── upgrade.sh             # Update script
+│
+└── research/                   # 🔬 Test Data
+    └── pcaps/                 # Sample captures
+```
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Linux**: Debian 12 / Ubuntu 22.04 / Kali (for Sensor)
-- **Windows**: Windows 10/11 (for Controller GUI)
-- USB WiFi Adapter with Monitor Mode (Atheros AR9271)
+
 - Python 3.9+
+- Linux (Debian/Ubuntu recommended)
+- WiFi adapter with monitor mode support ([see compatibility](docs/operations/hardware.md))
 
----
-
-### 📥 Download
+### Installation
 
 ```bash
 # Clone repository
 git clone https://github.com/Anduong1200/sentinel-netlab.git
 cd sentinel-netlab
+
+# Run setup script (Debian/Ubuntu)
+sudo ./scripts/setup.sh
+
+# Or manual installation
+python3 -m venv venv
+source venv/bin/activate
+pip install -r sensor/requirements.txt
 ```
 
----
-
-### 🐧 Linux Setup (Sensor)
+### Configure WiFi Adapter
 
 ```bash
-# Run unified setup script
-sudo ./scripts/setup_vm.sh
+# Enable monitor mode
+sudo ip link set wlan0 down
+sudo iw wlan0 set type monitor
+sudo ip link set wlan0 up
+```
 
-# Activate virtual environment
-source /opt/sentinel-netlab/venv/bin/activate
+### Start Sensor
 
-# Start sensor API
+```bash
 cd sensor
-python api_server.py
-```
 
-**Verify**: Open browser → `http://localhost:5000/health`
+# Production mode (requires root)
+sudo python cli.py --sensor-id lab-sensor-01 --iface wlan0
+
+# Development mode (mock capture)
+python cli.py --sensor-id dev-01 --iface mock0 --mock-mode
+```
 
 ---
 
-### 🪟 Windows Setup (Controller GUI)
-
-```powershell
-# Navigate to project
-cd D:\path\to\sentinel-netlab
-
-# Install dependencies
-pip install -r controller/requirements.txt
-
-# Launch GUI
-python controller/scanner_gui.py
-```
-
-**Connect**: Enter Linux VM IP address (e.g., `192.168.1.100:5000`)
-
----
-
-## 🏗️ Project Structure
+## 📊 Architecture
 
 ```
-sentinel-netlab/
-├── sensor/           # API server and capture engine
-│   ├── api_server.py
-│   ├── capture.py
-│   ├── parser.py
-│   └── risk.py
-├── controller/       # Windows GUI
-│   └── scanner_gui.py
-├── scripts/          # Setup and utility scripts
-│   └── setup_vm.sh
-├── tests/            # Unit tests
-├── docs/             # Documentation
-└── .github/          # CI/CD workflows
+┌──────────────────────────────────────────────────────────────────┐
+│                        SENSOR LAYER                              │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │
+│  │  Sensor #1  │   │  Sensor #2  │   │  Sensor #3  │            │
+│  │  (Pi/VM)    │   │  (Pi/VM)    │   │  (Pi/VM)    │            │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘            │
+│         │ HTTPS           │ HTTPS           │ HTTPS              │
+└─────────┼─────────────────┼─────────────────┼────────────────────┘
+          │                 │                 │
+          └────────────────┬┘─────────────────┘
+                           │
+┌──────────────────────────┼───────────────────────────────────────┐
+│                          ▼         CONTROLLER LAYER              │
+│                   ┌─────────────┐                                │
+│                   │  Controller │                                │
+│                   │  (Flask)    │                                │
+│                   └──────┬──────┘                                │
+│                          │                                       │
+│           ┌──────────────┼──────────────┐                       │
+│           ▼              ▼              ▼                       │
+│    ┌───────────┐  ┌───────────┐  ┌───────────┐                 │
+│    │  SQLite   │  │   Redis   │  │ Prometheus│                 │
+│    │  Storage  │  │   Queue   │  │  Metrics  │                 │
+│    └───────────┘  └───────────┘  └───────────┘                 │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow
+
+```
+[WiFi Adapter] → [CaptureDriver] → [FrameParser] → [Normalizer]
+                                                         ↓
+[Controller] ← [TransportClient] ← [BufferManager] ← [RiskEngine]
 ```
 
 ---
 
 ## 📚 Documentation
 
-### Core Docs
-| Document | Description |
-|----------|-------------|
-| [System Design](docs/SYSTEM_DESIGN.md) | Architecture & flowcharts |
-| [IEEE Report](docs/IEEE_Sentinel_NetLab_Report.md) | Academic paper |
-| [Install Guide](docs/install_guide.md) | Step-by-step setup |
-| [Demo Runbook](docs/demo_runbook.md) | Live demo guide |
+### Getting Started
+- [Installation Guide](docs/getting-started/installation.md)
+- [Quick Start Tutorial](docs/getting-started/quickstart.md)
+- [Configuration Reference](docs/getting-started/configuration.md)
 
-### Technical Deep-Dive
-| Document | Description |
-|----------|-------------|
-| [API Reference](docs/api_reference.md) | REST API endpoints |
-| [Technical Critique](docs/technical_critique.md) | Architectural analysis |
-| [Improvement Roadmap](docs/technical_improvement_roadmap.md) | Future plans |
+### Architecture
+- [System Design](docs/architecture/system-design.md)
+- [Risk Scoring Model](docs/architecture/risk-scoring.md)
+- [Detection Algorithms](docs/architecture/detection.md)
 
-### Defense & Presentation
-| Document | Description |
-|----------|-------------|
-| [Defense Script](docs/defense_script.md) | Q&A preparation |
-| [Slides](docs/presentation_slides.md) | Presentation content |
+### Operations
+- [Deployment Guide](docs/operations/deployment.md)
+- [Hardware Compatibility](docs/operations/hardware.md)
+- [Monitoring & Metrics](docs/operations/monitoring.md)
+- [Troubleshooting](docs/operations/troubleshooting.md)
+
+### Research
+- [WiFi Security Analysis](docs/research/wifi-security.md)
+- [IEEE Report Template](docs/research/ieee-report.md)
+- [Test Vectors](sensor/tests/unit/test_vectors/)
+
+### Reference
+- [API Documentation](docs/api-reference.md)
+- [CLI Reference](docs/cli-reference.md)
+- [JSON Schemas](sensor/schema/)
 
 ---
 
-## 🛡️ Security & Legal
+## 🧪 Development
 
-This software is for **authorized security auditing only**. Users must comply with all applicable laws.
+### Run Tests
 
-See [Legal Disclaimer](docs/legal_ethics.md) for details.
+```bash
+cd sensor
+pytest tests/unit/ -v --cov=. --cov-report=html
+```
+
+### Code Quality
+
+```bash
+# Linting
+ruff check sensor/
+flake8 sensor/ --max-line-length=120
+
+# Type checking
+mypy sensor/ --ignore-missing-imports
+```
+
+### Build Package
+
+```bash
+cd sensor
+python -m build
+```
+
+---
+
+## 🔒 Security & Ethics
+
+> [!CAUTION]
+> **AUTHORIZED USE ONLY**
+>
+> This software captures wireless network traffic. **Use only on networks you own or have explicit written authorization to monitor.**
+>
+> Unauthorized interception of wireless communications may violate laws including:
+> - Computer Fraud and Abuse Act (US)
+> - Computer Misuse Act (UK)
+> - Similar legislation in other jurisdictions
+
+See [ETHICS.md](ETHICS.md) for detailed guidelines and authorization templates.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! Please follow:
-- PEP 8 coding standards
-- Create tests for new features
-- Update documentation
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
-**Security Research Club** © 2024-2026
+## 📬 Contact
+
+- **Issues**: [GitHub Issues](https://github.com/Anduong1200/sentinel-netlab/issues)
+- **Security**: See [SECURITY.md](SECURITY.md) for reporting vulnerabilities
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ for security research and education</sub>
+</p>

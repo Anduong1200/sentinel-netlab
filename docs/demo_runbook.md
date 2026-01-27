@@ -1,90 +1,73 @@
 # Demo Runbook
 
-> Step-by-step guide for demonstrating Sentinel NetLab
+> Step-by-step guide for live demonstration of Sentinel NetLab
 
 ---
 
-## 🎯 Demo Objectives
+## Overview
 
-1. Show sensor capturing WiFi networks
-2. Demonstrate controller GUI functionality
-3. Display risk scoring in action
-4. Export and verify data
-
----
-
-## ⏱️ Estimated Time: 10-15 minutes
+| Duration | Audience | Prerequisites |
+|----------|----------|---------------|
+| 10-15 min | Technical reviewers | VM ready, USB adapter |
 
 ---
 
-## 📋 Pre-Demo Checklist
+## Pre-Demo Checklist
 
 ### Hardware
-- [ ] Laptop with VM ready
-- [ ] USB WiFi adapter (AR9271 recommended)
-- [ ] Power adapter connected
+- [ ] Laptop with VirtualBox/VMware installed
+- [ ] USB WiFi adapter connected (AR9271)
+- [ ] Power adapter plugged in
 
 ### Software
-- [ ] VM booted and sensor installed
-- [ ] Controller GUI ready on Windows
-- [ ] Terminal window open
+- [ ] Linux VM booted
+- [ ] Sensor installed and tested
+- [ ] Windows controller ready
 
 ### Environment
-- [ ] WiFi networks visible in area (at least 3-5)
-- [ ] Network owner consent (if in office/lab)
+- [ ] Visible WiFi networks (3+ in range)
+- [ ] Network use authorization (if in office)
 
 ---
 
-## 🚀 Demo Steps
+## Demo Script
 
-### Step 1: Verify Environment (2 min)
+### Step 1: Environment Check (2 min)
 
 ```bash
 # On Linux VM
 
-# 1. Check USB adapter connection
+# Check USB adapter
 lsusb | grep -i wireless
 
-# 2. Check interface
+# Check wireless interface
 iw dev
 
-# 3. Run driver check
+# Verify driver
 python3 scripts/check_driver.py
 ```
+
+**Show:** USB device detected, wlan0 interface present
 
 ---
 
 ### Step 2: Start Sensor (2 min)
 
+**Option A: Real Hardware**
 ```bash
-# Activate virtual environment
 source /opt/sentinel-netlab/venv/bin/activate
-
-# Start sensor API
-# Start sensor API
 cd sensor
 sudo python3 api_server.py
 ```
 
-### Option B: Run in Mock Mode (No Hardware)
-
-If you don't have a USB WiFi adapter, you can simulate networks:
-
+**Option B: Mock Mode (No Hardware)**
 ```bash
-# Enable mock mode via environment variable
 export WIFI_SCANNER_MOCK_MODE=true
-
-# Run API server
 cd sensor
 python3 api_server.py
 ```
 
-> **Note**: Mock mode generates fake networks and risk scores for demonstration purposes.
-
-**Expected output**:
-```
- * Running on http://0.0.0.0:5000
-```
+**Expected:** Server running on http://0.0.0.0:5000
 
 ---
 
@@ -94,12 +77,11 @@ python3 api_server.py
 # Health check
 curl http://localhost:5000/health
 
-# Get networks
-curl http://localhost:5000/networks | python3 -m json.tool
-
-# Get status
-curl http://localhost:5000/status
+# Scan networks
+curl -H "X-API-Key: sentinel-dev-2024" http://localhost:5000/scan | jq
 ```
+
+**Show:** JSON response with detected networks and risk scores
 
 ---
 
@@ -111,37 +93,38 @@ cd D:\hod_lab\controller
 python scanner_gui.py
 ```
 
-**GUI Demo Points**:
-1. Show connection to sensor (green status)
-2. Click "Start Scan" - networks populate
+**Demo Points:**
+1. Enter VM IP address → Connect
+2. Click "Start Scan" → Networks appear
 3. Sort by Risk Score column
-4. Select high-risk network - show details
+4. Click high-risk network → Show details panel
+5. Highlight `explain` field showing why it's risky
 
 ---
 
 ### Step 5: Export Data (1 min)
 
-1. In GUI, click "Export CSV"
-2. Save file
-3. Open in Excel/Notepad
+1. Click "Export CSV" in GUI
+2. Open file in Excel/Notepad
+3. Show columns: ssid, bssid, risk_score, risk_level
 
 ---
 
-### Step 6: Run Tests (Optional, 2 min)
+### Step 6: Show Metrics (Optional, 2 min)
 
 ```bash
-# Recall test
-python3 tests/compare_recall.py artifacts/gt_output.csv artifacts/poc.json
-
-# Latency test
-python3 tests/test_latency.py -n 10
+# Prometheus metrics
+curl http://localhost:5000/metrics
 ```
+
+**Show:** `scan_duration`, `networks_found`, `active_alerts`
 
 ---
 
-## ❓ Common Demo Issues
+## Troubleshooting
 
 ### "No networks found"
+
 ```bash
 # Re-enable monitor mode
 sudo ip link set wlan0 down
@@ -150,27 +133,38 @@ sudo ip link set wlan0 up
 ```
 
 ### "Connection refused"
+
 ```bash
 # Check if sensor is running
 ps aux | grep api_server
+
+# Check firewall
+sudo ufw status
 ```
 
----
+### GUI won't connect
 
-## 📊 Metrics to Highlight
-
-| Metric | Target |
-|--------|--------|
-| Networks detected | ≥5 |
-| API latency | <1s |
-| Memory usage | <500MB |
+1. Verify VM IP: `ip addr show`
+2. Check network mode: Host-Only or NAT with port forward
+3. Ping from Windows: `ping 192.168.56.101`
 
 ---
 
-## 🏁 Post-Demo
+## Key Metrics to Highlight
+
+| Metric | Target | Meaning |
+|--------|--------|---------|
+| Networks Detected | ≥5 | System captures real environment |
+| Scan Duration | <5s | Acceptable performance |
+| Risk Score Accuracy | Matches expectations | Algorithm works correctly |
+
+---
+
+## Post-Demo
 
 1. Stop sensor: `Ctrl+C`
-2. Answer Q&A
+2. Take questions
+3. Share documentation links
 
 ---
 

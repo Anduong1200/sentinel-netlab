@@ -1,0 +1,158 @@
+# Risk Scoring Weights Configuration
+# Sentinel NetLab v1.0
+#
+# Adjust weights to tune detection sensitivity
+# All weights should sum to approximately 1.0
+
+version: "1.0"
+
+# =============================================================================
+# FEATURE WEIGHTS
+# =============================================================================
+# Each weight determines how much a feature contributes to the final risk score
+# Score = Σ(weight × normalized_feature) × 100
+
+weights:
+  # Encryption strength (0=WPA3, 0.3=WPA2, 0.7=WEP, 1.0=Open)
+  encryption: 0.25
+
+  # Signal strength anomaly (unusually strong signal may indicate rogue AP)
+  rssi_anomaly: 0.10
+
+  # Vendor trust (unknown/suspicious vendors score higher)
+  vendor_trust: 0.15
+
+  # SSID suspiciousness (matches common phishing patterns)
+  ssid_pattern: 0.15
+
+  # WPS enabled (vulnerable to PIN brute force)
+  wps_enabled: 0.10
+
+  # Beacon interval anomaly (deviation from 100ms standard)
+  beacon_anomaly: 0.10
+
+  # Channel congestion (unusual channel for the region)
+  channel_anomaly: 0.05
+
+  # First seen recency (new networks are more suspicious)
+  first_seen_recency: 0.10
+
+# =============================================================================
+# THRESHOLDS
+# =============================================================================
+
+thresholds:
+  # Risk level boundaries
+  critical: 90 # Score >= 90 = CRITICAL
+  high: 70 # Score >= 70 = HIGH
+  medium: 40 # Score >= 40 = MEDIUM
+  low: 20 # Score >= 20 = LOW
+  # Score < 20 = INFO
+
+  # Detection thresholds
+  rssi_strong_threshold: -30 # dBm, unusually strong
+  rssi_weak_threshold: -85 # dBm, unusually weak
+  beacon_interval_min: 90 # ms, below is suspicious
+  beacon_interval_max: 110 # ms, above is suspicious
+  ssid_similarity_threshold: 0.85 # Levenshtein ratio for evil twin
+
+# =============================================================================
+# VENDOR TRUST DATABASE
+# =============================================================================
+
+vendors:
+  # Trusted vendors (lower risk)
+  trusted:
+    - "00:00:0C" # Cisco
+    - "00:1A:2B" # Cisco
+    - "DC:A6:32" # Raspberry Pi Foundation
+    - "B8:27:EB" # Raspberry Pi Foundation
+    - "00:50:56" # VMware
+    - "00:0C:29" # VMware
+    - "08:00:27" # VirtualBox
+    - "00:1E:67" # Intel
+    - "00:1F:3B" # Intel
+
+  # Suspicious vendors (higher risk)
+  suspicious:
+    - "00:11:22" # Test/Development
+    - "02:00:00" # Locally administered (often spoofed)
+    - "06:00:00" # Locally administered
+    - "0A:00:00" # Locally administered
+    - "0E:00:00" # Locally administered
+
+# =============================================================================
+# SSID PATTERNS
+# =============================================================================
+
+ssid_patterns:
+  # High-risk patterns (regex)
+  high_risk:
+    - "^FREE.*WIFI$"
+    - "^OPEN.*WIFI$"
+    - "(?i)xfinity"
+    - "(?i)attwifi"
+    - "(?i)starbucks"
+    - "(?i)mcdonalds"
+    - "(?i)airport"
+    - "(?i)hotel"
+    - "(?i)guest"
+    - "^[A-Z]{4}-[0-9]{4}$" # Default router pattern
+
+  # Medium-risk patterns
+  medium_risk:
+    - "(?i)test"
+    - "(?i)setup"
+    - "(?i)default"
+    - "^linksys"
+    - "^netgear"
+    - "^dlink"
+
+# =============================================================================
+# BASELINE CONFIGURATION
+# =============================================================================
+
+baseline:
+  # Learning period for establishing normal behavior
+  learning_period_hours: 72
+
+  # Minimum observations before baseline is valid
+  min_observations: 100
+
+  # Standard deviation multiplier for anomaly detection
+  anomaly_sigma: 2.5
+
+  # Decay factor for older observations (exponential moving average)
+  ema_alpha: 0.1
+
+# =============================================================================
+# SCORING ADJUSTMENTS
+# =============================================================================
+
+adjustments:
+  # Bonus/penalty modifiers (additive)
+  known_network_bonus: -20 # Reduce score for whitelisted networks
+  hidden_ssid_penalty: +10 # Increase score for hidden SSIDs
+  short_beacon_penalty: +15 # Very short beacon intervals
+  pmf_bonus: -10 # Networks with PMF enabled
+  wpa3_bonus: -15 # WPA3 networks get score reduction
+
+# =============================================================================
+# ALERT CONFIGURATION
+# =============================================================================
+
+alerts:
+  # Minimum score to generate alert
+  min_alert_score: 40
+
+  # Rate limiting (max alerts per source per hour)
+  rate_limit_per_hour: 10
+
+  # Alert cooldown in seconds
+  cooldown_seconds: 300
+
+  # Include evidence in alerts
+  include_evidence: true
+
+  # Maximum evidence items
+  max_evidence_items: 10

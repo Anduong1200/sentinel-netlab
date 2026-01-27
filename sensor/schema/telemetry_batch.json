@@ -1,0 +1,243 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Sentinel NetLab Telemetry Batch",
+    "description": "Batch wrapper for telemetry uploads from a Sentinel NetLab sensor. Each batch contains metadata and an array of telemetry records (telemetryRecord).",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "batch_id",
+        "sensor_id",
+        "batch_timestamp",
+        "record_count",
+        "records"
+    ],
+    "properties": {
+        "batch_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique ID for the batch (UUID recommended)."
+        },
+        "sensor_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique sensor identifier that produced this batch."
+        },
+        "batch_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 UTC timestamp when the batch was created/serialized by the sensor."
+        },
+        "record_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of telemetry records included in this batch. SHOULD equal the length of the 'records' array; controllers SHOULD validate this match."
+        },
+        "compressed": {
+            "type": "boolean",
+            "description": "True if payload is compressed on transport (e.g., gzip). This flag is informational; actual transport compression is handled at HTTP level as well."
+        },
+        "encoding": {
+            "type": "string",
+            "enum": [
+                "none",
+                "gzip"
+            ],
+            "description": "Encoding used for the batch body (if any). 'gzip' recommended for larger batches."
+        },
+        "schema_version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+$",
+            "description": "Schema version of telemetryRecord the sensor uses (e.g., '1.0')."
+        },
+        "records": {
+            "type": "array",
+            "minItems": 0,
+            "description": "Array of telemetryRecord objects.",
+            "items": {
+                "$ref": "#/definitions/telemetryRecord"
+            }
+        },
+        "note": {
+            "type": "string",
+            "maxLength": 1024,
+            "description": "Optional human-readable note about this batch (debug only). Avoid PII in production."
+        }
+    },
+    "definitions": {
+        "telemetryRecord": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "sensor_id",
+                "timestamp_utc",
+                "sequence_id",
+                "capture_method",
+                "frame_type",
+                "bssid",
+                "rssi_dbm",
+                "channel",
+                "frequency_mhz",
+                "local_iface",
+                "local_uptime_seconds"
+            ],
+            "properties": {
+                "sensor_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "sensor_ip": {
+                    "type": "string",
+                    "format": "ipv4"
+                },
+                "timestamp_utc": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "sequence_id": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "capture_method": {
+                    "type": "string",
+                    "enum": [
+                        "pcap",
+                        "radiotap",
+                        "iw",
+                        "raw"
+                    ]
+                },
+                "batch_id": {
+                    "type": "string"
+                },
+                "frame_type": {
+                    "type": "string",
+                    "enum": [
+                        "beacon",
+                        "probe_req",
+                        "probe_resp",
+                        "auth",
+                        "assoc_req",
+                        "assoc_resp",
+                        "disassoc",
+                        "other_management",
+                        "data"
+                    ]
+                },
+                "bssid": {
+                    "type": "string",
+                    "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+                },
+                "ssid": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "maxLength": 32
+                },
+                "rssi_dbm": {
+                    "type": "integer",
+                    "minimum": -120,
+                    "maximum": 20
+                },
+                "channel": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 196
+                },
+                "frequency_mhz": {
+                    "type": "integer"
+                },
+                "vendor_oui": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "pattern": "^([0-9A-Fa-f]{2}:){2}[0-9A-Fa-f]{2}$"
+                },
+                "capabilities": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "privacy": {
+                            "type": "boolean"
+                        },
+                        "ht": {
+                            "type": "boolean"
+                        },
+                        "vht": {
+                            "type": "boolean"
+                        },
+                        "pmf": {
+                            "type": "boolean"
+                        },
+                        "short_gi": {
+                            "type": "boolean"
+                        },
+                        "wps": {
+                            "type": "boolean"
+                        },
+                        "hidden_ssid": {
+                            "type": "boolean"
+                        },
+                        "ies_present": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "ie": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "raw_radiotap_meta": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9+/]+=*$"
+                },
+                "local_iface": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "local_uptime_seconds": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "gps": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "lat": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        },
+                        "lon": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        },
+                        "alt": {
+                            "type": "number"
+                        },
+                        "accuracy_m": {
+                            "type": "number",
+                            "minimum": 0
+                        },
+                        "gps_timestamp": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                },
+                "time_sync": {
+                    "type": "boolean"
+                },
+                "note": {
+                    "type": "string",
+                    "maxLength": 1024
+                }
+            }
+        }
+    }
+}

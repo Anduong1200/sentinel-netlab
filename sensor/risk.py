@@ -35,203 +35,140 @@ class ScoringWeights:
 class EnhancedRiskScorer:
     """
     Enhanced risk scoring with:
-    - Configurable weights
-    - ML-ready feature extraction
-    - Validation metrics collection
+    - External YAML configuration
+    - Modular Feature Extraction (FeatureExtractor)
+    - ML-ready interface
     """
     
-    def __init__(self, weights: Optional[ScoringWeights] = None, 
+    def __init__(self, config_path: str = "sensor/risk_weights.yaml", 
                  whitelist: Optional[List[str]] = None):
-        self.weights = weights or ScoringWeights()
+        self.config = self._load_config(config_path)
+        self.weights = self.config.get('weights', {})
         self.whitelist = set(whitelist or [])
         
+        # Initialize modular Feature Extractor
+        from features import FeatureExtractor
+        self.feature_extractor = FeatureExtractor(config=self.config)
+        
         # Metrics for validation
-        self.predictions = []  # Store (network, score, label) for validation
-        self.feature_importance = defaultdict(float)
-        
-        # Known malicious patterns (can be updated from threat intel)
-        self.malicious_patterns = [
-            "free", "guest", "open", "public",
-            "linksys", "netgear", "default"  # Default router names
-        ]
-        
-        # Known good vendors (enterprise)
-        self.trusted_vendors = [
-            "cisco", "aruba", "juniper", "fortinet", "meraki"
-        ]
-        
-        # Suspicious beacon intervals (non-standard)
-        self.standard_beacon_interval = 102400  # microseconds (100 TU)
-        
-    def extract_features(self, network: Dict) -> Dict[str, float]:
-        """
-        Extract normalized features for scoring or ML training.
-        Returns feature vector suitable for logistic regression.
-        """
-        features = {}
-        
-        # 1. Encryption (0-1, lower = more secure)
-        enc = network.get("encryption", "").upper()
-        if "WPA3" in enc:
-            features["enc_score"] = 0.0
-        elif "WPA2" in enc:
-            features["enc_score"] = 0.2
-        elif "WPA" in enc:
-            features["enc_score"] = 0.5
-        elif "WEP" in enc:
-            features["enc_score"] = 0.9
-        else:  # Open
-            features["enc_score"] = 1.0
+        self.predictions = []
+
+    def _load_config(self, path: str) -> Dict:
+        try:
+            with open(path, 'r') as f:
+                import yaml
+                return yaml.safe_load(f)
+        except Exception as e:
+            logger.warning(f"Failed to load risk config from {path}: {e}. Using defaults.")
+            return {
+                "weights": {
+                    "encryption": 0.40,
+                    "rssi_norm": 0.15,
+                    "beacon_anomaly": 0.12,
+                    "vendor_risk": 0.10,
+                    "ssid_suspicion": 0.08,
+                    "wps_flag": 0.06,
+                    "channel_crowd": 0.04,
+                    "hidden_ssid": 0.05,
+                    "temporal": 0.05
+                }
+            }
             
-        # 2. Signal Strength (normalized, strong = potentially closer/attacker)
-        rssi = network.get("signal", network.get("rssi", -70))
-        if rssi is None:
-            rssi = -70
-        # Normalize: -90 to -30 dBm → 0 to 1
-        features["signal_norm"] = max(0, min(1, (rssi + 90) / 60))
-        
-        # 3. SSID Pattern Matching
-        ssid = network.get("ssid", "").lower()
-        features["ssid_suspicious"] = 0.0
-        for pattern in self.malicious_patterns:
-            if pattern in ssid:
-                # Stronger penalty for known bad patterns (0.3 -> 0.5)
-                features["ssid_suspicious"] = min(1.0, features["ssid_suspicious"] + 0.5)
-        
-        # Hidden SSID
-        features["ssid_hidden"] = 1.0 if not ssid or ssid == "<hidden>" else 0.0
-        
-        # 4. Vendor Trust
-        vendor = network.get("vendor", "").lower()
-        if any(t in vendor for t in self.trusted_vendors):
-            features["vendor_trust"] = 0.0
-        elif vendor:
-            features["vendor_trust"] = 0.3
-        else:
-            features["vendor_trust"] = 0.5  # Unknown vendor
-            
-        # 5. Channel (unusual channels)
-        channel = network.get("channel", 0)
-        common_channels = [1, 6, 11]  # 2.4GHz common
-        if channel in common_channels:
-            features["channel_unusual"] = 0.0
-        elif 1 <= channel <= 14:
-            features["channel_unusual"] = 0.3
-        else:  # 5GHz or unusual
-            features["channel_unusual"] = 0.1
-            
-        # 6. Beacon Interval (NEW)
-        beacon_interval = network.get("beacon_interval", self.standard_beacon_interval)
-        if beacon_interval:
-            deviation = abs(beacon_interval - self.standard_beacon_interval) / self.standard_beacon_interval
-            features["beacon_anomaly"] = min(1.0, deviation)
-        else:
-            features["beacon_anomaly"] = 0.0
-            
-        # 7. Privacy/Capability Flags (NEW)
-        capabilities = network.get("capabilities", "")
-        features["privacy_concern"] = 0.0
-        if "ESS" not in str(capabilities):
-            features["privacy_concern"] += 0.3  # Not infrastructure mode
-        if network.get("wps_enabled", False):
-            features["privacy_concern"] += 0.2  # WPS vulnerable
-            
-        # 8. Temporal (NEW) - First seen recently = potentially rogue
-        first_seen = network.get("first_seen")
-        last_seen = network.get("last_seen")
-        if first_seen and first_seen == last_seen:
-            features["temporal_new"] = 0.5  # Just appeared
-        else:
-            features["temporal_new"] = 0.0
-            
-        return features
-    
     def calculate_risk(self, network: Dict, 
                        ground_truth_label: Optional[str] = None) -> Dict:
         """
-        Calculate risk score with optional ground truth for validation.
-        
-        Args:
-            network: Network dictionary
-            ground_truth_label: Optional "malicious" or "benign" for metrics
-            
-        Returns:
-            Dict with risk_score, risk_level, features, contributing_factors
+        Calculate risk score using modular features and configurable weights.
         """
-        # Check whitelist first
+        # Check whitelist
         ssid = network.get("ssid", "")
         bssid = network.get("bssid", "")
-        
         if ssid in self.whitelist or bssid in self.whitelist:
             return {
                 "risk_score": 0,
                 "risk_level": "Whitelisted",
+                "confidence": 1.0,
                 "features": {},
+                "explain": {},
                 "contributing_factors": []
             }
         
-        # Extract features
-        features = self.extract_features(network)
+        # 1. Extract Features via separate module
+        features = self.feature_extractor.extract(network)
         
-        # Calculate weighted score
+        # 2. Calculate Weighted Score
         w = self.weights
-        score = (
-            features["enc_score"] * w.encryption +
-            features["signal_norm"] * w.signal_strength +
-            features["ssid_suspicious"] * w.ssid_pattern +
-            features.get("ssid_hidden", 0) * 0.05 +
-            features["vendor_trust"] * w.vendor +
-            features["channel_unusual"] * w.channel +
-            features["beacon_anomaly"] * w.beacon_interval +
-            features["privacy_concern"] * w.privacy_flags +
-            features["temporal_new"] * w.temporal
+        raw_score = (
+            features["enc_score"] * w.get("encryption", 0) +
+            features["rssi_norm"] * w.get("rssi_norm", 0) +
+            features["ssid_suspicious"] * w.get("ssid_suspicion", 0) +
+            features["ssid_hidden"] * w.get("hidden_ssid", 0) +
+            features["vendor_trust"] * w.get("vendor_risk", 0) +
+            features["channel_unusual"] * w.get("channel_crowd", 0) + # Using channel weight
+            features["beacon_anomaly"] * w.get("beacon_anomaly", 0) +
+            features["wps_flag"] * w.get("wps_flag", 0) +
+            features["temporal_new"] * w.get("temporal", 0) +
+            features["privacy_concern"] * w.get("privacy_flags", 0.05) # Fallback if missing in yaml
         )
         
         # Normalize to 0-100
-        risk_score = min(100, int(score * 100))
+        risk_score = min(100, int(raw_score * 100))
         
-        # Determine level
-        if risk_score >= 80:
-            risk_level = "Critical"
-        elif risk_score >= 60:
+        # 3. Determine Risk Level
+        thresholds = self.config.get('thresholds', {'low': 40, 'medium': 70})
+        if risk_score >= thresholds['medium']:
             risk_level = "High"
-        elif risk_score >= 40:
+        elif risk_score >= thresholds['low']:
             risk_level = "Medium"
         else:
             risk_level = "Low"
             
-        # Track contributing factors
+        # 4. Calculate Confidence (Availability of data)
+        # Simplified: Check distinct non-default keys in features or raw network
+        # (Assuming the extractor provides 10 features, we assume High confidence if basic fields present)
+        av_fields = sum(1 for k,v in features.items() if v != 0.5) # 0.5 is often default
+        confidence = min(1.0, round(av_fields / 5.0, 2)) # Heuristic: 5 indicators = 100% conf
+        
+        # 5. Explain Breakdown
+        explain = {
+            k: round(features.get(f_map, 0) * val * 100, 1)
+            for k, val in w.items()
+            for f_map in features.keys()
+            if self._map_weight_to_feature(k) == f_map
+        }
+        
+        # Contributing factors (Human readable)
         factors = []
-        if features["enc_score"] > 0.5:
-            factors.append(f"Weak encryption: {network.get('encryption', 'Open')}")
-        if features["ssid_suspicious"] > 0:
-            factors.append("Suspicious SSID pattern")
-        if features.get("ssid_hidden", 0) > 0:
-            factors.append("Hidden SSID")
-        if features["beacon_anomaly"] > 0.2:
-            factors.append("Non-standard beacon interval")
-        if features["privacy_concern"] > 0.3:
-            factors.append("Privacy/capability concerns")
-        if features["temporal_new"] > 0:
-            factors.append("Newly appeared network")
-            
-        # Store for validation if ground truth provided
-        if ground_truth_label:
-            self.predictions.append({
-                "bssid": bssid,
-                "ssid": ssid,
-                "score": risk_score,
-                "predicted": "malicious" if risk_score >= 60 else "benign",
-                "actual": ground_truth_label,
-                "features": features
-            })
-            
-        return {
+        if features["enc_score"] > 0.5: factors.append(f"Weak Encryption ({network.get('encryption')})")
+        if features["ssid_suspicious"] > 0.5: factors.append("Suspicious SSID Pattern")
+        if features["beacon_anomaly"] > 0.5: factors.append("Beacon Anomaly Detected")
+        
+        result = {
             "risk_score": risk_score,
             "risk_level": risk_level,
+            "confidence": confidence,
             "features": features,
+            "explain": explain,
             "contributing_factors": factors
         }
+        
+        return result
+
+    def _map_weight_to_feature(self, weight_key: str) -> str:
+        # Helper to map yaml weight keys to feature keys
+        mapping = {
+            "encryption": "enc_score",
+            "rssi_norm": "rssi_norm",
+            "ssid_suspicion": "ssid_suspicious",
+            "hidden_ssid": "ssid_hidden",
+            "vendor_risk": "vendor_trust",
+            "channel_crowd": "channel_unusual",
+            "beacon_anomaly": "beacon_anomaly",
+            "wps_flag": "wps_flag",
+            "temporal": "temporal_new",
+            "privacy_flags": "privacy_concern"
+        }
+        return mapping.get(weight_key)
+
     
     def get_validation_metrics(self) -> Dict:
         """

@@ -53,7 +53,7 @@ RUN chmod +x /entrypoint.sh
 # Configuration
 # ============================================================
 ENV WIFI_SCANNER_INTERFACE=wlan0
-ENV WIFI_SCANNER_API_KEY=sentinel-2024
+ENV WIFI_SCANNER_API_KEY=sentinel-dev-2024
 ENV ALLOW_ACTIVE_ATTACKS=false
 ENV CAPTURE_ENGINE=tshark
 

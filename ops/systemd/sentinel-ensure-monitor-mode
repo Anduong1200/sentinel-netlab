@@ -1,0 +1,78 @@
+#!/bin/bash
+# ============================================================
+# sentinel-ensure-monitor-mode
+# Safe, idempotent script to enable monitor mode on WiFi interface
+# Run by systemd ExecStartPre before sensor starts
+# ============================================================
+
+set -e
+
+IFACE="${1:-wlan0}"
+LOG_TAG="sentinel-monitor-mode"
+
+log_info() {
+    logger -t "$LOG_TAG" -p local0.info "$1"
+    echo "[INFO] $1"
+}
+
+log_error() {
+    logger -t "$LOG_TAG" -p local0.err "$1"
+    echo "[ERROR] $1" >&2
+}
+
+# Check if interface exists
+if ! ip link show "$IFACE" &>/dev/null; then
+    log_error "Interface $IFACE does not exist"
+    exit 1
+fi
+
+# Check rfkill state and unblock if needed
+if command -v rfkill &>/dev/null; then
+    if rfkill list wifi | grep -q "Soft blocked: yes"; then
+        log_info "WiFi is soft-blocked, unblocking..."
+        rfkill unblock wifi
+        sleep 1
+    fi
+fi
+
+# Check if already in monitor mode
+CURRENT_TYPE=$(iw dev "$IFACE" info 2>/dev/null | grep -oP 'type\s+\K\w+' || echo "unknown")
+if [ "$CURRENT_TYPE" = "monitor" ]; then
+    log_info "Interface $IFACE already in monitor mode"
+    exit 0
+fi
+
+log_info "Enabling monitor mode on $IFACE..."
+
+# Bring interface down
+ip link set "$IFACE" down
+if [ $? -ne 0 ]; then
+    log_error "Failed to bring down $IFACE"
+    exit 1
+fi
+
+# Set monitor mode
+if ! iw dev "$IFACE" set type monitor 2>/dev/null; then
+    log_error "Failed to set monitor mode on $IFACE. Driver may not support it."
+    # Try to bring it back up in managed mode
+    ip link set "$IFACE" up 2>/dev/null || true
+    exit 1
+fi
+
+# Bring interface up
+ip link set "$IFACE" up
+if [ $? -ne 0 ]; then
+    log_error "Failed to bring up $IFACE in monitor mode"
+    exit 1
+fi
+
+# Verify monitor mode
+sleep 0.5
+VERIFY_TYPE=$(iw dev "$IFACE" info 2>/dev/null | grep -oP 'type\s+\K\w+' || echo "unknown")
+if [ "$VERIFY_TYPE" != "monitor" ]; then
+    log_error "Verification failed: $IFACE is '$VERIFY_TYPE' instead of 'monitor'"
+    exit 1
+fi
+
+log_info "Successfully enabled monitor mode on $IFACE"
+exit 0

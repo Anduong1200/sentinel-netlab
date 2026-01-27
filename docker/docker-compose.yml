@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
     environment:
       - WIFI_SCANNER_INTERFACE=wlan0
-      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-2024}
+      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-dev-2024}
       - ALLOW_ACTIVE_ATTACKS=${ALLOW_ATTACKS:-false}
       - CAPTURE_ENGINE=tshark
     volumes:
@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       - WIFI_SCANNER_INTERFACE=wlan0
-      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-2024}
+      - WIFI_SCANNER_API_KEY=${API_KEY:-sentinel-dev-2024}
       - ALLOW_ACTIVE_ATTACKS=${ALLOW_ATTACKS:-false}
     volumes:
       - sensor_data:/opt/sensor/data

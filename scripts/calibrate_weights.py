@@ -23,9 +23,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "sensor"))
 
 try:
-    from risk_v2 import EnhancedRiskScorer, ScoringWeights
+    from risk import EnhancedRiskScorer, ScoringWeights
 except ImportError:
-    print("Error: Cannot import risk_v2. Make sure sensor/risk_v2.py exists.")
+    print("Error: Cannot import from risk.py. Make sure sensor/risk.py exists.")
     sys.exit(1)
 
 

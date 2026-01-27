@@ -1,0 +1,43 @@
+{
+    "description": "Test vectors for deauth_burst.pcap - deauthentication flood detection",
+    "pcap": "deauth_burst.pcap",
+    "matching_rules": {
+        "timestamp_tolerance_ms": 500,
+        "rssi_tolerance_db": 3
+    },
+    "burst_detection": {
+        "time_window_seconds": 2,
+        "min_frames_threshold": 20,
+        "frame_types": [
+            "disassoc",
+            "other_management"
+        ]
+    },
+    "vectors": [
+        {
+            "id": "deauth_3.1",
+            "note": "Single deauth/disassociation frame from attacker BSSID",
+            "expected": {
+                "frame_type": "disassoc",
+                "bssid": "fa:ce:fa:ce:fa:ce",
+                "ssid": null,
+                "rssi_dbm": -20,
+                "channel": 11,
+                "frequency_mhz": 2462,
+                "vendor_oui": "fa:ce:fa",
+                "capabilities": {
+                    "ies_present": []
+                },
+                "ie": {}
+            }
+        }
+    ],
+    "meta_expectations": {
+        "id": "deauth_3.2",
+        "note": "Burst pattern expectation - verify >= 20 frames within 2s window",
+        "min_frames_in_2s": 20,
+        "attacker_bssid": "fa:ce:fa:ce:fa:ce",
+        "time_window_seconds": 2,
+        "detection_rule": "count(frame_type in ['disassoc', 'deauth']) >= threshold within window"
+    }
+}

@@ -58,53 +58,64 @@ class WiFiScannerGUI:
         control_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=(0, 10))
         
         # Control buttons
+        self.connect_btn = ttk.Button(
+            control_frame,
+            text="🔌 Connect",
+            command=self.toggle_connection,
+            width=20
+        )
+        self.connect_btn.grid(row=0, column=0, pady=5)
+        
         ttk.Button(
             control_frame,
             text="🚀 Start Scan",
             command=self.start_scan,
             width=20
-        ).grid(row=0, column=0, pady=5)
+        ).grid(row=1, column=0, pady=5)
         
         ttk.Button(
             control_frame,
             text="📊 View History",
             command=self.view_history,
             width=20
-        ).grid(row=1, column=0, pady=5)
+        ).grid(row=2, column=0, pady=5)
         
         ttk.Button(
             control_frame,
             text="💾 Export CSV",
             command=self.export_csv,
             width=20
-        ).grid(row=2, column=0, pady=5)
+        ).grid(row=3, column=0, pady=5)
         
         ttk.Button(
             control_frame,
             text="📈 Risk Report",
             command=self.show_report,
             width=20
-        ).grid(row=3, column=0, pady=5)
+        ).grid(row=4, column=0, pady=5)
         
         ttk.Button(
             control_frame,
             text="⚙️ Settings",
             command=self.show_settings,
             width=20
-        ).grid(row=4, column=0, pady=5)
+        ).grid(row=5, column=0, pady=5)
         
         # Network List
         list_frame = ttk.LabelFrame(main_frame, text="Discovered Networks", padding="10")
         list_frame.grid(row=1, column=1, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
         
         # Treeview for networks
-        columns = ("SSID", "BSSID", "Signal", "Channel", "Encryption", "Risk", "Status")
+        columns = ("SSID", "BSSID", "Signal", "Channel", "Encryption", "Risk", "Confidence")
         self.tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=15)
         
-        col_widths = [150, 180, 80, 80, 100, 80, 100]
+        col_widths = [140, 150, 70, 60, 90, 70, 80]
         for col, width in zip(columns, col_widths):
             self.tree.heading(col, text=col)
             self.tree.column(col, width=width, anchor="center")
+        
+        # Bind double-click to show details
+        self.tree.bind("<Double-1>", self.show_network_details)
         
         # Scrollbar
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -161,6 +172,67 @@ class WiFiScannerGUI:
                 self.message_queue.put(("ERROR", f"❌ Connection failed: {str(e)}"))
         
         threading.Thread(target=test, daemon=True).start()
+    
+    def toggle_connection(self):
+        """Toggle connection to sensor"""
+        if self.connect_btn.cget("text") == "🔌 Connect":
+            self.test_connection()
+            self.connect_btn.config(text="❌ Disconnect")
+            self.log_message("Connecting to sensor...", "INFO")
+        else:
+            self.connect_btn.config(text="🔌 Connect")
+            self.log_message("Disconnected from sensor", "WARNING")
+    
+    def show_network_details(self, event):
+        """Show detailed info for selected network (double-click)"""
+        selection = self.tree.selection()
+        if not selection:
+            return
+        
+        item = self.tree.item(selection[0])
+        values = item['values']
+        ssid = values[0]
+        
+        # Find network data
+        net = next((n for n in self.networks if n.get('ssid') == ssid), None)
+        if not net:
+            return
+        
+        # Create details window
+        detail_win = tk.Toplevel(self.root)
+        detail_win.title(f"Network Details: {ssid}")
+        detail_win.geometry("450x400")
+        
+        text = scrolledtext.ScrolledText(detail_win, wrap=tk.WORD)
+        text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Format details
+        details = f"""
+=== NETWORK DETAILS ===
+SSID: {net.get('ssid', 'Unknown')}
+BSSID: {net.get('bssid', 'Unknown')}
+Channel: {net.get('channel', 'N/A')}
+Signal: {net.get('signal', 'N/A')} dBm
+Encryption: {net.get('encryption', 'Unknown')}
+Vendor: {net.get('vendor', 'Unknown')}
+
+=== RISK ASSESSMENT ===
+Score: {net.get('risk_score', 0)}%
+Level: {net.get('risk_level', 'Unknown')}
+Confidence: {net.get('confidence', 0):.0%}
+
+=== EXPLANATION ===
+"""
+        # Add explain breakdown
+        explain = net.get('explain', {})
+        if explain:
+            for factor, contribution in explain.items():
+                details += f"  • {factor}: +{contribution:.1f} points\n"
+        else:
+            details += "  No detailed breakdown available\n"
+        
+        text.insert(tk.END, details)
+        text.config(state=tk.DISABLED)
     
     def start_scan(self):
         """Start network scan"""
@@ -326,17 +398,18 @@ class WiFiScannerGUI:
         # Add networks
         for net in networks:
             risk = net.get('risk_score', 0)
+            confidence = net.get('confidence', 0)
             
             # Determine risk color
             if risk >= 70:
                 risk_text = f"🔴 {risk}%"
-                status = "HIGH RISK"
             elif risk >= 40:
                 risk_text = f"🟡 {risk}%"
-                status = "MEDIUM RISK"
             else:
                 risk_text = f"🟢 {risk}%"
-                status = "LOW RISK"
+            
+            # Format confidence
+            conf_text = f"{confidence:.0%}" if isinstance(confidence, float) else f"{confidence}%"
             
             self.tree.insert("", tk.END, values=(
                 net.get('ssid', 'Unknown'),
@@ -345,7 +418,7 @@ class WiFiScannerGUI:
                 net.get('channel', 0),
                 net.get('encryption', 'Unknown'),
                 risk_text,
-                status
+                conf_text
             ))
 
 def main():

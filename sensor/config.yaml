@@ -1,0 +1,57 @@
+# Sentinel NetLab Sensor - Default Configuration
+# Copy to config.yaml and customize
+
+sensor:
+  id: "sensor-01"
+  interface: "wlan0"
+
+capture:
+  method: "scapy" # scapy | tshark | pcap
+  channels: [1, 6, 11] # Default 2.4GHz non-overlapping
+  dwell_ms: 200 # Channel dwell time
+  settle_ms: 50 # Radio settle time after switch
+  adaptive_hopping: false # Weight channels by activity
+
+buffer:
+  max_items: 10000 # Ring buffer capacity
+  drop_policy: "oldest" # oldest | spill_to_disk
+  storage_path: "/var/lib/sentinel/journal"
+  max_disk_mb: 100 # Max journal disk usage
+
+transport:
+  upload_url: "http://localhost:5000/api/v1/telemetry"
+  auth_token: "sentinel-dev-2024"
+  timeout_sec: 30
+  max_retries: 5
+  initial_delay_sec: 1.0
+  backoff_factor: 2.0
+  max_delay_sec: 60.0
+  verify_ssl: true
+  compress: true
+
+upload:
+  batch_size: 200 # Max items per batch
+  batch_bytes: 262144 # Max batch size (256KB)
+  interval_sec: 5.0 # Upload interval
+
+heartbeat:
+  interval_sec: 60 # Heartbeat interval
+  enabled: true
+
+health:
+  port: 9100 # Prometheus metrics port
+  enabled: true
+
+privacy:
+  anonymize_ssid: false # Hash SSIDs
+  scrub_probe_requests: false
+
+logging:
+  level: "INFO" # DEBUG | INFO | WARNING | ERROR
+  format: "json" # json | text
+  file: null # Log file path (null = stdout)
+
+# Safety flags
+lab:
+  allow_active_attacks: false
+  require_confirm: true
