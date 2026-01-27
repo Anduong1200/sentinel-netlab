@@ -6,9 +6,18 @@
 [![Status](https://img.shields.io/badge/status-production_ready-green.svg)]()
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 
-**Sentinel NetLab** is a **Lightweight Wireless Network Monitoring and Anomaly Detection System** designed to **automate and orchestrate** security assessment tasks. It serves as an operational layer above standard tools (like Tshark/Aircrack-ng), providing continuous monitoring, centralized logging, and risk scoring for SMEs and Research Labs.
+**Sentinel NetLab** is a **Lightweight Hybrid Wireless Monitoring System** designed for **resource-constrained environments**. It combines a high-performance C-based capture engine with a flexible Python analysis core to orchestrate security assessment tasks.
 
-> **Note:** This project does not aim to replace deep analysis tools like Wireshark, nor does it focus on breaking encryption. Its core value lies in **operational visibility** and **posture assessment**.
+> **Note:** This project targets **Education, Research, and Tactical Monitoring**. It is **not** an Enterprise WIPS replacement.
+
+---
+
+## 🎯 Target Audience & Fit
+| Audience | Fit | Verdict |
+|----------|-----|---------|
+| 🎓 **Student / Lab** | ⭐⭐⭐⭐⭐ | **Perfect**. Ideal for learning 802.11 security internals. |
+| 🔬 **Researcher** | ⭐⭐⭐⭐ | **Strong**. Modular framework for testing new algorithms. |
+| 🏢 **SME / Corp** | ⭐ | **Weak**. Recommending commercial deployment for stability. |
 
 ---
 
@@ -28,6 +37,7 @@
 ### 🛠️ Technical Documentation
 - **Detailed Architecture**: [See System Design & Flowchart](docs/SYSTEM_DESIGN.md)
 - **Technical Report**: [IEEE Standard Report](docs/IEEE_Sentinel_NetLab_Report.md)
+- **Improvement Roadmap**: [Future Engineering Plans](docs/technical_improvement_roadmap.md)
 - **Defense Materials**: [Defense Script](docs/defense_script.md) & [Slides](docs/presentation_slides.md)
 
 - **[API Reference](docs/api_reference.md)**: Full REST API documentation with Python examples.
