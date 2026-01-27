@@ -408,8 +408,8 @@ class KalmanPositionFilter:
         self.state = self.state + K @ y_innov
         
         # Update covariance
-        I = np.eye(4)
-        self.P = (I - K @ self.H) @ self.P
+        identity_matrix = np.eye(4)
+        self.P = (identity_matrix - K @ self.H) @ self.P
         
         # Return filtered position and uncertainty
         uncertainty = math.sqrt(self.P[0, 0] + self.P[1, 1])

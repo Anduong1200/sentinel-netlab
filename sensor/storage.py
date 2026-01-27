@@ -389,7 +389,7 @@ class WiFiStorage:
         for pcap in self.pcap_dir.glob("*.pcap"):
             try:
                 pcap.unlink()
-            except:
+            except OSError:
                 pass
         
         logger.info("All data cleared")

@@ -206,7 +206,7 @@ class TsharkCaptureEngine:
             try:
                 self.process.terminate()
                 self.process.wait(timeout=5)
-            except:
+            except (subprocess.TimeoutExpired, OSError):
                 self.process.kill()
             self.process = None
             

@@ -199,11 +199,11 @@ def play_alert_sound():
         # Try to play a beep
         subprocess.run(["paplay", "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"], 
                       timeout=2, capture_output=True)
-    except:
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         try:
             # Fallback to beep
             subprocess.run(["beep", "-f", "1000", "-l", "500"], timeout=2, capture_output=True)
-        except:
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             pass
 
 

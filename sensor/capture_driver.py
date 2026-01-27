@@ -194,7 +194,7 @@ class IwCaptureDriver(CaptureDriver):
         
         try:
             # Try to use scapy for capture
-            from scapy.all import sniff, RadioTap
+            from scapy.all import sniff  # noqa: E402
             
             def packet_handler(pkt):
                 if not self._running:

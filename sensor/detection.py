@@ -5,6 +5,7 @@ Implements Levenshtein distance for Evil Twin, Bloom Filter for MAC blacklist.
 """
 
 import logging
+import time
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import hashlib
@@ -273,9 +274,6 @@ def get_evil_twin_detector() -> EvilTwinDetector:
 def get_deauth_detector() -> DeauthFloodDetector:
     return _deauth_detector
 
-
-# Import time for timestamp
-import time
 
 
 if __name__ == "__main__":

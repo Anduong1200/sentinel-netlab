@@ -287,7 +287,7 @@ class WiFiParser:
                 if elt.ID == 0:
                     try:
                         ssid = elt.info.decode('utf-8', errors='ignore').strip('\x00')
-                    except:
+                    except (UnicodeDecodeError, AttributeError):
                         ssid = ""
                 
                 # Check for WPS (Vendor Specific ID 221 + Microsoft OUI \x00\x50\xf2\x04)
