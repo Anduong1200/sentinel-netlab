@@ -39,6 +39,9 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Deauth Flood Detection** | Alert on denial-of-service attacks |
 | **Risk Scoring** | Weighted threat assessment with explainability |
 | **Distributed Architecture** | Multiple sensors → centralized controller |
+| **Geo-Location** | Trilateration & Heatmaps for physical source tracking |
+| **Active Defense** | Deauth & FakeAP generation (Lab/Authorized only) |
+| **Wardriving** | GPS-correlated mobile network mapping |
 | **ML Integration** | Export labeled data for machine learning workflows |
 
 ---
@@ -57,6 +60,11 @@ sentinel-netlab/
 │   ├── transport_client.py    # Upload with retry
 │   ├── detection.py           # Threat detection logic
 │   ├── risk.py                # Risk scoring engine
+│   ├── geo_mapping.py         # 📍 Trilateration & Heatmaps
+│   ├── attacks.py             # ⚔️ Active Defense (Lab)
+│   ├── wardrive.py            # 🚗 Wardriving CLI
+│   ├── audit.py               # 📋 Security Audit
+│   ├── wids_detectors.py      # Advanced WIDS rules
 │   ├── utils/                 # OUI lookup, time sync
 │   ├── schema/                # JSON schemas
 │   └── tests/                 # Unit & integration tests

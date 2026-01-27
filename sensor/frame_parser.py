@@ -144,10 +144,11 @@ class FrameParser:
         Returns:
             ParsedFrame object or None on error
         """
-        if len(raw_frame) < 8:
-            return None
-
         result = ParsedFrame(timestamp=timestamp)
+
+        if len(raw_frame) < 8:
+            result.parse_error = "Frame too short (< 8 bytes)"
+            return result
 
         try:
             # Parse radiotap header

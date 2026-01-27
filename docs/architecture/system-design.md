@@ -75,6 +75,10 @@ flowchart LR
 | **Detection** | `detection.py` | Evil twin, deauth flood, pattern matching |
 | **BufferManager** | `buffer_manager.py` | Ring buffer, disk journal, batch selection |
 | **TransportClient** | `transport_client.py` | Upload, retry, circuit breaker |
+| **GeoMapper** | `geo_mapping.py` | Signal trilateration, Kalman filtering, heatmap generation |
+| **Wardrive** | `wardrive.py` | GPS correlation, mobile capture, session management |
+| **ActiveDefense** | `attacks.py` | Deauth, FakeAP (controlled lab use only) |
+| **Audit** | `audit.py` | Security posture analysis, report generation |
 
 ---
 
@@ -207,6 +211,27 @@ def detect_deauth_flood(frames, window_sec=2):
     if deauth_count > threshold:
         return Alert("Deauth Flood", rate=deauth_count)
 ```
+
+    if deauth_count > threshold:
+        return Alert("Deauth Flood", rate=deauth_count)
+```
+
+### Geo-Location Engine (Trilateration)
+
+```mermaid
+flowchart LR
+    S1[Sensor 1] & S2[Sensor 2] & S3[Sensor 3] --> |"RSSI (dBm)"| PL{Path Loss Model}
+    PL --> |"Distance (m)"| TRI[Trilateration Solver]
+    TRI --> |"Raw (x,y)"| KAL[Kalman Filter]
+    KAL --> |"Smoothed (x,y)"| MAP[Heatmap Generator]
+```
+
+### Active Defense Safety
+
+The `ActiveDefense` module requires explicit safety overrides to operate (`ALLOW_ACTIVE_ATTACKS` env var). It provides:
+- **Deauth**: Targeted disconnection of unauthorized clients.
+- **FakeAP**: Honey-pot AP creation for detecting connection attempts.
+- **Lab Safety**: Checks for isolated environment before execution.
 
 ---
 
