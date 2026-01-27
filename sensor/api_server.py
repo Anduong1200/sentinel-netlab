@@ -17,7 +17,7 @@ import time
 from capture import CaptureEngine, check_monitor_support
 from parser import WiFiParser
 from storage import WiFiStorage, MemoryStorage
-from risk import RiskScorer, calculate_risk_score
+from risk import RiskScorer
 from attacks import AttackEngine
 from forensics import ForensicAnalyzer, analyze_pcap
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)  # Allow Windows GUI to connect
-limiter = Limiter(app, key_func=get_remote_address)
+limiter = Limiter(key_func=get_remote_address, app=app)
 
 # Configuration
 API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
