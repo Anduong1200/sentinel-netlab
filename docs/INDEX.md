@@ -11,6 +11,9 @@
 | [IEEE Technical Report](IEEE_Sentinel_NetLab_Report.md) | Main academic paper (IEEE format) |
 | [System Design & Flowchart](SYSTEM_DESIGN.md) | Architecture diagrams (Mermaid) |
 | [API Reference](api_reference.md) | REST API endpoints & examples |
+| [WiFi Analysis Methodology](wifi_analysis_methodology.md) | Theoretical framework & techniques |
+| [WiFi Security & Attack Analysis](wifi_security_analysis.md) | Protocol risks (WEP/WPA3), Evil Twin, Downgrade |
+| [Behavioral Risk Analysis](behavioral_risk_analysis.md) | Anomaly detection, Signal Leakage, Rogue APs |
 
 ---
 
