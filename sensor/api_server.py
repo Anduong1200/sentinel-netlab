@@ -78,8 +78,8 @@ def record_metrics(response):
     """Record request metrics"""
     if request.endpoint != 'metrics':
         REQUESTS.labels(
-            request.path, 
-            request.method, 
+            request.path,
+            request.method,
             str(response.status_code)
         ).inc()
     return response
@@ -106,7 +106,7 @@ def status():
     try:
         interface_info = check_monitor_support(INTERFACE)
         capture_status = capture_engine.get_status()
-        
+
         return jsonify({
             "interface": interface_info,
             "capture": capture_status,
@@ -125,21 +125,21 @@ def status():
 def scan_networks():
     """Scan for WiFi networks using integrated modules"""
     start_time = time.time()
-    
+
     # Measure latency for scan specifically
     with LATENCY.labels('/scan').time():
         try:
             # Clear previous scan data
             parser.clear()
             memory_storage.clear()
-            
+
             # Try real scan first
             networks = perform_real_scan()
-            
+
         except Exception as e:
             logger.warning(f"Real scan failed or not supported: {e}, activating simulation mode")
             networks = get_simulation_data()
-        
+
         # Calculate risk scores using RiskScorer
         alerts_count = 0
         for net in networks:
@@ -148,19 +148,19 @@ def scan_networks():
             net['risk_level'] = risk_result['risk_level']
             if net['risk_score'] > 70:
                 alerts_count += 1
-        
+
         # Update metrics
         duration = time.time() - start_time
         SCAN_DURATION.set(duration)
         NETWORKS_FOUND.set(len(networks))
         ACTIVE_ALERTS.set(alerts_count)
-        
+
         # Store in persistent storage
         try:
             storage.store_networks(networks)
         except Exception as e:
             logger.error(f"Storage error: {e}")
-        
+
         return jsonify({
             "status": "success",
             "timestamp": datetime.now().isoformat(),
@@ -176,19 +176,19 @@ def perform_real_scan(channels=None, dwell_time=0.5):
     """
     if channels is None:
         channels = [1, 6, 11]
-    
+
     networks = []
-    
+
     def packet_callback(packet):
         """Callback for each captured packet"""
         result = parser.process_packet(packet)
         if result:
             memory_storage.update(result)
-    
+
     # Enable monitor mode
     if not capture_engine.enable_monitor_mode():
         raise RuntimeError("Failed to enable monitor mode")
-    
+
     try:
         # Start capture with channel hopping
         capture_engine.start_capture(
@@ -197,25 +197,25 @@ def perform_real_scan(channels=None, dwell_time=0.5):
             dwell_time=dwell_time,
             enable_channel_hop=True
         )
-        
+
         # Wait for scan to complete (3 passes)
         import time
         total_time = len(channels) * dwell_time * 3
         time.sleep(total_time)
-        
+
         # Stop capture
         capture_engine.stop_capture()
-        
+
         # Get parsed networks
         networks = memory_storage.get_all()
-        
+
     finally:
         # Restore managed mode
         capture_engine.disable_monitor_mode()
-    
+
     if not networks:
         raise RuntimeError("No networks captured")
-    
+
     return networks
 
 
@@ -224,7 +224,7 @@ def get_simulation_data():
     import random
     vendors = ["TP-Link", "Asus", "Netgear", "D-Link", "MikroTik"]
     encryptions = ["Open", "WEP", "WPA2-PSK", "WPA3-SAE"]
-    
+
     networks = []
     for i in range(random.randint(3, 8)):
         vendor = random.choice(vendors)
@@ -289,25 +289,25 @@ def attack_deauth():
     """
     if not ALLOW_ACTIVE_ATTACKS:
         return jsonify({"error": "Active attacks disabled by configuration"}), 403
-        
+
     try:
         data = request.get_json()
         target_bssid = data.get('bssid')
         client_mac = data.get('client', 'FF:FF:FF:FF:FF:FF')
         count = int(data.get('count', 10))
-        
+
         if not target_bssid:
             return jsonify({"error": "Missing target_bssid"}), 400
-            
+
         success = attack_engine.deauth(target_bssid, client_mac, count)
         if success:
             return jsonify({
-                "status": "success", 
+                "status": "success",
                 "message": f"Deauth sent to {target_bssid} ({count} frames)"
             })
         else:
             return jsonify({"error": "Attack failed"}), 500
-            
+
     except Exception as e:
         logger.error(f"Deauth error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -321,24 +321,24 @@ def attack_fakeap():
     """
     if not ALLOW_ACTIVE_ATTACKS:
         return jsonify({"error": "Active attacks disabled by configuration"}), 403
-        
+
     try:
         data = request.get_json()
         ssids = data.get('ssids', [])
         count = int(data.get('count', 100))
-        
+
         if not ssids:
             return jsonify({"error": "Missing ssids list"}), 400
-            
+
         success = attack_engine.beacon_flood(ssids, count)
         if success:
             return jsonify({
-                "status": "success", 
+                "status": "success",
                 "message": f"Beacon flood sent ({len(ssids)} SSIDs, {count} frames)"
             })
         else:
             return jsonify({"error": "Attack failed"}), 500
-            
+
     except Exception as e:
         logger.error(f"FakeAP error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -367,7 +367,7 @@ def forensics_report(scan_id):
         pcap_path = storage.get_pcap_path(scan_id)
         if not pcap_path or not os.path.exists(pcap_path):
             return jsonify({"error": f"PCAP not found for scan_id: {scan_id}"}), 404
-        
+
         # Get known networks for Evil Twin detection
         known_networks = {}
         for net in parser.networks.values():
@@ -376,7 +376,7 @@ def forensics_report(scan_id):
                     "bssid": net.get("bssid"),
                     "encryption": net.get("encryption")
                 }
-        
+
         # Run forensic analysis
         report = analyze_pcap(pcap_path, known_networks)
         return jsonify({
@@ -384,7 +384,7 @@ def forensics_report(scan_id):
             "scan_id": scan_id,
             "report": report
         })
-        
+
     except Exception as e:
         logger.error(f"Forensics error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -408,5 +408,5 @@ if __name__ == '__main__':
     print("  GET /forensics/events - Security events")
     print("  GET /forensics/report/<id> - Forensic report")
     print("=" * 50)
-    
+
     app.run(host='0.0.0.0', port=5000, debug=False)

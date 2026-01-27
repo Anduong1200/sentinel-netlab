@@ -16,7 +16,7 @@ class OUIDatabase:
     OUI (Organizationally Unique Identifier) database for vendor lookup.
     Supports loading from local JSON file and updates.
     """
-    
+
     # Embedded common OUIs (subset for offline use)
     EMBEDDED_OUI = {
         "00:00:0C": "Cisco",
@@ -74,31 +74,31 @@ class OUIDatabase:
         "F0:9F:C2": "Ubiquiti",
         "F4:F2:6D": "TP-Link"
     }
-    
+
     # Trusted enterprise vendors (lower risk)
     TRUSTED_VENDORS = [
         "cisco", "aruba", "juniper", "fortinet", "meraki",
         "ruckus", "ubiquiti", "hp", "arista"
     ]
-    
+
     # Consumer vendors (moderate risk)
     CONSUMER_VENDORS = [
         "tp-link", "netgear", "linksys", "d-link", "asus", "belkin",
         "edimax", "tenda", "zyxel"
     ]
-    
+
     def __init__(self, oui_file: Optional[str] = None):
         """
         Initialize OUI database.
-        
+
         Args:
             oui_file: Path to JSON OUI database file
         """
         self._db: Dict[str, str] = dict(self.EMBEDDED_OUI)
-        
+
         if oui_file and Path(oui_file).exists():
             self._load_file(oui_file)
-    
+
     def _load_file(self, path: str) -> None:
         """Load OUI database from JSON file"""
         try:
@@ -108,29 +108,29 @@ class OUIDatabase:
                 logger.info(f"Loaded {len(data)} OUIs from {path}")
         except Exception as e:
             logger.warning(f"Failed to load OUI file: {e}")
-    
+
     def lookup(self, mac: str) -> Optional[str]:
         """
         Lookup vendor name from MAC address.
-        
+
         Args:
             mac: MAC address (any format)
-            
+
         Returns:
             Vendor name or None
         """
         if not mac:
             return None
-        
+
         # Normalize: extract first 3 octets
         mac = mac.upper().replace('-', ':')
         parts = mac.split(':')
         if len(parts) >= 3:
             oui = ':'.join(parts[:3])
             return self._db.get(oui)
-        
+
         return None
-    
+
     def get_oui(self, mac: str) -> Optional[str]:
         """Extract OUI prefix from MAC address"""
         if not mac:
@@ -140,25 +140,25 @@ class OUIDatabase:
         if len(parts) >= 3:
             return ':'.join(parts[:3])
         return None
-    
+
     def is_trusted_vendor(self, vendor: Optional[str]) -> bool:
         """Check if vendor is enterprise/trusted"""
         if not vendor:
             return False
         vendor_lower = vendor.lower()
         return any(t in vendor_lower for t in self.TRUSTED_VENDORS)
-    
+
     def is_consumer_vendor(self, vendor: Optional[str]) -> bool:
         """Check if vendor is consumer-grade"""
         if not vendor:
             return False
         vendor_lower = vendor.lower()
         return any(c in vendor_lower for c in self.CONSUMER_VENDORS)
-    
+
     def get_vendor_risk(self, vendor: Optional[str]) -> float:
         """
         Get vendor risk score (0.0 = trusted, 1.0 = unknown).
-        
+
         Returns:
             0.0: Trusted enterprise vendor
             0.3: Consumer vendor
@@ -171,14 +171,14 @@ class OUIDatabase:
         if self.is_consumer_vendor(vendor):
             return 0.3
         return 0.5
-    
+
     def update_from_url(self, url: str) -> bool:
         """
         Update OUI database from remote URL.
-        
+
         Args:
             url: URL to JSON OUI database
-            
+
         Returns:
             True if updated successfully
         """
@@ -193,7 +193,7 @@ class OUIDatabase:
         except Exception as e:
             logger.error(f"Failed to update OUI database: {e}")
             return False
-    
+
     def save(self, path: str) -> bool:
         """Save current database to file"""
         try:
@@ -203,7 +203,7 @@ class OUIDatabase:
         except Exception as e:
             logger.error(f"Failed to save OUI database: {e}")
             return False
-    
+
     def __len__(self) -> int:
         return len(self._db)
 

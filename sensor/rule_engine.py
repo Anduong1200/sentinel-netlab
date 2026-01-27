@@ -40,7 +40,7 @@ class MitreAttack:
     technique_name: str
     tactic: str
     url: str = ""
-    
+
     def __post_init__(self):
         if not self.url:
             self.url = f"https://attack.mitre.org/techniques/{self.technique_id.replace('.', '/')}/"
@@ -71,7 +71,7 @@ class Alert:
     evidence: List[Evidence] = field(default_factory=list)
     mitre_attack: Optional[MitreAttack] = None
     score: float = 0.0
-    
+
     def to_dict(self) -> Dict:
         result = asdict(self)
         result['severity'] = self.severity.value
@@ -89,24 +89,24 @@ class DetectionRule:
     description: str
     severity: Severity
     enabled: bool = True
-    
+
     # Conditions (all must match for rule to fire)
     conditions: List[Dict[str, Any]] = field(default_factory=list)
-    
+
     # Thresholds
     threshold: Optional[Dict[str, Any]] = None
-    
+
     # Time window for aggregation
     window_seconds: int = 0
-    
+
     # MITRE mapping
     mitre_technique_id: str = ""
     mitre_technique_name: str = ""
     mitre_tactic: str = ""
-    
+
     # Rate limiting
     cooldown_seconds: int = 300
-    
+
     @classmethod
     def from_dict(cls, data: Dict) -> 'DetectionRule':
         return cls(
@@ -127,7 +127,7 @@ class DetectionRule:
 
 class ConditionEvaluator:
     """Evaluate rule conditions against data"""
-    
+
     OPERATORS = {
         'eq': operator.eq,
         '==': operator.eq,
@@ -147,113 +147,113 @@ class ConditionEvaluator:
         'regex': lambda a, b: bool(re.search(b, str(a))) if a else False,
         'exists': lambda a, b: a is not None if b else a is None,
     }
-    
+
     def evaluate(self, condition: Dict, data: Dict) -> bool:
         """Evaluate a single condition against data"""
         field = condition.get('field')
         op = condition.get('op', 'eq')
         value = condition.get('value')
-        
+
         # Get field value from data (supports nested fields with dot notation)
         actual = self._get_field(data, field)
-        
+
         # Get operator function
         op_func = self.OPERATORS.get(op)
         if not op_func:
             logger.warning(f"Unknown operator: {op}")
             return False
-        
+
         try:
             return op_func(actual, value)
         except (TypeError, ValueError) as e:
             logger.debug(f"Condition evaluation error: {e}")
             return False
-    
+
     def evaluate_all(self, conditions: List[Dict], data: Dict) -> bool:
         """Evaluate all conditions (AND logic)"""
         if not conditions:
             return False
         return all(self.evaluate(c, data) for c in conditions)
-    
+
     def _get_field(self, data: Dict, field: str) -> Any:
         """Get nested field value using dot notation"""
         if not field:
             return None
-        
+
         parts = field.split('.')
         value = data
-        
+
         for part in parts:
             if isinstance(value, dict):
                 value = value.get(part)
             else:
                 return None
-        
+
         return value
 
 
 class RuleEngine:
     """Rule-based detection engine"""
-    
+
     def __init__(self, rules_path: Optional[Path] = None):
         self.rules: Dict[str, DetectionRule] = {}
         self.evaluator = ConditionEvaluator()
         self.last_fired: Dict[str, datetime] = {}  # For cooldown
         self.alert_count = 0
-        
+
         if rules_path:
             self.load_rules(rules_path)
-    
+
     def load_rules(self, path: Path):
         """Load rules from JSON file"""
         with open(path, 'r') as f:
             data = json.load(f)
-        
+
         for rule_data in data.get('rules', []):
             rule = DetectionRule.from_dict(rule_data)
             self.rules[rule.rule_id] = rule
             logger.info(f"Loaded rule: {rule.rule_id} - {rule.name}")
-        
+
         logger.info(f"Loaded {len(self.rules)} detection rules")
-    
+
     def add_rule(self, rule: DetectionRule):
         """Add a rule programmatically"""
         self.rules[rule.rule_id] = rule
-    
+
     def evaluate(self, data: Dict, sensor_id: str = "") -> List[Alert]:
         """Evaluate all rules against data, return triggered alerts"""
         alerts = []
-        
+
         for rule_id, rule in self.rules.items():
             if not rule.enabled:
                 continue
-            
+
             # Check cooldown
             if self._in_cooldown(rule_id, rule.cooldown_seconds):
                 continue
-            
+
             # Evaluate conditions
             if self.evaluator.evaluate_all(rule.conditions, data):
                 alert = self._create_alert(rule, data, sensor_id)
                 alerts.append(alert)
                 self.last_fired[rule_id] = datetime.now(timezone.utc)
                 logger.info(f"Alert: [{rule.severity.value.upper()}] {rule.name}")
-        
+
         return alerts
-    
+
     def _in_cooldown(self, rule_id: str, cooldown_seconds: int) -> bool:
         """Check if rule is in cooldown period"""
         if rule_id not in self.last_fired:
             return False
-        
+
         elapsed = (datetime.now(timezone.utc) - self.last_fired[rule_id]).total_seconds()
         return elapsed < cooldown_seconds
-    
+
     def _create_alert(self, rule: DetectionRule, data: Dict, sensor_id: str) -> Alert:
         """Create alert from triggered rule"""
         self.alert_count += 1
         alert_id = f"ALT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}"
-        
+
         # Build evidence
         evidence = [
             Evidence(
@@ -263,7 +263,7 @@ class RuleEngine:
                 description="Data that triggered the alert"
             )
         ]
-        
+
         # Build MITRE mapping
         mitre = None
         if rule.mitre_technique_id:
@@ -272,7 +272,7 @@ class RuleEngine:
                 technique_name=rule.mitre_technique_name,
                 tactic=rule.mitre_tactic
             )
-        
+
         return Alert(
             alert_id=alert_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
@@ -378,28 +378,28 @@ def create_default_rules_file(path: Path):
 
 def main():
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Rule Engine CLI')
     parser.add_argument('--rules', type=Path, help='Path to rules JSON file')
     parser.add_argument('--create-default', type=Path, help='Create default rules file')
     parser.add_argument('--test', action='store_true', help='Run test with sample data')
-    
+
     args = parser.parse_args()
-    
+
     if args.create_default:
         create_default_rules_file(args.create_default)
         return
-    
+
     # Initialize engine
     engine = RuleEngine()
-    
+
     if args.rules:
         engine.load_rules(args.rules)
     else:
         # Load default rules
         for rule_data in DEFAULT_RULES['rules']:
             engine.add_rule(DetectionRule.from_dict(rule_data))
-    
+
     if args.test:
         # Test with sample data
         test_data = [
@@ -408,11 +408,11 @@ def main():
             {"bssid": "AA:BB:CC:77:88:99", "ssid": "OldRouter", "security": "WEP", "rssi_dbm": -70},
             {"bssid": "AA:BB:CC:AA:BB:CC", "ssid": "FREE_STARBUCKS_WIFI", "security": "Open", "rssi_dbm": -25},
         ]
-        
+
         print("\n" + "="*60)
         print("RULE ENGINE TEST")
         print("="*60)
-        
+
         for data in test_data:
             print(f"\nTesting: {data.get('ssid')} ({data.get('security')})")
             alerts = engine.evaluate(data, sensor_id="test-sensor")

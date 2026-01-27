@@ -48,21 +48,21 @@ def run_labeling(input_path: str, output_path: str) -> None:
     # Load data
     with open(input_path, 'r') as f:
         networks = json.load(f)
-    
+
     if isinstance(networks, dict) and 'networks' in networks:
         networks = networks['networks']
-    
+
     labeled = []
     total = len(networks)
-    
+
     print(f"\nLoaded {total} networks from {input_path}")
     print("Enter labels for each network. Press Ctrl+C to save and exit.\n")
-    
+
     try:
         for i, net in enumerate(networks):
             display_network(net, i, total)
             label = get_label()
-            
+
             if label:
                 labeled.append({
                     "bssid": net.get("bssid"),
@@ -75,14 +75,14 @@ def run_labeling(input_path: str, output_path: str) -> None:
                 print(f"  -> Labeled as {label}")
             else:
                 print("  -> Skipped")
-                
+
     except KeyboardInterrupt:
         print("\n\nLabeling interrupted.")
-    
+
     # Save
     with open(output_path, 'w') as f:
         json.dump(labeled, f, indent=2)
-    
+
     print(f"\nSaved {len(labeled)} labeled networks to {output_path}")
 
 
@@ -90,11 +90,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Label WiFi networks for ML training")
     parser.add_argument("--input", "-i", required=True, help="Input JSON file with networks")
     parser.add_argument("--output", "-o", default="data/labeled_networks.json", help="Output file for labeled data")
-    
+
     args = parser.parse_args()
-    
+
     if not os.path.exists(args.input):
         print(f"Error: Input file not found: {args.input}")
         exit(1)
-    
+
     run_labeling(args.input, args.output)

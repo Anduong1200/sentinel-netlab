@@ -58,18 +58,18 @@ def setup_json_logging(app_name='sentinel-sensor'):
     """
     logger = logging.getLogger()
     logHandler = logging.StreamHandler()
-    
+
     # Custom JSON formatter
     formatter = jsonlogger.JsonFormatter(
         '%(asctime)s %(levelname)s %(name)s %(message)s %(module)s %(funcName)s'
     )
     logHandler.setFormatter(formatter)
-    
+
     # Reset handlers and add JSON handler
     logger.handlers = []
     logger.addHandler(logHandler)
     logger.setLevel(logging.INFO)
-    
+
     return logger
 
 # -----------------------------------------------------------------------------

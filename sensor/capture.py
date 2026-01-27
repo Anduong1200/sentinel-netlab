@@ -22,15 +22,15 @@ class CaptureEngine:
     - Channel hopping
     - Packet sniffing
     """
-    
+
     # Default 2.4GHz channels (non-overlapping first)
     DEFAULT_CHANNELS = [1, 6, 11, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13]
     QUICK_CHANNELS = [1, 6, 11]  # For fast scanning
-    
+
     def __init__(self, interface: str = "wlan0"):
         """
         Initialize capture engine.
-        
+
         Args:
             interface: Wireless interface name (default: wlan0)
         """
@@ -41,7 +41,7 @@ class CaptureEngine:
         self.current_channel = 1
         self.dwell_time = 0.4  # seconds per channel
         self.channels = self.QUICK_CHANNELS.copy()
-        
+
     def check_interface_exists(self) -> bool:
         """Check if the wireless interface exists."""
         try:
@@ -53,7 +53,7 @@ class CaptureEngine:
         except Exception as e:
             logger.error(f"Failed to check interface: {e}")
             return False
-    
+
     def get_interface_mode(self) -> Optional[str]:
         """Get current interface mode (managed/monitor)."""
         try:
@@ -68,11 +68,11 @@ class CaptureEngine:
         except Exception as e:
             logger.error(f"Failed to get interface mode: {e}")
             return None
-    
+
     def enable_monitor_mode(self) -> bool:
         """
         Enable monitor mode on the wireless interface.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -82,25 +82,25 @@ class CaptureEngine:
             if current_mode == "monitor":
                 logger.info(f"{self.interface} already in monitor mode")
                 return True
-            
+
             # Bring interface down
             subprocess.run(
                 ["ip", "link", "set", self.interface, "down"],
                 check=True, timeout=5
             )
-            
+
             # Set monitor mode
             subprocess.run(
                 ["iw", "dev", self.interface, "set", "type", "monitor"],
                 check=True, timeout=5
             )
-            
+
             # Bring interface up
             subprocess.run(
                 ["ip", "link", "set", self.interface, "up"],
                 check=True, timeout=5
             )
-            
+
             # Verify
             if self.get_interface_mode() == "monitor":
                 logger.info(f"Monitor mode enabled on {self.interface}")
@@ -108,18 +108,18 @@ class CaptureEngine:
             else:
                 logger.error("Failed to verify monitor mode")
                 return False
-                
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to enable monitor mode: {e}")
             return False
         except Exception as e:
             logger.error(f"Unexpected error enabling monitor mode: {e}")
             return False
-    
+
     def disable_monitor_mode(self) -> bool:
         """
         Disable monitor mode and return to managed mode.
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -141,14 +141,14 @@ class CaptureEngine:
         except Exception as e:
             logger.error(f"Failed to disable monitor mode: {e}")
             return False
-    
+
     def set_channel(self, channel: int) -> bool:
         """
         Set the wireless interface to a specific channel.
-        
+
         Args:
             channel: Channel number (1-14 for 2.4GHz)
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -162,7 +162,7 @@ class CaptureEngine:
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to set channel {channel}: {e}")
             return False
-    
+
     def _channel_hopper(self):
         """Background thread for channel hopping."""
         channel_idx = 0
@@ -171,9 +171,9 @@ class CaptureEngine:
             self.set_channel(channel)
             channel_idx += 1
             time.sleep(self.dwell_time)
-    
+
     def start_capture(
-        self, 
+        self,
         packet_callback: Callable,
         channels: Optional[List[int]] = None,
         dwell_time: float = 0.4,
@@ -181,30 +181,30 @@ class CaptureEngine:
     ) -> bool:
         """
         Start packet capture with optional channel hopping.
-        
+
         Args:
             packet_callback: Function to call for each captured packet
             channels: List of channels to hop (default: [1, 6, 11])
             dwell_time: Time to stay on each channel in seconds
             enable_channel_hop: Whether to enable channel hopping
-            
+
         Returns:
             True if capture started successfully
         """
         if self.is_capturing:
             logger.warning("Capture already running")
             return False
-        
+
         # Configure
         self.channels = channels or self.QUICK_CHANNELS.copy()
         self.dwell_time = dwell_time
-        
+
         # Enable monitor mode if needed
         if self.get_interface_mode() != "monitor":
             if not self.enable_monitor_mode():
                 logger.error("Cannot start capture without monitor mode")
                 return False
-        
+
         # Start sniffer
         try:
             self.sniffer = AsyncSniffer(
@@ -216,40 +216,40 @@ class CaptureEngine:
             self.sniffer.start()
             self.is_capturing = True
             logger.info(f"Capture started on {self.interface}")
-            
+
             # Start channel hopping
             if enable_channel_hop:
                 self.channel_hopper_thread = threading.Thread(
-                    target=self._channel_hopper, 
+                    target=self._channel_hopper,
                     daemon=True
                 )
                 self.channel_hopper_thread.start()
                 logger.info(f"Channel hopping started: {self.channels}")
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to start capture: {e}")
             self.is_capturing = False
             return False
-    
+
     def stop_capture(self):
         """Stop packet capture."""
         self.is_capturing = False
-        
+
         if self.sniffer:
             try:
                 self.sniffer.stop()
                 self.sniffer = None
             except Exception as e:
                 logger.warning(f"Error stopping sniffer: {e}")
-        
+
         # Wait for channel hopper to stop
         if self.channel_hopper_thread and self.channel_hopper_thread.is_alive():
             self.channel_hopper_thread.join(timeout=2)
-        
+
         logger.info("Capture stopped")
-    
+
     def get_current_channel(self) -> int:
         """Get the current channel."""
         return self.current_channel
@@ -257,10 +257,10 @@ class CaptureEngine:
     def inject_frame(self, packet) -> bool:
         """
         Inject a raw frame into the interface.
-        
+
         Args:
             packet: Scapy packet to send
-            
+
         Returns:
             True if sent successfully
         """
@@ -288,7 +288,7 @@ class CaptureEngine:
 def check_monitor_support(interface: str = "wlan0") -> dict:
     """
     Check if the interface supports monitor mode.
-    
+
     Returns:
         Dictionary with interface info and recommendations
     """
@@ -299,9 +299,9 @@ def check_monitor_support(interface: str = "wlan0") -> dict:
         "monitor_capable": False,
         "recommendations": []
     }
-    
+
     engine = CaptureEngine(interface)
-    
+
     # Check existence
     result["exists"] = engine.check_interface_exists()
     if not result["exists"]:
@@ -309,10 +309,10 @@ def check_monitor_support(interface: str = "wlan0") -> dict:
             f"Interface {interface} not found. Check USB passthrough and driver."
         )
         return result
-    
+
     # Check current mode
     result["current_mode"] = engine.get_interface_mode()
-    
+
     # Try to enable monitor mode
     if engine.enable_monitor_mode():
         result["monitor_capable"] = True
@@ -321,7 +321,7 @@ def check_monitor_support(interface: str = "wlan0") -> dict:
         result["recommendations"].append(
             "Cannot enable monitor mode. Check driver compatibility."
         )
-    
+
     return result
 
 
@@ -330,13 +330,13 @@ if __name__ == "__main__":
     print("=" * 50)
     print("WiFi Capture Module Test")
     print("=" * 50)
-    
+
     result = check_monitor_support("wlan0")
     print(f"Interface: {result['interface']}")
     print(f"Exists: {result['exists']}")
     print(f"Current Mode: {result['current_mode']}")
     print(f"Monitor Capable: {result['monitor_capable']}")
-    
+
     if result["recommendations"]:
         print("\nRecommendations:")
         for rec in result["recommendations"]:

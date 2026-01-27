@@ -18,7 +18,7 @@ class TelemetryNormalizer:
     Normalizes parsed 802.11 frames to canonical telemetry JSON.
     Handles SSID encoding, vendor lookup, and field standardization.
     """
-    
+
     # Common OUI database (subset)
     DEFAULT_OUI_DB = {
         "00:1A:2B": "Cisco",
@@ -45,14 +45,14 @@ class TelemetryNormalizer:
         "58:6D:8F": "Cisco-Linksys",
         "C0:C1:C0": "Cisco-Linksys",
     }
-    
+
     # Channel to frequency mapping
     CHANNEL_FREQ_2G = {
         1: 2412, 2: 2417, 3: 2422, 4: 2427, 5: 2432,
         6: 2437, 7: 2442, 8: 2447, 9: 2452, 10: 2457,
         11: 2462, 12: 2467, 13: 2472, 14: 2484
     }
-    
+
     def __init__(
         self,
         sensor_id: str,
@@ -62,7 +62,7 @@ class TelemetryNormalizer:
     ):
         """
         Initialize normalizer.
-        
+
         Args:
             sensor_id: Unique sensor identifier
             capture_method: Capture method identifier
@@ -73,34 +73,34 @@ class TelemetryNormalizer:
         self.capture_method = capture_method
         self.oui_db = oui_db or self.DEFAULT_OUI_DB
         self.anonymize_ssid = anonymize_ssid
-        
+
         self._sequence_id = 0
         self._start_time = datetime.now(timezone.utc)
-    
+
     def normalize(self, parsed_frame: Any) -> TelemetryFrame:
         """
         Convert parsed frame to TelemetryFrame.
-        
+
         Args:
             parsed_frame: ParsedFrame from FrameParser
-            
+
         Returns:
             TelemetryFrame with canonical fields
         """
         self._sequence_id += 1
-        
+
         # Get vendor info
         vendor_oui = self._extract_oui(parsed_frame.bssid)
         vendor_name = self._lookup_vendor(vendor_oui)
-        
+
         # Calculate frequency
         frequency = self._channel_to_freq(parsed_frame.channel)
-        
+
         # Handle SSID
         ssid = parsed_frame.ssid
         if self.anonymize_ssid and ssid:
             ssid = self._anonymize(ssid)
-        
+
         # Build capabilities
         caps = Capabilities(
             privacy=parsed_frame.privacy,
@@ -113,7 +113,7 @@ class TelemetryNormalizer:
             ibss=parsed_frame.ibss,
             ies_present=parsed_frame.ies_present
         )
-        
+
         # Build IE dictionary
         ie = {}
         if parsed_frame.rsn_info:
@@ -124,10 +124,10 @@ class TelemetryNormalizer:
             ie['beacon_interval'] = parsed_frame.beacon_interval
         if parsed_frame.ies:
             ie.update(parsed_frame.ies)
-        
+
         # Calculate uptime
         uptime = (datetime.now(timezone.utc) - self._start_time).total_seconds()
-        
+
         return TelemetryFrame(
             sensor_id=self.sensor_id,
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
@@ -148,7 +148,7 @@ class TelemetryNormalizer:
             parse_error=parsed_frame.parse_error,
             ssid_decoding_error=parsed_frame.ssid_decoding_error
         )
-    
+
     def _extract_oui(self, mac: str) -> Optional[str]:
         """Extract OUI from MAC address"""
         if not mac:
@@ -157,13 +157,13 @@ class TelemetryNormalizer:
         if len(parts) >= 3:
             return ':'.join(parts[:3]).upper()
         return None
-    
+
     def _lookup_vendor(self, oui: Optional[str]) -> Optional[str]:
         """Lookup vendor name from OUI"""
         if not oui:
             return None
         return self.oui_db.get(oui.upper())
-    
+
     def _channel_to_freq(self, channel: int) -> int:
         """Convert channel number to frequency in MHz"""
         if channel in self.CHANNEL_FREQ_2G:
@@ -172,12 +172,12 @@ class TelemetryNormalizer:
             # 5 GHz bands (simplified)
             return 5000 + (channel * 5)
         return 0
-    
+
     def _anonymize(self, ssid: str) -> str:
         """Hash SSID for privacy"""
         hash_val = hashlib.sha256(ssid.encode()).hexdigest()[:8]
         return f"ANON_{len(ssid)}_{hash_val}"
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get normalizer statistics"""
         return {

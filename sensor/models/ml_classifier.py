@@ -18,10 +18,10 @@ MODEL_PATH = "models/risk_classifier.joblib"
 def predict_risk(features: Dict[str, float]) -> Dict:
     """
     Predict risk using ML model if available, else return None.
-    
+
     Args:
         features: Normalized feature vector from FeatureExtractor
-        
+
     Returns:
         Dict with 'score' and 'probability' or None if model not available
     """
@@ -40,18 +40,18 @@ def predict_risk(features: Dict[str, float]) -> Dict:
         logger.debug("scikit-learn not installed, skipping ML prediction")
     except Exception as e:
         logger.warning(f"ML prediction failed: {e}")
-    
+
     return None
 
 
 def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
     """
     Train a simple Logistic Regression model from labeled data.
-    
+
     Args:
         labeled_data: List of {"features": {...}, "label": "HIGH"/"LOW"}
         save_path: Path to save the trained model
-        
+
     Returns:
         Dict with training metrics
     """
@@ -60,22 +60,22 @@ def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
         from sklearn.model_selection import cross_val_score
         import joblib
         import numpy as np
-        
+
         # Prepare data
         X = [list(d["features"].values()) for d in labeled_data]
         y = [1 if d["label"] in ["HIGH", "MEDIUM"] else 0 for d in labeled_data]
-        
+
         # Train
         model = LogisticRegression(max_iter=500)
         model.fit(X, y)
-        
+
         # Evaluate with cross-validation
         scores = cross_val_score(model, X, y, cv=5, scoring='roc_auc')
-        
+
         # Save
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         joblib.dump(model, save_path)
-        
+
         return {
             "status": "success",
             "samples": len(labeled_data),
@@ -83,7 +83,7 @@ def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
             "auc_std": round(np.std(scores), 3),
             "model_path": save_path
         }
-        
+
     except ImportError:
         return {"error": "scikit-learn not installed. Run: pip install scikit-learn joblib"}
     except Exception as e:
@@ -100,7 +100,7 @@ class RiskClassifier:
         self.model = None
         self.model_path = model_path
         self._load()
-    
+
     def _load(self):
         try:
             import joblib
@@ -109,7 +109,7 @@ class RiskClassifier:
                 logger.info(f"Loaded ML model from {self.model_path}")
         except Exception as e:
             logger.warning(f"Could not load model: {e}")
-    
+
     def predict(self, features: Dict[str, float]) -> Optional[Dict]:
         if self.model is None:
             return None

@@ -66,7 +66,7 @@ class NetworkInfo:
     vendor: Optional[str] = None
 
 
-@dataclass 
+@dataclass
 class AuditReport:
     """Complete audit report"""
     audit_id: str
@@ -76,7 +76,7 @@ class AuditReport:
     networks_scanned: int
     findings: List[Finding]
     summary: Dict[str, int]
-    
+
     def to_dict(self):
         return {
             'audit_id': self.audit_id,
@@ -91,12 +91,12 @@ class AuditReport:
 
 class SecurityAuditor:
     """Perform security checks on discovered networks"""
-    
+
     def __init__(self, sensor_id: str):
         self.sensor_id = sensor_id
         self.findings: List[Finding] = []
         self.networks: List[NetworkInfo] = []
-        
+
     def check_open_networks(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for open (unencrypted) networks"""
         if network.security.upper() == 'OPEN':
@@ -111,7 +111,7 @@ class SecurityAuditor:
                 references=["NIST SP 800-153", "CIS Wireless Benchmark"]
             )
         return None
-    
+
     def check_wep_networks(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for WEP encryption (deprecated)"""
         if 'WEP' in network.security.upper():
@@ -126,7 +126,7 @@ class SecurityAuditor:
                 references=["CVE-2001-0131", "aircrack-ng documentation"]
             )
         return None
-    
+
     def check_wps_enabled(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for WPS (vulnerable to brute force)"""
         if network.wps_enabled:
@@ -141,7 +141,7 @@ class SecurityAuditor:
                 references=["CVE-2011-5053", "Reaver documentation"]
             )
         return None
-    
+
     def check_pmf_disabled(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for missing Protected Management Frames (802.11w)"""
         if 'WPA2' in network.security.upper() or 'WPA3' in network.security.upper():
@@ -157,7 +157,7 @@ class SecurityAuditor:
                     references=["IEEE 802.11w", "NIST SP 800-153"]
                 )
         return None
-    
+
     def check_hidden_ssid(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for hidden SSID (false sense of security)"""
         if network.hidden:
@@ -172,7 +172,7 @@ class SecurityAuditor:
                 references=["OWASP Wireless Testing Guide"]
             )
         return None
-    
+
     def check_suspicious_ssid(self, network: NetworkInfo) -> Optional[Finding]:
         """Check for suspicious SSID patterns"""
         suspicious_patterns = [
@@ -181,7 +181,7 @@ class SecurityAuditor:
             ('XFINITY', 'Possible evil twin'),
             ('STARBUCKS', 'Possible evil twin'),
         ]
-        
+
         if network.ssid:
             for pattern, reason in suspicious_patterns:
                 if pattern.lower() in network.ssid.lower():
@@ -197,11 +197,11 @@ class SecurityAuditor:
                             references=["Evil Twin Attack", "OWASP"]
                         )
         return None
-    
+
     def audit_network(self, network: NetworkInfo):
         """Run all checks on a network"""
         self.networks.append(network)
-        
+
         checks = [
             self.check_open_networks,
             self.check_wep_networks,
@@ -210,7 +210,7 @@ class SecurityAuditor:
             self.check_hidden_ssid,
             self.check_suspicious_ssid,
         ]
-        
+
         for check in checks:
             finding = check(network)
             if finding:
@@ -224,7 +224,7 @@ class SecurityAuditor:
                 }
                 logger.log(log_level.get(finding.severity, logging.INFO),
                           f"[{finding.severity}] {finding.title}: {finding.description}")
-    
+
     def generate_report(self, duration_sec: float) -> AuditReport:
         """Generate final audit report"""
         summary = {
@@ -234,10 +234,10 @@ class SecurityAuditor:
             'LOW': 0,
             'INFO': 0,
         }
-        
+
         for finding in self.findings:
             summary[finding.severity] += 1
-        
+
         return AuditReport(
             audit_id=f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             timestamp=datetime.now(timezone.utc).isoformat(),
@@ -252,7 +252,7 @@ class SecurityAuditor:
 def scan_mock_networks() -> List[NetworkInfo]:
     """Generate mock networks for testing"""
     return [
-        NetworkInfo(bssid="AA:BB:CC:11:22:33", ssid="SecureNet", channel=6, 
+        NetworkInfo(bssid="AA:BB:CC:11:22:33", ssid="SecureNet", channel=6,
                    rssi_dbm=-45, security="WPA2", pmf_enabled=True),
         NetworkInfo(bssid="AA:BB:CC:44:55:66", ssid="OpenCafe", channel=1,
                    rssi_dbm=-65, security="Open"),
@@ -270,7 +270,7 @@ def scan_mock_networks() -> List[NetworkInfo]:
 def run_audit(args):
     """Main audit function"""
     start_time = datetime.now(timezone.utc)
-    
+
     print("\n" + "="*60)
     print("🔍 SENTINEL NETLAB SECURITY AUDIT")
     print("="*60)
@@ -278,9 +278,9 @@ def run_audit(args):
     print(f"Interface: {args.iface}")
     print(f"Started:   {start_time.isoformat()}")
     print("="*60 + "\n")
-    
+
     auditor = SecurityAuditor(args.sensor_id)
-    
+
     # Get networks (mock or real)
     if args.mock:
         logger.info("Using mock network data")
@@ -289,27 +289,27 @@ def run_audit(args):
         logger.info(f"Scanning on {args.iface}...")
         # TODO: Implement real scanning
         networks = scan_mock_networks()
-    
+
     logger.info(f"Found {len(networks)} networks")
-    
+
     # Run audit checks
     for network in networks:
         ssid_display = network.ssid or "[Hidden]"
         logger.info(f"Auditing: {ssid_display} ({network.bssid})")
         auditor.audit_network(network)
-    
+
     # Generate report
     end_time = datetime.now(timezone.utc)
     duration = (end_time - start_time).total_seconds()
     report = auditor.generate_report(duration)
-    
+
     # Save report
     output_path = Path(args.output)
     with open(output_path, 'w') as f:
         json.dump(report.to_dict(), f, indent=2)
-    
+
     logger.info(f"Report saved to {output_path}")
-    
+
     # Print summary
     print("\n" + "="*60)
     print("AUDIT SUMMARY")
@@ -323,7 +323,7 @@ def run_audit(args):
     print(f"  LOW:      {report.summary['LOW']}")
     print(f"  INFO:     {report.summary['INFO']}")
     print("="*60 + "\n")
-    
+
     # Return exit code based on findings
     if report.summary['CRITICAL'] > 0:
         return 2
@@ -348,14 +348,14 @@ IMPORTANT: Use only on networks you own or have authorization to assess.
 See ETHICS.md for legal guidelines.
         """
     )
-    
+
     parser.add_argument('--sensor-id', default='audit-cli', help='Sensor identifier')
     parser.add_argument('--iface', default='wlan0', help='WiFi interface')
     parser.add_argument('--output', default='audit_report.json', help='Output file')
     parser.add_argument('--mock', action='store_true', help='Use mock data')
-    
+
     args = parser.parse_args()
-    
+
     sys.exit(run_audit(args))
 
 

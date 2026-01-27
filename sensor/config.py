@@ -83,18 +83,18 @@ class ConfigManager:
     """
     Manages configuration loading, saving, and access.
     """
-    
+
     def __init__(self, config_path: str = DEFAULT_CONFIG_PATH):
         """
         Initialize configuration manager.
-        
+
         Args:
             config_path: Path to JSON config file
         """
         self.config_path = Path(config_path)
         self.config = Config()
         self._load_config()
-    
+
     def _load_config(self):
         """Load configuration from file or use defaults."""
         if self.config_path.exists():
@@ -107,38 +107,38 @@ class ConfigManager:
                 logger.warning(f"Failed to load config: {e}, using defaults")
         else:
             logger.info("No config file found, using defaults")
-        
+
         # Also check for environment variables
         self._apply_env_vars()
-    
+
     def _apply_dict(self, data: Dict[str, Any]):
         """Apply dictionary values to config."""
         if "capture" in data:
             for key, value in data["capture"].items():
                 if hasattr(self.config.capture, key):
                     setattr(self.config.capture, key, value)
-        
+
         if "storage" in data:
             for key, value in data["storage"].items():
                 if hasattr(self.config.storage, key):
                     setattr(self.config.storage, key, value)
-        
+
         if "api" in data:
             for key, value in data["api"].items():
                 if hasattr(self.config.api, key):
                     setattr(self.config.api, key, value)
-        
+
         if "risk" in data:
             for key, value in data["risk"].items():
                 if hasattr(self.config.risk, key):
                     setattr(self.config.risk, key, value)
-        
+
         if "mock_mode" in data:
             self.config.mock_mode = data["mock_mode"]
-        
+
         if "log_level" in data:
             self.config.log_level = data["log_level"]
-    
+
     def _apply_env_vars(self):
         """Override config with environment variables."""
         env_mappings = {
@@ -150,7 +150,7 @@ class ConfigManager:
             "WIFI_SCANNER_DB_PATH": ("storage", "db_path"),
             "WIFI_SCANNER_LOG_LEVEL": ("log_level", None),
         }
-        
+
         for env_var, mapping in env_mappings.items():
             value = os.environ.get(env_var)
             if value is not None:
@@ -160,31 +160,31 @@ class ConfigManager:
                         converter = str
                     else:
                         section, key, converter = mapping
-                    
+
                     converted_value = converter(value)
-                    
+
                     if key is None:
                         setattr(self.config, section, converted_value)
                     else:
                         section_obj = getattr(self.config, section)
                         setattr(section_obj, key, converted_value)
-                    
+
                     logger.debug(f"Applied {env_var}={value}")
                 except Exception as e:
                     logger.warning(f"Failed to apply {env_var}: {e}")
-    
+
     def save_config(self, path: Optional[str] = None):
         """
         Save current configuration to file.
-        
+
         Args:
             path: Optional path (uses default if not specified)
         """
         save_path = Path(path) if path else self.config_path
-        
+
         # Ensure directory exists
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Convert to dictionary
         data = {
             "capture": asdict(self.config.capture),
@@ -194,12 +194,12 @@ class ConfigManager:
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }
-        
+
         with open(save_path, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         logger.info(f"Config saved to {save_path}")
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Export configuration as dictionary."""
         return {
@@ -210,7 +210,7 @@ class ConfigManager:
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }
-    
+
     def get_safe_dict(self) -> Dict[str, Any]:
         """Export configuration without sensitive values (for logging/API)."""
         data = self.to_dict()
@@ -244,10 +244,10 @@ def get_config_manager() -> ConfigManager:
 def init_config(config_path: str = DEFAULT_CONFIG_PATH) -> Config:
     """
     Initialize configuration from file.
-    
+
     Args:
         config_path: Path to configuration JSON file
-        
+
     Returns:
         Configuration object
     """
@@ -268,10 +268,10 @@ def generate_sample_config(output_path: str = "./sample_config.json"):
         "mock_mode": False,
         "log_level": "INFO",
     }
-    
+
     with open(output_path, 'w') as f:
         json.dump(data, f, indent=2)
-    
+
     print(f"Sample config written to {output_path}")
 
 
@@ -280,26 +280,26 @@ if __name__ == "__main__":
     print("=" * 50)
     print("WiFi Scanner Configuration Module Test")
     print("=" * 50)
-    
+
     # Initialize with defaults
     config = get_config()
-    
+
     print("\nCapture Settings:")
     print(f"  Interface: {config.capture.interface}")
     print(f"  Channels: {config.capture.channels}")
     print(f"  Dwell Time: {config.capture.dwell_time}s")
-    
+
     print("\nAPI Settings:")
     print(f"  Host: {config.api.host}")
     print(f"  Port: {config.api.port}")
     print(f"  Debug: {config.api.debug}")
-    
+
     print("\nStorage Settings:")
     print(f"  DB Path: {config.storage.db_path}")
     print(f"  PCAP Dir: {config.storage.pcap_dir}")
-    
+
     print(f"\nMock Mode: {config.mock_mode}")
     print(f"Log Level: {config.log_level}")
-    
+
     # Generate sample config
     generate_sample_config("./sample_config.json")

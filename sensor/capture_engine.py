@@ -24,7 +24,7 @@ class CaptureEngine:
     """
     Unified Capture Engine supporting Scapy (Dev) and Tshark (Prod).
     """
-    
+
     def __init__(self, iface: str, backend: str = 'scapy', channels=(1, 6, 11)):
         self.iface = iface
         self.backend = backend
@@ -38,7 +38,7 @@ class CaptureEngine:
 
     def ensure_monitor(self) -> bool:
         """
-        Ensure interface is in monitor mode. 
+        Ensure interface is in monitor mode.
         Returns True if successful, False otherwise.
         """
         try:
@@ -63,14 +63,14 @@ class CaptureEngine:
         """Start capturing packets."""
         if self._is_capturing:
             return
-            
+
         if not self.ensure_monitor():
             logger.error("Cannot start capture: Monitor mode failed")
             return
 
         self._stop.clear()
         self._is_capturing = True
-        
+
         # Start processing worker
         if not self._worker.is_alive():
             self._worker = threading.Thread(target=self._process_loop, daemon=True)
@@ -84,24 +84,24 @@ class CaptureEngine:
         else:
             logger.warning(f"Unknown backend {self.backend}, default to Scapy")
             self._start_scapy_sniffer(packet_callback)
-            
+
         # Start channel hopping
         self._hopper_thread = threading.Thread(target=self._channel_hopper, daemon=True)
         self._hopper_thread.start()
-        
+
         logger.info(f"Capture started on {self.iface} using {self.backend}")
 
     def stop(self):
         """Stop capturing."""
         self._stop.set()
         self._is_capturing = False
-        
+
         if self._sniffer:
             self._sniffer.stop()
-            
+
         if self._hopper_thread:
             self._hopper_thread.join(timeout=2)
-            
+
         logger.info("Capture stopped")
 
     def _start_scapy_sniffer(self, callback):
@@ -118,12 +118,12 @@ class CaptureEngine:
         """Hop through channels"""
         from itertools import cycle
         chan_cycle = cycle(self.channels)
-        
+
         while not self._stop.is_set():
             ch = next(chan_cycle)
             try:
                 subprocess.run(
-                    ["sudo", "iw", "dev", self.iface, "set", "channel", str(ch)], 
+                    ["sudo", "iw", "dev", self.iface, "set", "channel", str(ch)],
                     check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                 )
             except Exception:
@@ -144,7 +144,7 @@ class CaptureEngine:
 
     def get_status(self):
         return {
-            "is_capturing": self._is_capturing, 
+            "is_capturing": self._is_capturing,
             "backend": self.backend,
             "interface": self.iface
         }

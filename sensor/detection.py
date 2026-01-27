@@ -18,22 +18,22 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     """
     Calculate Levenshtein (edit) distance between two strings.
     Used for fuzzy SSID matching to detect Evil Twins.
-    
+
     Args:
         s1: First string
         s2: Second string
-        
+
     Returns:
         Edit distance (number of insertions/deletions/substitutions)
     """
     if len(s1) < len(s2):
         return levenshtein_distance(s2, s1)
-    
+
     if len(s2) == 0:
         return len(s1)
-    
+
     previous_row = range(len(s2) + 1)
-    
+
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
         for j, c2 in enumerate(s2):
@@ -43,30 +43,30 @@ def levenshtein_distance(s1: str, s2: str) -> int:
             substitutions = previous_row[j] + (c1 != c2)
             current_row.append(min(insertions, deletions, substitutions))
         previous_row = current_row
-    
+
     return previous_row[-1]
 
 
 def ssid_similarity(ssid1: str, ssid2: str) -> float:
     """
     Calculate similarity ratio between two SSIDs.
-    
+
     Args:
         ssid1: First SSID
         ssid2: Second SSID
-        
+
     Returns:
         Similarity ratio (0.0 to 1.0, 1.0 = identical)
     """
     if not ssid1 or not ssid2:
         return 0.0
-    
+
     distance = levenshtein_distance(ssid1.lower(), ssid2.lower())
     max_len = max(len(ssid1), len(ssid2))
-    
+
     if max_len == 0:
         return 1.0
-    
+
     return 1.0 - (distance / max_len)
 
 
@@ -75,11 +75,11 @@ class BloomFilter:
     Probabilistic data structure for fast MAC address blacklist lookup.
     Memory efficient for large blacklists with small false positive rate.
     """
-    
+
     def __init__(self, expected_items: int = 10000, false_positive_rate: float = 0.01):
         """
         Initialize Bloom Filter.
-        
+
         Args:
             expected_items: Expected number of items
             false_positive_rate: Acceptable false positive rate
@@ -90,7 +90,7 @@ class BloomFilter:
         self.hash_count = int((self.size / expected_items) * math.log(2))
         self.bit_array = [False] * self.size
         self.item_count = 0
-        
+
     def _hashes(self, item: str) -> List[int]:
         """Generate hash values for an item."""
         hashes = []
@@ -98,17 +98,17 @@ class BloomFilter:
             h = hashlib.sha256(f"{item}{i}".encode()).hexdigest()
             hashes.append(int(h, 16) % self.size)
         return hashes
-    
+
     def add(self, item: str):
         """Add item to filter."""
         for h in self._hashes(item):
             self.bit_array[h] = True
         self.item_count += 1
-    
+
     def contains(self, item: str) -> bool:
         """Check if item might be in filter (may have false positives)."""
         return all(self.bit_array[h] for h in self._hashes(item))
-    
+
     def __contains__(self, item: str) -> bool:
         return self.contains(item)
 
@@ -117,18 +117,18 @@ class EvilTwinDetector:
     """
     Detects Evil Twin attacks using fuzzy SSID matching and BSSID analysis.
     """
-    
+
     def __init__(self, similarity_threshold: float = 0.8):
         """
         Initialize detector.
-        
+
         Args:
             similarity_threshold: Minimum similarity to flag as potential Evil Twin
         """
         self.similarity_threshold = similarity_threshold
         self.known_networks: Dict[str, Dict[str, Any]] = {}  # SSID -> {bssid, encryption, vendor}
         self.alerts: List[Dict[str, Any]] = []
-        
+
     def register_network(self, ssid: str, bssid: str, encryption: str = "", vendor: str = ""):
         """Register a known legitimate network."""
         self.known_networks[ssid.lower()] = {
@@ -138,20 +138,20 @@ class EvilTwinDetector:
             "vendor": vendor,
             "first_seen": datetime.now().isoformat()
         }
-    
+
     def check_network(self, ssid: str, bssid: str, encryption: str = "", vendor: str = "") -> Optional[Dict[str, Any]]:
         """
         Check a network for potential Evil Twin.
-        
+
         Returns:
             Alert dict if suspicious, None otherwise
         """
         if not ssid or ssid == "<Hidden>":
             return None
-            
+
         ssid_lower = ssid.lower()
         bssid_upper = bssid.upper()
-        
+
         # Check 1: Exact SSID match but different BSSID
         if ssid_lower in self.known_networks:
             known = self.known_networks[ssid_lower]
@@ -169,11 +169,11 @@ class EvilTwinDetector:
                 }
                 self.alerts.append(alert)
                 return alert
-        
+
         # Check 2: Fuzzy SSID match (typosquatting)
         for known_ssid, known_info in self.known_networks.items():
             similarity = ssid_similarity(ssid_lower, known_ssid)
-            
+
             if similarity >= self.similarity_threshold and similarity < 1.0:
                 # Similar but not exact match
                 if known_info["bssid"] != bssid_upper:
@@ -192,9 +192,9 @@ class EvilTwinDetector:
                     }
                     self.alerts.append(alert)
                     return alert
-        
+
         return None
-    
+
     def get_alerts(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get recent alerts."""
         return self.alerts[-limit:]
@@ -204,11 +204,11 @@ class DeauthFloodDetector:
     """
     Detects Deauthentication flood attacks using time-window analysis.
     """
-    
+
     def __init__(self, threshold: int = 10, window_seconds: float = 1.0):
         """
         Initialize detector.
-        
+
         Args:
             threshold: Number of deauths in window to trigger alert
             window_seconds: Time window in seconds
@@ -218,31 +218,31 @@ class DeauthFloodDetector:
         self.deauth_events: List[float] = []  # Timestamps
         self.alerts: List[Dict[str, Any]] = []
         self.last_alert_time = 0
-        
+
     def add_deauth(self, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
         """
         Record a deauth event and check for flood.
-        
+
         Returns:
             Alert if flood detected, None otherwise
         """
         now = timestamp or time.time()
         self.deauth_events.append(now)
-        
+
         # Clean old events
         cutoff = now - self.window_seconds * 2
         self.deauth_events = [t for t in self.deauth_events if t > cutoff]
-        
+
         # Count events in current window
         window_start = now - self.window_seconds
         count = sum(1 for t in self.deauth_events if t >= window_start)
-        
+
         # Check threshold
         if count >= self.threshold:
             # Avoid alert spam (min 5s between alerts)
             if now - self.last_alert_time < 5.0:
                 return None
-                
+
             self.last_alert_time = now
             alert = {
                 "type": "deauth_flood",
@@ -255,7 +255,7 @@ class DeauthFloodDetector:
             }
             self.alerts.append(alert)
             return alert
-        
+
         return None
 
 
@@ -275,12 +275,11 @@ def get_deauth_detector() -> DeauthFloodDetector:
     return _deauth_detector
 
 
-
 if __name__ == "__main__":
     print("=" * 50)
     print("Detection Algorithms Test")
     print("=" * 50)
-    
+
     # Test Levenshtein distance
     print("\n[Levenshtein Distance Tests]")
     test_cases = [
@@ -294,15 +293,15 @@ if __name__ == "__main__":
         dist = levenshtein_distance(s1, s2)
         sim = ssid_similarity(s1, s2)
         print(f"  '{s1}' vs '{s2}': distance={dist}, similarity={sim:.2f}")
-    
+
     # Test Evil Twin Detector
     print("\n[Evil Twin Detector Tests]")
     detector = EvilTwinDetector(similarity_threshold=0.7)
-    
+
     # Register known networks
     detector.register_network("CoffeeHouse", "AA:BB:CC:DD:EE:FF", "WPA2-PSK")
     detector.register_network("CompanyNet", "11:22:33:44:55:66", "WPA2-Enterprise")
-    
+
     # Check suspicious networks
     networks_to_check = [
         ("CoffeeHouse", "XX:XX:XX:XX:XX:XX"),  # Exact match, wrong BSSID
@@ -310,31 +309,31 @@ if __name__ == "__main__":
         ("CofeeHouse", "ZZ:ZZ:ZZ:ZZ:ZZ:ZZ"),  # Typo
         ("RandomNet", "00:00:00:00:00:00"),  # Unknown
     ]
-    
+
     for ssid, bssid in networks_to_check:
         alert = detector.check_network(ssid, bssid)
         if alert:
             print(f"  ⚠️  {alert['type']}: {alert['message']}")
         else:
             print(f"  ✅ '{ssid}' is clean")
-    
+
     # Test Bloom Filter
     print("\n[Bloom Filter Tests]")
     bf = BloomFilter(expected_items=1000)
     bf.add("AA:BB:CC:DD:EE:FF")
     bf.add("11:22:33:44:55:66")
-    
+
     print(f"  AA:BB:CC:DD:EE:FF in filter: {bf.contains('AA:BB:CC:DD:EE:FF')}")
     print(f"  XX:XX:XX:XX:XX:XX in filter: {bf.contains('XX:XX:XX:XX:XX:XX')}")
-    
+
     # Test Deauth Flood Detector
     print("\n[Deauth Flood Detector Tests]")
     deauth = DeauthFloodDetector(threshold=5, window_seconds=1.0)
-    
+
     base_time = time.time()
     for i in range(15):
         alert = deauth.add_deauth(base_time + i * 0.1)  # 10 deauths/second
         if alert:
             print(f"  🔴 Alert: {alert['message']}")
-    
+
     print("\nAll tests completed!")

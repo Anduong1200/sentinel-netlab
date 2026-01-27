@@ -25,7 +25,7 @@ class TransportClient:
     - Circuit breaker for failure protection
     - Batch compression
     """
-    
+
     def __init__(
         self,
         upload_url: str,
@@ -40,7 +40,7 @@ class TransportClient:
     ):
         """
         Initialize transport client.
-        
+
         Args:
             upload_url: Controller telemetry endpoint
             auth_token: Bearer token for authentication
@@ -61,23 +61,23 @@ class TransportClient:
         self.max_delay = max_delay
         self.verify_ssl = verify_ssl
         self.hmac_secret = hmac_secret
-        
+
         # Stats
         self._uploads_total = 0
         self._uploads_success = 0
         self._uploads_failed = 0
         self._last_upload_time: Optional[datetime] = None
         self._last_error: Optional[str] = None
-        
+
         # Circuit breaker
         self._circuit_open = False
         self._circuit_failures = 0
         self._circuit_threshold = 5
         self._circuit_reset_time: Optional[float] = None
         self._circuit_reset_delay = 60.0  # seconds
-        
+
         self._lock = threading.Lock()
-    
+
     def upload(
         self,
         batch: Dict[str, Any],
@@ -85,16 +85,16 @@ class TransportClient:
     ) -> Dict[str, Any]:
         """
         Upload batch to controller.
-        
+
         Args:
             batch: Batch dict with items
             compress: Compress payload with gzip
-            
+
         Returns:
             Response dict with success status and ack_id
         """
         import requests
-        
+
         # Check circuit breaker
         if self._circuit_open:
             if time.time() < self._circuit_reset_time:
@@ -107,33 +107,33 @@ class TransportClient:
                 # Try to reset circuit
                 self._circuit_open = False
                 self._circuit_failures = 0
-        
+
         self._uploads_total += 1
-        
+
         # Prepare payload
         payload = json.dumps(batch)
-        
+
         # Sign if HMAC configured
         headers = {
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json'
         }
-        
+
         if self.hmac_secret:
             signature = self._sign_payload(payload)
             headers['X-Signature'] = signature
-        
+
         # Compress
         if compress:
             payload_bytes = gzip.compress(payload.encode())
             headers['Content-Encoding'] = 'gzip'
         else:
             payload_bytes = payload.encode()
-        
+
         # Retry loop
         delay = self.initial_delay
         last_error = None
-        
+
         for attempt in range(self.max_retries + 1):
             try:
                 response = requests.post(
@@ -143,7 +143,7 @@ class TransportClient:
                     timeout=self.timeout,
                     verify=self.verify_ssl
                 )
-                
+
                 if response.status_code == 200:
                     self._on_success()
                     result = response.json()
@@ -152,7 +152,7 @@ class TransportClient:
                         'ack_id': result.get('ack_id'),
                         'accepted': result.get('accepted', len(batch.get('items', [])))
                     }
-                
+
                 elif response.status_code >= 400 and response.status_code < 500:
                     # Client error - don't retry
                     self._on_failure(f"HTTP {response.status_code}")
@@ -161,31 +161,31 @@ class TransportClient:
                         'error': f"Client error: {response.status_code}",
                         'response': response.text[:500]
                     }
-                
+
                 else:
                     # Server error - retry
                     last_error = f"HTTP {response.status_code}"
                     logger.warning(f"Upload attempt {attempt + 1} failed: {last_error}")
-                    
+
             except requests.exceptions.Timeout:
                 last_error = "Request timeout"
                 logger.warning(f"Upload timeout on attempt {attempt + 1}")
-                
+
             except requests.exceptions.ConnectionError as e:
                 last_error = f"Connection error: {str(e)[:100]}"
                 logger.warning(f"Connection error on attempt {attempt + 1}")
-                
+
             except Exception as e:
                 last_error = str(e)[:100]
                 logger.error(f"Unexpected upload error: {e}")
-            
+
             # Wait before retry
             if attempt < self.max_retries:
                 jitter = delay * 0.1 * (2 * (0.5 - time.time() % 1))  # Simple jitter
                 sleep_time = min(delay + jitter, self.max_delay)
                 time.sleep(sleep_time)
                 delay *= self.backoff_factor
-        
+
         # All retries failed
         self._on_failure(last_error)
         return {
@@ -193,7 +193,7 @@ class TransportClient:
             'error': last_error,
             'retries_exhausted': True
         }
-    
+
     def _sign_payload(self, payload: str) -> str:
         """Sign payload with HMAC-SHA256"""
         signature = hmac.new(
@@ -202,41 +202,41 @@ class TransportClient:
             hashlib.sha256
         )
         return signature.hexdigest()
-    
+
     def _on_success(self) -> None:
         """Called on successful upload"""
         with self._lock:
             self._uploads_success += 1
             self._last_upload_time = datetime.now(timezone.utc)
             self._circuit_failures = 0
-    
+
     def _on_failure(self, error: str) -> None:
         """Called on failed upload"""
         with self._lock:
             self._uploads_failed += 1
             self._last_error = error
             self._circuit_failures += 1
-            
+
             # Open circuit breaker if threshold exceeded
             if self._circuit_failures >= self._circuit_threshold:
                 self._circuit_open = True
                 self._circuit_reset_time = time.time() + self._circuit_reset_delay
                 logger.warning("Circuit breaker opened due to repeated failures")
-    
+
     def heartbeat(self, status: Dict[str, Any]) -> Dict[str, Any]:
         """
         Send heartbeat to controller.
-        
+
         Args:
             status: Sensor status dict
-            
+
         Returns:
             Response with optional commands
         """
         import requests
-        
+
         heartbeat_url = self.upload_url.replace('/telemetry', '/heartbeat')
-        
+
         try:
             response = requests.post(
                 heartbeat_url,
@@ -245,18 +245,18 @@ class TransportClient:
                 timeout=10,
                 verify=self.verify_ssl
             )
-            
+
             if response.status_code == 200:
                 return {
                     'success': True,
                     'commands': response.json().get('commands', [])
                 }
-            
+
         except Exception as e:
             logger.debug(f"Heartbeat failed: {e}")
-        
+
         return {'success': False, 'commands': []}
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get transport statistics"""
         with self._lock:

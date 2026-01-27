@@ -37,17 +37,17 @@ class EnhancedRiskScorer:
     - Modular Feature Extraction (FeatureExtractor)
     - ML-ready interface
     """
-    
-    def __init__(self, config_path: str = "sensor/risk_weights.yaml", 
+
+    def __init__(self, config_path: str = "sensor/risk_weights.yaml",
                  whitelist: Optional[List[str]] = None):
         self.config = self._load_config(config_path)
         self.weights = self.config.get('weights', {})
         self.whitelist = set(whitelist or [])
-        
+
         # Initialize modular Feature Extractor
         from features import FeatureExtractor
         self.feature_extractor = FeatureExtractor(config=self.config)
-        
+
         # Metrics for validation
         self.predictions = []
 
@@ -71,8 +71,8 @@ class EnhancedRiskScorer:
                     "temporal": 0.05
                 }
             }
-            
-    def calculate_risk(self, network: Dict, 
+
+    def calculate_risk(self, network: Dict,
                        ground_truth_label: Optional[str] = None) -> Dict:
         """
         Calculate risk score using modular features and configurable weights.
@@ -89,10 +89,10 @@ class EnhancedRiskScorer:
                 "explain": {},
                 "contributing_factors": []
             }
-        
+
         # 1. Extract Features via separate module
         features = self.feature_extractor.extract(network)
-        
+
         # 2. Calculate Weighted Score
         w = self.weights
         raw_score = (
@@ -107,10 +107,10 @@ class EnhancedRiskScorer:
             features["temporal_new"] * w.get("temporal", 0) +
             features["privacy_concern"] * w.get("privacy_flags", 0.05) # Fallback if missing in yaml
         )
-        
+
         # Normalize to 0-100
         risk_score = min(100, int(raw_score * 100))
-        
+
         # 3. Determine Risk Level
         thresholds = self.config.get('thresholds', {'low': 40, 'medium': 70})
         if risk_score >= thresholds['medium']:
@@ -119,13 +119,13 @@ class EnhancedRiskScorer:
             risk_level = "Medium"
         else:
             risk_level = "Low"
-            
+
         # 4. Calculate Confidence (Availability of data)
         # Simplified: Check distinct non-default keys in features or raw network
         # (Assuming the extractor provides 10 features, we assume High confidence if basic fields present)
         av_fields = sum(1 for k,v in features.items() if v != 0.5) # 0.5 is often default
         confidence = min(1.0, round(av_fields / 5.0, 2)) # Heuristic: 5 indicators = 100% conf
-        
+
         # 5. Explain Breakdown
         explain = {
             k: round(features.get(f_map, 0) * val * 100, 1)
@@ -133,7 +133,7 @@ class EnhancedRiskScorer:
             for f_map in features.keys()
             if self._map_weight_to_feature(k) == f_map
         }
-        
+
         # Contributing factors (Human readable)
         factors = []
         if features["enc_score"] > 0.5:
@@ -142,7 +142,7 @@ class EnhancedRiskScorer:
             factors.append("Suspicious SSID Pattern")
         if features["beacon_anomaly"] > 0.5:
             factors.append("Beacon Anomaly Detected")
-        
+
         result = {
             "risk_score": risk_score,
             "risk_level": risk_level,
@@ -151,7 +151,7 @@ class EnhancedRiskScorer:
             "explain": explain,
             "contributing_factors": factors
         }
-        
+
         return result
 
     def _map_weight_to_feature(self, weight_key: str) -> str:
@@ -170,7 +170,6 @@ class EnhancedRiskScorer:
         }
         return mapping.get(weight_key)
 
-    
     def get_validation_metrics(self) -> Dict:
         """
         Calculate validation metrics from labeled predictions.
@@ -178,13 +177,13 @@ class EnhancedRiskScorer:
         """
         if not self.predictions:
             return {"error": "No labeled predictions available"}
-            
+
         tp = fp = tn = fn = 0
-        
+
         for pred in self.predictions:
             predicted = pred["predicted"]
             actual = pred["actual"]
-            
+
             if predicted == "malicious" and actual == "malicious":
                 tp += 1
             elif predicted == "malicious" and actual == "benign":
@@ -193,15 +192,15 @@ class EnhancedRiskScorer:
                 tn += 1
             else:  # predicted benign, actual malicious
                 fn += 1
-                
+
         total = tp + fp + tn + fn
-        
+
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         accuracy = (tp + tn) / total if total > 0 else 0
-        
+
         return {
             "total_samples": total,
             "true_positives": tp,
@@ -214,7 +213,7 @@ class EnhancedRiskScorer:
             "false_positive_rate": round(fpr, 4),
             "accuracy": round(accuracy, 4)
         }
-    
+
     def calibrate_weights_from_data(self, labeled_data: List[Dict]) -> ScoringWeights:
         """
         Simple weight calibration using labeled data.
@@ -222,7 +221,7 @@ class EnhancedRiskScorer:
         logger.info(f"Calibrating weights from {len(labeled_data)} samples...")
         # (Simplified logic - no sklearn dependency for now)
         return self.weights
-    
+
     def export_for_ml_training(self) -> List[Dict]:
         """
         Export feature vectors for external ML training.
@@ -247,7 +246,7 @@ RiskScorer = EnhancedRiskScorer  # Alias for legacy tests
 if __name__ == "__main__":
     # Demo usage
     scorer = EnhancedRiskScorer()
-    
+
     # Test network
     test_net = {
         "ssid": "Free_WiFi_Airport",
@@ -257,7 +256,7 @@ if __name__ == "__main__":
         "channel": 6,
         "vendor": "Unknown"
     }
-    
+
     result = scorer.calculate_risk(test_net, ground_truth_label="malicious")
     print(f"Risk Score: {result['risk_score']}")
     print(f"Risk Level: {result['risk_level']}")
