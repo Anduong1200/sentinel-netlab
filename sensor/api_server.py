@@ -54,10 +54,19 @@ attack_engine = AttackEngine(interface=INTERFACE)
 # Set static info metric
 SYSTEM_INFO.labels(version="1.0.0", interface=INTERFACE, engine="tshark").set(1)
 
+@app.route('/')
+def index():
+    """Root endpoint"""
+    return jsonify({
+        "message": "Sentinel NetLab Sensor API",
+        "version": "1.0.0",
+        "docs": "/api/docs"  # Placeholder
+    })
+
 @app.before_request
 def check_auth():
     """Simple API key authentication"""
-    if request.endpoint not in ['health', 'status', 'metrics']:  # Allow metrics without auth
+    if request.endpoint not in ['health', 'status', 'metrics', 'index']:  # Allow metrics without auth
         api_key = request.headers.get('X-API-Key')
         if api_key != API_KEY:
             # Count failed auth
