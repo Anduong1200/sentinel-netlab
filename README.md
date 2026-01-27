@@ -1,120 +1,123 @@
 # Sentinel NetLab 🛡️
 > **Wireless Intrusion Detection System (WIDS)**
 
-[![Release](https://img.shields.io/github/v/release/sentinel-netlab/core?label=latest)](https://github.com/sentinel-netlab/core)
+[![CI](https://github.com/Anduong1200/sentinel-netlab/actions/workflows/main.yml/badge.svg)](https://github.com/Anduong1200/sentinel-netlab/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-production_ready-green.svg)]()
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 
-**Sentinel NetLab** is a **Lightweight Hybrid Wireless Monitoring System** designed for **resource-constrained environments**. It combines a high-performance C-based capture engine with a flexible Python analysis core to orchestrate security assessment tasks.
+**Sentinel NetLab** is a **Lightweight Hybrid Wireless Monitoring System** designed for **resource-constrained environments**. It combines a high-performance C-based capture engine (Tshark) with a flexible Python analysis core.
 
-> **Note:** This project targets **Education, Research, and Tactical Monitoring**. It is **not** an Enterprise WIPS replacement.
+> **Note:** This project targets **Education, Research, and Tactical Monitoring**.
 
 ---
 
-## 🎯 Target Audience & Fit
+## 🎯 Target Audience
+
 | Audience | Fit | Verdict |
 |----------|-----|---------|
-| 🎓 **Student / Lab** | ⭐⭐⭐⭐⭐ | **Perfect**. Ideal for learning 802.11 security internals. |
-| 🔬 **Researcher** | ⭐⭐⭐⭐ | **Strong**. Modular framework for testing new algorithms. |
-| 🏢 **SME / Corp** | ⭐ | **Weak**. Recommending commercial deployment for stability. |
+| 🎓 **Student / Lab** | ⭐⭐⭐⭐⭐ | **Perfect**. Ideal for learning 802.11 security. |
+| 🔬 **Researcher** | ⭐⭐⭐⭐ | **Strong**. Modular framework for testing algorithms. |
+| 🏢 **Enterprise** | ⭐ | **Weak**. Use commercial WIPS for production. |
 
 ---
 
-## 🚀 Key Objectives
+## 🚀 Quick Start
 
-- **Orchestration**: Automate the capture-analyze-alert loop 24/7 without human intervention.
-- **Posture Assessment**: Detect misconfigurations (Shadow IT, Rogue APs) and behavioral anomalies.
-- **Cost-Effective Visibility**: Provide WIDS capabilities for environments that cannot afford enterprise appliances.
-- **Real-time Forensics**: Automated PCAP analysis and attack signature detection.
-- **Scalable Architecture**: Support for distributed sensors with centralized aggregation (Prometheus/ELK stack ready).
-- **Active Defense**: Deauthentication containment capabilities (controlled environment only).
-
----
-
-## 📚 Documentation Center
-
-### 🛠️ Technical Documentation
-- **Detailed Architecture**: [See System Design & Flowchart](docs/SYSTEM_DESIGN.md)
-- **Technical Report**: [IEEE Standard Report](docs/IEEE_Sentinel_NetLab_Report.md)
-- **Improvement Roadmap**: [Future Engineering Plans](docs/technical_improvement_roadmap.md)
-- **Defense Materials**: [Defense Script](docs/defense_script.md) & [Slides](docs/presentation_slides.md)
-
-- **[API Reference](docs/api_reference.md)**: Full REST API documentation with Python examples.
-- **[Risk Scoring Model](docs/technical_gap_analysis.md#1-risk-scoring-algorithm-improvements)**: Details on the v2 scoring algorithm and weight calibration.
-
-### ⚙️ Operations & Deployment
-- **[Deployment Guide](docs/lightweight_deployment.md)**: Installation on Debian/Docker/Raspberry Pi.
-- **[OS Tuning Guide](docs/os_tuning_guide.md)**: Kernel and OS optimization for low-latency capture.
-- **[Metrics & Monitoring](docs/metrics_guide.md)**: KPIs, Prometheus integration, and benchmarking.
-- **[ROI Analysis](docs/roi_analysis.md)**: Business value and cost-benefit analysis.
-
-### 📖 User Guides
-- **[User Manual & Demo](docs/demo_runbook.md)**: Step-by-step usage guide.
-- **[Artifact Checklist](docs/artifact_checklist.md)**: Deliverables for audit/review.
-
----
-
-## 🏗️ System Architecture
-
-```mermaid
-graph TD
-    subgraph "Edge Sensor (Linux/Pi)"
-        A[WiFi Adapter] -->|Monitor Mode| B(Capture Engine)
-        B -->|JSON Stream| C{Analysis Core}
-        C -->|Risk Score v2| D[SQLite/Postgres]
-        C -->|Metrics| P[Prometheus Exp]
-    end
-    
-    subgraph "Central Controller"
-        E[API Gateway] -->|REST/HTTPS| F[Dashboard GUI]
-        E -->|Logs| G[ELK Stack]
-        P -->|TimeSeries| H[Grafana]
-    end
-```
-
----
-
-## ⚡ Quick Start
-
-### 1. Prerequisites
-- Linux Environment (Debian 12 / Ubuntu 22.04 recommended)
-- Wireless Adapter supporting Monitor Mode (Atheros AR9271, Realtek RTL8812AU)
+### Prerequisites
+- Linux Environment (Debian 12 / Ubuntu 22.04 / Kali)
+- USB WiFi Adapter with Monitor Mode (Atheros AR9271)
 - Python 3.9+
 
-### 2. Installation
+### Installation
+
 ```bash
 # Clone repository
-git clone https://github.com/sentinel-netlab/core.git
-cd core
+git clone https://github.com/Anduong1200/sentinel-netlab.git
+cd sentinel-netlab
 
-# Install dependencies
-pip install -r requirements.txt
+# Run unified setup script
+sudo ./scripts/setup_vm.sh
 
-# Run system optimization (Optional)
-sudo bash scripts/setup_debian_minimal.sh
+# Activate virtual environment
+source /opt/sentinel-netlab/venv/bin/activate
 ```
 
-### 3. Launching the Sensor
+### Start Sensor
+
 ```bash
-# Start API Server with Gunicorn (Production)
 cd sensor
-gunicorn -c gunicorn_conf.py api_server:app
+python api_server.py
+```
+
+### Launch GUI (Windows)
+
+```powershell
+cd controller
+python scanner_gui.py
 ```
 
 ---
 
-## 🛡️ Security & Compliance
-This software is intended for **authorized security auditing and research purposes only**. Users are responsible for complying with all applicable local, state, and federal laws.
-- See **[Legal Disclaimer](docs/legal_ethics.md)** for details.
+## 🏗️ Project Structure
+
+```
+sentinel-netlab/
+├── sensor/           # API server and capture engine
+│   ├── api_server.py
+│   ├── capture.py
+│   ├── parser.py
+│   └── risk.py
+├── controller/       # Windows GUI
+│   └── scanner_gui.py
+├── scripts/          # Setup and utility scripts
+│   └── setup_vm.sh
+├── tests/            # Unit tests
+├── docs/             # Documentation
+└── .github/          # CI/CD workflows
+```
+
+---
+
+## 📚 Documentation
+
+### Core Docs
+| Document | Description |
+|----------|-------------|
+| [System Design](docs/SYSTEM_DESIGN.md) | Architecture & flowcharts |
+| [IEEE Report](docs/IEEE_Sentinel_NetLab_Report.md) | Academic paper |
+| [Install Guide](docs/install_guide.md) | Step-by-step setup |
+| [Demo Runbook](docs/demo_runbook.md) | Live demo guide |
+
+### Technical Deep-Dive
+| Document | Description |
+|----------|-------------|
+| [API Reference](docs/api_reference.md) | REST API endpoints |
+| [Technical Critique](docs/technical_critique.md) | Architectural analysis |
+| [Improvement Roadmap](docs/technical_improvement_roadmap.md) | Future plans |
+
+### Defense & Presentation
+| Document | Description |
+|----------|-------------|
+| [Defense Script](docs/defense_script.md) | Q&A preparation |
+| [Slides](docs/presentation_slides.md) | Presentation content |
+
+---
+
+## 🛡️ Security & Legal
+
+This software is for **authorized security auditing only**. Users must comply with all applicable laws.
+
+See [Legal Disclaimer](docs/legal_ethics.md) for details.
 
 ---
 
 ## 🤝 Contributing
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
-- Code of Conduct
-- Pull Request Process
-- Coding Standards (PEP 8)
+
+Contributions welcome! Please follow:
+- PEP 8 coding standards
+- Create tests for new features
+- Update documentation
 
 ---
-**Security Research Club** © 2024-2026. All Rights Reserved.
+
+**Security Research Club** © 2024-2026
