@@ -1,0 +1,101 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Logs
+*.log
+controller.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+wifi_scans.db
+
+# PCAP files (large, binary)
+*.pcap
+*.pcapng
+pcaps/
+
+# Test artifacts (can be regenerated)
+artifacts/*.json
+artifacts/*.csv
+artifacts/*.txt
+artifacts/*.pcap
+!artifacts/.gitkeep
+
+# Config with secrets
+config.json
+sample_config.json
+!config.example.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+
+# SSL certificates (generated)
+*.pem
+*.crt
+*.key
+
+# Archive folders (optional, can uncomment if needed)
+# archive/
