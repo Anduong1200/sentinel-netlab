@@ -57,7 +57,7 @@ class CaptureProducer(mp.Process):
                 ["iw", "dev", self.interface, "set", "channel", str(channel)],
                 timeout=2, capture_output=True
             )
-        except:
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
             pass
     
     def run(self):
@@ -131,9 +131,9 @@ class CaptureProducer(mp.Process):
                                 "data": line.strip() if isinstance(line, str) else line,
                                 "channel": self.channels[(channel_idx - 1) % len(self.channels)]
                             })
-                        except:
+                        except (queue.Full, queue.Empty):
                             pass
-            except:
+            except (IOError, OSError):
                 time.sleep(0.01)
         
         # Cleanup

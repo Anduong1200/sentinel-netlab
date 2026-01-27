@@ -136,9 +136,12 @@ class EnhancedRiskScorer:
         
         # Contributing factors (Human readable)
         factors = []
-        if features["enc_score"] > 0.5: factors.append(f"Weak Encryption ({network.get('encryption')})")
-        if features["ssid_suspicious"] > 0.5: factors.append("Suspicious SSID Pattern")
-        if features["beacon_anomaly"] > 0.5: factors.append("Beacon Anomaly Detected")
+        if features["enc_score"] > 0.5:
+            factors.append(f"Weak Encryption ({network.get('encryption')})")
+        if features["ssid_suspicious"] > 0.5:
+            factors.append("Suspicious SSID Pattern")
+        if features["beacon_anomaly"] > 0.5:
+            factors.append("Beacon Anomaly Detected")
         
         result = {
             "risk_score": risk_score,

@@ -68,7 +68,7 @@ class ForensicAnalyzer:
                         "target": pkt.addr1,
                         "reason": pkt[Dot11Deauth].reason
                     })
-                except:
+                except (AttributeError, TypeError, ValueError):
                     pass
         
         if not deauth_times:
@@ -140,7 +140,7 @@ class ForensicAnalyzer:
                     
                     if ssid:
                         seen_ssids[ssid].append(bssid.upper())
-                except:
+                except (AttributeError, UnicodeDecodeError):
                     pass
         
         # Check against known networks
@@ -195,7 +195,7 @@ class ForensicAnalyzer:
                                     clients[client_mac]["probed_ssids"].append(ssid)
                                 break
                             elt = elt.payload.getlayer(Dot11Elt)
-                    except:
+                    except (AttributeError, UnicodeDecodeError):
                         pass
                         
         return list(clients.values())

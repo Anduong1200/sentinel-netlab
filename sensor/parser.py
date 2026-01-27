@@ -141,7 +141,7 @@ class WiFiParser:
                     if b'\x00\x0f\xac\x08' in elt.info:
                         encryption = "WPA3"
                         crypto.add("SAE")
-                except:
+                except (AttributeError, IndexError):
                     pass
             
             # WPA (vendor specific)
@@ -169,7 +169,7 @@ class WiFiParser:
         if packet.haslayer(RadioTap):
             try:
                 return packet[RadioTap].Channel
-            except:
+            except (AttributeError, TypeError):
                 pass
         
         # Try DS Parameter Set
@@ -189,7 +189,7 @@ class WiFiParser:
                 rssi = packet[RadioTap].dBm_AntSignal
                 if rssi is not None:
                     return int(rssi)
-            except:
+            except (AttributeError, TypeError, ValueError):
                 pass
         return -100  # Default weak signal
     def parse_deauth(self, packet) -> Optional[Dict[str, Any]]:

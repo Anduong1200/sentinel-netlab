@@ -51,10 +51,14 @@ class FeatureExtractor:
         mapping = self.mappings.get('encryption', {})
         
         # Default logic if mapping missing or partial
-        if 'WPA3' in enc_str: return mapping.get('WPA3', 0.0)
-        if 'WPA2' in enc_str: return mapping.get('WPA2', 0.2)
-        if 'WPA' in enc_str: return mapping.get('WPA', 0.5)
-        if 'WEP' in enc_str: return mapping.get('WEP', 0.9)
+        if 'WPA3' in enc_str:
+            return mapping.get('WPA3', 0.0)
+        if 'WPA2' in enc_str:
+            return mapping.get('WPA2', 0.2)
+        if 'WPA' in enc_str:
+            return mapping.get('WPA', 0.5)
+        if 'WEP' in enc_str:
+            return mapping.get('WEP', 0.9)
         return mapping.get('OPEN', 1.0)
 
     def _extract_rssi(self, network: Dict) -> float:
@@ -82,7 +86,8 @@ class FeatureExtractor:
 
     def _extract_ssid_suspicion(self, network: Dict) -> float:
         ssid = str(network.get('ssid', '')).lower()
-        if not ssid: return 0.0
+        if not ssid:
+            return 0.0
         
         for pattern in self.suspicious_ssid_patterns:
             if re.search(pattern, ssid):
@@ -92,16 +97,19 @@ class FeatureExtractor:
     def _extract_channel(self, network: Dict) -> float:
         try:
             ch = int(network.get('channel', 0))
-        except:
+        except (ValueError, TypeError):
             ch = 0
             
         # Common 2.4GHz channels
-        if ch in [1, 6, 11]: return 0.0
+        if ch in [1, 6, 11]:
+            return 0.0
         # Other valid channels
-        if 1 <= ch <= 14: return 0.3
+        if 1 <= ch <= 14:
+            return 0.3
         # 5GHz (simplified for now, treat as trusted/low risk compared to weird 2.4 channels)
-        if ch > 14: return 0.1 
-        return 0.5 # Unknown
+        if ch > 14:
+            return 0.1
+        return 0.5  # Unknown
 
     def _extract_beacon_anomaly(self, network: Dict) -> float:
         # Placeholder for real anomaly detection logic
@@ -114,9 +122,9 @@ class FeatureExtractor:
                 # deviation from 102400 (microseconds)
                 std_bi = 102400
                 diff = abs(bi - std_bi)
-                if diff > 1000: # significant deviation
+                if diff > 1000:  # significant deviation
                     return 1.0
-            except:
+            except (ValueError, TypeError):
                 pass
         return 0.0
 
@@ -133,6 +141,8 @@ class FeatureExtractor:
     def _extract_privacy(self, network: Dict) -> float:
         caps = str(network.get('capabilities', ''))
         score = 0.0
-        if 'ESS' not in caps: score += 0.3
-        if network.get('wps_enabled'): score += 0.2
+        if 'ESS' not in caps:
+            score += 0.3
+        if network.get('wps_enabled'):
+            score += 0.2
         return min(1.0, score)
