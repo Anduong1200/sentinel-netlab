@@ -124,6 +124,13 @@ else
     log_ok "Virtual environment exists"
 fi
 
+# Create data directories
+mkdir -p /var/lib/wifi-scanner/pcaps
+mkdir -p /etc/wifi-scanner
+chmod 755 /var/lib/wifi-scanner
+chmod 777 /var/lib/wifi-scanner/pcaps  # Allow writing
+log_ok "Created data directories: /var/lib/wifi-scanner"
+
 # Activate and install
 source "$VENV_PATH/bin/activate"
 

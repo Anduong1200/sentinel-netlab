@@ -1,5 +1,5 @@
 # Sentinel NetLab 🛡️
-> **Wireless Intrusion Detection System (WIDS)**
+>**Wireless Intrusion Detection System (WIDS)**
 
 [![CI](https://github.com/Anduong1200/sentinel-netlab/actions/workflows/main.yml/badge.svg)](https://github.com/Anduong1200/sentinel-netlab/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -25,12 +25,12 @@
 
 | Objective | Description |
 |-----------|-------------|
-| **🔍 Real-time Monitoring** | Capture and analyze 802.11 frames in real-time using Tshark/Scapy |
-| **⚠️ Threat Detection** | Identify Rogue APs, Evil Twin attacks, and suspicious networks |
-| **📊 Risk Scoring** | Weighted algorithm (v2) scoring encryption, SSID patterns, signal anomalies |
-| **🔔 Alerting** | REST API for integration with dashboards, SIEM, or custom alerting |
-| **📁 Forensics** | PCAP capture with rotation for post-incident analysis |
-| **🖥️ GUI Control** | Windows-based controller for remote sensor management |
+| **Real-time Monitoring** | Capture and analyze 802.11 frames in real-time using Tshark/Scapy |
+| **Threat Detection** | Identify Rogue APs, Evil Twin attacks, and suspicious networks |
+| **Risk Scoring** | Weighted algorithm (v2) scoring encryption, SSID patterns, signal anomalies |
+| **Alerting** | REST API for integration with dashboards, SIEM, or custom alerting |
+| **Forensics** | PCAP capture with rotation for post-incident analysis |
+| **GUI Control** | Windows-based controller for remote sensor management |
 
 ---
 

@@ -2,100 +2,76 @@
 
 > Advanced configuration for Sentinel NetLab Sensors
 
-This guide details how to tune the Linux environment for low-latency wireless packet capture and optimal resource usage.
+This guide details how to tune the Linux environment for low-latency wireless packet capture.
 
 ---
 
 ## 1. Distribution Selection
 
-### Why "Lightweight" Matters
-Running a full desktop OS (Kali/Ubuntu Desktop) wastes ~2GB RAM on GUI rendering. A headless sensor performs better on limited hardware (e.g., Raspberry Pi, VM with USB passthrough).
-
-### Comparison Matrix
-
-| Distro | RAM Usage | Setup | Use Case |
-|--------|-----------|-------|----------|
-| **Debian 12 (Netinst)** | ~180 MB | Easy (apt) | **Recommended** for stability |
-| **Alpine Linux** | ~50 MB | Advanced (apk) | Extreme resource constraints |
-| **Kali "Barebone"** | ~300 MB | Medium | If pre-patched drivers needed |
+| Distro | RAM Usage | Best For |
+|--------|-----------|----------|
+| **Debian 12 (Netinst)** | ~180 MB | **Recommended**. Stability & compatibility. |
+| **Kali Linux** | ~300 MB | Quick prototyping (drivers pre-installed). |
+| **Alpine Linux** | ~60 MB | Extreme resource constraints (requires manual driver compilation). |
 
 ---
 
-## 2. Kernel Tuning
+## 2. Automated Tuning (Recommended)
 
-The Linux Kernel is the heart of packet capture. Default kernels are tuned for throughput (Servers) or responsiveness (Desktops), not necessarily real-time packet processing.
+The unified setup script (`scripts/setup_vm.sh`) handles basic dependency installation but does **not** apply aggressive kernel tuning by default to ensure stability.
 
-### Recommended Version
-- **Version**: 6.1 LTS or 6.6 LTS (Best driver support for Atheros/Realtek)
-- **Avoid**: Bleeding edge (driver instability) or very old (<5.15) kernels.
+To apply performance tuning, add the following to `/etc/sysctl.conf`:
 
-### Advanced Compilation (Optional)
-If compiling a custom kernel, enable:
-
-1.  **Timer Frequency**: `1000 HZ`
-    - *Why*: Increases timestamp precision for captured frames.
-    - *Config*: `CONFIG_HZ_1000=y`
-
-2.  **Preemption Model**: `Low-Latency Desktop`
-    - *Why*: Allows the kernel to interrupt tasks faster, reducing packet drops during bursts.
-    - *Config*: `CONFIG_PREEMPT=y`
-
-3.  **In-Kernel Drivers**:
-    - Build `ath9k` or `rt2800usb` directly into the kernel (not as modules) for marginally faster load times.
-
----
-
-## 3. System Optimization
-
-### Headless Operation
-- **Remove GUI**: Do not install GNOME/KDE.
-- **Management**: Use SSH exclusively.
-
-### Init System
-- **Systemd**: Standard, easier to manage service dependencies.
-- **OpenRC/Runit**: Lighter alternatives (for Alpine/Void), saves ~20-50MB RAM.
-
-### Python Optimization
-- **PyInstaller/Nuitka**: Compile Python code to binary to reduce startup time and dependence on system libraries.
-- **Virtualenv**: Keep dependencies isolated (already implemented in setup scripts).
-
----
-
-## 4. Implementation Roadmap
-
-### Phase 1: Debian Minimal (Current Standard)
-1. Install **Debian 12 Netinst**.
-2. Select only **"SSH server"** and **"Standard system utilities"**.
-3. Install capture stack:
-   ```bash
-   apt install python3 python3-pip tshark aircrack-ng wireless-tools firmware-atheros
-   ```
-4. Result: ~180MB RAM usage.
-
-### Phase 2: Kernel Tuning (Performance)
-Apply sysctl params (automated in `setup_debian_minimal.sh`):
 ```bash
-# Increase buffer sizes to prevent packet loss
-sysctl -w net.core.rmem_max=16777216
-sysctl -w net.core.wmem_max=16777216
+# Increase network capture buffers (prevents packet drops)
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.core.netdev_max_backlog = 5000
+
+# Optimize VM dirty pages (better for writing PCAPs to disk)
+vm.dirty_ratio = 80
+vm.dirty_background_ratio = 5
 ```
 
-### Phase 3: "Hardcore" (Alpine/Custom)
-For specialized hardware (e.g., embedded implants):
-1. Use Alpine Linux.
-2. Compile custom kernel with `CONFIG_HZ_1000`.
-3. Strip all unused drivers (USB Audio, Printer, etc.).
+Apply changes:
+```bash
+sudo sysctl -p
+```
 
 ---
 
-## 5. Deployment Checklist
+## 3. Kernel Configuration
 
-- [ ] **Distro**: Debian 12 Netinst / Ubuntu Server
-- [ ] **Kernel**: 6.1+ LTS
-- [ ] **GUI**: Disabled (Headless)
-- [ ] **Firmware**: `firmware-atheros` installed
-- [ ] **Tuning**: Network buffers increased via sysctl
-- [ ] **Power**: USB autosuspend disabled (kernel boot param `usbcore.autosuspend=-1`)
+For production sensors, use Kernel **6.1+ LTS** or **6.6+ LTS**.
+
+### Optional: Real-time Kernel
+If compiling a custom kernel, enable:
+- `CONFIG_HZ_1000=y` (High resolution timer)
+- `CONFIG_PREEMPT=y` (Low-latency desktop)
 
 ---
-*Based on performance analysis for Sentinel NetLab*
+
+## 4. Headless Optimization Checklist
+
+- [ ] **Disable GUI**: Use `systemctl set-default multi-user.target`
+- [ ] **Disable Bluetooth**: `systemctl disable bluetooth`
+- [ ] **Disable Printing**: `systemctl disable cups`
+- [ ] **Disable Unused Services**: Avahi, ModemManager
+
+---
+
+## 5. Deployment Hardware Tuning
+
+### Raspberry Pi 4/5
+- Use **USB 3.0** ports for the WiFi adapter.
+- Overclocking is **not** recommended (stability > speed).
+- Use a high-quality (Class A1/A2) SD card or USB SSD for PCAP storage.
+
+### Virtual Machines
+- **USB Controller**: Set to USB 3.0 (xHCI).
+- **RAM**: Minimum 1GB recommended (512MB possible with swap).
+- **Cores**: 2 vCPUs minimum.
+
+---
+
+*Verified for Sentinel NetLab v1.0*

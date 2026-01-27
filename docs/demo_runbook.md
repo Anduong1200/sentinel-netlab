@@ -61,9 +61,25 @@ python3 scripts/check_driver.py
 source /opt/sentinel-netlab/venv/bin/activate
 
 # Start sensor API
+# Start sensor API
 cd sensor
 sudo python3 api_server.py
 ```
+
+### Option B: Run in Mock Mode (No Hardware)
+
+If you don't have a USB WiFi adapter, you can simulate networks:
+
+```bash
+# Enable mock mode via environment variable
+export WIFI_SCANNER_MOCK_MODE=true
+
+# Run API server
+cd sensor
+python3 api_server.py
+```
+
+> **Note**: Mock mode generates fake networks and risk scores for demonstration purposes.
 
 **Expected output**:
 ```
