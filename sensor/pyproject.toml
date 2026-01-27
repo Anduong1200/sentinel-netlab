@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-sensor"
+version = "0.1.0"
+description = "Lightweight Wireless IDS Sensor Agent"
+authors = [
+  { name = "Sentinel Team", email = "dev@sentinel.lab" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "scapy>=2.5.0",
+    "cryptography>=41.0.0",
+    "requests>=2.31.0",
+    "PyYAML>=6.0",
+    "prometheus-client>=0.17.0",
+    "netifaces>=0.11.0",
+    "numpy>=1.24.0",
+    "python-dateutil>=2.8.2",
+    "jsonschema>=4.17.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "flake8",
+    "ruff",
+    "mypy",
+    "build",
+    "twine",
+    "black"
+]
+
+[project.scripts]
+sentinel-sensor = "sensor.cli:main"
+sentinel-wardrive = "sensor.wardrive:main"
+sentinel-audit = "sensor.audit:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sensor*"]
+namespaces = false
