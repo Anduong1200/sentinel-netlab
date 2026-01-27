@@ -9,7 +9,7 @@ Usage:
 import json
 import argparse
 import os
-from typing import Dict, List
+from typing import Dict
 
 
 def display_network(net: Dict, index: int, total: int) -> None:

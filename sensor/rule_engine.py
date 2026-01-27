@@ -11,7 +11,7 @@ import operator
 from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from enum import Enum
 
 logging.basicConfig(level=logging.INFO)

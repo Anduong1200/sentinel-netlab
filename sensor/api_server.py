@@ -19,7 +19,7 @@ from parser import WiFiParser
 from storage import WiFiStorage, MemoryStorage
 from risk import RiskScorer
 from attacks import AttackEngine
-from forensics import ForensicAnalyzer, analyze_pcap
+from forensics import analyze_pcap
 
 # Import monitoring
 from monitoring import (

@@ -9,7 +9,7 @@ import time
 import threading
 import logging
 from typing import Optional, List, Callable
-from scapy.all import AsyncSniffer, Dot11
+from scapy.all import AsyncSniffer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

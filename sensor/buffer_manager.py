@@ -6,7 +6,6 @@ In-memory ring buffer with disk journal for telemetry batching.
 import os
 import gzip
 import json
-import time
 import logging
 import threading
 from typing import List, Optional, Dict, Any

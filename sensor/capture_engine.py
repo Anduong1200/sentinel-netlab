@@ -10,11 +10,9 @@ import queue
 import time
 import subprocess
 import logging
-from typing import List, Optional, Dict
 from threading import Event
 
 # Local imports
-from models import NetworkRecord
 try:
     from scapy.all import AsyncSniffer
 except ImportError:
@@ -118,7 +116,6 @@ class CaptureEngine:
 
     def _channel_hopper(self):
         """Hop through channels"""
-        idx = 0
         from itertools import cycle
         chan_cycle = cycle(self.channels)
         
@@ -139,7 +136,7 @@ class CaptureEngine:
         # For now, just a loop placeholder
         while not self._stop.is_set():
             try:
-                pkt = self._pkt_q.get(timeout=1)
+                self._pkt_q.get(timeout=1)
                 # Parse logic linked here
                 self._pkt_q.task_done()
             except queue.Empty:

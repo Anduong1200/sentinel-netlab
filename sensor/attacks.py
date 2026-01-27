@@ -13,7 +13,7 @@ import sys
 import logging
 import time
 import random
-from typing import List, Optional
+from typing import List
 from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO)
@@ -118,7 +118,7 @@ class LabSafetyChecker:
             return True
         
         print("\n" + "="*60)
-        print(f"⚠️  ATTACK CONFIRMATION REQUIRED")
+        print("⚠️  ATTACK CONFIRMATION REQUIRED")
         print("="*60)
         print(f"Type:   {attack_type}")
         print(f"Target: {target}")

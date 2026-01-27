@@ -7,7 +7,6 @@ Usage:
     python audit.py --iface wlan0 --output report.json
 """
 
-import os
 import sys
 import json
 import logging
@@ -317,7 +316,7 @@ def run_audit(args):
     print("="*60)
     print(f"Networks Scanned: {report.networks_scanned}")
     print(f"Duration:         {report.duration_sec:.1f} seconds")
-    print(f"\nFindings by Severity:")
+    print("\nFindings by Severity:")
     print(f"  CRITICAL: {report.summary['CRITICAL']}")
     print(f"  HIGH:     {report.summary['HIGH']}")
     print(f"  MEDIUM:   {report.summary['MEDIUM']}")

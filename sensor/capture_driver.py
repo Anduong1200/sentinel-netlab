@@ -10,7 +10,7 @@ import logging
 import subprocess
 import threading
 from abc import ABC, abstractmethod
-from typing import Optional, Callable, List, Tuple
+from typing import Optional, List, Tuple
 from dataclasses import dataclass
 from queue import Queue, Empty
 

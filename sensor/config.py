@@ -284,17 +284,17 @@ if __name__ == "__main__":
     # Initialize with defaults
     config = get_config()
     
-    print(f"\nCapture Settings:")
+    print("\nCapture Settings:")
     print(f"  Interface: {config.capture.interface}")
     print(f"  Channels: {config.capture.channels}")
     print(f"  Dwell Time: {config.capture.dwell_time}s")
     
-    print(f"\nAPI Settings:")
+    print("\nAPI Settings:")
     print(f"  Host: {config.api.host}")
     print(f"  Port: {config.api.port}")
     print(f"  Debug: {config.api.debug}")
     
-    print(f"\nStorage Settings:")
+    print("\nStorage Settings:")
     print(f"  DB Path: {config.storage.db_path}")
     print(f"  PCAP Dir: {config.storage.pcap_dir}")
     

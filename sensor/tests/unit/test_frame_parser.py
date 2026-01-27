@@ -77,10 +77,10 @@ class TestFrameParser:
                             seq_num=100, frame_type="beacon", ssid="Test")
         
         # First frame should not be duplicate
-        assert parser.is_duplicate(frame1) == False
+        assert not parser.is_duplicate(frame1)
         
         # Second frame (same key) should be duplicate
-        assert parser.is_duplicate(frame2) == True
+        assert parser.is_duplicate(frame2)
     
     def test_is_duplicate_after_window_expires(self, parser):
         """Duplicate cache expires after window"""
@@ -92,7 +92,7 @@ class TestFrameParser:
         parser.is_duplicate(frame1)
         
         # After 10 seconds (> 5s default window), should not be duplicate
-        assert parser.is_duplicate(frame2, window_sec=5.0) == False
+        assert not parser.is_duplicate(frame2, window_sec=5.0)
     
     def _create_mock_beacon(self, bssid: bytes, ssid: bytes) -> bytes:
         """Create simplified mock beacon frame"""

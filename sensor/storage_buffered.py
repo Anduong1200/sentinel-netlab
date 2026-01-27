@@ -9,10 +9,8 @@ import threading
 import time
 import json
 import logging
-import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from queue import Queue, Empty
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

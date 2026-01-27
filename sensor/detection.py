@@ -5,7 +5,7 @@ Implements Levenshtein distance for Evil Twin, Bloom Filter for MAC blacklist.
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, List, Any, Optional
 from datetime import datetime
 import hashlib
 

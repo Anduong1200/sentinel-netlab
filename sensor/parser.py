@@ -261,7 +261,7 @@ class WiFiParser:
                     self.networks[bssid]["handshake_captured"] = True
                     logger.info(f"Handshake captured for {self.networks[bssid]['ssid']}")
                     return self.networks[bssid]
-            except Exception as e:
+            except Exception:
                 pass
             return None
         

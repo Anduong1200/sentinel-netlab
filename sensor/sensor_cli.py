@@ -5,14 +5,11 @@ Combines all sensor features with toggleable options.
 """
 
 import argparse
-import json
 import threading
 import time
 import sys
 import os
-import signal
 import logging
-from typing import Optional
 
 # Add sensor to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -150,7 +147,7 @@ class SensorCLI:
         if not self.args.api:
             return
             
-        from flask import Flask, jsonify, request
+        from flask import Flask, jsonify
         from flask_cors import CORS
         
         app = Flask(__name__)

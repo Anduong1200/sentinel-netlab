@@ -4,7 +4,6 @@ Sentinel NetLab Sensor - CLI Entry Point
 Validates flags, loads config, and starts sensor controller.
 """
 
-import os
 import sys
 import yaml
 import logging

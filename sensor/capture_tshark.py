@@ -10,7 +10,6 @@ import time
 import json
 import logging
 import os
-import signal
 from typing import Optional, Callable, List, Dict, Any
 from datetime import datetime
 

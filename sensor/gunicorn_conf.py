@@ -3,7 +3,6 @@ Gunicorn configuration for Sentinel NetLab Sensor
 Run with: gunicorn -c gunicorn_conf.py api_server:app
 """
 import multiprocessing
-import os
 
 # Binding
 bind = "0.0.0.0:5000"

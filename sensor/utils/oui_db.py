@@ -3,7 +3,6 @@ Sentinel NetLab - OUI Database Utilities
 Lookup vendor names from MAC address OUI prefixes.
 """
 
-import os
 import json
 import logging
 from typing import Optional, Dict

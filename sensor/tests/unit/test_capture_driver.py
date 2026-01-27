@@ -26,17 +26,17 @@ class TestMockCaptureDriver:
         """enable_monitor_mode returns success on mock driver"""
         success, error = driver.enable_monitor_mode()
         
-        assert success == True
+        assert success
         assert error == ""
-        assert driver.is_monitor_mode == True
+        assert driver.is_monitor_mode
     
     def test_disable_monitor_mode(self, driver):
         """disable_monitor_mode restores state"""
         driver.enable_monitor_mode()
         success, error = driver.disable_monitor_mode()
         
-        assert success == True
-        assert driver.is_monitor_mode == False
+        assert success
+        assert not driver.is_monitor_mode
     
     def test_set_channel_applies(self, driver):
         """set_channel called before read_raw_frame"""
@@ -44,7 +44,7 @@ class TestMockCaptureDriver:
         
         result = driver.set_channel(6)
         
-        assert result == True
+        assert result
     
     def test_read_raw_frame_timeout(self, driver):
         """read_raw_frame returns None if no frame within timeout"""
@@ -53,7 +53,7 @@ class TestMockCaptureDriver:
         
         # With short timeout, may return None
         start = time.time()
-        frame = driver.read_frame(timeout_ms=50)
+        driver.read_frame(timeout_ms=50)
         elapsed = time.time() - start
         
         # Should respect timeout approximately
@@ -81,11 +81,11 @@ class TestMockCaptureDriver:
         """Start and stop capture cleanly"""
         driver.enable_monitor_mode()
         
-        assert driver.start_capture() == True
-        assert driver._running == True
+        assert driver.start_capture()
+        assert driver._running
         
         driver.stop_capture()
-        assert driver._running == False
+        assert not driver._running
     
     def test_raw_frame_structure(self, driver):
         """RawFrame has expected fields"""

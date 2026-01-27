@@ -6,7 +6,7 @@ Specialized detection modules for common WiFi attacks.
 
 import logging
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple

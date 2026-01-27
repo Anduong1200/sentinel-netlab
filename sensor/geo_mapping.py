@@ -15,7 +15,7 @@ import math
 import json
 import logging
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 
@@ -515,7 +515,7 @@ class HeatmapGenerator:
                        origin='lower', vmin=-100, vmax=-30)
         
         # Colorbar
-        cbar = plt.colorbar(im, ax=ax, label='RSSI (dBm)')
+        plt.colorbar(im, ax=ax, label='RSSI (dBm)')
         
         # Overlay sensors
         if sensors:

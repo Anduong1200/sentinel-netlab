@@ -10,7 +10,7 @@ import logging
 import threading
 import hashlib
 import hmac
-from typing import Optional, Dict, Any, Callable
+from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)

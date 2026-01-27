@@ -10,11 +10,9 @@ Changes from v1:
 - Metrics collection for validation
 """
 
-import json
 import logging
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
-from collections import defaultdict
+from typing import Dict, List, Optional
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 

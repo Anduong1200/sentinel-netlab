@@ -8,7 +8,7 @@ import hashlib
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
-from .schema import TelemetryFrame, Capabilities, FrameType
+from .schema import TelemetryFrame, Capabilities
 
 logger = logging.getLogger(__name__)
 

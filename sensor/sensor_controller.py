@@ -4,7 +4,6 @@ Sentinel NetLab - Sensor Controller
 Main orchestrator for capture, processing, and upload.
 """
 
-import os
 import sys
 import time
 import signal
@@ -19,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from capture import CaptureDriver, IwCaptureDriver, MockCaptureDriver, FrameParser
-from telemetry import TelemetryNormalizer, TelemetryFrame
+from telemetry import TelemetryNormalizer
 from transport import BufferManager, TransportClient
 
 logger = logging.getLogger(__name__)

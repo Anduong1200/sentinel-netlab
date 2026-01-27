@@ -219,7 +219,6 @@ class FrameParser:
         
         # Parse present flags and extract common fields
         present = struct.unpack('<I', data[4:8])[0]
-        offset = 8
         
         # Simplified extraction - real implementation would
         # parse all present fields according to bitmap
@@ -367,8 +366,8 @@ class FrameParser:
         if len(data) < 4:
             return
         
-        oui = data[:3]
-        vendor_type = data[3] if len(data) > 3 else 0
+        data[:3]
+        data[3] if len(data) > 3 else 0
         
         # WPA IE (Microsoft OUI + type 1)
         if data[:4] == self.OUI_WPA:

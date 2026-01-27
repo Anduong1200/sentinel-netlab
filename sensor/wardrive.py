@@ -7,7 +7,6 @@ Usage:
     python wardrive.py --iface wlan0 --gps /dev/ttyUSB0 --output session.json
 """
 
-import os
 import sys
 import time
 import json
@@ -133,7 +132,7 @@ class WardriveSession:
         """Print session statistics"""
         duration = (datetime.now(timezone.utc) - self.start_time).total_seconds()
         print(f"\n{'='*50}")
-        print(f"Wardrive Session Statistics")
+        print("Wardrive Session Statistics")
         print(f"{'='*50}")
         print(f"Duration:        {duration:.1f} seconds")
         print(f"Total Sightings: {len(self.sightings)}")
@@ -213,7 +212,7 @@ def run_wardrive(args):
     gps.start()
     capture.start()
     
-    logger.info(f"Wardriving started. Press Ctrl+C to stop.")
+    logger.info("Wardriving started. Press Ctrl+C to stop.")
     logger.info(f"Output: {args.output}")
     
     # Main loop
