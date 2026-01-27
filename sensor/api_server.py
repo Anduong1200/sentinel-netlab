@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 WiFi Scanner API Server - Run in Kali VM
-Integrated version using modular components.
+# Integrated version using modular components.
 """
 
 from flask import Flask, jsonify, request, Response
@@ -11,6 +11,7 @@ from flask_limiter.util import get_remote_address
 from datetime import datetime
 import logging
 import os
+import time
 
 # Import modular components
 from capture import CaptureEngine, check_monitor_support
@@ -20,8 +21,14 @@ from risk import RiskScorer, calculate_risk_score
 from attacks import AttackEngine
 from forensics import ForensicAnalyzer, analyze_pcap
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Import monitoring
+from monitoring import (
+    setup_json_logging, prometheus_metrics_endpoint,
+    REQUESTS, LATENCY, SCAN_DURATION, NETWORKS_FOUND, ACTIVE_ALERTS, SYSTEM_INFO
+)
+
+# Setup JSON logging
+setup_json_logging()
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -31,8 +38,8 @@ limiter = Limiter(app, key_func=get_remote_address)
 # Configuration
 API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
 if not API_KEY:
-    logger.warning("WIFI_SCANNER_API_KEY not set! Using insecure default for PoC.")
-    API_KEY = "student-project-2024"
+    logger.warning("WIFI_SCANNER_API_KEY not set! Using default development key.")
+    API_KEY = "sentinel-dev-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
 ALLOW_ACTIVE_ATTACKS = os.environ.get("ALLOW_ACTIVE_ATTACKS", "false").lower() == "true"
 
@@ -44,15 +51,34 @@ memory_storage = MemoryStorage()
 risk_scorer = RiskScorer()
 attack_engine = AttackEngine(interface=INTERFACE)
 
+# Set static info metric
+SYSTEM_INFO.labels(version="1.0.0", interface=INTERFACE, engine="tshark").set(1)
 
 @app.before_request
 def check_auth():
     """Simple API key authentication"""
-    if request.endpoint not in ['health', 'status']:
+    if request.endpoint not in ['health', 'status', 'metrics']:  # Allow metrics without auth
         api_key = request.headers.get('X-API-Key')
         if api_key != API_KEY:
+            # Count failed auth
+            REQUESTS.labels(request.path, request.method, '401').inc()
             return jsonify({"error": "Unauthorized"}), 401
 
+@app.after_request
+def record_metrics(response):
+    """Record request metrics"""
+    if request.endpoint != 'metrics':
+        REQUESTS.labels(
+            request.path, 
+            request.method, 
+            str(response.status_code)
+        ).inc()
+    return response
+
+@app.route('/metrics')
+def metrics():
+    """Prometheus metrics endpoint"""
+    return prometheus_metrics_endpoint()
 
 @app.route('/health')
 def health():
@@ -60,60 +86,79 @@ def health():
     return jsonify({
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
-        "interface": INTERFACE
+        "interface": INTERFACE,
+        "metrics_url": "/metrics"
     })
 
 
 @app.route('/status')
 def status():
     """Get sensor status including interface and capture state"""
-    interface_info = check_monitor_support(INTERFACE)
-    capture_status = capture_engine.get_status()
-    
-    return jsonify({
-        "interface": interface_info,
-        "capture": capture_status,
-        "storage": {
-            "network_count": storage.get_network_count(),
-            "pcap_stats": storage.get_pcap_stats()
-        }
-    })
+    try:
+        interface_info = check_monitor_support(INTERFACE)
+        capture_status = capture_engine.get_status()
+        
+        return jsonify({
+            "interface": interface_info,
+            "capture": capture_status,
+            "storage": {
+                "network_count": storage.get_network_count(),
+                "pcap_stats": storage.get_pcap_stats()
+            }
+        })
+    except Exception as e:
+        logger.error(f"Status check failed: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/scan')
 @limiter.limit("10 per minute")
 def scan_networks():
     """Scan for WiFi networks using integrated modules"""
-    try:
-        # Clear previous scan data
-        parser.clear()
-        memory_storage.clear()
+    start_time = time.time()
+    
+    # Measure latency for scan specifically
+    with LATENCY.labels('/scan').time():
+        try:
+            # Clear previous scan data
+            parser.clear()
+            memory_storage.clear()
+            
+            # Try real scan first
+            networks = perform_real_scan()
+            
+        except Exception as e:
+            logger.warning(f"Real scan failed or not supported: {e}, activating simulation mode")
+            networks = get_simulation_data()
         
-        # Try real scan first
-        networks = perform_real_scan()
+        # Calculate risk scores using RiskScorer
+        alerts_count = 0
+        for net in networks:
+            risk_result = risk_scorer.calculate_risk(net)
+            net['risk_score'] = risk_result['risk_score']
+            net['risk_level'] = risk_result['risk_level']
+            if net['risk_score'] > 70:
+                alerts_count += 1
         
-    except Exception as e:
-        logger.warning(f"Real scan failed: {e}, using mock data")
-        networks = get_mock_networks()
-    
-    # Calculate risk scores using RiskScorer
-    for net in networks:
-        risk_result = risk_scorer.calculate_risk(net)
-        net['risk_score'] = risk_result['risk_score']
-        net['risk_level'] = risk_result['risk_level']
-    
-    # Store in persistent storage
-    try:
-        storage.store_networks(networks)
-    except Exception as e:
-        logger.error(f"Storage error: {e}")
-    
-    return jsonify({
-        "status": "success",
-        "timestamp": datetime.now().isoformat(),
-        "networks": networks,
-        "count": len(networks)
-    })
+        # Update metrics
+        duration = time.time() - start_time
+        SCAN_DURATION.set(duration)
+        NETWORKS_FOUND.set(len(networks))
+        ACTIVE_ALERTS.set(alerts_count)
+        
+        # Store in persistent storage
+        try:
+            storage.store_networks(networks)
+        except Exception as e:
+            logger.error(f"Storage error: {e}")
+        
+        return jsonify({
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "networks": networks,
+            "count": len(networks),
+            "scan_duration": round(duration, 2)
+        })
 
 
 def perform_real_scan(channels=None, dwell_time=0.5):
@@ -165,8 +210,8 @@ def perform_real_scan(channels=None, dwell_time=0.5):
     return networks
 
 
-def get_mock_networks():
-    """Mock networks for demonstration when real scan fails"""
+def get_simulation_data():
+    """Generate simulation data for testing or fallback mode"""
     import random
     vendors = ["TP-Link", "Asus", "Netgear", "D-Link", "MikroTik"]
     encryptions = ["Open", "WEP", "WPA2-PSK", "WPA3-SAE"]

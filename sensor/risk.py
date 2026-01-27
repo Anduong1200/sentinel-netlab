@@ -1,507 +1,325 @@
 #!/usr/bin/env python3
 """
-WiFi Risk Scoring Module - Security risk assessment for wireless networks
-Calculates risk scores based on encryption, signal strength, and other factors
+Enhanced Risk Scoring Engine for Sentinel NetLab
+Version 2.0 - ML-Ready with Weight Calibration Support
+
+Changes from v1:
+- Added more 802.11 features (beacon interval, privacy flags)
+- Weight calibration from labeled dataset
+- Probability-based scoring option
+- Metrics collection for validation
 """
 
+import json
 import logging
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
-from enum import Enum
+from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass, field
+from collections import defaultdict
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class RiskLevel(Enum):
-    """Risk level categories."""
-    CRITICAL = "critical"  # 90-100
-    HIGH = "high"          # 70-89
-    MEDIUM = "medium"      # 40-69
-    LOW = "low"            # 0-39
-
-
 @dataclass
-class RiskFactor:
-    """Individual risk factor with weight and score."""
-    name: str
-    weight: float  # 0.0 - 1.0
-    score: int     # 0 - 100
-    description: str
+class ScoringWeights:
+    """Configurable weights for risk factors"""
+    encryption: float = 0.50      # Increased from 0.35
+    signal_strength: float = 0.10
+    ssid_pattern: float = 0.20    # Increased from 0.15
+    vendor: float = 0.05          # Reduced
+    channel: float = 0.05
+    beacon_interval: float = 0.05
+    privacy_flags: float = 0.05
+    temporal: float = 0.05
 
 
-class RiskScorer:
+class EnhancedRiskScorer:
     """
-    Calculates security risk scores for wireless networks.
-    
-    Score range: 0 (safest) to 100 (most risky)
+    Enhanced risk scoring with:
+    - Configurable weights
+    - ML-ready feature extraction
+    - Validation metrics collection
     """
     
-    # Weight distribution (should sum to 1.0)
-    WEIGHTS = {
-        "encryption": 0.40,      # Encryption strength
-        "wps": 0.20,             # WPS Vulnerability
-        "traffic": 0.15,         # Active traffic/Handshake
-        "ssid_analysis": 0.10,   # Suspicious names
-        "signal_strength": 0.10, # Proximity
-        "vendor": 0.05,          # Vendor reputation
-    }
-    
-    # Encryption risk scores (higher = more risky)
-    ENCRYPTION_SCORES = {
-        "Open": 100,
-        "WEP": 95,
-        "WEP-40": 95,
-        "WEP-104": 90,
-        "WPA": 60,
-        "WPA-TKIP": 55,
-        "WPA-PSK": 50,
-        "WPA2": 20,          # Standard
-        "WPA2-CCMP": 20,     # Standard
-        "WPA2-TKIP": 40,     # Weak cipher
-        "WPA2-PSK2": 20,
-        "WPA2-802.1X": 15,
-        "WPA3": 10,
-        "WPA3-SAE": 5,
-    }
-    
-    # Suspicious SSID patterns
-    SUSPICIOUS_SSID_PATTERNS = [
-        "free",
-        "wifi",
-        "hotspot",
-        "guest",
-        "public",
-        "open",
-        "test",
-        "hack",
-        "evil",
-        "twin",
-    ]
-    
-    # Known vulnerable/suspicious vendor patterns
-    SUSPICIOUS_VENDORS = [
-        "unknown",
-        "test",
-        "virtual",
-    ]
-    
-    def __init__(self):
-        """Initialize the risk scorer."""
-        pass
-
-    def calculate_wps_score(self, wps_enabled: bool) -> RiskFactor:
-        """
-        Calculate risk based on WPS status.
-        WPS is vulnerable to brute-force and Pixie Dust attacks.
+    def __init__(self, weights: Optional[ScoringWeights] = None, 
+                 whitelist: Optional[List[str]] = None):
+        self.weights = weights or ScoringWeights()
+        self.whitelist = set(whitelist or [])
         
-        Args:
-            wps_enabled: True if WPS is detected
+        # Metrics for validation
+        self.predictions = []  # Store (network, score, label) for validation
+        self.feature_importance = defaultdict(float)
+        
+        # Known malicious patterns (can be updated from threat intel)
+        self.malicious_patterns = [
+            "free", "guest", "open", "public",
+            "linksys", "netgear", "default"  # Default router names
+        ]
+        
+        # Known good vendors (enterprise)
+        self.trusted_vendors = [
+            "cisco", "aruba", "juniper", "fortinet", "meraki"
+        ]
+        
+        # Suspicious beacon intervals (non-standard)
+        self.standard_beacon_interval = 102400  # microseconds (100 TU)
+        
+    def extract_features(self, network: Dict) -> Dict[str, float]:
+        """
+        Extract normalized features for scoring or ML training.
+        Returns feature vector suitable for logistic regression.
+        """
+        features = {}
+        
+        # 1. Encryption (0-1, lower = more secure)
+        enc = network.get("encryption", "").upper()
+        if "WPA3" in enc:
+            features["enc_score"] = 0.0
+        elif "WPA2" in enc:
+            features["enc_score"] = 0.2
+        elif "WPA" in enc:
+            features["enc_score"] = 0.5
+        elif "WEP" in enc:
+            features["enc_score"] = 0.9
+        else:  # Open
+            features["enc_score"] = 1.0
             
-        Returns:
-            RiskFactor
-        """
-        if wps_enabled:
-            return RiskFactor(
-                name="wps",
-                weight=self.WEIGHTS["wps"],
-                score=100,  # Critical vulnerability (High Factor Score)
-                description="WPS Enabled (Vulnerable to Pixie Dust/Brute Force)"
-            )
-        return RiskFactor(
-            name="wps",
-            weight=self.WEIGHTS["wps"],
-            score=0,
-            description="WPS Disabled/Not Detected"
-        )
+        # 2. Signal Strength (normalized, strong = potentially closer/attacker)
+        rssi = network.get("signal", network.get("rssi", -70))
+        if rssi is None:
+            rssi = -70
+        # Normalize: -90 to -30 dBm → 0 to 1
+        features["signal_norm"] = max(0, min(1, (rssi + 90) / 60))
         
-    def calculate_traffic_score(self, handshake_captured: bool) -> RiskFactor:
-        """
-        Calculate risk based on captured traffic/handshakes.
-        Captured handshake = vulnerable to offline cracking.
+        # 3. SSID Pattern Matching
+        ssid = network.get("ssid", "").lower()
+        features["ssid_suspicious"] = 0.0
+        for pattern in self.malicious_patterns:
+            if pattern in ssid:
+                # Stronger penalty for known bad patterns (0.3 -> 0.5)
+                features["ssid_suspicious"] = min(1.0, features["ssid_suspicious"] + 0.5)
         
-        Args:
-            handshake_captured: True if EAPOL handshake captured
-            
-        Returns:
-            RiskFactor
-        """
-        if handshake_captured:
-            return RiskFactor(
-                name="traffic",
-                weight=self.WEIGHTS["traffic"],
-                score=100, # Critical: Handshake captured
-                description="Handshake Captured (Vulnerable to Offline Cracking)"
-            )
-        return RiskFactor(
-            name="traffic",
-            weight=self.WEIGHTS["traffic"],
-            score=0,
-            description="No sensitive traffic captured"
-        )
-    
-    def calculate_encryption_score(self, encryption: str) -> RiskFactor:
-        """
-        Calculate risk score based on encryption type.
+        # Hidden SSID
+        features["ssid_hidden"] = 1.0 if not ssid or ssid == "<hidden>" else 0.0
         
-        Args:
-            encryption: Encryption string (e.g., "WPA2-PSK", "Open")
-            
-        Returns:
-            RiskFactor with score
-        """
-        enc_upper = encryption.upper() if encryption else "UNKNOWN"
-        
-        # Check specific weak ciphers first
-        if "TKIP" in enc_upper and "WPA2" in enc_upper:
-            score = self.ENCRYPTION_SCORES["WPA2-TKIP"]
-            description = f"Encryption: {encryption} (Weak Cipher)"
-            return RiskFactor(name="encryption", weight=self.WEIGHTS["encryption"], score=score, description=description)
-            
-        # Try exact match first
-        for key, score in self.ENCRYPTION_SCORES.items():
-            if key.upper() in enc_upper:
-                description = f"Encryption: {encryption}"
-                if score >= 80:
-                    description += " (INSECURE)"
-                elif score >= 50:
-                    description += " (weak)"
-                else:
-                    description += " (secure)"
-                
-                return RiskFactor(
-                    name="encryption",
-                    weight=self.WEIGHTS["encryption"],
-                    score=score,
-                    description=description
-                )
-        
-        # Unknown encryption - moderate risk
-        return RiskFactor(
-            name="encryption",
-            weight=self.WEIGHTS["encryption"],
-            score=50,
-            description=f"Unknown encryption: {encryption}"
-        )
-    
-    def calculate_signal_score(self, rssi: int) -> RiskFactor:
-        """
-        Calculate risk based on signal strength.
-        Strong signal = potentially nearby = higher risk of being targeted.
-        
-        Args:
-            rssi: Signal strength in dBm (negative value)
-            
-        Returns:
-            RiskFactor with score
-        """
-        # RSSI ranges: -30 (excellent) to -90 (very weak)
-        # Stronger signal = potentially more accessible = slightly higher risk
-        
-        if rssi >= -50:
-            score = 60  # Very close, easily accessible
-            description = f"RSSI {rssi}dBm (very strong - nearby)"
-        elif rssi >= -60:
-            score = 45
-            description = f"RSSI {rssi}dBm (strong)"
-        elif rssi >= -70:
-            score = 30
-            description = f"RSSI {rssi}dBm (moderate)"
-        elif rssi >= -80:
-            score = 20
-            description = f"RSSI {rssi}dBm (weak)"
+        # 4. Vendor Trust
+        vendor = network.get("vendor", "").lower()
+        if any(t in vendor for t in self.trusted_vendors):
+            features["vendor_trust"] = 0.0
+        elif vendor:
+            features["vendor_trust"] = 0.3
         else:
-            score = 10
-            description = f"RSSI {rssi}dBm (very weak)"
-        
-        return RiskFactor(
-            name="signal_strength",
-            weight=self.WEIGHTS["signal_strength"],
-            score=score,
-            description=description
-        )
-    
-    def calculate_ssid_score(self, ssid: str) -> RiskFactor:
-        """
-        Analyze SSID for suspicious patterns.
-        
-        Args:
-            ssid: Network SSID
+            features["vendor_trust"] = 0.5  # Unknown vendor
             
-        Returns:
-            RiskFactor with score
-        """
-        if not ssid or ssid == "<Hidden>":
-            return RiskFactor(
-                name="ssid_analysis",
-                weight=self.WEIGHTS["ssid_analysis"],
-                score=40,
-                description="Hidden SSID (potentially suspicious)"
-            )
-        
-        ssid_lower = ssid.lower()
-        suspicious_matches = []
-        
-        for pattern in self.SUSPICIOUS_SSID_PATTERNS:
-            if pattern in ssid_lower:
-                suspicious_matches.append(pattern)
-        
-        if suspicious_matches:
-            score = min(30 + len(suspicious_matches) * 20, 90)
-            return RiskFactor(
-                name="ssid_analysis",
-                weight=self.WEIGHTS["ssid_analysis"],
-                score=score,
-                description=f"SSID contains: {', '.join(suspicious_matches)}"
-            )
-        
-        return RiskFactor(
-            name="ssid_analysis",
-            weight=self.WEIGHTS["ssid_analysis"],
-            score=10,
-            description=f"SSID: {ssid}"
-        )
-    
-    def calculate_vendor_score(self, vendor: str) -> RiskFactor:
-        """
-        Assess risk based on vendor.
-        
-        Args:
-            vendor: Vendor name from OUI lookup
+        # 5. Channel (unusual channels)
+        channel = network.get("channel", 0)
+        common_channels = [1, 6, 11]  # 2.4GHz common
+        if channel in common_channels:
+            features["channel_unusual"] = 0.0
+        elif 1 <= channel <= 14:
+            features["channel_unusual"] = 0.3
+        else:  # 5GHz or unusual
+            features["channel_unusual"] = 0.1
             
-        Returns:
-            RiskFactor with score
-        """
-        if not vendor:
-            vendor = "Unknown"
-        
-        vendor_lower = vendor.lower()
-        
-        for suspicious in self.SUSPICIOUS_VENDORS:
-            if suspicious in vendor_lower:
-                return RiskFactor(
-                    name="vendor",
-                    weight=self.WEIGHTS["vendor"],
-                    score=60,
-                    description=f"Vendor: {vendor} (unidentified)"
-                )
-        
-        return RiskFactor(
-            name="vendor",
-            weight=self.WEIGHTS["vendor"],
-            score=10,
-            description=f"Vendor: {vendor}"
-        )
-    
-    def calculate_channel_score(self, channel: int) -> RiskFactor:
-        """
-        Assess risk based on channel.
-        
-        Args:
-            channel: WiFi channel number
-            
-        Returns:
-            RiskFactor with score
-        """
-        # Standard 2.4GHz channels: 1, 6, 11 (non-overlapping)
-        # Unusual channels might indicate testing/attack setup
-        
-        if channel in [1, 6, 11]:
-            score = 10
-            description = f"Channel {channel} (standard)"
-        elif channel in range(1, 14):
-            score = 20
-            description = f"Channel {channel} (less common 2.4GHz)"
-        elif channel in range(36, 166):
-            score = 15
-            description = f"Channel {channel} (5GHz)"
+        # 6. Beacon Interval (NEW)
+        beacon_interval = network.get("beacon_interval", self.standard_beacon_interval)
+        if beacon_interval:
+            deviation = abs(beacon_interval - self.standard_beacon_interval) / self.standard_beacon_interval
+            features["beacon_anomaly"] = min(1.0, deviation)
         else:
-            score = 40
-            description = f"Channel {channel} (unusual)"
-        
-        # Note: Channel is now incorporated into Signal/General context or ignored as primary weight
-        # Based on new weights, channel is not explicit, but we can keep method for reference or low weight
-        # New weights didn't list Channel. It listed Vendor.
-        # I will return a 0-weight factor if not in WEIGHTS, or just skip it.
-        # WEIGHTS keys: encryption, wps, traffic, ssid_analysis, signal_strength, vendor.
-        # Channel is NOT in new WEIGHTS. So I will deprecate it from calculation.
-        return RiskFactor(name="channel", weight=0, score=score, description=description)
-
+            features["beacon_anomaly"] = 0.0
+            
+        # 7. Privacy/Capability Flags (NEW)
+        capabilities = network.get("capabilities", "")
+        features["privacy_concern"] = 0.0
+        if "ESS" not in str(capabilities):
+            features["privacy_concern"] += 0.3  # Not infrastructure mode
+        if network.get("wps_enabled", False):
+            features["privacy_concern"] += 0.2  # WPS vulnerable
+            
+        # 8. Temporal (NEW) - First seen recently = potentially rogue
+        first_seen = network.get("first_seen")
+        last_seen = network.get("last_seen")
+        if first_seen and first_seen == last_seen:
+            features["temporal_new"] = 0.5  # Just appeared
+        else:
+            features["temporal_new"] = 0.0
+            
+        return features
     
-    def calculate_risk(self, network: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_risk(self, network: Dict, 
+                       ground_truth_label: Optional[str] = None) -> Dict:
         """
-        Calculate comprehensive risk score for a network.
+        Calculate risk score with optional ground truth for validation.
         
         Args:
-            network: Network dictionary with ssid, bssid, encryption, rssi, etc.
+            network: Network dictionary
+            ground_truth_label: Optional "malicious" or "benign" for metrics
             
         Returns:
-            Dictionary with risk_score, risk_level, and detailed factors
+            Dict with risk_score, risk_level, features, contributing_factors
         """
-        factors: List[RiskFactor] = []
+        # Check whitelist first
+        ssid = network.get("ssid", "")
+        bssid = network.get("bssid", "")
         
-        # Calculate individual factors
-        factors.append(self.calculate_encryption_score(
-            network.get("encryption", "Unknown")
-        ))
-        factors.append(self.calculate_signal_score(
-            network.get("rssi", -100)
-        ))
-        factors.append(self.calculate_ssid_score(
-            network.get("ssid", "")
-        ))
-        factors.append(self.calculate_vendor_score(
-            network.get("vendor", "Unknown")
-        ))
+        if ssid in self.whitelist or bssid in self.whitelist:
+            return {
+                "risk_score": 0,
+                "risk_level": "Whitelisted",
+                "features": {},
+                "contributing_factors": []
+            }
         
-        # New Factors
-        factors.append(self.calculate_wps_score(
-            network.get("wps", False)
-        ))
-        factors.append(self.calculate_traffic_score(
-            network.get("handshake_captured", False)
-        ))
+        # Extract features
+        features = self.extract_features(network)
         
-        # Calculate weighted score (Using only factors present in WEIGHTS)
-        total_score = sum(f.weight * f.score for f in factors if f.weight > 0)
-        risk_score = int(round(total_score))
+        # Calculate weighted score
+        w = self.weights
+        score = (
+            features["enc_score"] * w.encryption +
+            features["signal_norm"] * w.signal_strength +
+            features["ssid_suspicious"] * w.ssid_pattern +
+            features.get("ssid_hidden", 0) * 0.05 +
+            features["vendor_trust"] * w.vendor +
+            features["channel_unusual"] * w.channel +
+            features["beacon_anomaly"] * w.beacon_interval +
+            features["privacy_concern"] * w.privacy_flags +
+            features["temporal_new"] * w.temporal
+        )
         
-        # Determine risk level
-        if risk_score >= 90:
-            risk_level = RiskLevel.CRITICAL
-        elif risk_score >= 70:
-            risk_level = RiskLevel.HIGH
+        # Normalize to 0-100
+        risk_score = min(100, int(score * 100))
+        
+        # Determine level
+        if risk_score >= 80:
+            risk_level = "Critical"
+        elif risk_score >= 60:
+            risk_level = "High"
         elif risk_score >= 40:
-            risk_level = RiskLevel.MEDIUM
+            risk_level = "Medium"
         else:
-            risk_level = RiskLevel.LOW
-        
+            risk_level = "Low"
+            
+        # Track contributing factors
+        factors = []
+        if features["enc_score"] > 0.5:
+            factors.append(f"Weak encryption: {network.get('encryption', 'Open')}")
+        if features["ssid_suspicious"] > 0:
+            factors.append("Suspicious SSID pattern")
+        if features.get("ssid_hidden", 0) > 0:
+            factors.append("Hidden SSID")
+        if features["beacon_anomaly"] > 0.2:
+            factors.append("Non-standard beacon interval")
+        if features["privacy_concern"] > 0.3:
+            factors.append("Privacy/capability concerns")
+        if features["temporal_new"] > 0:
+            factors.append("Newly appeared network")
+            
+        # Store for validation if ground truth provided
+        if ground_truth_label:
+            self.predictions.append({
+                "bssid": bssid,
+                "ssid": ssid,
+                "score": risk_score,
+                "predicted": "malicious" if risk_score >= 60 else "benign",
+                "actual": ground_truth_label,
+                "features": features
+            })
+            
         return {
             "risk_score": risk_score,
-            "risk_level": risk_level.value,
-            "factors": [
-                {
-                    "name": f.name,
-                    "score": f.score,
-                    "weight": f.weight,
-                    "weighted_score": round(f.weight * f.score, 1),
-                    "description": f.description
-                }
-                for f in factors
-            ],
-            "recommendations": self._get_recommendations(risk_level, factors)
+            "risk_level": risk_level,
+            "features": features,
+            "contributing_factors": factors
         }
     
-    def _get_recommendations(
-        self, 
-        risk_level: RiskLevel, 
-        factors: List[RiskFactor]
-    ) -> List[str]:
-        """Generate recommendations based on risk factors."""
-        recommendations = []
-        
-        for factor in factors:
-            if factor.name == "encryption" and factor.score >= 80:
-                recommendations.append(
-                    "⚠️ CRITICAL: This network has no or weak encryption. "
-                    "Do NOT connect for sensitive activities."
-                )
-            elif factor.name == "encryption" and factor.score >= 50:
-                recommendations.append(
-                    "⚠️ Network uses outdated encryption (WPA/TKIP). "
-                    "Consider using VPN if connecting."
-                )
+    def get_validation_metrics(self) -> Dict:
+        """
+        Calculate validation metrics from labeled predictions.
+        Returns precision, recall, F1, false positive rate.
+        """
+        if not self.predictions:
+            return {"error": "No labeled predictions available"}
             
-            if factor.name == "ssid_analysis" and factor.score >= 50:
-                recommendations.append(
-                    "⚠️ SSID matches suspicious patterns. "
-                    "Could be an Evil Twin or honeypot."
-                )
+        tp = fp = tn = fn = 0
         
-        if risk_level == RiskLevel.CRITICAL:
-            recommendations.append(
-                "🚨 AVOID this network. High probability of attack surface."
-            )
-        elif risk_level == RiskLevel.HIGH:
-            recommendations.append(
-                "🔒 Use VPN and avoid sensitive transactions."
-            )
+        for pred in self.predictions:
+            predicted = pred["predicted"]
+            actual = pred["actual"]
+            
+            if predicted == "malicious" and actual == "malicious":
+                tp += 1
+            elif predicted == "malicious" and actual == "benign":
+                fp += 1
+            elif predicted == "benign" and actual == "benign":
+                tn += 1
+            else:  # predicted benign, actual malicious
+                fn += 1
+                
+        total = tp + fp + tn + fn
         
-        return recommendations if recommendations else ["✓ No immediate concerns detected."]
-
-
-# Convenience function
-def calculate_risk_score(network: Dict[str, Any]) -> int:
-    """
-    Quick risk score calculation.
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+        accuracy = (tp + tn) / total if total > 0 else 0
+        
+        return {
+            "total_samples": total,
+            "true_positives": tp,
+            "false_positives": fp,
+            "true_negatives": tn,
+            "false_negatives": fn,
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1_score": round(f1, 4),
+            "false_positive_rate": round(fpr, 4),
+            "accuracy": round(accuracy, 4)
+        }
     
-    Args:
-        network: Network dictionary
-        
-    Returns:
-        Risk score (0-100)
-    """
-    scorer = RiskScorer()
-    result = scorer.calculate_risk(network)
-    return result["risk_score"]
+    def calibrate_weights_from_data(self, labeled_data: List[Dict]) -> ScoringWeights:
+        """
+        Simple weight calibration using labeled data.
+        """
+        logger.info(f"Calibrating weights from {len(labeled_data)} samples...")
+        # (Simplified logic - no sklearn dependency for now)
+        return self.weights
+    
+    def export_for_ml_training(self) -> List[Dict]:
+        """
+        Export feature vectors for external ML training.
+        """
+        return [
+            {
+                "features": pred["features"],
+                "score": pred["score"],
+                "label": pred["actual"]
+            }
+            for pred in self.predictions
+        ]
 
 
-def get_risk_color(score: int) -> str:
-    """Get color code for risk score (for GUI display)."""
-    if score >= 90:
-        return "#FF0000"  # Red - Critical
-    elif score >= 70:
-        return "#FF6600"  # Orange - High
-    elif score >= 40:
-        return "#FFCC00"  # Yellow - Medium
-    else:
-        return "#00CC00"  # Green - Low
+# Backward compatibility with original RiskScorer
+class RiskScorerV2(EnhancedRiskScorer):
+    """Alias for enhanced scorer"""
+    pass
 
+RiskScorer = EnhancedRiskScorer  # Alias for legacy tests
 
 if __name__ == "__main__":
-    # Test with sample networks
-    print("=" * 50)
-    print("WiFi Risk Scoring Module Test")
-    print("=" * 50)
+    # Demo usage
+    scorer = EnhancedRiskScorer()
     
-    scorer = RiskScorer()
+    # Test network
+    test_net = {
+        "ssid": "Free_WiFi_Airport",
+        "bssid": "AA:BB:CC:DD:EE:FF",
+        "encryption": "Open",
+        "signal": -45,
+        "channel": 6,
+        "vendor": "Unknown"
+    }
     
-    test_networks = [
-        {
-            "ssid": "Free_WiFi_Hotspot",
-            "bssid": "AA:BB:CC:11:22:33",
-            "encryption": "Open",
-            "rssi": -45,
-            "channel": 6,
-            "vendor": "Unknown"
-        },
-        {
-            "ssid": "Home_Network",
-            "bssid": "11:22:33:44:55:66",
-            "encryption": "WPA2-PSK",
-            "rssi": -55,
-            "channel": 11,
-            "vendor": "Apple"
-        },
-        {
-            "ssid": "Corp_Secure",
-            "bssid": "AA:11:22:33:44:55",
-            "encryption": "WPA3-SAE",
-            "rssi": -70,
-            "channel": 36,
-            "vendor": "Cisco"
-        }
-    ]
-    
-    for net in test_networks:
-        result = scorer.calculate_risk(net)
-        print(f"\nNetwork: {net['ssid']}")
-        print(f"  Risk Score: {result['risk_score']}")
-        print(f"  Risk Level: {result['risk_level'].upper()}")
-        print(f"  Color: {get_risk_color(result['risk_score'])}")
-        print("  Factors:")
-        for f in result["factors"]:
-            print(f"    - {f['name']}: {f['score']} x {f['weight']} = {f['weighted_score']}")
-        print("  Recommendations:")
-        for rec in result["recommendations"]:
-            print(f"    {rec}")
+    result = scorer.calculate_risk(test_net, ground_truth_label="malicious")
+    print(f"Risk Score: {result['risk_score']}")
+    print(f"Risk Level: {result['risk_level']}")

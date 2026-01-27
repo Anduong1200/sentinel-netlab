@@ -1,79 +1,110 @@
 # Sentinel NetLab 🛡️
+> **Enterprise-Grade Wireless Intrusion Detection System (WIDS)**
 
-> **A Lightweight, Hybrid Wireless Intrusion Detection System (WIDS)**
-
+[![Release](https://img.shields.io/github/v/release/sentinel-netlab/core?label=latest)](https://github.com/sentinel-netlab/core)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-production_ready-green.svg)]()
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)]()
 
-Sentinel NetLab is a modular security tool designed to detect **Rogue Access Points**, **Evil Twin** attacks, and **Wi-Fi anomalies** using low-resource hardware. It combines the speed of C-based capture tools (`tshark`) with the flexibility of Python analysis.
+**Sentinel NetLab** is a **Lightweight Wireless Network Monitoring and Anomaly Detection System** designed to **automate and orchestrate** security assessment tasks. It serves as an operational layer above standard tools (like Tshark/Aircrack-ng), providing continuous monitoring, centralized logging, and risk scoring for SMEs and Research Labs.
 
----
-
-## 📚 Documentation
-- **[IEEE Technical Report](docs/IEEE_Sentinel_NetLab_Report.md)**: Full system design and academic evaluation.
-- **[Installation Guide](docs/lightweight_deployment.md)**: Deployment on VM, Docker, or Raspberry Pi.
-- **[User Guide](docs/demo_runbook.md)**: Step-by-step usage instructions.
-- **[API Reference](docs/api_reference.md)**: Interact with the sensor programmatically.
+> **Note:** This project does not aim to replace deep analysis tools like Wireshark, nor does it focus on breaking encryption. Its core value lies in **operational visibility** and **posture assessment**.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Key Objectives
 
-### 1. Installation
-```bash
-# Clone repository
-git clone https://github.com/your-repo/sentinel-netlab.git
-cd sentinel-netlab
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Run Sensor (Linux)
-```bash
-# Must be run as root for monitor mode
-sudo python sensor/sensor_cli.py --engine tshark --api
-```
-
-### 3. Run Controller (Windows/Linux)
-```bash
-# GUI Dashboard
-python controller/scanner_gui.py
-```
+- **Orchestration**: Automate the capture-analyze-alert loop 24/7 without human intervention.
+- **Posture Assessment**: Detect misconfigurations (Shadow IT, Rogue APs) and behavioral anomalies.
+- **Cost-Effective Visibility**: Provide WIDS capabilities for environments that cannot afford enterprise appliances.
+- **Real-time Forensics**: Automated PCAP analysis and attack signature detection.
+- **Scalable Architecture**: Support for distributed sensors with centralized aggregation (Prometheus/ELK stack ready).
+- **Active Defense**: Deauthentication containment capabilities (controlled environment only).
 
 ---
 
-## 🏗️ Architecture
+## 📚 Documentation Center
+
+### 🛠️ Technical Documentation
+- **Detailed Architecture**: [See System Design & Flowchart](docs/SYSTEM_DESIGN.md)
+- **Technical Report**: [IEEE Standard Report](docs/IEEE_Sentinel_NetLab_Report.md)
+- **Defense Materials**: [Defense Script](docs/defense_script.md) & [Slides](docs/presentation_slides.md)
+
+- **[API Reference](docs/api_reference.md)**: Full REST API documentation with Python examples.
+- **[Risk Scoring Model](docs/technical_gap_analysis.md#1-risk-scoring-algorithm-improvements)**: Details on the v2 scoring algorithm and weight calibration.
+
+### ⚙️ Operations & Deployment
+- **[Deployment Guide](docs/lightweight_deployment.md)**: Installation on Debian/Docker/Raspberry Pi.
+- **[OS Tuning Guide](docs/os_tuning_guide.md)**: Kernel and OS optimization for low-latency capture.
+- **[Metrics & Monitoring](docs/metrics_guide.md)**: KPIs, Prometheus integration, and benchmarking.
+- **[ROI Analysis](docs/roi_analysis.md)**: Business value and cost-benefit analysis.
+
+### 📖 User Guides
+- **[User Manual & Demo](docs/demo_runbook.md)**: Step-by-step usage guide.
+- **[Artifact Checklist](docs/artifact_checklist.md)**: Deliverables for audit/review.
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
 graph TD
-    A[WiFi Adapter] -->|Monitor Mode| B(Capture Engine/Tshark)
-    B -->|JSON Stream| C{Analysis Core}
-    C -->|Risk Score| D[SQLite DB]
-    C -->|Alerts| E[API Server]
-    E -->|REST/JSON| F[Controller GUI]
+    subgraph "Edge Sensor (Linux/Pi)"
+        A[WiFi Adapter] -->|Monitor Mode| B(Capture Engine)
+        B -->|JSON Stream| C{Analysis Core}
+        C -->|Risk Score v2| D[SQLite/Postgres]
+        C -->|Metrics| P[Prometheus Exp]
+    end
+    
+    subgraph "Central Controller"
+        E[API Gateway] -->|REST/HTTPS| F[Dashboard GUI]
+        E -->|Logs| G[ELK Stack]
+        P -->|TimeSeries| H[Grafana]
+    end
 ```
 
-## 🧪 Evaluation & Benchmarks
-We have rigorously tested Sentinel NetLab against enterprise standards.
-- **Recall:** >90% detection rate.
-- **Latency:** <50ms API response.
-- **Stability:** 99.9% uptime 24h stress test.
+---
 
-See [Evaluation Rubric](docs/evaluation_rubric.md) for details.
+## ⚡ Quick Start
+
+### 1. Prerequisites
+- Linux Environment (Debian 12 / Ubuntu 22.04 recommended)
+- Wireless Adapter supporting Monitor Mode (Atheros AR9271, Realtek RTL8812AU)
+- Python 3.9+
+
+### 2. Installation
+```bash
+# Clone repository
+git clone https://github.com/sentinel-netlab/core.git
+cd core
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run system optimization (Optional)
+sudo bash scripts/setup_debian_minimal.sh
+```
+
+### 3. Launching the Sensor
+```bash
+# Start API Server with Gunicorn (Production)
+cd sensor
+gunicorn -c gunicorn_conf.py api_server:app
+```
 
 ---
 
-## ⚖️ Legal & Ethics
-This tool is for **authorized security assessments only**. See [Legal Disclaimer](docs/legal_ethics.md).
+## 🛡️ Security & Compliance
+This software is intended for **authorized security auditing and research purposes only**. Users are responsible for complying with all applicable local, state, and federal laws.
+- See **[Legal Disclaimer](docs/legal_ethics.md)** for details.
+
+---
 
 ## 🤝 Contributing
-1. Fork the repo
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+- Code of Conduct
+- Pull Request Process
+- Coding Standards (PEP 8)
 
 ---
-**Maintained by Sentinel NetLab Team**
+**Sentinel NetLab** © 2024-2026. All Rights Reserved.

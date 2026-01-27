@@ -1,4 +1,4 @@
-# Sentinel NetLab: A Lightweight, Hybrid Wireless Intrusion Detection System using Edge Computing
+# Design and Implementation of a Lightweight Wireless Network Monitoring and Anomaly Detection System
 
 **Abstract**—The proliferation of wireless networks has led to an increase in Wi-Fi based attacks, specifically Rogue Access Points (APs) and Evil Twin attacks. Traditional Wireless Intrusion Detection Systems (WIDS) often suffer from high resource consumption, hardware dependency, or lack of centralized management for small-to-medium enterprises (SME). This paper presents **Sentinel NetLab**, a lightweight, modular, and hybrid WIDS designed for resource-constrained environments (e.g., Raspberry Pi, Debian Minimal VMs). By decoupling the capture engine (C/C++ based Tshark) from the analysis logic (Python), and implementing a novel risk scoring algorithm, the system achieves >90% detection recall with sub-second latency while maintaining low CPU footprint. We evaluate the proposed system across multiple hardware configurations, demonstrating its efficacy in detecting sophisticated attacks including Deauthentication floods and Karma attacks.
 
