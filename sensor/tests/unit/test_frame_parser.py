@@ -65,9 +65,10 @@ class TestFrameParser:
         assert result.parse_error is not None
 
     def test_parse_empty_frame_returns_none(self, parser):
-        """Empty frame returns None"""
+        """Empty frame returns error object"""
         result = parser.parse(b'', timestamp=1000.0)
-        assert result is None
+        assert result is not None
+        assert result.parse_error is not None
 
     def test_is_duplicate_within_window(self, parser):
         """Duplicate detection within time window"""
