@@ -24,7 +24,7 @@ class WiFiScannerGUI:
         # Configuration
         # Default to localhost for testing (User can change in settings)
         self.api_url = "http://127.0.0.1:5000"  
-        self.api_key = "student-project-2024"
+        self.api_key = "sentinel-dev-2024"
         
         # Data storage
         self.networks = []
