@@ -102,12 +102,12 @@ class EnhancedRiskScorer:
             + features["ssid_suspicious"] * w.get("ssid_suspicion", 0)
             + features["ssid_hidden"] * w.get("hidden_ssid", 0)
             + features["vendor_trust"] * w.get("vendor_risk", 0)
- # Using channel weight
+            # Using channel weight
             + features["channel_unusual"] * w.get("channel_crowd", 0)
             + features["beacon_anomaly"] * w.get("beacon_anomaly", 0)
             + features["wps_flag"] * w.get("wps_flag", 0)
             + features["temporal_new"] * w.get("temporal", 0)
- # Fallback if missing in yaml
+            # Fallback if missing in yaml
             + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
 
@@ -202,8 +202,8 @@ class EnhancedRiskScorer:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + \
-                                         recall) if (precision + recall) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision
+                                         + recall) if (precision + recall) > 0 else 0
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         accuracy = (tp + tn) / total if total > 0 else 0
 

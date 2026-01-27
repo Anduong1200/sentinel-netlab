@@ -136,8 +136,8 @@ class WardriveSession:
         """Print session statistics"""
         duration = (
             datetime.now(
-                timezone.utc) -
-            self.start_time).total_seconds()
+                timezone.utc)
+            - self.start_time).total_seconds()
         print(f"\n{'='*50}")
         print("Wardrive Session Statistics")
         print(f"{'='*50}")

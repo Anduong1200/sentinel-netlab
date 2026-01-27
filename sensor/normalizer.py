@@ -128,8 +128,8 @@ class TelemetryNormalizer:
         # Calculate uptime
         uptime = (
             datetime.now(
-                timezone.utc) -
-            self._start_time).total_seconds()
+                timezone.utc)
+            - self._start_time).total_seconds()
 
         return TelemetryFrame(
             sensor_id=self.sensor_id,
@@ -188,7 +188,7 @@ class TelemetryNormalizer:
             'sequence_id': self._sequence_id,
             'uptime_seconds': (
                 datetime.now(
-                    timezone.utc) -
-                self._start_time).total_seconds(),
+                    timezone.utc)
+                - self._start_time).total_seconds(),
             'capture_method': self.capture_method,
             'anonymize_ssid': self.anonymize_ssid}

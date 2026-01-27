@@ -294,8 +294,8 @@ class SensorController:
         if self._start_time:
             uptime = (
                 datetime.now(
-                    timezone.utc) -
-                self._start_time).total_seconds()
+                    timezone.utc)
+                - self._start_time).total_seconds()
 
         return {
             'sensor_id': self.sensor_id,
