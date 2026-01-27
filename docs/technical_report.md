@@ -2668,3 +2668,95 @@ curl -H "X-API-Key: student-project-2024" http://localhost:5000/scan
 ---
 
 *Báo cáo được tạo ngày: 2026-01-27*
+
+## 7. Kịch bản Thử nghiệm & Kết quả
+
+### 7.1 Kịch bản Thử nghiệm
+1. **Kiểm tra Kết nối (Connectivity Testing):**
+   - Ping giữa Host và VM.
+   - Truy cập API /health từ trình duyệt/Postman trên Host.
+
+2. **Kiểm tra Chức năng Scan (Functional Testing):**
+   - Chạy scan trên VM (CLI & API).
+   - So sánh danh sách mạng thu được với phần mềm irodump-ng chạy song song (trên cùng phần cứng hoặc thiết bị tham chiếu).
+
+3. **Kiểm tra Hiệu năng (Performance Testing):**
+   - Đo thời gian phản hồi API (RTT).
+   - Chạy scan liên tục trong 30 phút để kiểm tra độ ổn định và memory leak.
+
+### 7.2 Tiêu chí Đánh giá & Kết quả Mong đợi
+- **Recall:** System phát hiện  80% số lượng AP so với irodump-ng.
+- **Accuracy:** Thông tin SSID, BSSID, Encryption chính xác 100%.
+- **Latency:** API response time trung bình < 1s (không tính thời gian dwell).
+
+---
+
+## 8. Rủi ro & Giới hạn
+
+### 8.1 Rủi ro Kỹ thuật
+- **WSL2 Limitations:** Kernel mặc định của WSL2 thường thiếu driver (th9k_htc) và hỗ trợ USB passthrough không hoàn hảo.
+  - *Giải pháp:* Sử dụng Linux VM trên VirtualBox/VMware hoặc phần cứng vật lý (Raspberry Pi).
+- **Driver/Firmware:** Thiếu firmware (htc_9271.fw) trên một số bản distro.
+  - *Giải pháp:* Script check_driver.py để chẩn đoán và hướng dẫn cài đặt irmware-atheros.
+- **USB Passthrough:** Có thể không ổn định tùy thuộc vào Host OS và Hypervisor.
+  - *Giải pháp:* Test kỹ trên máy demo, chuẩn bị video demo dự phòng.
+
+### 8.2 Giới hạn Phạm vi
+- Chỉ hỗ trợ tốt nhất cho adapter Atheros AR9271.
+- Không thực hiện tấn công chủ động (Deauth/Injection) theo mặc định để đảm bảo an toàn pháp lý.
+- Hiệu năng phụ thuộc vào phần cứng USB và giới hạn băng thông USB 2.0.
+
+---
+
+## 9. Hướng Phát triển (Roadmap)
+
+### A. Ngắn hạn (2-6 tuần)
+- **Củng cố độ tin cậy:** Hoàn thiện scripts tự động (check_driver.py, setup_vm.sh).
+- **Core Features:** Tinh chỉnh dwell time, adaptive hopping để tăng khả năng phát hiện.
+- **Security:** Bắt buộc API Key, Rate Limiting; hướng dẫn SSH tunnel.
+
+### B. Trung hạn (1-3 tháng)
+- **Tối ưu Capture:** Chuyển sang 	shark pipeline cho môi trường mật độ cao.
+- **Multi-Sensor:** Tích hợp đẩy log về ELK Stack (Elasticsearch) tập trung.
+- **Advanced Scoring:** Calibrate trọng số rủi ro dựa trên dataset thực tế; thêm phát hiện WPS, Hidden SSID.
+
+### C. Dài hạn (3-12 tháng)
+- **Advanced Detection:** Phát hiện Evil-Twin dựa trên fingerprinting, hành vi bất thường.
+- **Production Security:** Triển khai mTLS, mã hóa dữ liệu PCAP lưu trữ (encryption at rest).
+- **Pentest Integration:** Module tấn công (Deauth, Fake AP) có kiểm soát chặt chẽ (consent-based).
+
+---
+
+## 10. Sản phẩm Đầu ra (Deliverables)
+
+Dự án cung cấp trọn bộ artifacts bao gồm phần mềm, tài liệu và kịch bản kiểm thử:
+
+1. **Phần mềm:**
+   - Source code Sensor (Linux VM): pi_server.py, capture.py, parser.py, isk.py, storage.py.
+   - Source code Controller (Windows): scanner_gui.py, pi_client.py.
+   - Utility Scripts: check_driver.py, setup_vm.sh, wifi-scanner.service.
+
+2. **Tài liệu:**
+   - docs/install_guide.md: Hướng dẫn cài đặt chi tiết.
+   - docs/api_reference.md: Tài liệu API.
+   - docs/risk_management.md: Quản lý rủi ro & Runbook.
+   - docs/demo_runbook.md: Kịch bản demo.
+   - Báo cáo kỹ thuật (Technical Report) này.
+
+3. **Artifacts Kiểm chứng:**
+   - rtifacts/poc.json: Kết quả scan mẫu.
+   - Video demo quy trình hoạt động.
+
+---
+
+## 11. Kết luận
+
+Dự án đã thiết kế và bước đầu hiện thực hóa kiến trúc **Hybrid Wireless Security Assessment**: kết hợp sức mạnh xử lý tầng thấp của Linux (cho sensor) với tính tiện dụng của Windows (cho controller).
+
+**Kết quả đạt được:**
+- Xây dựng thành công sensor trên Linux VM có khả năng monitor mode và channel hopping.
+- Thiết kế giao thức giao tiếp REST API tách biệt rõ ràng sensor và controller.
+- Cung cấp bộ công cụ scripts hỗ trợ deployment và troubleshooting tự động.
+- Xác định rõ và có phương án xử lý các rủi ro kỹ thuật (đặc biệt là vấn đề driver trên WSL2/VM).
+
+Hệ thống đóng vai trò là một **Proof-of-Concept** khả thi, chi phí thấp, phù hợp cho nhu cầu đào tạo, diễn tập an ninh mạng và điều tra số cơ bản, giải quyết bài toán thiếu hụt công cụ monitor mode chuyên sâu trên nền tảng Windows.

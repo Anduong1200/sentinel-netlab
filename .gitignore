@@ -1,9 +1,11 @@
-# Python
+# Python bytecode
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Build/Distribution
 build/
 develop-eggs/
 dist/
@@ -39,6 +41,7 @@ env/
 # Logs
 *.log
 controller.log
+sensor.log
 
 # Database
 *.db
@@ -58,9 +61,11 @@ artifacts/*.txt
 artifacts/*.pcap
 !artifacts/.gitkeep
 
+# Tests output
+!tests/.gitkeep
+
 # Config with secrets
 config.json
-sample_config.json
 !config.example.json
 
 # OS files
@@ -97,5 +102,7 @@ coverage.xml
 *.crt
 *.key
 
-# Archive folders (optional, can uncomment if needed)
-# archive/
+# Reports (generated)
+security_report_*.txt
+wifi_scan_*.csv
+wifi_scan_*.json

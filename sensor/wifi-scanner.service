@@ -1,0 +1,16 @@
+[Unit]
+Description=WiFi Scanner Sensor API Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/kali/hod_lab/sensor
+ExecStart=/usr/bin/python3 api_server.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=WIFI_SCANNER_INTERFACE=wlan0
+
+[Install]
+WantedBy=multi-user.target

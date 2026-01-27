@@ -13,19 +13,40 @@ RESTful API cho WiFi Scanner Sensor chạy trên Linux VM.
 
 ### GET /health
 
-Health check endpoint (không cần authentication).
-
-**Request:**
-```bash
-curl http://192.168.1.100:5000/health
-```
+Health check endpoint (không yêu cầu authentication).
 
 **Response:**
 ```json
 {
   "status": "ok",
-  "timestamp": "2026-01-27T12:00:00Z",
-  "version": "1.0.0"
+  "timestamp": "2026-01-27T10:00:00.000000",
+  "interface": "wlan0"
+}
+```
+
+---
+
+### GET /status
+
+Sensor status với thông tin interface và capture state.
+
+**Response:**
+```json
+{
+  "interface": {
+    "interface": "wlan0",
+    "exists": true,
+    "mode": "managed",
+    "monitor_capable": true
+  },
+  "capture": {
+    "is_running": false,
+    "total_packets": 0
+  },
+  "storage": {
+    "network_count": 15,
+    "pcap_stats": {"count": 3, "total_size_mb": 12.5}
+  }
 }
 ```
 
@@ -33,61 +54,33 @@ curl http://192.168.1.100:5000/health
 
 ### GET /scan
 
-Trigger WiFi scan và trả về danh sách networks.
+Trigger WiFi scan và trả về kết quả.
 
 **Headers:**
-| Header | Required | Description |
-|--------|----------|-------------|
-| `X-API-Key` | Yes | API authentication key |
+| Header | Value |
+|--------|-------|
+| `X-API-Key` | `student-project-2024` |
 
-**Request:**
-```bash
-curl -H "X-API-Key: student-project-2024" \
-     http://192.168.1.100:5000/scan
-```
+**Rate Limit:** 10 requests/minute
 
 **Response:**
 ```json
 {
   "status": "success",
-  "timestamp": "2026-01-27T12:00:00Z",
+  "timestamp": "2026-01-27T10:00:00.000000",
+  "count": 5,
   "networks": [
     {
-      "ssid": "Home_WiFi",
+      "ssid": "Home_Network",
       "bssid": "AA:BB:CC:11:22:33",
+      "signal": -55,
       "channel": 6,
-      "rssi": -48,
       "encryption": "WPA2-PSK",
-      "vendor": "Apple",
-      "risk_score": 25,
-      "risk_level": "low",
-      "first_seen": "2026-01-27T11:55:00Z",
-      "last_seen": "2026-01-27T12:00:00Z",
-      "beacon_count": 42
-    },
-    {
-      "ssid": "Free_WiFi",
-      "bssid": "11:22:33:44:55:66",
-      "channel": 1,
-      "rssi": -72,
-      "encryption": "Open",
-      "vendor": "Unknown",
-      "risk_score": 92,
-      "risk_level": "critical",
-      "first_seen": "2026-01-27T11:58:00Z",
-      "last_seen": "2026-01-27T12:00:00Z",
-      "beacon_count": 15
+      "vendor": "TP-Link",
+      "risk_score": 45,
+      "risk_level": "medium"
     }
-  ],
-  "count": 2
-}
-```
-
-**Error Response (401):**
-```json
-{
-  "status": "error",
-  "message": "Unauthorized - Invalid or missing API key"
+  ]
 }
 ```
 
@@ -95,27 +88,25 @@ curl -H "X-API-Key: student-project-2024" \
 
 ### GET /history
 
-Lấy scan history từ database.
+Lấy lịch sử scan (50 networks gần nhất).
 
-**Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `limit` | int | 100 | Max records to return |
-| `offset` | int | 0 | Pagination offset |
-
-**Request:**
-```bash
-curl -H "X-API-Key: student-project-2024" \
-     "http://192.168.1.100:5000/history?limit=50"
-```
+**Headers:** `X-API-Key`
 
 **Response:**
 ```json
 {
-  "status": "success",
-  "networks": [...],
-  "count": 50,
-  "total": 150
+  "networks": [
+    {
+      "ssid": "...",
+      "bssid": "...",
+      "first_seen": "2026-01-27T09:00:00",
+      "last_seen": "2026-01-27T10:00:00",
+      "signal": -60,
+      "channel": 1,
+      "encryption": "WPA2",
+      "risk_score": 50
+    }
+  ]
 }
 ```
 
@@ -123,108 +114,64 @@ curl -H "X-API-Key: student-project-2024" \
 
 ### GET /export/csv
 
-Export network data dưới dạng CSV.
+Export data dạng CSV file.
 
-**Request:**
-```bash
-curl -H "X-API-Key: student-project-2024" \
-     http://192.168.1.100:5000/export/csv \
-     -o networks.csv
+**Headers:** `X-API-Key`
+
+**Response:** CSV file download
+
 ```
-
-**Response:** CSV file
-```csv
-SSID,BSSID,Channel,Encryption,Vendor,First Seen,Last Seen,Beacon Count,Best RSSI
-Home_WiFi,AA:BB:CC:11:22:33,6,WPA2-PSK,Apple,2026-01-27T11:55:00Z,2026-01-27T12:00:00Z,42,-48
-Free_WiFi,11:22:33:44:55:66,1,Open,Unknown,2026-01-27T11:58:00Z,2026-01-27T12:00:00Z,15,-72
+SSID,BSSID,Signal,Channel,Encryption,Risk Score
+Home_Network,AA:BB:CC:11:22:33,-55,6,WPA2,45
 ```
 
 ---
 
 ### GET /export/json
 
-Export network data dưới dạng JSON.
+Export data dạng JSON file.
 
-**Request:**
-```bash
-curl -H "X-API-Key: student-project-2024" \
-     http://192.168.1.100:5000/export/json \
-     -o networks.json
+**Headers:** `X-API-Key`
+
+**Response:** JSON file download
+
+---
+
+## Error Responses
+
+| Code | Meaning |
+|------|---------|
+| 401 | Unauthorized - Invalid or missing API key |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error |
+
+**Error Response Format:**
+```json
+{
+  "error": "Unauthorized"
+}
 ```
 
 ---
 
-## Data Models
-
-### Network Object
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `ssid` | string | Network name (empty = hidden) |
-| `bssid` | string | MAC address (XX:XX:XX:XX:XX:XX) |
-| `channel` | int | WiFi channel (1-14 for 2.4GHz) |
-| `rssi` | int | Signal strength in dBm (-30 to -100) |
-| `encryption` | string | Encryption type (Open, WEP, WPA, WPA2, WPA3) |
-| `vendor` | string | OUI vendor lookup result |
-| `risk_score` | int | Security risk score (0-100) |
-| `risk_level` | string | Risk category (low, medium, high, critical) |
-| `first_seen` | string | ISO 8601 timestamp |
-| `last_seen` | string | ISO 8601 timestamp |
-| `beacon_count` | int | Number of beacons received |
-
-### Risk Levels
-
-| Level | Score Range | Color |
-|-------|-------------|-------|
-| `low` | 0-39 | Green |
-| `medium` | 40-69 | Yellow |
-| `high` | 70-89 | Orange |
-| `critical` | 90-100 | Red |
-
----
-
-## Error Codes
-
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 400 | Bad Request - Invalid parameters |
-| 401 | Unauthorized - Missing or invalid API key |
-| 500 | Internal Server Error |
-
----
-
-## Rate Limiting
-
-- Default: 60 requests per minute
-- Headers trả về: `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-
----
-
-## Examples
-
-### Python Client
+## Client Example (Python)
 
 ```python
 import requests
 
-API_URL = "http://192.168.1.100:5000"
+API_URL = "http://192.168.56.101:5000"
 API_KEY = "student-project-2024"
 
 headers = {"X-API-Key": API_KEY}
 
 # Scan
-response = requests.get(f"{API_URL}/scan", headers=headers)
-networks = response.json()["networks"]
-
-for net in networks:
-    print(f"{net['ssid']} ({net['encryption']}) - Risk: {net['risk_score']}")
+response = requests.get(f"{API_URL}/scan", headers=headers, timeout=30)
+data = response.json()
+print(f"Found {data['count']} networks")
 ```
 
-### PowerShell
+## Client Example (cURL)
 
-```powershell
-$headers = @{"X-API-Key" = "student-project-2024"}
-$response = Invoke-RestMethod -Uri "http://192.168.1.100:5000/scan" -Headers $headers
-$response.networks | Format-Table ssid, encryption, risk_score
+```bash
+curl -H "X-API-Key: student-project-2024" http://VM_IP:5000/scan
 ```

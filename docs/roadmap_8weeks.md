@@ -1,72 +1,91 @@
 # Lộ Trình 8 Tuần - WiFi Security Assessment System
 
-## Tổng quan
+## Tổng quan Tiến độ
 
 | Phase | Tuần | Nội dung | Status |
 |-------|------|----------|--------|
 | 1 | 1-2 | Môi trường & POC | ✅ Done |
-| 2 | 3-4 | Core Sensor | ✅ Done |
-| 3 | 5-6 | Controller & GUI | 🔄 In Progress |
-| 4 | 7-8 | Testing & Documentation | ⏳ Pending |
+| 2 | 3-4 | Core Sensor (Modules) | ✅ Done |
+| 3 | 5-6 | Controller & Integration | ✅ Done |
+| 4 | 7 | Testing & Validation | 🔄 In Progress |
+| 5 | 8 | Demo & Documentation | 🔄 In Progress |
 
 ---
 
-## Chi tiết
+## Chi tiết từng Phase
 
-### Tuần 1-2: Môi trường & POC ✅
+### Phase 1: Môi trường & POC (Tuần 1-2) ✅
 
-- [x] Setup VirtualBox/VMware
-- [x] Import Kali Linux VM
-- [x] Configure USB Passthrough
-- [x] Test monitor mode với adapter
-- [x] Tạo Flask API skeleton
-- [x] Implement mock data endpoint
+- [x] Setup VM (Kali Linux)
+- [x] USB passthrough configuration
+- [x] Driver verification (`check_driver.py`)
+- [x] Basic monitor mode test
+- [x] POC: capture beacons with Scapy
 
-### Tuần 3-4: Core Sensor ✅
+### Phase 2: Core Sensor Development (Tuần 3-4) ✅
 
-- [x] `capture.py` - Monitor mode control, channel hopping
-- [x] `parser.py` - 802.11 frame parsing, OUI lookup
-- [x] `storage.py` - SQLite database, PCAP rotation
-- [x] `risk.py` - Risk scoring algorithm
-- [x] `config.py` - Configuration management
-- [x] Real WiFi scanning integration
+- [x] `capture.py` - CaptureEngine class
+  - Monitor mode control
+  - Channel hopping (1-13)
+  - AsyncSniffer integration
+- [x] `parser.py` - WiFiParser class
+  - Beacon/Probe parsing
+  - OUI vendor lookup
+  - Encryption detection
+- [x] `storage.py` - WiFiStorage class
+  - SQLite persistence
+  - PCAP rotation
+  - MemoryStorage for real-time
+- [x] `risk.py` - RiskScorer class
+  - Weighted scoring algorithm
+  - Risk level categorization
+- [x] `api_server.py` - Flask REST API
+  - Endpoints: /health, /status, /scan, /history, /export
+  - Rate limiting
+  - API key authentication
 
-### Tuần 5-6: Controller & GUI 🔄
+### Phase 3: Controller & Integration (Tuần 5-6) ✅
 
 - [x] `scanner_gui.py` - Tkinter GUI
-- [ ] `api_client.py` - HTTP client wrapper
-- [ ] Color-coded risk display
-- [ ] Settings persistence
-- [ ] Export functionality polish
-- [ ] Error handling & recovery UI
+  - Start/Stop Scan
+  - Network list with risk colors
+  - History view
+  - Export CSV/JSON
+  - Settings dialog
+  - Risk report popup
+- [x] API integration với sensor
+- [x] Fallback mock mode
 
-### Tuần 7-8: Testing & Documentation ⏳
+### Phase 4: Testing & Validation (Tuần 7) 🔄
 
-- [ ] Unit tests cho parser, risk
-- [ ] `compare_recall.py` - Accuracy test vs airodump-ng
-- [ ] `test_latency.py` - API performance test
-- [ ] Complete technical report
-- [ ] Prepare demo video (3-5 mins)
-- [ ] Prepare presentation slides
-- [ ] Final bug fixes
+- [x] Unit tests (`test_modules.py`)
+- [ ] Integration tests
+- [ ] Recall benchmark vs airodump-ng
+- [ ] 30-minute stability test
+- [ ] Latency measurements
+
+### Phase 5: Demo & Documentation (Tuần 8) 🔄
+
+- [x] README.md
+- [x] Technical Report
+- [x] Installation Guide
+- [x] API Reference
+- [x] Risk Management docs
+- [x] Demo Runbook
+- [ ] Demo video recording
+- [ ] Presentation slides
+- [ ] Fallback preparation
 
 ---
 
-## Milestones
+## Deliverables Summary
 
-| Milestone | Target | Status |
-|-----------|--------|--------|
-| M1: Hardware Working | Tuần 2 | ✅ |
-| M2: API Functional | Tuần 4 | ✅ |
-| M3: GUI Complete | Tuần 6 | 🔄 |
-| M4: Ready for Demo | Tuần 8 | ⏳ |
+| Category | Count | Status |
+|----------|-------|--------|
+| Code files | 15 | ✅ Complete |
+| Documentation | 9 | ✅ Complete |
+| Test files | 1/2 | 🔄 Partial |
+| Artifacts | 0/3 | ⬜ Pending |
+| Demo materials | 0/3 | ⬜ Pending |
 
----
-
-## Deliverables
-
-- Source code (sensor + controller)
-- Technical report (30-40 pages)
-- Presentation slides (15-20 slides)
-- Demo video (3-5 minutes)
-- Test artifacts (recall report, latency stats)
+**Overall: ~85% Complete**
