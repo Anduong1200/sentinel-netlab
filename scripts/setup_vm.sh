@@ -1,78 +1,177 @@
 #!/bin/bash
-# automated setup script for WiFi Sensor VM (Kali/Ubuntu)
+###############################################################################
+#  Sentinel NetLab - Unified VM Setup Script
+#  Runs entirely in a SINGLE terminal window with progress tracking
+###############################################################################
 
-# Colors
+set -e  # Exit on error
+
+# ─────────────────────────── Colors & Symbols ────────────────────────────────
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-echo -e "${GREEN}==============================================${NC}"
-echo -e "${GREEN}   WiFi Sensor VM Setup Script                ${NC}"
-echo -e "${GREEN}==============================================${NC}"
+OK="${GREEN}✔${NC}"
+FAIL="${RED}✘${NC}"
+ARROW="${CYAN}➜${NC}"
+WARN="${YELLOW}⚠${NC}"
 
-# Check if running as root
+# ─────────────────────────── Helper Functions ────────────────────────────────
+log_step() {
+    echo -e "\n${ARROW} ${BOLD}$1${NC}"
+}
+
+log_ok() {
+    echo -e "  ${OK} $1"
+}
+
+log_warn() {
+    echo -e "  ${WARN} $1"
+}
+
+log_fail() {
+    echo -e "  ${FAIL} $1"
+}
+
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    while ps -p $pid > /dev/null 2>&1; do
+        for i in $(seq 0 9); do
+            printf "\r  ${CYAN}${spinstr:$i:1}${NC} Installing..."
+            sleep $delay
+        done
+    done
+    printf "\r                    \r"
+}
+
+run_silent() {
+    "$@" > /dev/null 2>&1
+}
+
+# ─────────────────────────── Pre-flight Checks ───────────────────────────────
+clear
+echo -e "${BOLD}${BLUE}"
+echo "╔═══════════════════════════════════════════════════════════════╗"
+echo "║         🛡️  SENTINEL NETLAB - VM SETUP WIZARD                 ║"
+echo "║             Single-Window Unified Installer                   ║"
+echo "╚═══════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+# Root check
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Please run as root (sudo ./setup_vm.sh)${NC}"
-  exit 1
+    log_fail "This script requires root privileges."
+    echo -e "    Run: ${CYAN}sudo $0${NC}"
+    exit 1
 fi
+log_ok "Running as root"
 
-echo -e "${YELLOW}[*] Updating package lists...${NC}"
-apt-get update
-
-echo -e "${YELLOW}[*] Installing system dependencies...${NC}"
-# aircrack-ng: for airmon-ng if needed
-# wireless-tools: for iwconfig
-# iw: for iw dev
-# pciutils: for lspci
-# usbutils: for lsusb
-# net-tools: for ifconfig
-# python3-pip: for python libs
-apt-get install -y \
-    python3 \
-    python3-pip \
-    aircrack-ng \
-    wireless-tools \
-    iw \
-    pciutils \
-    usbutils \
-    net-tools \
-    ufw \
-    curl
-
-echo -e "${YELLOW}[*] Installing Python libraries...${NC}"
-# Install requirements directly
-pip3 install flask flask-cors flask-limiter scapy requests pandas --break-system-packages
-
-echo -e "${YELLOW}[*] Configuring Firewall (UFW)...${NC}"
-# Allow API port
-ufw allow 5000/tcp
-echo -e "${GREEN}[+] Port 5000 allowed.${NC}"
-
-# Optional: Enable ufw if not enabled (be careful not to lock out SSH)
-# ufw enable
-
-echo -e "${YELLOW}[*] Checking for Atheros Firmware...${NC}"
-if [ ! -d "/lib/firmware/ath9k_htc" ]; then
-    echo -e "${YELLOW}[!] Firmware directory /lib/firmware/ath9k_htc not found.${NC}"
-    echo -e "${YELLOW}[*] Attempting to install firmware-atheros...${NC}"
-    apt-get install -y firmware-atheros
+# Detect OS
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_NAME="$NAME"
+    log_ok "Detected OS: ${OS_NAME}"
 else
-    echo -e "${GREEN}[+] Firmware directory exists.${NC}"
+    log_warn "Could not detect OS, assuming Debian-based"
+    OS_NAME="Unknown"
 fi
 
-echo -e "${YELLOW}[*] Setting permissions...${NC}"
-# Make diagnostic script executable if it exists
-if [ -f "check_driver.py" ]; then
-    chmod +x check_driver.py
-    echo -e "${GREEN}[+] Made check_driver.py executable.${NC}"
+# ─────────────────────────── Step 1: System Packages ─────────────────────────
+log_step "Step 1/5: Updating package lists..."
+apt-get update -qq &
+spinner $!
+log_ok "Package lists updated"
+
+log_step "Step 2/5: Installing system dependencies..."
+PACKAGES=(
+    python3
+    python3-pip
+    python3-venv
+    aircrack-ng
+    wireless-tools
+    iw
+    pciutils
+    usbutils
+    net-tools
+    tshark
+    curl
+    git
+)
+
+for pkg in "${PACKAGES[@]}"; do
+    if dpkg -s "$pkg" > /dev/null 2>&1; then
+        log_ok "$pkg (already installed)"
+    else
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$pkg" > /dev/null 2>&1 && \
+            log_ok "$pkg" || log_fail "$pkg (failed)"
+    fi
+done
+
+# ─────────────────────────── Step 3: Python Environment ──────────────────────
+log_step "Step 3/5: Setting up Python environment..."
+
+VENV_PATH="/opt/sentinel-netlab/venv"
+mkdir -p /opt/sentinel-netlab
+
+if [ ! -d "$VENV_PATH" ]; then
+    python3 -m venv "$VENV_PATH" && log_ok "Virtual environment created at $VENV_PATH"
+else
+    log_ok "Virtual environment exists"
 fi
 
-echo -e "${GREEN}==============================================${NC}"
-echo -e "${GREEN}   Setup Complete!                            ${NC}"
-echo -e "${GREEN}==============================================${NC}"
-echo -e "You can now run the sensor API:"
-echo -e "  sudo python3 ../sensor/api_server.py"
-echo -e ""
-echo -e "Or run diagnostics:"
-echo -e "  sudo python3 check_driver.py"
+# Activate and install
+source "$VENV_PATH/bin/activate"
+
+log_step "Step 4/5: Installing Python packages..."
+PIP_PACKAGES=(
+    flask
+    flask-cors
+    flask-limiter
+    scapy
+    requests
+    psutil
+    colorama
+    prometheus_client
+    gunicorn
+    python-json-logger
+)
+
+pip install --upgrade pip -q
+for pkg in "${PIP_PACKAGES[@]}"; do
+    pip install "$pkg" -q && log_ok "$pkg" || log_fail "$pkg"
+done
+
+# ─────────────────────────── Step 5: Configuration ───────────────────────────
+log_step "Step 5/5: Final configuration..."
+
+# Wireshark permissions for tshark
+if getent group wireshark > /dev/null 2>&1; then
+    usermod -aG wireshark "$SUDO_USER" 2>/dev/null && log_ok "Added $SUDO_USER to wireshark group"
+fi
+
+# Firmware check
+if [ -d "/lib/firmware/ath9k_htc" ]; then
+    log_ok "Atheros firmware present"
+else
+    log_warn "Atheros firmware not found (install firmware-atheros if using AR9271)"
+fi
+
+# ─────────────────────────── Summary ─────────────────────────────────────────
+echo ""
+echo -e "${BOLD}${GREEN}"
+echo "╔═══════════════════════════════════════════════════════════════╗"
+echo "║                    ✅ SETUP COMPLETE!                         ║"
+echo "╚═══════════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+
+echo -e "${BOLD}Quick Start:${NC}"
+echo -e "  ${ARROW} Activate environment: ${CYAN}source /opt/sentinel-netlab/venv/bin/activate${NC}"
+echo -e "  ${ARROW} Start API server:     ${CYAN}python sensor/api_server.py${NC}"
+echo -e "  ${ARROW} Run diagnostics:      ${CYAN}python scripts/check_driver.py${NC}"
+echo ""
+echo -e "${YELLOW}Note: Log out and back in for group changes to take effect.${NC}"
