@@ -139,3 +139,32 @@ ls -1tr /var/lib/wifi-scanner/pcaps/*.pcap | head -n -30 | xargs -r rm --
     *   **Giải pháp:** Chuyển sang **Linux VM (VirtualBox/VMware)** là bắt buộc.
 *   **Demo:** Ưu tiên tính ổn định (Mock data/Video backup) hơn là live demo rủi ro cao nếu môi trường chưa được kiểm chứng kỹ.
 *   **Bảo mật:** Tuân thủ nguyên tắc least-privilege và mã hóa giao tiếp cơ bản.
+
+## 5. Security Hardening Guide
+
+### 5.1 Service Isolation
+Avoid running the main web service as root. Recommended architecture:
+
+1. **Web Layer**: Nginx (Reverse Proxy + TLS) -> Exposes port 443
+2. **App Layer**: Gunicorn (non-root user) -> Runs Flask API
+3. **Privileged Layer**: Helper script (sudoers limited) -> Executes iw/ip commands
+
+**Implementation:**
+- Create user: `useradd -r -s /bin/false wifi-scan`
+- Allow sudo for helper:
+  ```bash
+  # /etc/sudoers.d/wifi-scan
+  wifi-scan ALL=(root) NOPASSWD: /usr/bin/iw, /usr/bin/ip
+  ```
+
+### 5.2 PCAP Sanitization (Data Privacy)
+Raw PCAP files may contain sensitive user traffic (PII).
+- **Policy**: Delete PCAPs after 7 days automatically.
+- **Sanitization**: Before sharing, use `trace-sanitizer` or `tcprewrite`:
+  ```bash
+  # Remove payloads, keep L2 headers
+  tshark -r input.pcap -w clean.pcap -F pcap
+  # Or scramble MAC addresses
+  tcprewrite --seed=42 --infile=input.pcap --outfile=clean.pcap --dlt=enet
+  ```
+

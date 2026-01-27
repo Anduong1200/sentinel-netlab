@@ -27,7 +27,10 @@ CORS(app)  # Allow Windows GUI to connect
 limiter = Limiter(app, key_func=get_remote_address)
 
 # Configuration
-API_KEY = os.environ.get("WIFI_SCANNER_API_KEY", "student-project-2024")
+API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
+if not API_KEY:
+    logger.warning("WIFI_SCANNER_API_KEY not set! Using insecure default for PoC.")
+    API_KEY = "student-project-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
 
 # Initialize components
