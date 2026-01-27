@@ -37,37 +37,55 @@
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Linux Environment (Debian 12 / Ubuntu 22.04 / Kali)
+- **Linux**: Debian 12 / Ubuntu 22.04 / Kali (for Sensor)
+- **Windows**: Windows 10/11 (for Controller GUI)
 - USB WiFi Adapter with Monitor Mode (Atheros AR9271)
 - Python 3.9+
 
-### Installation
+---
+
+### 📥 Download
 
 ```bash
 # Clone repository
 git clone https://github.com/Anduong1200/sentinel-netlab.git
 cd sentinel-netlab
+```
 
+---
+
+### 🐧 Linux Setup (Sensor)
+
+```bash
 # Run unified setup script
 sudo ./scripts/setup_vm.sh
 
 # Activate virtual environment
 source /opt/sentinel-netlab/venv/bin/activate
-```
 
-### Start Sensor
-
-```bash
+# Start sensor API
 cd sensor
 python api_server.py
 ```
 
-### Launch GUI (Windows)
+**Verify**: Open browser → `http://localhost:5000/health`
+
+---
+
+### 🪟 Windows Setup (Controller GUI)
 
 ```powershell
-cd controller
-python scanner_gui.py
+# Navigate to project
+cd D:\path\to\sentinel-netlab
+
+# Install dependencies
+pip install -r controller/requirements.txt
+
+# Launch GUI
+python controller/scanner_gui.py
 ```
+
+**Connect**: Enter Linux VM IP address (e.g., `192.168.1.100:5000`)
 
 ---
 
