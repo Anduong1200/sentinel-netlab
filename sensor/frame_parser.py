@@ -130,7 +130,10 @@ class FrameParser:
         self._dedup_cache: Dict[str, float] = {}
         self._dedup_window = 5.0  # seconds
 
-    def parse(self, raw_frame: bytes, timestamp: float = 0.0) -> Optional[ParsedFrame]:
+    def parse(
+            self,
+            raw_frame: bytes,
+            timestamp: float = 0.0) -> Optional[ParsedFrame]:
         """
         Parse raw radiotap + 802.11 frame.
 
@@ -162,7 +165,8 @@ class FrameParser:
                 result.parse_error = "Frame too short for 802.11 header"
                 return result
 
-            frame_control = struct.unpack('<H', raw_frame[dot11_start:dot11_start+2])[0]
+            frame_control = struct.unpack(
+                '<H', raw_frame[dot11_start:dot11_start + 2])[0]
             frame_type = (frame_control >> 2) & 0x03
             frame_subtype = (frame_control >> 4) & 0x0f
 
@@ -177,12 +181,16 @@ class FrameParser:
                 return result
 
             # Extract addresses
-            result.dst_addr = self._format_mac(raw_frame[dot11_start+4:dot11_start+10])
-            result.src_addr = self._format_mac(raw_frame[dot11_start+10:dot11_start+16])
-            result.bssid = self._format_mac(raw_frame[dot11_start+16:dot11_start+22])
+            result.dst_addr = self._format_mac(
+                raw_frame[dot11_start + 4:dot11_start + 10])
+            result.src_addr = self._format_mac(
+                raw_frame[dot11_start + 10:dot11_start + 16])
+            result.bssid = self._format_mac(
+                raw_frame[dot11_start + 16:dot11_start + 22])
 
             # Sequence number
-            seq_ctrl = struct.unpack('<H', raw_frame[dot11_start+22:dot11_start+24])[0]
+            seq_ctrl = struct.unpack(
+                '<H', raw_frame[dot11_start + 22:dot11_start + 24])[0]
             result.seq_num = seq_ctrl >> 4
 
             # Parse management frame body based on subtype
@@ -237,14 +245,20 @@ class FrameParser:
 
         return length
 
-    def _parse_beacon_probe_resp(self, data: bytes, start: int, result: ParsedFrame) -> None:
+    def _parse_beacon_probe_resp(
+            self,
+            data: bytes,
+            start: int,
+            result: ParsedFrame) -> None:
         """Parse beacon or probe response fixed fields and IEs"""
         if len(data) < start + 12:
             return
 
         # Fixed fields: timestamp (8) + beacon interval (2) + capabilities (2)
-        result.beacon_interval = struct.unpack('<H', data[start+8:start+10])[0]
-        result.capability_flags = struct.unpack('<H', data[start+10:start+12])[0]
+        result.beacon_interval = struct.unpack(
+            '<H', data[start + 8:start + 10])[0]
+        result.capability_flags = struct.unpack(
+            '<H', data[start + 10:start + 12])[0]
 
         # Parse capability flags
         result.ess = bool(result.capability_flags & 0x0001)
@@ -254,22 +268,34 @@ class FrameParser:
         # Parse IEs
         self._parse_ies(data, start + 12, result)
 
-    def _parse_probe_req(self, data: bytes, start: int, result: ParsedFrame) -> None:
+    def _parse_probe_req(
+            self,
+            data: bytes,
+            start: int,
+            result: ParsedFrame) -> None:
         """Parse probe request IEs"""
         self._parse_ies(data, start, result)
 
-    def _parse_deauth_disassoc(self, data: bytes, start: int, result: ParsedFrame) -> None:
+    def _parse_deauth_disassoc(
+            self,
+            data: bytes,
+            start: int,
+            result: ParsedFrame) -> None:
         """Parse deauth/disassoc reason code"""
         if len(data) >= start + 2:
-            reason = struct.unpack('<H', data[start:start+2])[0]
+            reason = struct.unpack('<H', data[start:start + 2])[0]
             result.ies['reason_code'] = reason
 
-    def _parse_auth(self, data: bytes, start: int, result: ParsedFrame) -> None:
+    def _parse_auth(
+            self,
+            data: bytes,
+            start: int,
+            result: ParsedFrame) -> None:
         """Parse authentication frame"""
         if len(data) >= start + 6:
-            algo = struct.unpack('<H', data[start:start+2])[0]
-            seq = struct.unpack('<H', data[start+2:start+4])[0]
-            status = struct.unpack('<H', data[start+4:start+6])[0]
+            algo = struct.unpack('<H', data[start:start + 2])[0]
+            seq = struct.unpack('<H', data[start + 2:start + 4])[0]
+            status = struct.unpack('<H', data[start + 4:start + 6])[0]
             result.ies['auth_algo'] = algo
             result.ies['auth_seq'] = seq
             result.ies['auth_status'] = status
@@ -334,22 +360,22 @@ class FrameParser:
             pairwise_ciphers = []
             for _ in range(pairwise_count):
                 if offset + 4 <= len(data):
-                    pairwise_ciphers.append(data[offset:offset+4].hex())
+                    pairwise_ciphers.append(data[offset:offset + 4].hex())
                     offset += 4
 
             # Parse AKM suites
             if offset + 2 <= len(data):
-                akm_count = struct.unpack('<H', data[offset:offset+2])[0]
+                akm_count = struct.unpack('<H', data[offset:offset + 2])[0]
                 offset += 2
                 akm_suites = []
                 for _ in range(akm_count):
                     if offset + 4 <= len(data):
-                        akm_suites.append(data[offset:offset+4].hex())
+                        akm_suites.append(data[offset:offset + 4].hex())
                         offset += 4
 
             # RSN capabilities
             if offset + 2 <= len(data):
-                rsn_caps = struct.unpack('<H', data[offset:offset+2])[0]
+                rsn_caps = struct.unpack('<H', data[offset:offset + 2])[0]
                 result.pmf_capable = bool(rsn_caps & 0x80)
                 result.pmf_required = bool(rsn_caps & 0x40)
 
@@ -383,7 +409,10 @@ class FrameParser:
         """Format MAC address as string"""
         return ':'.join(f'{b:02X}' for b in mac_bytes)
 
-    def is_duplicate(self, frame: ParsedFrame, window_sec: float = 5.0) -> bool:
+    def is_duplicate(
+            self,
+            frame: ParsedFrame,
+            window_sec: float = 5.0) -> bool:
         """Check if frame is duplicate within time window"""
         key = f"{frame.bssid}_{frame.seq_num}_{frame.frame_type}_{frame.ssid}"
         now = frame.timestamp

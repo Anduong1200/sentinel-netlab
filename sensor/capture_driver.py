@@ -174,7 +174,8 @@ class IwCaptureDriver(CaptureDriver):
                 capture_output=True, text=True, timeout=5
             )
             if result.returncode != 0:
-                logger.warning(f"Failed to set channel {channel}: {result.stderr}")
+                logger.warning(
+                    f"Failed to set channel {channel}: {result.stderr}")
                 return False
             return True
         except Exception as e:

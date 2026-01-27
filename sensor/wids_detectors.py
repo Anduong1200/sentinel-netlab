@@ -92,7 +92,8 @@ class EvilTwinDetector:
                  rssi_delta_threshold: int = 20,
                  max_rssi_samples: int = 100):
         self.known_networks: Dict[str, NetworkProfile] = {}  # bssid -> profile
-        self.ssid_to_bssids: Dict[str, set] = defaultdict(set)  # ssid -> {bssids}
+        self.ssid_to_bssids: Dict[str, set] = defaultdict(
+            set)  # ssid -> {bssids}
 
         self.ssid_similarity_threshold = ssid_similarity_threshold
         self.rssi_delta_threshold = rssi_delta_threshold
@@ -142,8 +143,7 @@ class EvilTwinDetector:
                 rssi_samples=[rssi_dbm],
                 observation_count=1,
                 sensor_ids={sensor_id},
-                beacon_intervals=[beacon_interval_ms] if beacon_interval_ms else []
-            )
+                beacon_intervals=[beacon_interval_ms] if beacon_interval_ms else [])
             self.known_networks[bssid] = profile
 
         # Track SSID -> BSSIDs mapping
@@ -158,7 +158,10 @@ class EvilTwinDetector:
 
         return alerts
 
-    def _check_evil_twin(self, current: NetworkProfile, current_rssi: int) -> Optional[EvilTwinAlert]:
+    def _check_evil_twin(
+            self,
+            current: NetworkProfile,
+            current_rssi: int) -> Optional[EvilTwinAlert]:
         """Check if current network is an evil twin of a known network"""
         if not current.ssid:
             return None
@@ -169,7 +172,8 @@ class EvilTwinDetector:
                 continue  # Skip self
 
             # Check SSID similarity
-            similarity = SequenceMatcher(None, current.ssid.lower(), ssid.lower()).ratio()
+            similarity = SequenceMatcher(
+                None, current.ssid.lower(), ssid.lower()).ratio()
 
             if similarity >= self.ssid_similarity_threshold:
                 # Found similar SSID with different BSSID
@@ -191,8 +195,7 @@ class EvilTwinDetector:
 
                         # Calculate confidence
                         confidence = self._calculate_confidence(
-                            similarity, rssi_delta, security_match, other.observation_count
-                        )
+                            similarity, rssi_delta, security_match, other.observation_count)
 
                         if confidence >= 0.6:  # Minimum confidence threshold
                             return self._create_alert(
@@ -277,7 +280,8 @@ class DeauthFloodDetector:
         self.cooldown_seconds = cooldown_seconds
 
         # Track deauth frames: (bssid, client) -> [timestamps]
-        self.deauth_history: Dict[Tuple[str, str], List[float]] = defaultdict(list)
+        self.deauth_history: Dict[Tuple[str, str],
+                                  List[float]] = defaultdict(list)
 
         # Cooldown tracking
         self.last_alert: Dict[Tuple[str, str], float] = {}
@@ -325,7 +329,8 @@ class DeauthFloodDetector:
 
         # Count frames in window
         window_start = now - self.window_seconds
-        frames_in_window = [t for t in self.deauth_history[key] if t >= window_start]
+        frames_in_window = [
+            t for t in self.deauth_history[key] if t >= window_start]
         count = len(frames_in_window)
 
         # Calculate rate
@@ -333,7 +338,8 @@ class DeauthFloodDetector:
 
         if rate >= self.threshold_per_sec:
             self.last_alert[key] = now
-            return self._create_alert(bssid, client_mac, count, rate, sensor_id)
+            return self._create_alert(
+                bssid, client_mac, count, rate, sensor_id)
 
         return None
 
@@ -348,7 +354,8 @@ class DeauthFloodDetector:
 
         return DeauthFloodAlert(
             alert_id=f"DF-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(
+                timezone.utc).isoformat(),
             target_bssid=bssid,
             target_client=client_mac if client_mac != "ff:ff:ff:ff:ff:ff" else None,
             frame_count=count,
@@ -357,9 +364,7 @@ class DeauthFloodDetector:
             evidence={
                 'sensor_id': sensor_id,
                 'threshold_per_sec': self.threshold_per_sec,
-                'is_broadcast': client_mac == "ff:ff:ff:ff:ff:ff"
-            }
-        )
+                'is_broadcast': client_mac == "ff:ff:ff:ff:ff:ff"})
 
     def get_stats(self) -> Dict:
         """Get current detection statistics"""
@@ -486,7 +491,8 @@ class TimeSeriesBaseline:
         # Check RSSI anomaly (> 2 std from mean)
         current_rssi = data.get('rssi_dbm')
         if current_rssi is not None:
-            z_score = (current_rssi - rssi_mean) / rssi_std if rssi_std > 0 else 0
+            z_score = (current_rssi - rssi_mean) / \
+                rssi_std if rssi_std > 0 else 0
             if abs(z_score) > 2.5:
                 anomalies.append({
                     'type': 'rssi_anomaly',
@@ -516,15 +522,19 @@ class TimeSeriesBaseline:
 
     def get_status(self) -> Dict:
         """Get baseline learning status"""
-        elapsed = (datetime.now(timezone.utc) - self.learning_start).total_seconds() / 3600
+        elapsed = (datetime.now(timezone.utc)
+                   - self.learning_start).total_seconds() / 3600
         return {
             'is_learning': self.is_learning,
             'learning_hours': self.learning_hours,
             'elapsed_hours': elapsed,
-            'progress_pct': min(100, (elapsed / self.learning_hours) * 100),
-            'networks_tracked': len(self.baselines),
-            'total_observations': sum(b['observations'] for b in self.baselines.values())
-        }
+            'progress_pct': min(
+                100,
+                (elapsed / self.learning_hours) * 100),
+            'networks_tracked': len(
+                self.baselines),
+            'total_observations': sum(
+                b['observations'] for b in self.baselines.values())}
 
 
 # =============================================================================
@@ -533,13 +543,15 @@ class TimeSeriesBaseline:
 
 def main():
     """Test detectors"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("WIDS DETECTOR TEST")
-    print("="*60)
+    print("=" * 60)
 
     # Test Evil Twin Detector
     print("\n--- Evil Twin Detector ---")
-    et_detector = EvilTwinDetector(ssid_similarity_threshold=0.8, rssi_delta_threshold=15)
+    et_detector = EvilTwinDetector(
+        ssid_similarity_threshold=0.8,
+        rssi_delta_threshold=15)
 
     # Add "legitimate" network
     for i in range(50):
@@ -563,8 +575,10 @@ def main():
     )
 
     for alert in alerts:
-        print(f"  ⚠️  Evil Twin: {alert.rogue_bssid} impersonating {alert.original_bssid}")
-        print(f"      SSID: {alert.ssid}, RSSI delta: {alert.rssi_delta}dB, Confidence: {alert.confidence:.2f}")
+        print(
+            f"  ⚠️  Evil Twin: {alert.rogue_bssid} impersonating {alert.original_bssid}")
+        print(
+            f"      SSID: {alert.ssid}, RSSI delta: {alert.rssi_delta}dB, Confidence: {alert.confidence:.2f}")
 
     # Test Deauth Flood Detector
     print("\n--- Deauth Flood Detector ---")
@@ -578,20 +592,26 @@ def main():
             sensor_id="sensor-01"
         )
         if alert:
-            print(f"  ⚠️  Deauth Flood: {alert.frame_count} frames in {alert.window_seconds}s")
-            print(f"      Target: {alert.target_bssid}, Rate: {alert.rate_per_sec:.1f}/s")
+            print(
+                f"  ⚠️  Deauth Flood: {alert.frame_count} frames in {alert.window_seconds}s")
+            print(
+                f"      Target: {alert.target_bssid}, Rate: {alert.rate_per_sec:.1f}/s")
             break
 
     # Test Baseline
     print("\n--- Time Series Baseline ---")
-    baseline = TimeSeriesBaseline(learning_hours=1, min_observations=10)  # Short for demo
+    baseline = TimeSeriesBaseline(
+        learning_hours=1,
+        min_observations=10)  # Short for demo
 
     for i in range(15):
         baseline.update("AA:BB:CC:11:22:33", {'rssi_dbm': -65, 'channel': 6})
 
     status = baseline.get_status()
-    print(f"  Learning: {status['is_learning']}, Progress: {status['progress_pct']:.1f}%")
-    print(f"  Networks: {status['networks_tracked']}, Observations: {status['total_observations']}")
+    print(
+        f"  Learning: {status['is_learning']}, Progress: {status['progress_pct']:.1f}%")
+    print(
+        f"  Networks: {status['networks_tracked']}, Observations: {status['total_observations']}")
 
 
 if __name__ == '__main__':

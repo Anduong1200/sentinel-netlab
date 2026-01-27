@@ -211,6 +211,7 @@ class OUIDatabase:
 # Default instance
 _default_db = None
 
+
 def get_oui_database() -> OUIDatabase:
     """Get default OUI database instance"""
     global _default_db

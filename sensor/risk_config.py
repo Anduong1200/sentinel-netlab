@@ -16,6 +16,7 @@ DEFAULT_WEIGHTS = {
     "crowded_channel": 5
 }
 
+
 def load_weights(path="config/risk_weights.yaml"):
     """Load scoring weights from YAML config"""
     try:

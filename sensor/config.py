@@ -217,7 +217,8 @@ class ConfigManager:
         # Mask API key
         if "api" in data and "api_key" in data["api"]:
             key = data["api"]["api_key"]
-            data["api"]["api_key"] = key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
+            data["api"]["api_key"] = key[:4] + "****" + \
+                key[-4:] if len(key) > 8 else "****"
         return data
 
 

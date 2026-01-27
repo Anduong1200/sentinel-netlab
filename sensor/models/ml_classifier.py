@@ -30,7 +30,8 @@ def predict_risk(features: Dict[str, float]) -> Dict:
         if os.path.exists(MODEL_PATH):
             model = joblib.load(MODEL_PATH)
             X = [list(features.values())]
-            proba = model.predict_proba(X)[0][1]  # Probability of "risky" class
+            # Probability of "risky" class
+            proba = model.predict_proba(X)[0][1]
             return {
                 "score": int(proba * 100),
                 "probability": round(proba, 3),
@@ -85,7 +86,8 @@ def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
         }
 
     except ImportError:
-        return {"error": "scikit-learn not installed. Run: pip install scikit-learn joblib"}
+        return {
+            "error": "scikit-learn not installed. Run: pip install scikit-learn joblib"}
     except Exception as e:
         return {"error": str(e)}
 
@@ -96,6 +98,7 @@ class RiskClassifier:
     Wrapper class for ML-based risk classification.
     Can be swapped into EnhancedRiskScorer for production use.
     """
+
     def __init__(self, model_path: str = MODEL_PATH):
         self.model = None
         self.model_path = model_path

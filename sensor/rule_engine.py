@@ -77,7 +77,8 @@ class Alert:
         result['severity'] = self.severity.value
         result['status'] = self.status.value
         result['evidence'] = [asdict(e) for e in self.evidence]
-        result['mitre_attack'] = asdict(self.mitre_attack) if self.mitre_attack else None
+        result['mitre_attack'] = asdict(
+            self.mitre_attack) if self.mitre_attack else None
         return result
 
 
@@ -237,7 +238,8 @@ class RuleEngine:
                 alert = self._create_alert(rule, data, sensor_id)
                 alerts.append(alert)
                 self.last_fired[rule_id] = datetime.now(timezone.utc)
-                logger.info(f"Alert: [{rule.severity.value.upper()}] {rule.name}")
+                logger.info(
+                    f"Alert: [{rule.severity.value.upper()}] {rule.name}")
 
         return alerts
 
@@ -246,10 +248,15 @@ class RuleEngine:
         if rule_id not in self.last_fired:
             return False
 
-        elapsed = (datetime.now(timezone.utc) - self.last_fired[rule_id]).total_seconds()
+        elapsed = (datetime.now(timezone.utc)
+                   - self.last_fired[rule_id]).total_seconds()
         return elapsed < cooldown_seconds
 
-    def _create_alert(self, rule: DetectionRule, data: Dict, sensor_id: str) -> Alert:
+    def _create_alert(
+            self,
+            rule: DetectionRule,
+            data: Dict,
+            sensor_id: str) -> Alert:
         """Create alert from triggered rule"""
         self.alert_count += 1
         alert_id = f"ALT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}"
@@ -293,75 +300,61 @@ class RuleEngine:
 # DEFAULT DETECTION RULES
 # =============================================================================
 
-DEFAULT_RULES = {
-    "rules": [
-        {
-            "rule_id": "WIDS-001",
-            "name": "Open Network Detected",
-            "description": "Unencrypted wireless network detected. Open networks expose traffic to eavesdropping.",
-            "severity": "high",
-            "conditions": [
-                {"field": "security", "op": "eq", "value": "Open"}
-            ],
-            "mitre_technique_id": "T1557",
-            "mitre_technique_name": "Adversary-in-the-Middle",
-            "mitre_tactic": "Credential Access",
-            "cooldown_seconds": 3600
-        },
-        {
-            "rule_id": "WIDS-002",
-            "name": "WEP Encryption Detected",
-            "description": "Network using deprecated WEP encryption which can be cracked in minutes.",
-            "severity": "critical",
-            "conditions": [
-                {"field": "security", "op": "contains", "value": "WEP"}
-            ],
-            "mitre_technique_id": "T1040",
-            "mitre_technique_name": "Network Sniffing",
-            "mitre_tactic": "Credential Access",
-            "cooldown_seconds": 3600
-        },
-        {
-            "rule_id": "WIDS-003",
-            "name": "WPS Enabled",
-            "description": "WPS is enabled, vulnerable to PIN brute force attacks (Reaver/Bully).",
-            "severity": "medium",
-            "conditions": [
-                {"field": "capabilities.wps", "op": "eq", "value": True}
-            ],
-            "mitre_technique_id": "T1110",
-            "mitre_technique_name": "Brute Force",
-            "mitre_tactic": "Credential Access",
-            "cooldown_seconds": 3600
-        },
-        {
-            "rule_id": "WIDS-004",
-            "name": "Suspicious SSID Pattern",
-            "description": "SSID matches common phishing/rogue AP patterns.",
-            "severity": "medium",
-            "conditions": [
-                {"field": "ssid", "op": "regex", "value": "(?i)(free|guest|xfinity|starbucks)"}
-            ],
-            "mitre_technique_id": "T1557.002",
-            "mitre_technique_name": "ARP Cache Poisoning",
-            "mitre_tactic": "Credential Access",
-            "cooldown_seconds": 1800
-        },
-        {
-            "rule_id": "WIDS-005",
-            "name": "Unusually Strong Signal",
-            "description": "Signal strength indicates AP may be very close or spoofed (potential rogue AP).",
-            "severity": "low",
-            "conditions": [
-                {"field": "rssi_dbm", "op": ">=", "value": -30}
-            ],
-            "mitre_technique_id": "T1200",
-            "mitre_technique_name": "Hardware Additions",
-            "mitre_tactic": "Initial Access",
-            "cooldown_seconds": 900
-        }
-    ]
-}
+DEFAULT_RULES = {"rules": [{"rule_id": "WIDS-001",
+                            "name": "Open Network Detected",
+                            "description": "Unencrypted wireless network detected. Open networks expose traffic to eavesdropping.",
+                            "severity": "high",
+                            "conditions": [{"field": "security",
+                                            "op": "eq",
+                                            "value": "Open"}],
+                            "mitre_technique_id": "T1557",
+                            "mitre_technique_name": "Adversary-in-the-Middle",
+                            "mitre_tactic": "Credential Access",
+                            "cooldown_seconds": 3600},
+                           {"rule_id": "WIDS-002",
+                            "name": "WEP Encryption Detected",
+                            "description": "Network using deprecated WEP encryption which can be cracked in minutes.",
+                            "severity": "critical",
+                            "conditions": [{"field": "security",
+                                            "op": "contains",
+                                            "value": "WEP"}],
+                            "mitre_technique_id": "T1040",
+                            "mitre_technique_name": "Network Sniffing",
+                            "mitre_tactic": "Credential Access",
+                            "cooldown_seconds": 3600},
+                           {"rule_id": "WIDS-003",
+                            "name": "WPS Enabled",
+                            "description": "WPS is enabled, vulnerable to PIN brute force attacks (Reaver/Bully).",
+                            "severity": "medium",
+                            "conditions": [{"field": "capabilities.wps",
+                                            "op": "eq",
+                                            "value": True}],
+                            "mitre_technique_id": "T1110",
+                            "mitre_technique_name": "Brute Force",
+                            "mitre_tactic": "Credential Access",
+                            "cooldown_seconds": 3600},
+                           {"rule_id": "WIDS-004",
+                            "name": "Suspicious SSID Pattern",
+                            "description": "SSID matches common phishing/rogue AP patterns.",
+                            "severity": "medium",
+                            "conditions": [{"field": "ssid",
+                                            "op": "regex",
+                                            "value": "(?i)(free|guest|xfinity|starbucks)"}],
+                            "mitre_technique_id": "T1557.002",
+                            "mitre_technique_name": "ARP Cache Poisoning",
+                            "mitre_tactic": "Credential Access",
+                            "cooldown_seconds": 1800},
+                           {"rule_id": "WIDS-005",
+                            "name": "Unusually Strong Signal",
+                            "description": "Signal strength indicates AP may be very close or spoofed (potential rogue AP).",
+                            "severity": "low",
+                            "conditions": [{"field": "rssi_dbm",
+                                            "op": ">=",
+                                            "value": -30}],
+                            "mitre_technique_id": "T1200",
+                            "mitre_technique_name": "Hardware Additions",
+                            "mitre_tactic": "Initial Access",
+                            "cooldown_seconds": 900}]}
 
 
 def create_default_rules_file(path: Path):
@@ -381,8 +374,14 @@ def main():
 
     parser = argparse.ArgumentParser(description='Rule Engine CLI')
     parser.add_argument('--rules', type=Path, help='Path to rules JSON file')
-    parser.add_argument('--create-default', type=Path, help='Create default rules file')
-    parser.add_argument('--test', action='store_true', help='Run test with sample data')
+    parser.add_argument(
+        '--create-default',
+        type=Path,
+        help='Create default rules file')
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        help='Run test with sample data')
 
     args = parser.parse_args()
 
@@ -402,24 +401,37 @@ def main():
 
     if args.test:
         # Test with sample data
-        test_data = [
-            {"bssid": "AA:BB:CC:11:22:33", "ssid": "OpenCafe", "security": "Open", "rssi_dbm": -50},
-            {"bssid": "AA:BB:CC:44:55:66", "ssid": "SecureNet", "security": "WPA2", "rssi_dbm": -65},
-            {"bssid": "AA:BB:CC:77:88:99", "ssid": "OldRouter", "security": "WEP", "rssi_dbm": -70},
-            {"bssid": "AA:BB:CC:AA:BB:CC", "ssid": "FREE_STARBUCKS_WIFI", "security": "Open", "rssi_dbm": -25},
-        ]
+        test_data = [{"bssid": "AA:BB:CC:11:22:33",
+                      "ssid": "OpenCafe",
+                      "security": "Open",
+                      "rssi_dbm": -50},
+                     {"bssid": "AA:BB:CC:44:55:66",
+                      "ssid": "SecureNet",
+                      "security": "WPA2",
+                      "rssi_dbm": -65},
+                     {"bssid": "AA:BB:CC:77:88:99",
+                      "ssid": "OldRouter",
+                      "security": "WEP",
+                      "rssi_dbm": -70},
+                     {"bssid": "AA:BB:CC:AA:BB:CC",
+                      "ssid": "FREE_STARBUCKS_WIFI",
+                      "security": "Open",
+                      "rssi_dbm": -25},
+                     ]
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("RULE ENGINE TEST")
-        print("="*60)
+        print("=" * 60)
 
         for data in test_data:
             print(f"\nTesting: {data.get('ssid')} ({data.get('security')})")
             alerts = engine.evaluate(data, sensor_id="test-sensor")
             for alert in alerts:
-                print(f"  ⚠️  [{alert.severity.value.upper()}] {alert.rule_name}")
+                print(
+                    f"  ⚠️  [{alert.severity.value.upper()}] {alert.rule_name}")
                 if alert.mitre_attack:
-                    print(f"      MITRE: {alert.mitre_attack.technique_id} - {alert.mitre_attack.technique_name}")
+                    print(
+                        f"      MITRE: {alert.mitre_attack.technique_id} - {alert.mitre_attack.technique_name}")
 
 
 if __name__ == '__main__':

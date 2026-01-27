@@ -9,6 +9,7 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
+
 class FeatureExtractor:
     """
     Extracts features from network dictionaries for use in Risk Scoring or ML.
@@ -24,7 +25,13 @@ class FeatureExtractor:
             r"linksys", r"netgear", r"default", r"test"
         ]
 
-        self.trusted_vendors = ["cisco", "aruba", "juniper", "fortinet", "meraki", "ruckus"]
+        self.trusted_vendors = [
+            "cisco",
+            "aruba",
+            "juniper",
+            "fortinet",
+            "meraki",
+            "ruckus"]
 
     def extract(self, network: Dict[str, Any]) -> Dict[str, float]:
         """
@@ -37,7 +44,8 @@ class FeatureExtractor:
         features['rssi_norm'] = self._extract_rssi(network)
         features['vendor_trust'] = self._extract_vendor(network)
         features['ssid_suspicious'] = self._extract_ssid_suspicion(network)
-        features['ssid_hidden'] = 1.0 if not network.get('ssid') or network.get('ssid') == '<hidden>' else 0.0
+        features['ssid_hidden'] = 1.0 if not network.get(
+            'ssid') or network.get('ssid') == '<hidden>' else 0.0
         features['wps_flag'] = 1.0 if network.get('wps_enabled') else 0.0
         features['channel_unusual'] = self._extract_channel(network)
         features['beacon_anomaly'] = self._extract_beacon_anomaly(network)
@@ -80,9 +88,9 @@ class FeatureExtractor:
             return 0.5
 
         if any(v in vendor for v in self.trusted_vendors):
-            return 0.0 # Trusted
+            return 0.0  # Trusted
 
-        return 0.3 # Consumer/Common
+        return 0.3  # Consumer/Common
 
     def _extract_ssid_suspicion(self, network: Dict) -> float:
         ssid = str(network.get('ssid', '')).lower()
@@ -91,7 +99,7 @@ class FeatureExtractor:
 
         for pattern in self.suspicious_ssid_patterns:
             if re.search(pattern, ssid):
-                return 1.0 # Matched suspicious pattern
+                return 1.0  # Matched suspicious pattern
         return 0.0
 
     def _extract_channel(self, network: Dict) -> float:
@@ -106,7 +114,8 @@ class FeatureExtractor:
         # Other valid channels
         if 1 <= ch <= 14:
             return 0.3
-        # 5GHz (simplified for now, treat as trusted/low risk compared to weird 2.4 channels)
+        # 5GHz (simplified for now, treat as trusted/low risk compared to weird
+        # 2.4 channels)
         if ch > 14:
             return 0.1
         return 0.5  # Unknown

@@ -72,9 +72,9 @@ class TestFrameParser:
     def test_is_duplicate_within_window(self, parser):
         """Duplicate detection within time window"""
         frame1 = ParsedFrame(timestamp=1000.0, bssid="AA:BB:CC:DD:EE:FF",
-                            seq_num=100, frame_type="beacon", ssid="Test")
+                             seq_num=100, frame_type="beacon", ssid="Test")
         frame2 = ParsedFrame(timestamp=1001.0, bssid="AA:BB:CC:DD:EE:FF",
-                            seq_num=100, frame_type="beacon", ssid="Test")
+                             seq_num=100, frame_type="beacon", ssid="Test")
 
         # First frame should not be duplicate
         assert not parser.is_duplicate(frame1)
@@ -85,9 +85,9 @@ class TestFrameParser:
     def test_is_duplicate_after_window_expires(self, parser):
         """Duplicate cache expires after window"""
         frame1 = ParsedFrame(timestamp=1000.0, bssid="AA:BB:CC:DD:EE:FF",
-                            seq_num=100, frame_type="beacon", ssid="Test")
+                             seq_num=100, frame_type="beacon", ssid="Test")
         frame2 = ParsedFrame(timestamp=1010.0, bssid="AA:BB:CC:DD:EE:FF",
-                            seq_num=100, frame_type="beacon", ssid="Test")
+                             seq_num=100, frame_type="beacon", ssid="Test")
 
         parser.is_duplicate(frame1)
 
@@ -121,7 +121,8 @@ class TestFrameParser:
         # SSID IE
         ssid_ie = b'\x00' + bytes([len(ssid)]) + ssid
 
-        return radiotap + dot11_header + timestamp + beacon_interval + capabilities + ssid_ie
+        return radiotap + dot11_header + timestamp + \
+            beacon_interval + capabilities + ssid_ie
 
     def _create_mock_probe_req(self, ssid: bytes) -> bytes:
         """Create simplified mock probe request"""

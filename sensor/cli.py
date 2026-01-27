@@ -79,7 +79,8 @@ def validate_preconditions(args: argparse.Namespace) -> bool:
     return True
 
 
-def merge_config(args: argparse.Namespace, file_config: Dict) -> Dict[str, Any]:
+def merge_config(args: argparse.Namespace,
+                 file_config: Dict) -> Dict[str, Any]:
     """Merge CLI args with file config (CLI takes precedence)"""
     config = {
         'sensor': {
@@ -172,7 +173,10 @@ Examples:
 
     # Batching
     parser.add_argument('--batch-size', type=int, help='Max items per batch')
-    parser.add_argument('--upload-interval', type=float, help='Upload interval (sec)')
+    parser.add_argument(
+        '--upload-interval',
+        type=float,
+        help='Upload interval (sec)')
 
     # Transport
     parser.add_argument('--upload-url', help='Controller telemetry endpoint')
@@ -180,32 +184,55 @@ Examples:
 
     # Storage
     parser.add_argument('--storage-path', help='Journal storage path')
-    parser.add_argument('--max-disk-usage', type=int, help='Max disk MB for journals')
+    parser.add_argument(
+        '--max-disk-usage',
+        type=int,
+        help='Max disk MB for journals')
 
     # Mode
-    parser.add_argument('--mock-mode', action='store_true', help='Use mock capture driver')
-    parser.add_argument('--mode', choices=['capture', 'test'], default='capture',
-                       help='Operation mode')
+    parser.add_argument(
+        '--mock-mode',
+        action='store_true',
+        help='Use mock capture driver')
+    parser.add_argument(
+        '--mode',
+        choices=[
+            'capture',
+            'test'],
+        default='capture',
+        help='Operation mode')
 
     # Privacy
-    parser.add_argument('--anonymize-ssid', action='store_true', help='Hash SSIDs')
+    parser.add_argument(
+        '--anonymize-ssid',
+        action='store_true',
+        help='Hash SSIDs')
 
     # GPS
     parser.add_argument('--gps-device', help='GPS NMEA device path')
 
     # Sync
-    parser.add_argument('--ntp-sync', action='store_true', help='Ensure NTP sync on start')
+    parser.add_argument(
+        '--ntp-sync',
+        action='store_true',
+        help='Ensure NTP sync on start')
 
     # Logging
-    parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
-                       help='Log level')
+    parser.add_argument(
+        '--log-level',
+        choices=[
+            'DEBUG',
+            'INFO',
+            'WARNING',
+            'ERROR'],
+        help='Log level')
 
     # Config
     parser.add_argument('--config-file', help='YAML config file path')
 
     # Lab safety
     parser.add_argument('--confirm-lab-actions', action='store_true',
-                       help='Confirm lab/attack actions')
+                        help='Confirm lab/attack actions')
 
     args = parser.parse_args()
 

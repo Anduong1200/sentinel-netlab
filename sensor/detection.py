@@ -76,7 +76,8 @@ class BloomFilter:
     Memory efficient for large blacklists with small false positive rate.
     """
 
-    def __init__(self, expected_items: int = 10000, false_positive_rate: float = 0.01):
+    def __init__(self, expected_items: int = 10000,
+                 false_positive_rate: float = 0.01):
         """
         Initialize Bloom Filter.
 
@@ -86,7 +87,8 @@ class BloomFilter:
         """
         # Calculate optimal size and hash count
         import math
-        self.size = int(-expected_items * math.log(false_positive_rate) / (math.log(2) ** 2))
+        self.size = int(-expected_items
+                        * math.log(false_positive_rate) / (math.log(2) ** 2))
         self.hash_count = int((self.size / expected_items) * math.log(2))
         self.bit_array = [False] * self.size
         self.item_count = 0
@@ -126,10 +128,16 @@ class EvilTwinDetector:
             similarity_threshold: Minimum similarity to flag as potential Evil Twin
         """
         self.similarity_threshold = similarity_threshold
-        self.known_networks: Dict[str, Dict[str, Any]] = {}  # SSID -> {bssid, encryption, vendor}
+        # SSID -> {bssid, encryption, vendor}
+        self.known_networks: Dict[str, Dict[str, Any]] = {}
         self.alerts: List[Dict[str, Any]] = []
 
-    def register_network(self, ssid: str, bssid: str, encryption: str = "", vendor: str = ""):
+    def register_network(
+            self,
+            ssid: str,
+            bssid: str,
+            encryption: str = "",
+            vendor: str = ""):
         """Register a known legitimate network."""
         self.known_networks[ssid.lower()] = {
             "ssid": ssid,
@@ -139,7 +147,8 @@ class EvilTwinDetector:
             "first_seen": datetime.now().isoformat()
         }
 
-    def check_network(self, ssid: str, bssid: str, encryption: str = "", vendor: str = "") -> Optional[Dict[str, Any]]:
+    def check_network(self, ssid: str, bssid: str, encryption: str = "",
+                      vendor: str = "") -> Optional[Dict[str, Any]]:
         """
         Check a network for potential Evil Twin.
 
@@ -165,8 +174,7 @@ class EvilTwinDetector:
                     "expected_encryption": known.get("encryption"),
                     "detected_encryption": encryption,
                     "timestamp": datetime.now().isoformat(),
-                    "message": f"Evil Twin detected: '{ssid}' with unexpected BSSID"
-                }
+                    "message": f"Evil Twin detected: '{ssid}' with unexpected BSSID"}
                 self.alerts.append(alert)
                 return alert
 
@@ -219,7 +227,8 @@ class DeauthFloodDetector:
         self.alerts: List[Dict[str, Any]] = []
         self.last_alert_time = 0
 
-    def add_deauth(self, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    def add_deauth(
+            self, timestamp: Optional[float] = None) -> Optional[Dict[str, Any]]:
         """
         Record a deauth event and check for flood.
 
@@ -268,8 +277,10 @@ _deauth_detector = DeauthFloodDetector()
 def get_mac_blacklist() -> BloomFilter:
     return _mac_blacklist
 
+
 def get_evil_twin_detector() -> EvilTwinDetector:
     return _evil_twin_detector
+
 
 def get_deauth_detector() -> DeauthFloodDetector:
     return _deauth_detector
@@ -300,7 +311,10 @@ if __name__ == "__main__":
 
     # Register known networks
     detector.register_network("CoffeeHouse", "AA:BB:CC:DD:EE:FF", "WPA2-PSK")
-    detector.register_network("CompanyNet", "11:22:33:44:55:66", "WPA2-Enterprise")
+    detector.register_network(
+        "CompanyNet",
+        "11:22:33:44:55:66",
+        "WPA2-Enterprise")
 
     # Check suspicious networks
     networks_to_check = [

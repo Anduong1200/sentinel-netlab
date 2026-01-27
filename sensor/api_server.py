@@ -23,9 +23,14 @@ from forensics import analyze_pcap
 
 # Import monitoring
 from monitoring import (
-    setup_json_logging, prometheus_metrics_endpoint,
-    REQUESTS, LATENCY, SCAN_DURATION, NETWORKS_FOUND, ACTIVE_ALERTS, SYSTEM_INFO
-)
+    setup_json_logging,
+    prometheus_metrics_endpoint,
+    REQUESTS,
+    LATENCY,
+    SCAN_DURATION,
+    NETWORKS_FOUND,
+    ACTIVE_ALERTS,
+    SYSTEM_INFO)
 
 # Setup JSON logging
 setup_json_logging()
@@ -38,10 +43,13 @@ limiter = Limiter(key_func=get_remote_address, app=app)
 # Configuration
 API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
 if not API_KEY:
-    logger.warning("WIFI_SCANNER_API_KEY not set! Using default development key.")
+    logger.warning(
+        "WIFI_SCANNER_API_KEY not set! Using default development key.")
     API_KEY = "sentinel-dev-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
-ALLOW_ACTIVE_ATTACKS = os.environ.get("ALLOW_ACTIVE_ATTACKS", "false").lower() == "true"
+ALLOW_ACTIVE_ATTACKS = os.environ.get(
+    "ALLOW_ACTIVE_ATTACKS",
+    "false").lower() == "true"
 
 # Initialize components
 capture_engine = CaptureEngine(interface=INTERFACE)
@@ -52,7 +60,11 @@ risk_scorer = RiskScorer()
 attack_engine = AttackEngine(interface=INTERFACE)
 
 # Set static info metric
-SYSTEM_INFO.labels(version="1.0.0", interface=INTERFACE, engine="tshark").set(1)
+SYSTEM_INFO.labels(
+    version="1.0.0",
+    interface=INTERFACE,
+    engine="tshark").set(1)
+
 
 @app.route('/')
 def index():
@@ -63,15 +75,21 @@ def index():
         "docs": "/api/docs"  # Placeholder
     })
 
+
 @app.before_request
 def check_auth():
     """Simple API key authentication"""
-    if request.endpoint not in ['health', 'status', 'metrics', 'index']:  # Allow metrics without auth
+    if request.endpoint not in [
+        'health',
+        'status',
+        'metrics',
+            'index']:  # Allow metrics without auth
         api_key = request.headers.get('X-API-Key')
         if api_key != API_KEY:
             # Count failed auth
             REQUESTS.labels(request.path, request.method, '401').inc()
             return jsonify({"error": "Unauthorized"}), 401
+
 
 @app.after_request
 def record_metrics(response):
@@ -84,10 +102,12 @@ def record_metrics(response):
         ).inc()
     return response
 
+
 @app.route('/metrics')
 def metrics():
     """Prometheus metrics endpoint"""
     return prometheus_metrics_endpoint()
+
 
 @app.route('/health')
 def health():
@@ -137,7 +157,8 @@ def scan_networks():
             networks = perform_real_scan()
 
         except Exception as e:
-            logger.warning(f"Real scan failed or not supported: {e}, activating simulation mode")
+            logger.warning(
+                f"Real scan failed or not supported: {e}, activating simulation mode")
             networks = get_simulation_data()
 
         # Calculate risk scores using RiskScorer
@@ -259,8 +280,8 @@ def export_csv():
         return Response(
             csv_content,
             mimetype='text/csv',
-            headers={'Content-Disposition': 'attachment; filename=wifi_scan.csv'}
-        )
+            headers={
+                'Content-Disposition': 'attachment; filename=wifi_scan.csv'})
     except Exception as e:
         logger.error(f"Export error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -274,8 +295,8 @@ def export_json():
         return Response(
             json_content,
             mimetype='application/json',
-            headers={'Content-Disposition': 'attachment; filename=wifi_scan.json'}
-        )
+            headers={
+                'Content-Disposition': 'attachment; filename=wifi_scan.json'})
     except Exception as e:
         logger.error(f"Export error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -288,7 +309,8 @@ def attack_deauth():
     Requires ALLOW_ACTIVE_ATTACKS=true
     """
     if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify({"error": "Active attacks disabled by configuration"}), 403
+        return jsonify(
+            {"error": "Active attacks disabled by configuration"}), 403
 
     try:
         data = request.get_json()
@@ -320,7 +342,8 @@ def attack_fakeap():
     Requires ALLOW_ACTIVE_ATTACKS=true
     """
     if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify({"error": "Active attacks disabled by configuration"}), 403
+        return jsonify(
+            {"error": "Active attacks disabled by configuration"}), 403
 
     try:
         data = request.get_json()
@@ -342,6 +365,7 @@ def attack_fakeap():
     except Exception as e:
         logger.error(f"FakeAP error: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/forensics/events')
 def get_security_events():
@@ -366,7 +390,8 @@ def forensics_report(scan_id):
         # Get PCAP path from storage
         pcap_path = storage.get_pcap_path(scan_id)
         if not pcap_path or not os.path.exists(pcap_path):
-            return jsonify({"error": f"PCAP not found for scan_id: {scan_id}"}), 404
+            return jsonify(
+                {"error": f"PCAP not found for scan_id: {scan_id}"}), 404
 
         # Get known networks for Evil Twin detection
         known_networks = {}

@@ -57,7 +57,8 @@ class EnhancedRiskScorer:
                 import yaml
                 return yaml.safe_load(f)
         except Exception as e:
-            logger.warning(f"Failed to load risk config from {path}: {e}. Using defaults.")
+            logger.warning(
+                f"Failed to load risk config from {path}: {e}. Using defaults.")
             return {
                 "weights": {
                     "encryption": 0.40,
@@ -96,16 +97,18 @@ class EnhancedRiskScorer:
         # 2. Calculate Weighted Score
         w = self.weights
         raw_score = (
-            features["enc_score"] * w.get("encryption", 0) +
-            features["rssi_norm"] * w.get("rssi_norm", 0) +
-            features["ssid_suspicious"] * w.get("ssid_suspicion", 0) +
-            features["ssid_hidden"] * w.get("hidden_ssid", 0) +
-            features["vendor_trust"] * w.get("vendor_risk", 0) +
-            features["channel_unusual"] * w.get("channel_crowd", 0) + # Using channel weight
-            features["beacon_anomaly"] * w.get("beacon_anomaly", 0) +
-            features["wps_flag"] * w.get("wps_flag", 0) +
-            features["temporal_new"] * w.get("temporal", 0) +
-            features["privacy_concern"] * w.get("privacy_flags", 0.05) # Fallback if missing in yaml
+            features["enc_score"] * w.get("encryption", 0)
+            + features["rssi_norm"] * w.get("rssi_norm", 0)
+            + features["ssid_suspicious"] * w.get("ssid_suspicion", 0)
+            + features["ssid_hidden"] * w.get("hidden_ssid", 0)
+            + features["vendor_trust"] * w.get("vendor_risk", 0)
+ # Using channel weight
+            + features["channel_unusual"] * w.get("channel_crowd", 0)
+            + features["beacon_anomaly"] * w.get("beacon_anomaly", 0)
+            + features["wps_flag"] * w.get("wps_flag", 0)
+            + features["temporal_new"] * w.get("temporal", 0)
+ # Fallback if missing in yaml
+            + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
 
         # Normalize to 0-100
@@ -123,8 +126,10 @@ class EnhancedRiskScorer:
         # 4. Calculate Confidence (Availability of data)
         # Simplified: Check distinct non-default keys in features or raw network
         # (Assuming the extractor provides 10 features, we assume High confidence if basic fields present)
-        av_fields = sum(1 for k,v in features.items() if v != 0.5) # 0.5 is often default
-        confidence = min(1.0, round(av_fields / 5.0, 2)) # Heuristic: 5 indicators = 100% conf
+        av_fields = sum(1 for k, v in features.items()
+                        if v != 0.5)  # 0.5 is often default
+        # Heuristic: 5 indicators = 100% conf
+        confidence = min(1.0, round(av_fields / 5.0, 2))
 
         # 5. Explain Breakdown
         explain = {
@@ -197,7 +202,8 @@ class EnhancedRiskScorer:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + \
+                                         recall) if (precision + recall) > 0 else 0
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         accuracy = (tp + tn) / total if total > 0 else 0
 
@@ -214,7 +220,8 @@ class EnhancedRiskScorer:
             "accuracy": round(accuracy, 4)
         }
 
-    def calibrate_weights_from_data(self, labeled_data: List[Dict]) -> ScoringWeights:
+    def calibrate_weights_from_data(
+            self, labeled_data: List[Dict]) -> ScoringWeights:
         """
         Simple weight calibration using labeled data.
         """
@@ -240,6 +247,7 @@ class EnhancedRiskScorer:
 class RiskScorerV2(EnhancedRiskScorer):
     """Alias for enhanced scorer"""
     pass
+
 
 RiskScorer = EnhancedRiskScorer  # Alias for legacy tests
 

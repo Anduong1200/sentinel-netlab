@@ -128,7 +128,8 @@ class USBWatchdog:
             if was_connected and not is_connected:
                 self.connected = False
                 self.stats["disconnect_count"] += 1
-                self.stats["last_disconnect"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                self.stats["last_disconnect"] = time.strftime(
+                    "%Y-%m-%d %H:%M:%S")
 
                 logger.warning(f"🔴 USB adapter disconnected: {self.interface}")
 
@@ -151,7 +152,8 @@ class USBWatchdog:
             elif not was_connected and is_connected:
                 self.connected = True
                 self.stats["reconnect_count"] += 1
-                self.stats["last_reconnect"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                self.stats["last_reconnect"] = time.strftime(
+                    "%Y-%m-%d %H:%M:%S")
 
                 logger.info(f"🟢 USB adapter reconnected: {self.interface}")
 
@@ -162,7 +164,8 @@ class USBWatchdog:
 
             # Update uptime
             if self._start_time and self.connected:
-                self.stats["uptime_seconds"] = int(time.time() - self._start_time)
+                self.stats["uptime_seconds"] = int(
+                    time.time() - self._start_time)
 
     def start(self):
         """Start watchdog monitoring."""
@@ -171,7 +174,8 @@ class USBWatchdog:
 
         self.running = True
         self._start_time = time.time()
-        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+        self.monitor_thread = threading.Thread(
+            target=self._monitor_loop, daemon=True)
         self.monitor_thread.start()
 
         logger.info(f"USB Watchdog started for {self.interface}")
@@ -189,20 +193,22 @@ class USBWatchdog:
             "in_monitor_mode": self.check_monitor_mode() if self.connected else False,
             "driver": self.get_driver_info() if self.connected else None,
             "auto_recover": self.auto_recover,
-            "stats": self.stats
-        }
+            "stats": self.stats}
 
 
 def play_alert_sound():
     """Play alert sound (requires paplay or aplay)."""
     try:
         # Try to play a beep
-        subprocess.run(["paplay", "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"],
-                      timeout=2, capture_output=True)
+        subprocess.run(["paplay",
+                        "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"],
+                       timeout=2,
+                       capture_output=True)
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         try:
             # Fallback to beep
-            subprocess.run(["beep", "-f", "1000", "-l", "500"], timeout=2, capture_output=True)
+            subprocess.run(["beep", "-f", "1000", "-l", "500"],
+                           timeout=2, capture_output=True)
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             pass
 
@@ -212,11 +218,29 @@ if __name__ == "__main__":
     import json
 
     parser = argparse.ArgumentParser(description="USB WiFi Watchdog CLI")
-    parser.add_argument("-i", "--interface", default="wlan0", help="Wireless interface")
-    parser.add_argument("-t", "--interval", type=float, default=2.0, help="Check interval (seconds)")
-    parser.add_argument("--no-auto-recover", action="store_true", help="Disable auto recovery")
-    parser.add_argument("--alert-sound", action="store_true", help="Play sound on disconnect")
-    parser.add_argument("--status", action="store_true", help="Show current status and exit")
+    parser.add_argument(
+        "-i",
+        "--interface",
+        default="wlan0",
+        help="Wireless interface")
+    parser.add_argument(
+        "-t",
+        "--interval",
+        type=float,
+        default=2.0,
+        help="Check interval (seconds)")
+    parser.add_argument(
+        "--no-auto-recover",
+        action="store_true",
+        help="Disable auto recovery")
+    parser.add_argument(
+        "--alert-sound",
+        action="store_true",
+        help="Play sound on disconnect")
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="Show current status and exit")
 
     args = parser.parse_args()
 
@@ -264,4 +288,8 @@ if __name__ == "__main__":
         pass
 
     watchdog.stop()
-    print("\nFinal stats:", json.dumps(watchdog.get_status()["stats"], indent=2))
+    print(
+        "\nFinal stats:",
+        json.dumps(
+            watchdog.get_status()["stats"],
+            indent=2))

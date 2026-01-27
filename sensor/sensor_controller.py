@@ -15,11 +15,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
 
-from capture import CaptureDriver, IwCaptureDriver, MockCaptureDriver, FrameParser
-from telemetry import TelemetryNormalizer
-from transport import BufferManager, TransportClient
+from transport import BufferManager, TransportClient  # noqa: E402
+from telemetry import TelemetryNormalizer  # noqa: E402
+from capture import CaptureDriver, IwCaptureDriver, MockCaptureDriver, FrameParser  # noqa: E402
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ class ChannelHopper:
         adaptive: bool = False
     ):
         self.driver = driver
-        self.channels = channels or [1, 6, 11]  # Default 2.4GHz non-overlapping
+        # Default 2.4GHz non-overlapping
+        self.channels = channels or [1, 6, 11]
         self.dwell_ms = dwell_ms
         self.settle_ms = settle_ms
         self.adaptive = adaptive
@@ -47,7 +49,8 @@ class ChannelHopper:
         self._current_idx = 0
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        self._channel_activity: Dict[int, float] = {ch: 1.0 for ch in self.channels}
+        self._channel_activity: Dict[int, float] = {
+            ch: 1.0 for ch in self.channels}
 
     def start(self) -> None:
         """Start channel hopping thread"""
@@ -58,7 +61,8 @@ class ChannelHopper:
             name="ChannelHopper"
         )
         self._thread.start()
-        logger.info(f"Channel hopping started: {self.channels}, dwell={self.dwell_ms}ms")
+        logger.info(
+            f"Channel hopping started: {self.channels}, dwell={self.dwell_ms}ms")
 
     def stop(self) -> None:
         """Stop channel hopping"""
@@ -269,7 +273,10 @@ class SensorController:
         self.driver.stop_capture()
 
         # Wait for threads
-        for thread in [self._capture_thread, self._upload_thread, self._heartbeat_thread]:
+        for thread in [
+                self._capture_thread,
+                self._upload_thread,
+                self._heartbeat_thread]:
             if thread and thread.is_alive():
                 thread.join(timeout=5)
 
@@ -285,7 +292,10 @@ class SensorController:
         """Get sensor status"""
         uptime = 0
         if self._start_time:
-            uptime = (datetime.now(timezone.utc) - self._start_time).total_seconds()
+            uptime = (
+                datetime.now(
+                    timezone.utc) -
+                self._start_time).total_seconds()
 
         return {
             'sensor_id': self.sensor_id,
@@ -352,7 +362,8 @@ class SensorController:
                 result = self.transport.upload(batch)
 
                 if result.get('success'):
-                    logger.debug(f"Uploaded batch {batch['batch_id']}: {batch['item_count']} items")
+                    logger.debug(
+                        f"Uploaded batch {batch['batch_id']}: {batch['item_count']} items")
                 else:
                     logger.warning(f"Upload failed: {result.get('error')}")
 
@@ -421,32 +432,62 @@ Examples:
     parser.add_argument('--iface', required=True, help='Network interface')
 
     # Channel options
-    parser.add_argument('--channels', help='Comma-separated channel list (default: 1,6,11)')
-    parser.add_argument('--dwell-ms', type=int, default=200, help='Channel dwell time (ms)')
+    parser.add_argument(
+        '--channels',
+        help='Comma-separated channel list (default: 1,6,11)')
+    parser.add_argument(
+        '--dwell-ms',
+        type=int,
+        default=200,
+        help='Channel dwell time (ms)')
 
     # Batch options
-    parser.add_argument('--batch-size', type=int, default=200, help='Max frames per batch')
-    parser.add_argument('--batch-bytes', type=int, default=256*1024, help='Max batch size bytes')
-    parser.add_argument('--upload-interval', type=float, default=5.0, help='Upload interval (sec)')
+    parser.add_argument(
+        '--batch-size',
+        type=int,
+        default=200,
+        help='Max frames per batch')
+    parser.add_argument(
+        '--batch-bytes',
+        type=int,
+        default=256 * 1024,
+        help='Max batch size bytes')
+    parser.add_argument(
+        '--upload-interval',
+        type=float,
+        default=5.0,
+        help='Upload interval (sec)')
 
     # Controller
-    parser.add_argument('--upload-url', default='http://localhost:5000/api/v1/telemetry',
-                       help='Controller telemetry endpoint')
+    parser.add_argument(
+        '--upload-url',
+        default='http://localhost:5000/api/v1/telemetry',
+        help='Controller telemetry endpoint')
     parser.add_argument('--auth-token', default='sentinel-dev-2024',
-                       help='Auth token for controller')
+                        help='Auth token for controller')
 
     # Storage
     parser.add_argument('--storage-path', default='/var/lib/sentinel/journal',
-                       help='Journal storage path')
-    parser.add_argument('--max-disk-usage', type=int, default=100, help='Max disk MB')
+                        help='Journal storage path')
+    parser.add_argument(
+        '--max-disk-usage',
+        type=int,
+        default=100,
+        help='Max disk MB')
 
     # Mode
-    parser.add_argument('--mock-mode', action='store_true', help='Use mock capture')
-    parser.add_argument('--anonymize-ssid', action='store_true', help='Hash SSIDs')
+    parser.add_argument(
+        '--mock-mode',
+        action='store_true',
+        help='Use mock capture')
+    parser.add_argument(
+        '--anonymize-ssid',
+        action='store_true',
+        help='Hash SSIDs')
 
     # Logging
     parser.add_argument('--log-level', default='INFO',
-                       choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
 
     # Config file
     parser.add_argument('--config-file', help='JSON/YAML config file')

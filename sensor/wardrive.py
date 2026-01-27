@@ -117,27 +117,35 @@ class WardriveSession:
             'session_id': f"wardrive_{self.start_time.strftime('%Y%m%d_%H%M%S')}",
             'sensor_id': self.sensor_id,
             'start_time': self.start_time.isoformat(),
-            'end_time': datetime.now(timezone.utc).isoformat(),
-            'total_sightings': len(self.sightings),
-            'unique_networks': len(self.unique_bssids),
-            'sightings': [asdict(s) for s in self.sightings]
-        }
+            'end_time': datetime.now(
+                timezone.utc).isoformat(),
+            'total_sightings': len(
+                self.sightings),
+            'unique_networks': len(
+                self.unique_bssids),
+            'sightings': [
+                asdict(s) for s in self.sightings]}
 
         with open(self.output_path, 'w') as f:
             json.dump(data, f, indent=2, default=str)
 
-        logger.info(f"Saved {len(self.sightings)} sightings to {self.output_path}")
+        logger.info(
+            f"Saved {len(self.sightings)} sightings to {self.output_path}")
 
     def print_stats(self):
         """Print session statistics"""
-        duration = (datetime.now(timezone.utc) - self.start_time).total_seconds()
+        duration = (
+            datetime.now(
+                timezone.utc) -
+            self.start_time).total_seconds()
         print(f"\n{'='*50}")
         print("Wardrive Session Statistics")
         print(f"{'='*50}")
         print(f"Duration:        {duration:.1f} seconds")
         print(f"Total Sightings: {len(self.sightings)}")
         print(f"Unique Networks: {len(self.unique_bssids)}")
-        print(f"Rate:            {len(self.sightings)/max(duration,1):.1f} sightings/sec")
+        print(
+            f"Rate:            {len(self.sightings)/max(duration,1):.1f} sightings/sec")
         print(f"{'='*50}\n")
 
 
@@ -240,12 +248,14 @@ def run_wardrive(args):
                 is_new = session.add_sighting(sighting)
 
                 if is_new and sighting.ssid:
-                    logger.info(f"NEW: {sighting.ssid} ({sighting.bssid}) "
-                               f"[{sighting.security}] {sighting.rssi_dbm}dBm")
+                    logger.info(
+                        f"NEW: {sighting.ssid} ({sighting.bssid}) "
+                        f"[{sighting.security}] {sighting.rssi_dbm}dBm")
 
             scan_count += 1
             if scan_count % 10 == 0:
-                logger.info(f"Scans: {scan_count}, Networks: {len(session.unique_bssids)}")
+                logger.info(
+                    f"Scans: {scan_count}, Networks: {len(session.unique_bssids)}")
 
             # Wait before next scan
             time.sleep(args.interval)
@@ -275,24 +285,43 @@ See ETHICS.md for legal guidelines.
         """
     )
 
-    parser.add_argument('--sensor-id', required=True, help='Unique sensor identifier')
-    parser.add_argument('--iface', default='wlan0', help='WiFi interface (default: wlan0)')
+    parser.add_argument(
+        '--sensor-id',
+        required=True,
+        help='Unique sensor identifier')
+    parser.add_argument(
+        '--iface',
+        default='wlan0',
+        help='WiFi interface (default: wlan0)')
     parser.add_argument('--gps', help='GPS device path (e.g., /dev/ttyUSB0)')
-    parser.add_argument('--output', default='wardrive_session.json', help='Output file path')
-    parser.add_argument('--interval', type=float, default=1.0, help='Scan interval in seconds')
-    parser.add_argument('--mock-capture', action='store_true', help='Use mock capture (no hardware)')
-    parser.add_argument('--mock-gps', action='store_true', help='Use mock GPS data')
+    parser.add_argument(
+        '--output',
+        default='wardrive_session.json',
+        help='Output file path')
+    parser.add_argument(
+        '--interval',
+        type=float,
+        default=1.0,
+        help='Scan interval in seconds')
+    parser.add_argument(
+        '--mock-capture',
+        action='store_true',
+        help='Use mock capture (no hardware)')
+    parser.add_argument(
+        '--mock-gps',
+        action='store_true',
+        help='Use mock GPS data')
 
     args = parser.parse_args()
 
     # Print warning
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("⚠️  SENTINEL NETLAB WARDRIVING TOOL")
-    print("="*60)
+    print("=" * 60)
     print("This tool captures WiFi network information.")
     print("Use ONLY on networks you own or have authorization to monitor.")
     print("See ETHICS.md for legal guidelines.")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     run_wardrive(args)
 

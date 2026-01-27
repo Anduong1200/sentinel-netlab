@@ -30,7 +30,8 @@ def display_network(net: Dict, index: int, total: int) -> None:
 def get_label() -> str:
     """Prompt user for label."""
     while True:
-        choice = input("  Label [L]ow / [M]edium / [H]igh / [S]kip: ").strip().upper()
+        choice = input(
+            "  Label [L]ow / [M]edium / [H]igh / [S]kip: ").strip().upper()
         if choice in ['L', 'LOW']:
             return 'LOW'
         elif choice in ['M', 'MEDIUM']:
@@ -87,9 +88,18 @@ def run_labeling(input_path: str, output_path: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Label WiFi networks for ML training")
-    parser.add_argument("--input", "-i", required=True, help="Input JSON file with networks")
-    parser.add_argument("--output", "-o", default="data/labeled_networks.json", help="Output file for labeled data")
+    parser = argparse.ArgumentParser(
+        description="Label WiFi networks for ML training")
+    parser.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        help="Input JSON file with networks")
+    parser.add_argument(
+        "--output",
+        "-o",
+        default="data/labeled_networks.json",
+        help="Output file for labeled data")
 
     args = parser.parse_args()
 

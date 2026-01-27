@@ -93,8 +93,10 @@ class BufferedStorage:
             )
         """)
 
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_bssid ON networks(bssid)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON security_events(timestamp)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_bssid ON networks(bssid)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_timestamp ON security_events(timestamp)")
 
         conn.commit()
         conn.close()
@@ -106,9 +108,11 @@ class BufferedStorage:
             return
 
         self.running = True
-        self.flush_thread = threading.Thread(target=self._flush_loop, daemon=True)
+        self.flush_thread = threading.Thread(
+            target=self._flush_loop, daemon=True)
         self.flush_thread.start()
-        logger.info(f"Buffered storage started (buffer={self.buffer_size}, interval={self.flush_interval}s)")
+        logger.info(
+            f"Buffered storage started (buffer={self.buffer_size}, interval={self.flush_interval}s)")
 
     def stop(self):
         """Stop and flush remaining buffer."""
@@ -267,9 +271,16 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Buffered Storage CLI")
-    parser.add_argument("--db", default="wifi_scanner.db", help="Database path")
+    parser.add_argument(
+        "--db",
+        default="wifi_scanner.db",
+        help="Database path")
     parser.add_argument("--buffer", type=int, default=100, help="Buffer size")
-    parser.add_argument("--interval", type=float, default=5.0, help="Flush interval (seconds)")
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=5.0,
+        help="Flush interval (seconds)")
     parser.add_argument("--test", action="store_true", help="Run test insert")
     parser.add_argument("--stats", action="store_true", help="Show statistics")
     parser.add_argument("--list", action="store_true", help="List networks")
@@ -308,7 +319,8 @@ if __name__ == "__main__":
         networks = storage.get_networks(limit=20)
         print(f"Networks ({len(networks)}):")
         for net in networks:
-            print(f"  {net['ssid'][:20]:20} | {net['bssid']} | {net['rssi']}dBm")
+            print(
+                f"  {net['ssid'][:20]:20} | {net['bssid']} | {net['rssi']}dBm")
 
     else:
         print("Use --test, --stats, or --list")

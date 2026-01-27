@@ -77,7 +77,8 @@ class NTPSyncManager:
     def register_sensor(self, sensor_id: str, ntp_offset_ms: float = 0.0):
         """Register sensor with its NTP offset"""
         self.sensor_offsets[sensor_id] = ntp_offset_ms
-        logger.info(f"Registered sensor {sensor_id} with offset {ntp_offset_ms}ms")
+        logger.info(
+            f"Registered sensor {sensor_id} with offset {ntp_offset_ms}ms")
 
     def sync_timestamp(self, sensor_id: str, timestamp: datetime) -> datetime:
         """Adjust timestamp based on sensor's NTP offset"""
@@ -87,11 +88,11 @@ class NTPSyncManager:
 
     def get_sync_status(self) -> Dict:
         """Get synchronization status for all sensors"""
-        return {
-            'sensors': len(self.sensor_offsets),
-            'offsets': dict(self.sensor_offsets),
-            'max_drift_ms': max(self.sensor_offsets.values(), default=0) - min(self.sensor_offsets.values(), default=0)
-        }
+        return {'sensors': len(self.sensor_offsets),
+                'offsets': dict(self.sensor_offsets),
+                'max_drift_ms': max(self.sensor_offsets.values(),
+                                    default=0) - min(self.sensor_offsets.values(),
+                                                     default=0)}
 
 
 # =============================================================================
@@ -132,13 +133,17 @@ class PathLossModel:
             reference_rssi: RSSI at 1 meter (overrides preset)
             path_loss_exponent: Path loss exponent (overrides preset)
         """
-        preset = self.ENVIRONMENTS.get(environment, self.ENVIRONMENTS['indoor_los'])
+        preset = self.ENVIRONMENTS.get(
+            environment, self.ENVIRONMENTS['indoor_los'])
 
         self.pl0 = reference_rssi if reference_rssi is not None else preset['pl0']
         self.n = path_loss_exponent if path_loss_exponent is not None else preset['n']
         self.d0 = 1.0  # Reference distance (meters)
 
-    def rssi_to_distance(self, rssi_dbm: float, frequency_mhz: int = 2412) -> float:
+    def rssi_to_distance(
+            self,
+            rssi_dbm: float,
+            frequency_mhz: int = 2412) -> float:
         """
         Convert RSSI to estimated distance.
 
@@ -165,7 +170,10 @@ class PathLossModel:
         # Clamp to reasonable range
         return max(0.1, min(distance, 1000.0))
 
-    def distance_to_rssi(self, distance_m: float, frequency_mhz: int = 2412) -> float:
+    def distance_to_rssi(
+            self,
+            distance_m: float,
+            frequency_mhz: int = 2412) -> float:
         """
         Estimate RSSI at a given distance.
 
@@ -180,7 +188,8 @@ class PathLossModel:
             distance_m = 0.1
 
         freq_factor = -3.0 if frequency_mhz > 5000 else 0.0
-        rssi = self.pl0 + freq_factor - 10 * self.n * math.log10(distance_m / self.d0)
+        rssi = self.pl0 + freq_factor - 10 * \
+            self.n * math.log10(distance_m / self.d0)
 
         return rssi
 
@@ -212,7 +221,8 @@ class TrilaterationSolver:
             PositionEstimate or None if insufficient data
         """
         if len(sensors) < self.min_sensors or len(sensors) != len(distances):
-            logger.warning(f"Need at least {self.min_sensors} sensors, got {len(sensors)}")
+            logger.warning(
+                f"Need at least {self.min_sensors} sensors, got {len(sensors)}")
             return None
 
         n = len(sensors)
@@ -235,7 +245,8 @@ class TrilaterationSolver:
             xi, yi = sensors[i].x, sensors[i].y
             di = distances[i]
 
-            # 2*(x1-xi)*x + 2*(y1-yi)*y = d_i² - d_1² - x_i² - y_i² + x_1² + y_1²
+            # 2*(x1-xi)*x + 2*(y1-yi)*y = d_i² - d_1² - x_i² - y_i² + x_1² +
+            # y_1²
             A.append([2 * (x1 - xi), 2 * (y1 - yi)])
             b.append(d1**2 - di**2 - x1**2 - y1**2 + xi**2 + yi**2)
 
@@ -250,12 +261,14 @@ class TrilaterationSolver:
             # Calculate error estimate
             error = 0.0
             for i, sensor in enumerate(sensors):
-                estimated_dist = math.sqrt((x - sensor.x)**2 + (y - sensor.y)**2)
+                estimated_dist = math.sqrt(
+                    (x - sensor.x)**2 + (y - sensor.y)**2)
                 error += (estimated_dist - distances[i])**2
             error = math.sqrt(error / n)
 
             # Confidence based on residual error and sensor count
-            confidence = max(0.0, min(1.0, 1.0 - error / 10.0)) * min(1.0, n / 5.0)
+            confidence = max(0.0, min(1.0, 1.0 - error / 10.0)
+                             ) * min(1.0, n / 5.0)
 
             return PositionEstimate(
                 bssid="",  # Filled by caller
@@ -272,9 +285,11 @@ class TrilaterationSolver:
             logger.error(f"Trilateration failed: {e}")
             return None
 
-    def solve_from_rssi(self, sensors: List[SensorPosition],
-                        samples: List[RSSISample],
-                        path_loss: PathLossModel) -> Optional[PositionEstimate]:
+    def solve_from_rssi(
+            self,
+            sensors: List[SensorPosition],
+            samples: List[RSSISample],
+            path_loss: PathLossModel) -> Optional[PositionEstimate]:
         """
         Solve position from RSSI samples.
 
@@ -294,7 +309,8 @@ class TrilaterationSolver:
         for sample in samples:
             if sample.sensor_id in sensor_map:
                 matched_sensors.append(sensor_map[sample.sensor_id])
-                distance = path_loss.rssi_to_distance(sample.rssi_dbm, sample.frequency_mhz)
+                distance = path_loss.rssi_to_distance(
+                    sample.rssi_dbm, sample.frequency_mhz)
                 distances.append(distance)
 
         if len(matched_sensors) < self.min_sensors:
@@ -318,7 +334,8 @@ class KalmanPositionFilter:
     Reduces noise and provides velocity estimates.
     """
 
-    def __init__(self, process_noise: float = 0.1, measurement_noise: float = 1.0):
+    def __init__(self, process_noise: float = 0.1,
+                 measurement_noise: float = 1.0):
         """
         Initialize Kalman filter.
 
@@ -468,7 +485,8 @@ class HeatmapGenerator:
             # Running average
             count = self.counts[grid_y, grid_x]
             current = self.grid[grid_y, grid_x] if count > 0 else 0
-            self.grid[grid_y, grid_x] = (current * count + rssi_dbm) / (count + 1)
+            self.grid[grid_y, grid_x] = (
+                current * count + rssi_dbm) / (count + 1)
             self.counts[grid_y, grid_x] = count + 1
 
     def interpolate(self):
@@ -481,7 +499,8 @@ class HeatmapGenerator:
         # Use distance transform for nearest-neighbor interpolation
         if np.any(mask):
             # Get indices of nearest measured cell
-            indices = ndimage.distance_transform_edt(~mask, return_indices=True)[1]
+            indices = ndimage.distance_transform_edt(
+                ~mask, return_indices=True)[1]
             self.grid = self.grid[tuple(indices)]
 
     def export_png(self, filepath: str,
@@ -522,17 +541,17 @@ class HeatmapGenerator:
             for s in sensors:
                 ax.plot(s.x, s.y, 'w^', markersize=15, markeredgecolor='black')
                 ax.annotate(s.sensor_id, (s.x, s.y), color='white',
-                           fontsize=8, ha='center', va='bottom')
+                            fontsize=8, ha='center', va='bottom')
 
         # Overlay targets
         if targets:
             for t in targets:
                 circle = plt.Circle((t.x, t.y), t.error_radius_m,
-                                   fill=False, color='white', linestyle='--')
+                                    fill=False, color='white', linestyle='--')
                 ax.add_patch(circle)
                 ax.plot(t.x, t.y, 'wo', markersize=10, markeredgecolor='black')
                 ax.annotate(t.bssid[-8:] if t.bssid else 'Target',
-                           (t.x, t.y), color='white', fontsize=8)
+                            (t.x, t.y), color='white', fontsize=8)
 
         # Labels
         ax.set_xlabel('X (meters)')
@@ -602,7 +621,9 @@ class GeoMapper:
         """Initialize heatmap grid"""
         self.heatmap = HeatmapGenerator(width_m, height_m, resolution)
 
-    def process_samples(self, samples: List[RSSISample]) -> Optional[PositionEstimate]:
+    def process_samples(
+            self,
+            samples: List[RSSISample]) -> Optional[PositionEstimate]:
         """
         Process RSSI samples to estimate position.
 
@@ -624,7 +645,8 @@ class GeoMapper:
         if len(sensor_list) < 3:
             return None
 
-        estimate = self.trilateration.solve_from_rssi(sensor_list, samples, self.path_loss)
+        estimate = self.trilateration.solve_from_rssi(
+            sensor_list, samples, self.path_loss)
 
         if not estimate:
             return None
@@ -647,7 +669,8 @@ class GeoMapper:
             for sample in samples:
                 if sample.sensor_id in self.sensors:
                     sensor = self.sensors[sample.sensor_id]
-                    self.heatmap.add_reading(sensor.x, sensor.y, sample.rssi_dbm)
+                    self.heatmap.add_reading(
+                        sensor.x, sensor.y, sample.rssi_dbm)
 
         return estimate
 
@@ -658,9 +681,9 @@ class GeoMapper:
 
 def main():
     """Demo geo-mapping functionality"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("GEO-MAPPING MODULE DEMO")
-    print("="*60)
+    print("=" * 60)
 
     # Create geo-mapper
     mapper = GeoMapper(environment='indoor_los')
@@ -685,7 +708,8 @@ def main():
     for i in range(5):  # 5 measurements
         samples = []
         for sid, sensor in mapper.sensors.items():
-            dist = math.sqrt((target_x - sensor.x)**2 + (target_y - sensor.y)**2)
+            dist = math.sqrt((target_x - sensor.x)**2
+                             + (target_y - sensor.y)**2)
             rssi = mapper.path_loss.distance_to_rssi(dist)
             # Add some noise
             rssi += np.random.normal(0, 2)  # ±2 dB noise
@@ -701,9 +725,11 @@ def main():
         estimate = mapper.process_samples(samples)
 
         if estimate:
-            error = math.sqrt((estimate.x - target_x)**2 + (estimate.y - target_y)**2)
-            print(f"  Estimate #{i+1}: ({estimate.x:.2f}, {estimate.y:.2f}) "
-                  f"Error: {error:.2f}m, Confidence: {estimate.confidence:.2f}")
+            error = math.sqrt((estimate.x - target_x)**2
+                              + (estimate.y - target_y)**2)
+            print(
+                f"  Estimate #{i+1}: ({estimate.x:.2f}, {estimate.y:.2f}) "
+                f"Error: {error:.2f}m, Confidence: {estimate.confidence:.2f}")
 
     print("\n--- Path Loss Model ---")
     pl = mapper.path_loss
@@ -713,7 +739,8 @@ def main():
 
     print("\n--- NTP Sync Status ---")
     status = mapper.ntp_sync.get_sync_status()
-    print(f"  Sensors: {status['sensors']}, Max drift: {status['max_drift_ms']}ms")
+    print(
+        f"  Sensors: {status['sensors']}, Max drift: {status['max_drift_ms']}ms")
 
     print("\nDemo complete!")
 

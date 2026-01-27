@@ -87,7 +87,8 @@ class WiFiParser:
     def __init__(self):
         """Initialize the parser with an empty networks dictionary."""
         self.networks: Dict[str, Dict[str, Any]] = {}
-        self.security_events: List[Dict[str, Any]] = []  # Deauth, Evil Twin events
+        # Deauth, Evil Twin events
+        self.security_events: List[Dict[str, Any]] = []
         self.packet_count = 0
         self.last_update = datetime.now()
 
@@ -114,12 +115,13 @@ class WiFiParser:
         Returns:
             String describing encryption (e.g., "WPA2-PSK", "WEP", "Open")
         """
-        if not packet.haslayer(Dot11Beacon) and not packet.haslayer(Dot11ProbeResp):
+        if not packet.haslayer(
+                Dot11Beacon) and not packet.haslayer(Dot11ProbeResp):
             return "Unknown"
 
         # Get capability info
         cap = packet.sprintf("{Dot11Beacon:%Dot11Beacon.cap%}"
-                            "{Dot11ProbeResp:%Dot11ProbeResp.cap%}")
+                             "{Dot11ProbeResp:%Dot11ProbeResp.cap%}")
 
         # Check for WPA/WPA2/WPA3
         encryption = "Open"
@@ -192,6 +194,7 @@ class WiFiParser:
             except (AttributeError, TypeError, ValueError):
                 pass
         return -100  # Default weak signal
+
     def parse_deauth(self, packet) -> Optional[Dict[str, Any]]:
         """
         Parse Deauthentication frame to detect potential attack.
@@ -248,7 +251,8 @@ class WiFiParser:
             deauth_event = self.parse_deauth(packet)
             if deauth_event:
                 self.security_events.append(deauth_event)
-                logger.warning(f"Deauth detected: {deauth_event['sender']} -> {deauth_event['target']}")
+                logger.warning(
+                    f"Deauth detected: {deauth_event['sender']} -> {deauth_event['target']}")
                 return deauth_event
 
         # Check for EAPOL (Handshake)
@@ -259,14 +263,16 @@ class WiFiParser:
                 bssid = packet.addr3
                 if bssid and bssid in self.networks:
                     self.networks[bssid]["handshake_captured"] = True
-                    logger.info(f"Handshake captured for {self.networks[bssid]['ssid']}")
+                    logger.info(
+                        f"Handshake captured for {self.networks[bssid]['ssid']}")
                     return self.networks[bssid]
             except Exception:
                 pass
             return None
 
         # Only parse Beacons/ProbeResp for network discovery
-        if not (packet.haslayer(Dot11Beacon) or packet.haslayer(Dot11ProbeResp)):
+        if not (packet.haslayer(Dot11Beacon)
+                or packet.haslayer(Dot11ProbeResp)):
             return None
 
         try:
@@ -286,11 +292,13 @@ class WiFiParser:
                 # SSID
                 if elt.ID == 0:
                     try:
-                        ssid = elt.info.decode('utf-8', errors='ignore').strip('\x00')
+                        ssid = elt.info.decode(
+                            'utf-8', errors='ignore').strip('\x00')
                     except (UnicodeDecodeError, AttributeError):
                         ssid = ""
 
-                # Check for WPS (Vendor Specific ID 221 + Microsoft OUI \x00\x50\xf2\x04)
+                # Check for WPS (Vendor Specific ID 221 + Microsoft OUI
+                # \x00\x50\xf2\x04)
                 elif elt.ID == 221:
                     if elt.info.startswith(b'\x00\x50\xf2\x04'):
                         wps_present = True
@@ -359,7 +367,8 @@ class WiFiParser:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get parser statistics."""
-        handshake_count = sum(1 for n in self.networks.values() if n.get("handshake_captured"))
+        handshake_count = sum(
+            1 for n in self.networks.values() if n.get("handshake_captured"))
         return {
             "network_count": len(self.networks),
             "packet_count": self.packet_count,

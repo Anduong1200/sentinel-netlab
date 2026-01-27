@@ -62,7 +62,8 @@ class SensorCLI:
                 flush_interval=self.args.flush_interval
             )
             self.storage.start()
-            logger.info(f"Using buffered storage (buffer={self.args.buffer_size}, interval={self.args.flush_interval}s)")
+            logger.info(
+                f"Using buffered storage (buffer={self.args.buffer_size}, interval={self.args.flush_interval}s)")
         else:
             from storage import WiFiStorage
             self.storage = WiFiStorage(db_path=self.args.db)
@@ -123,10 +124,12 @@ class SensorCLI:
 
                 # Log
                 if result.get("type") == "deauth_detected":
-                    logger.warning(f"🔴 Deauth: {result.get('sender')} -> {result.get('target')}")
+                    logger.warning(
+                        f"🔴 Deauth: {result.get('sender')} -> {result.get('target')}")
                 elif result.get("ssid"):
                     if self.args.verbose:
-                        logger.info(f"📶 {result['ssid'][:20]:20} | {result['bssid']} | Risk: {result.get('risk_score', '?')}")
+                        logger.info(
+                            f"📶 {result['ssid'][:20]:20} | {result['bssid']} | Risk: {result.get('risk_score', '?')}")
 
         except Exception as e:
             logger.debug(f"Packet processing error: {e}")
@@ -187,11 +190,16 @@ class SensorCLI:
             return jsonify({"events": self.parser.security_events[-50:]})
 
         def run_api():
-            app.run(host=self.args.host, port=self.args.port, debug=False, use_reloader=False)
+            app.run(
+                host=self.args.host,
+                port=self.args.port,
+                debug=False,
+                use_reloader=False)
 
         self.api_thread = threading.Thread(target=run_api, daemon=True)
         self.api_thread.start()
-        logger.info(f"API server started on http://{self.args.host}:{self.args.port}")
+        logger.info(
+            f"API server started on http://{self.args.host}:{self.args.port}")
 
     def run(self):
         """Main run loop."""
@@ -223,7 +231,8 @@ class SensorCLI:
         print(f"Channels: {self.args.channels}")
         print(f"Buffered Storage: {self.args.buffered_storage}")
         print(f"USB Watchdog: {self.args.watchdog}")
-        print(f"API: {'http://' + self.args.host + ':' + str(self.args.port) if self.args.api else 'Disabled'}")
+        print(
+            f"API: {'http://' + self.args.host + ':' + str(self.args.port) if self.args.api else 'Disabled'}")
         print("-" * 60)
         print("Press Ctrl+C to stop")
         print()
@@ -235,7 +244,8 @@ class SensorCLI:
                 # Print stats periodically
                 if self.args.stats:
                     stats = self.parser.get_stats()
-                    print(f"[Stats] Networks: {stats['network_count']} | Packets: {stats['packet_count']} | Events: {len(self.parser.security_events)}")
+                    print(
+                        f"[Stats] Networks: {stats['network_count']} | Packets: {stats['packet_count']} | Events: {len(self.parser.security_events)}")
 
         except KeyboardInterrupt:
             pass
@@ -280,24 +290,63 @@ Examples:
     )
 
     # Interface options
-    parser.add_argument("-i", "--interface", default="wlan0", help="Wireless interface")
-    parser.add_argument("-c", "--channels", default="1,6,11", help="Channels to scan")
-    parser.add_argument("--no-hop", action="store_true", help="Disable channel hopping")
-    parser.add_argument("--no-monitor", action="store_true", help="Skip monitor mode setup")
+    parser.add_argument(
+        "-i",
+        "--interface",
+        default="wlan0",
+        help="Wireless interface")
+    parser.add_argument(
+        "-c",
+        "--channels",
+        default="1,6,11",
+        help="Channels to scan")
+    parser.add_argument(
+        "--no-hop",
+        action="store_true",
+        help="Disable channel hopping")
+    parser.add_argument(
+        "--no-monitor",
+        action="store_true",
+        help="Skip monitor mode setup")
 
     # Engine options
-    parser.add_argument("--engine", choices=["scapy", "tshark"], default="scapy",
-                       help="Capture engine (scapy=standard, tshark=high-performance)")
-    parser.add_argument("--pcap-dir", default="/tmp/captures", help="PCAP output directory")
+    parser.add_argument(
+        "--engine",
+        choices=[
+            "scapy",
+            "tshark"],
+        default="scapy",
+        help="Capture engine (scapy=standard, tshark=high-performance)")
+    parser.add_argument(
+        "--pcap-dir",
+        default="/tmp/captures",
+        help="PCAP output directory")
 
     # Storage options
-    parser.add_argument("--db", default="wifi_scanner.db", help="Database path")
-    parser.add_argument("--buffered-storage", action="store_true", help="Enable buffered batch writes")
-    parser.add_argument("--buffer-size", type=int, default=100, help="Buffer size for batch writes")
-    parser.add_argument("--flush-interval", type=float, default=5.0, help="Flush interval (seconds)")
+    parser.add_argument(
+        "--db",
+        default="wifi_scanner.db",
+        help="Database path")
+    parser.add_argument(
+        "--buffered-storage",
+        action="store_true",
+        help="Enable buffered batch writes")
+    parser.add_argument(
+        "--buffer-size",
+        type=int,
+        default=100,
+        help="Buffer size for batch writes")
+    parser.add_argument(
+        "--flush-interval",
+        type=float,
+        default=5.0,
+        help="Flush interval (seconds)")
 
     # Watchdog options
-    parser.add_argument("--watchdog", action="store_true", help="Enable USB watchdog")
+    parser.add_argument(
+        "--watchdog",
+        action="store_true",
+        help="Enable USB watchdog")
 
     # API options
     parser.add_argument("--api", action="store_true", help="Enable REST API")
@@ -305,8 +354,15 @@ Examples:
     parser.add_argument("--port", type=int, default=5000, help="API port")
 
     # Output options
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    parser.add_argument("--stats", action="store_true", help="Show periodic stats")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Verbose output")
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Show periodic stats")
 
     args = parser.parse_args()
 

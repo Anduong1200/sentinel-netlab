@@ -148,10 +148,10 @@ class TransportClient:
                     self._on_success()
                     result = response.json()
                     return {
-                        'success': True,
-                        'ack_id': result.get('ack_id'),
-                        'accepted': result.get('accepted', len(batch.get('items', [])))
-                    }
+                        'success': True, 'ack_id': result.get('ack_id'), 'accepted': result.get(
+                            'accepted', len(
+                                batch.get(
+                                    'items', [])))}
 
                 elif response.status_code >= 400 and response.status_code < 500:
                     # Client error - don't retry
@@ -165,7 +165,8 @@ class TransportClient:
                 else:
                     # Server error - retry
                     last_error = f"HTTP {response.status_code}"
-                    logger.warning(f"Upload attempt {attempt + 1} failed: {last_error}")
+                    logger.warning(
+                        f"Upload attempt {attempt + 1} failed: {last_error}")
 
             except requests.exceptions.Timeout:
                 last_error = "Request timeout"
@@ -181,7 +182,8 @@ class TransportClient:
 
             # Wait before retry
             if attempt < self.max_retries:
-                jitter = delay * 0.1 * (2 * (0.5 - time.time() % 1))  # Simple jitter
+                jitter = delay * 0.1 * \
+                    (2 * (0.5 - time.time() % 1))  # Simple jitter
                 sleep_time = min(delay + jitter, self.max_delay)
                 time.sleep(sleep_time)
                 delay *= self.backoff_factor
@@ -221,7 +223,8 @@ class TransportClient:
             if self._circuit_failures >= self._circuit_threshold:
                 self._circuit_open = True
                 self._circuit_reset_time = time.time() + self._circuit_reset_delay
-                logger.warning("Circuit breaker opened due to repeated failures")
+                logger.warning(
+                    "Circuit breaker opened due to repeated failures")
 
     def heartbeat(self, status: Dict[str, Any]) -> Dict[str, Any]:
         """

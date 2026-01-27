@@ -211,7 +211,8 @@ class CaptureEngine:
                 iface=self.interface,
                 prn=packet_callback,
                 store=False,
-                filter="type mgt or (wlan type data and ether proto 0x888e)"  # Mgt + EAPOL (Handshake)
+                # Mgt + EAPOL (Handshake)
+                filter="type mgt or (wlan type data and ether proto 0x888e)"
             )
             self.sniffer.start()
             self.is_capturing = True

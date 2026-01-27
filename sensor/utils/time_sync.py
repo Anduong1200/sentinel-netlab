@@ -206,25 +206,26 @@ class GPSTime:
                 parts = line.split(',')
                 if len(parts) >= 6:
                     # Parse latitude
-                    lat_raw = parts[3] if line.startswith('$GPGGA') else parts[3]
-                    lat_dir = parts[4] if line.startswith('$GPGGA') else parts[4]
+                    lat_raw = parts[3] if line.startswith(
+                        '$GPGGA') else parts[3]
+                    lat_dir = parts[4] if line.startswith(
+                        '$GPGGA') else parts[4]
 
                     if lat_raw and lat_dir:
                         lat = self._parse_coord(lat_raw, lat_dir)
 
                         # Parse longitude
-                        lon_raw = parts[5] if line.startswith('$GPGGA') else parts[5]
-                        lon_dir = parts[6] if line.startswith('$GPGGA') else parts[6]
+                        lon_raw = parts[5] if line.startswith(
+                            '$GPGGA') else parts[5]
+                        lon_dir = parts[6] if line.startswith(
+                            '$GPGGA') else parts[6]
 
                         if lon_raw and lon_dir:
                             lon = self._parse_coord(lon_raw, lon_dir)
 
                             self._last_position = {
-                                'lat': lat,
-                                'lon': lon,
-                                'alt': None,
-                                'timestamp': datetime.now(timezone.utc).isoformat()
-                            }
+                                'lat': lat, 'lon': lon, 'alt': None, 'timestamp': datetime.now(
+                                    timezone.utc).isoformat()}
                             return self._last_position
         except Exception as e:
             logger.debug(f"GPS read error: {e}")
@@ -237,8 +238,8 @@ class GPSTime:
             if len(value) >= 4:
                 if '.' in value:
                     dot_pos = value.index('.')
-                    degrees = float(value[:dot_pos-2])
-                    minutes = float(value[dot_pos-2:])
+                    degrees = float(value[:dot_pos - 2])
+                    minutes = float(value[dot_pos - 2:])
                     result = degrees + minutes / 60.0
                     if direction in ['S', 'W']:
                         result = -result

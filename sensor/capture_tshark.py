@@ -23,7 +23,8 @@ class TsharkCaptureEngine:
     Handles 500-2000+ packets/second without dropping.
     """
 
-    def __init__(self, interface: str = "wlan0", output_dir: str = "/tmp/captures"):
+    def __init__(self, interface: str = "wlan0",
+                 output_dir: str = "/tmp/captures"):
         self.interface = interface
         self.output_dir = output_dir
         self.process: Optional[subprocess.Popen] = None
@@ -42,9 +43,12 @@ class TsharkCaptureEngine:
     def enable_monitor_mode(self) -> bool:
         """Enable monitor mode on interface."""
         try:
-            subprocess.run(["ip", "link", "set", self.interface, "down"], check=True, timeout=5)
-            subprocess.run(["iw", "dev", self.interface, "set", "type", "monitor"], check=True, timeout=5)
-            subprocess.run(["ip", "link", "set", self.interface, "up"], check=True, timeout=5)
+            subprocess.run(["ip", "link", "set", self.interface,
+                           "down"], check=True, timeout=5)
+            subprocess.run(["iw", "dev", self.interface, "set",
+                           "type", "monitor"], check=True, timeout=5)
+            subprocess.run(["ip", "link", "set", self.interface,
+                           "up"], check=True, timeout=5)
             logger.info(f"Monitor mode enabled on {self.interface}")
             return True
         except Exception as e:
@@ -100,7 +104,8 @@ class TsharkCaptureEngine:
 
         # Generate capture filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.capture_file = os.path.join(self.output_dir, f"capture_{timestamp}.pcap")
+        self.capture_file = os.path.join(
+            self.output_dir, f"capture_{timestamp}.pcap")
 
         # Build tshark command
         # -i: interface
@@ -268,10 +273,27 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Tshark Capture Engine CLI")
-    parser.add_argument("-i", "--interface", default="wlan0", help="Wireless interface")
-    parser.add_argument("-c", "--channels", default="1,6,11", help="Channels to scan (comma-separated)")
-    parser.add_argument("-t", "--duration", type=int, default=30, help="Capture duration in seconds")
-    parser.add_argument("-o", "--output", default="/tmp/captures", help="Output directory")
+    parser.add_argument(
+        "-i",
+        "--interface",
+        default="wlan0",
+        help="Wireless interface")
+    parser.add_argument(
+        "-c",
+        "--channels",
+        default="1,6,11",
+        help="Channels to scan (comma-separated)")
+    parser.add_argument(
+        "-t",
+        "--duration",
+        type=int,
+        default=30,
+        help="Capture duration in seconds")
+    parser.add_argument(
+        "-o",
+        "--output",
+        default="/tmp/captures",
+        help="Output directory")
 
     args = parser.parse_args()
 
@@ -280,7 +302,9 @@ if __name__ == "__main__":
     print("=" * 50)
 
     channels = [int(c) for c in args.channels.split(",")]
-    engine = TsharkCaptureEngine(interface=args.interface, output_dir=args.output)
+    engine = TsharkCaptureEngine(
+        interface=args.interface,
+        output_dir=args.output)
 
     networks = {}
 
@@ -288,7 +312,8 @@ if __name__ == "__main__":
         net = parse_tshark_packet(pkt)
         if net:
             networks[net["bssid"]] = net
-            print(f"[{len(networks)}] {net['ssid'][:20]:20} | {net['bssid']} | Ch:{net['channel']:2} | {net['rssi']}dBm")
+            print(
+                f"[{len(networks)}] {net['ssid'][:20]:20} | {net['bssid']} | Ch:{net['channel']:2} | {net['rssi']}dBm")
 
     print(f"Interface: {args.interface}")
     print(f"Channels: {channels}")

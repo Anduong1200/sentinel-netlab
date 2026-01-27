@@ -108,8 +108,9 @@ class SecurityAuditor:
                 description=f"Network '{network.ssid}' ({network.bssid}) has no encryption.",
                 evidence=f"Security: {network.security}",
                 recommendation="Enable WPA2 or WPA3 encryption.",
-                references=["NIST SP 800-153", "CIS Wireless Benchmark"]
-            )
+                references=[
+                    "NIST SP 800-153",
+                    "CIS Wireless Benchmark"])
         return None
 
     def check_wep_networks(self, network: NetworkInfo) -> Optional[Finding]:
@@ -123,8 +124,9 @@ class SecurityAuditor:
                 description=f"Network '{network.ssid}' uses WEP, which is cryptographically broken.",
                 evidence=f"Security: {network.security}",
                 recommendation="Upgrade to WPA2 or WPA3 immediately.",
-                references=["CVE-2001-0131", "aircrack-ng documentation"]
-            )
+                references=[
+                    "CVE-2001-0131",
+                    "aircrack-ng documentation"])
         return None
 
     def check_wps_enabled(self, network: NetworkInfo) -> Optional[Finding]:
@@ -138,8 +140,9 @@ class SecurityAuditor:
                 description=f"Network '{network.ssid}' has WPS enabled, vulnerable to PIN brute force.",
                 evidence="WPS IE detected",
                 recommendation="Disable WPS in router settings.",
-                references=["CVE-2011-5053", "Reaver documentation"]
-            )
+                references=[
+                    "CVE-2011-5053",
+                    "Reaver documentation"])
         return None
 
     def check_pmf_disabled(self, network: NetworkInfo) -> Optional[Finding]:
@@ -154,8 +157,9 @@ class SecurityAuditor:
                     description=f"Network '{network.ssid}' does not enforce Protected Management Frames.",
                     evidence="PMF capability not detected",
                     recommendation="Enable 802.11w (PMF) for deauth protection.",
-                    references=["IEEE 802.11w", "NIST SP 800-153"]
-                )
+                    references=[
+                        "IEEE 802.11w",
+                        "NIST SP 800-153"])
         return None
 
     def check_hidden_ssid(self, network: NetworkInfo) -> Optional[Finding]:
@@ -169,8 +173,7 @@ class SecurityAuditor:
                 description=f"Network {network.bssid} uses hidden SSID (easily discovered via probe responses).",
                 evidence="SSID not broadcast",
                 recommendation="Hidden SSID provides no real security. Consider enabling broadcast.",
-                references=["OWASP Wireless Testing Guide"]
-            )
+                references=["OWASP Wireless Testing Guide"])
         return None
 
     def check_suspicious_ssid(self, network: NetworkInfo) -> Optional[Finding]:
@@ -194,8 +197,9 @@ class SecurityAuditor:
                             description=f"Network '{network.ssid}' matches suspicious pattern: {reason}",
                             evidence=f"SSID: {network.ssid}, Security: Open",
                             recommendation="Verify this is a legitimate network before connecting.",
-                            references=["Evil Twin Attack", "OWASP"]
-                        )
+                            references=[
+                                "Evil Twin Attack",
+                                "OWASP"])
         return None
 
     def audit_network(self, network: NetworkInfo):
@@ -222,8 +226,11 @@ class SecurityAuditor:
                     Severity.LOW: logging.INFO,
                     Severity.INFO: logging.DEBUG,
                 }
-                logger.log(log_level.get(finding.severity, logging.INFO),
-                          f"[{finding.severity}] {finding.title}: {finding.description}")
+                logger.log(
+                    log_level.get(
+                        finding.severity,
+                        logging.INFO),
+                    f"[{finding.severity}] {finding.title}: {finding.description}")
 
     def generate_report(self, duration_sec: float) -> AuditReport:
         """Generate final audit report"""
@@ -240,30 +247,31 @@ class SecurityAuditor:
 
         return AuditReport(
             audit_id=f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(
+                timezone.utc).isoformat(),
             sensor_id=self.sensor_id,
             duration_sec=duration_sec,
-            networks_scanned=len(self.networks),
+            networks_scanned=len(
+                self.networks),
             findings=self.findings,
-            summary=summary
-        )
+            summary=summary)
 
 
 def scan_mock_networks() -> List[NetworkInfo]:
     """Generate mock networks for testing"""
     return [
         NetworkInfo(bssid="AA:BB:CC:11:22:33", ssid="SecureNet", channel=6,
-                   rssi_dbm=-45, security="WPA2", pmf_enabled=True),
+                    rssi_dbm=-45, security="WPA2", pmf_enabled=True),
         NetworkInfo(bssid="AA:BB:CC:44:55:66", ssid="OpenCafe", channel=1,
-                   rssi_dbm=-65, security="Open"),
+                    rssi_dbm=-65, security="Open"),
         NetworkInfo(bssid="AA:BB:CC:77:88:99", ssid="OldRouter", channel=11,
-                   rssi_dbm=-70, security="WEP"),
+                    rssi_dbm=-70, security="WEP"),
         NetworkInfo(bssid="AA:BB:CC:AA:BB:CC", ssid="HomeWiFi", channel=6,
-                   rssi_dbm=-50, security="WPA2", wps_enabled=True),
+                    rssi_dbm=-50, security="WPA2", wps_enabled=True),
         NetworkInfo(bssid="AA:BB:CC:DD:EE:FF", ssid=None, channel=44,
-                   rssi_dbm=-60, security="WPA2", hidden=True),
+                    rssi_dbm=-60, security="WPA2", hidden=True),
         NetworkInfo(bssid="11:22:33:44:55:66", ssid="FREE_WIFI", channel=1,
-                   rssi_dbm=-40, security="Open"),
+                    rssi_dbm=-40, security="Open"),
     ]
 
 
@@ -271,13 +279,13 @@ def run_audit(args):
     """Main audit function"""
     start_time = datetime.now(timezone.utc)
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🔍 SENTINEL NETLAB SECURITY AUDIT")
-    print("="*60)
+    print("=" * 60)
     print(f"Sensor ID: {args.sensor_id}")
     print(f"Interface: {args.iface}")
     print(f"Started:   {start_time.isoformat()}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     auditor = SecurityAuditor(args.sensor_id)
 
@@ -311,9 +319,9 @@ def run_audit(args):
     logger.info(f"Report saved to {output_path}")
 
     # Print summary
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("AUDIT SUMMARY")
-    print("="*60)
+    print("=" * 60)
     print(f"Networks Scanned: {report.networks_scanned}")
     print(f"Duration:         {report.duration_sec:.1f} seconds")
     print("\nFindings by Severity:")
@@ -322,7 +330,7 @@ def run_audit(args):
     print(f"  MEDIUM:   {report.summary['MEDIUM']}")
     print(f"  LOW:      {report.summary['LOW']}")
     print(f"  INFO:     {report.summary['INFO']}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # Return exit code based on findings
     if report.summary['CRITICAL'] > 0:
@@ -349,9 +357,15 @@ See ETHICS.md for legal guidelines.
         """
     )
 
-    parser.add_argument('--sensor-id', default='audit-cli', help='Sensor identifier')
+    parser.add_argument(
+        '--sensor-id',
+        default='audit-cli',
+        help='Sensor identifier')
     parser.add_argument('--iface', default='wlan0', help='WiFi interface')
-    parser.add_argument('--output', default='audit_report.json', help='Output file')
+    parser.add_argument(
+        '--output',
+        default='audit_report.json',
+        help='Output file')
     parser.add_argument('--mock', action='store_true', help='Use mock data')
 
     args = parser.parse_args()

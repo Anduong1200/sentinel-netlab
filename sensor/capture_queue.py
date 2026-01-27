@@ -42,9 +42,12 @@ class CaptureProducer(mp.Process):
     def enable_monitor_mode(self):
         """Enable monitor mode."""
         try:
-            subprocess.run(["ip", "link", "set", self.interface, "down"], check=True, timeout=5)
-            subprocess.run(["iw", "dev", self.interface, "set", "type", "monitor"], check=True, timeout=5)
-            subprocess.run(["ip", "link", "set", self.interface, "up"], check=True, timeout=5)
+            subprocess.run(["ip", "link", "set", self.interface,
+                           "down"], check=True, timeout=5)
+            subprocess.run(["iw", "dev", self.interface, "set",
+                           "type", "monitor"], check=True, timeout=5)
+            subprocess.run(["ip", "link", "set", self.interface,
+                           "up"], check=True, timeout=5)
             return True
         except Exception as e:
             logger.error(f"Monitor mode failed: {e}")
@@ -188,7 +191,8 @@ class CaptureConsumer(threading.Thread):
                     self.stats["queue_max_size"] = qsize
 
                 # Process batch when full or timeout
-                if len(batch) >= self.batch_size or (time.time() - last_flush) >= self.batch_timeout:
+                if len(batch) >= self.batch_size or (
+                        time.time() - last_flush) >= self.batch_timeout:
                     self._process_batch(batch)
                     batch = []
                     last_flush = time.time()
@@ -298,14 +302,14 @@ class ProducerConsumerEngine:
             "channels": self.channels,
             "queue_size": self.packet_queue.qsize() if self.packet_queue else 0,
             "queue_capacity": self.queue_size,
-            "consumer_stats": self.consumer.stats if self.consumer else {}
-        }
+            "consumer_stats": self.consumer.stats if self.consumer else {}}
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Producer-Consumer Capture Engine")
+    parser = argparse.ArgumentParser(
+        description="Producer-Consumer Capture Engine")
     parser.add_argument("-i", "--interface", default="wlan0")
     parser.add_argument("-c", "--channels", default="1,6,11")
     parser.add_argument("-t", "--duration", type=int, default=30)
@@ -342,7 +346,8 @@ if __name__ == "__main__":
         for i in range(args.duration):
             time.sleep(1)
             status = engine.get_status()
-            print(f"[{i+1}s] Queue: {status['queue_size']}/{status['queue_capacity']}")
+            print(
+                f"[{i+1}s] Queue: {status['queue_size']}/{status['queue_capacity']}")
     except KeyboardInterrupt:
         pass
 

@@ -52,6 +52,7 @@ SYSTEM_INFO = Gauge(
 # Logging Configuration
 # -----------------------------------------------------------------------------
 
+
 def setup_json_logging(app_name='sentinel-sensor'):
     """
     Configure structured JSON logging for ELK stack integration.
@@ -75,6 +76,7 @@ def setup_json_logging(app_name='sentinel-sensor'):
 # -----------------------------------------------------------------------------
 # Metrics Endpoint Handler
 # -----------------------------------------------------------------------------
+
 
 def prometheus_metrics_endpoint():
     """

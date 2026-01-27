@@ -20,12 +20,20 @@ except ImportError:
 
 logger = logging.getLogger("capture")
 
+
 class CaptureEngine:
     """
     Unified Capture Engine supporting Scapy (Dev) and Tshark (Prod).
     """
 
-    def __init__(self, iface: str, backend: str = 'scapy', channels=(1, 6, 11)):
+    def __init__(
+        self,
+        iface: str,
+        backend: str = 'scapy',
+        channels=(
+            1,
+            6,
+            11)):
         self.iface = iface
         self.backend = backend
         self.channels = list(channels)
@@ -43,14 +51,18 @@ class CaptureEngine:
         """
         try:
             # Check current mode first
-            res = subprocess.run(["iw", "dev", self.iface, "info"], capture_output=True, text=True)
+            res = subprocess.run(
+                ["iw", "dev", self.iface, "info"], capture_output=True, text=True)
             if "type monitor" in res.stdout:
                 return True
 
             logger.info(f"Setting {self.iface} to monitor mode...")
-            subprocess.run(["sudo", "ip", "link", "set", self.iface, "down"], check=True)
-            subprocess.run(["sudo", "iw", "dev", self.iface, "set", "type", "monitor"], check=True)
-            subprocess.run(["sudo", "ip", "link", "set", self.iface, "up"], check=True)
+            subprocess.run(["sudo", "ip", "link", "set",
+                           self.iface, "down"], check=True)
+            subprocess.run(["sudo", "iw", "dev", self.iface,
+                           "set", "type", "monitor"], check=True)
+            subprocess.run(["sudo", "ip", "link", "set",
+                           self.iface, "up"], check=True)
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed set monitor mode: {e}")
@@ -73,20 +85,22 @@ class CaptureEngine:
 
         # Start processing worker
         if not self._worker.is_alive():
-            self._worker = threading.Thread(target=self._process_loop, daemon=True)
+            self._worker = threading.Thread(
+                target=self._process_loop, daemon=True)
             self._worker.start()
 
         # Start backend
         if self.backend == 'scapy' and AsyncSniffer:
             self._start_scapy_sniffer(packet_callback)
         elif self.backend == 'tshark':
-            pass # Tshark logic would go here
+            pass  # Tshark logic would go here
         else:
             logger.warning(f"Unknown backend {self.backend}, default to Scapy")
             self._start_scapy_sniffer(packet_callback)
 
         # Start channel hopping
-        self._hopper_thread = threading.Thread(target=self._channel_hopper, daemon=True)
+        self._hopper_thread = threading.Thread(
+            target=self._channel_hopper, daemon=True)
         self._hopper_thread.start()
 
         logger.info(f"Capture started on {self.iface} using {self.backend}")

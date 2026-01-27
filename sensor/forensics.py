@@ -35,13 +35,15 @@ class ForensicAnalyzer:
         try:
             self.packets = rdpcap(self.pcap_path)
             self.loaded = True
-            logger.info(f"Loaded {len(self.packets)} packets from {self.pcap_path}")
+            logger.info(
+                f"Loaded {len(self.packets)} packets from {self.pcap_path}")
             return True
         except Exception as e:
             logger.error(f"Failed to load PCAP: {e}")
             return False
 
-    def detect_deauth_flood(self, threshold: int = 10, window_seconds: float = 1.0) -> List[Dict[str, Any]]:
+    def detect_deauth_flood(self, threshold: int = 10,
+                            window_seconds: float = 1.0) -> List[Dict[str, Any]]:
         """
         Detect Deauthentication flood attacks.
 
@@ -105,7 +107,8 @@ class ForensicAnalyzer:
 
         return alerts
 
-    def detect_evil_twin(self, known_networks: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def detect_evil_twin(
+            self, known_networks: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Detect Evil Twin / Rogue AP attacks.
         An Evil Twin has same SSID but different BSSID/Encryption.
@@ -134,7 +137,8 @@ class ForensicAnalyzer:
                     elt = pkt.getlayer(Dot11Elt)
                     while elt:
                         if elt.ID == 0:
-                            ssid = elt.info.decode('utf-8', errors='ignore').strip('\x00')
+                            ssid = elt.info.decode(
+                                'utf-8', errors='ignore').strip('\x00')
                             break
                         elt = elt.payload.getlayer(Dot11Elt)
 
@@ -182,17 +186,20 @@ class ForensicAnalyzer:
                         if client_mac and client_mac not in clients:
                             clients[client_mac] = {
                                 "mac": client_mac.upper(),
-                                "first_seen": datetime.fromtimestamp(float(pkt.time)).isoformat(),
-                                "probed_ssids": []
-                            }
+                                "first_seen": datetime.fromtimestamp(
+                                    float(
+                                        pkt.time)).isoformat(),
+                                "probed_ssids": []}
 
                         # Get probed SSID
                         elt = pkt.getlayer(Dot11Elt)
                         while elt:
                             if elt.ID == 0 and elt.info:
-                                ssid = elt.info.decode('utf-8', errors='ignore').strip('\x00')
+                                ssid = elt.info.decode(
+                                    'utf-8', errors='ignore').strip('\x00')
                                 if ssid and ssid not in clients[client_mac]["probed_ssids"]:
-                                    clients[client_mac]["probed_ssids"].append(ssid)
+                                    clients[client_mac]["probed_ssids"].append(
+                                        ssid)
                                 break
                             elt = elt.payload.getlayer(Dot11Elt)
                     except (AttributeError, UnicodeDecodeError):
@@ -200,7 +207,8 @@ class ForensicAnalyzer:
 
         return list(clients.values())
 
-    def generate_report(self, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
+    def generate_report(
+            self, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Generate comprehensive forensic report.
 
@@ -235,16 +243,19 @@ class ForensicAnalyzer:
 
         # Summary
         report["summary"] = {
-            "total_alerts": len(report["alerts"]),
+            "total_alerts": len(
+                report["alerts"]),
             "deauth_flood_detected": len(deauth_alerts) > 0,
-            "evil_twin_detected": any(a["type"] == "evil_twin" for a in report["alerts"]),
-            "unique_clients": len(report["clients"])
-        }
+            "evil_twin_detected": any(
+                a["type"] == "evil_twin" for a in report["alerts"]),
+            "unique_clients": len(
+                report["clients"])}
 
         return report
 
 
-def analyze_pcap(file_path: str, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
+def analyze_pcap(
+        file_path: str, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
     """
     Convenience function for quick PCAP analysis.
 

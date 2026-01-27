@@ -160,7 +160,8 @@ class WiFiStorage:
                 ))
                 count += 1
             except Exception as e:
-                logger.warning(f"Failed to store network {net.get('bssid')}: {e}")
+                logger.warning(
+                    f"Failed to store network {net.get('bssid')}: {e}")
 
         conn.commit()
         conn.close()
@@ -188,7 +189,11 @@ class WiFiStorage:
         cursor = conn.cursor()
 
         # Sanitize order_by to prevent SQL injection
-        allowed_orders = ["last_seen DESC", "first_seen DESC", "best_rssi DESC", "ssid ASC"]
+        allowed_orders = [
+            "last_seen DESC",
+            "first_seen DESC",
+            "best_rssi DESC",
+            "ssid ASC"]
         if order_by not in allowed_orders:
             order_by = "last_seen DESC"
 
@@ -208,7 +213,8 @@ class WiFiStorage:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM networks WHERE bssid = ?", (bssid.upper(),))
+        cursor.execute(
+            "SELECT * FROM networks WHERE bssid = ?", (bssid.upper(),))
         row = cursor.fetchone()
         conn.close()
 
@@ -277,7 +283,8 @@ class WiFiStorage:
         networks = self.get_networks(limit=10000)
 
         # CSV header
-        csv_lines = ["SSID,BSSID,Channel,Encryption,Vendor,First Seen,Last Seen,Beacon Count,Best RSSI"]
+        csv_lines = [
+            "SSID,BSSID,Channel,Encryption,Vendor,First Seen,Last Seen,Beacon Count,Best RSSI"]
 
         for net in networks:
             line = ",".join([
@@ -345,12 +352,14 @@ class WiFiStorage:
                     logger.warning(f"Failed to delete {pcap}: {e}")
 
         # Remove files if total size exceeds limit
-        total_size_mb = sum(f.stat().st_size for f in pcap_files) / (1024 * 1024)
+        total_size_mb = sum(
+            f.stat().st_size for f in pcap_files) / (1024 * 1024)
         while total_size_mb > self.pcap_max_size_mb and pcap_files:
             oldest = pcap_files.pop(0)
             try:
                 oldest.unlink()
-                total_size_mb = sum(f.stat().st_size for f in pcap_files) / (1024 * 1024)
+                total_size_mb = sum(
+                    f.stat().st_size for f in pcap_files) / (1024 * 1024)
                 logger.info(f"Deleted PCAP for size limit: {oldest.name}")
             except Exception as e:
                 logger.warning(f"Failed to delete {oldest}: {e}")
@@ -358,12 +367,20 @@ class WiFiStorage:
     def get_pcap_stats(self) -> Dict[str, Any]:
         """Get statistics about stored PCAP files."""
         if not self.pcap_dir.exists():
-            return {"count": 0, "total_size_mb": 0, "oldest": None, "newest": None}
+            return {
+                "count": 0,
+                "total_size_mb": 0,
+                "oldest": None,
+                "newest": None}
 
         pcap_files = list(self.pcap_dir.glob("*.pcap"))
 
         if not pcap_files:
-            return {"count": 0, "total_size_mb": 0, "oldest": None, "newest": None}
+            return {
+                "count": 0,
+                "total_size_mb": 0,
+                "oldest": None,
+                "newest": None}
 
         pcap_files.sort(key=lambda f: f.stat().st_mtime)
         total_size = sum(f.stat().st_size for f in pcap_files)
@@ -472,6 +489,5 @@ if __name__ == "__main__":
     print(f"PCAP stats: {storage.get_pcap_stats()}")
 
     # Cleanup
-    import os
     os.remove("./test_wifi.db")
     print("\nTest complete!")

