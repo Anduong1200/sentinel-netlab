@@ -9,8 +9,7 @@ import json
 import logging
 import argparse
 import numpy as np
-from typing import Dict, List, Tuple
-from itertools import product
+from typing import Dict, List
 from pathlib import Path
 
 # Add parent dir to path
@@ -67,7 +66,6 @@ def optimize(dataset_path: str, config_path: str):
     # Define search space (simplified)
     # Weights must sum to ~1.0
     weight_keys = ['encryption', 'rssi_norm', 'vendor_risk', 'ssid_suspicion', 'wps_flag']
-    steps = [0.1, 0.2, 0.3, 0.4]
     
     best_f1 = -1.0
     best_weights = {}

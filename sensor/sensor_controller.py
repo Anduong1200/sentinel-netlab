@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
 
 from transport import BufferManager, TransportClient  # noqa: E402
-from telemetry import TelemetryNormalizer  # noqa: E402
+from normalizer import TelemetryNormalizer  # noqa: E402
 from capture import CaptureDriver, IwCaptureDriver, MockCaptureDriver, FrameParser  # noqa: E402
 
 
@@ -142,9 +142,11 @@ class SensorController:
         buffer_size: int = 10000,
         batch_size: int = 200,
         upload_interval: float = 5.0,
-        mock_mode: bool = False,
-        anonymize_ssid: bool = False
-    ):
+            mock_mode: bool = False,
+            anonymize_ssid: bool = False,
+            store_raw_mac: bool = False,
+            privacy_mode: str = "anonymized"
+        ):
         """
         Initialize sensor controller.
 
@@ -161,6 +163,8 @@ class SensorController:
             upload_interval: Seconds between uploads
             mock_mode: Use mock capture driver
             anonymize_ssid: Hash SSIDs for privacy
+            store_raw_mac: Allow storing raw MAC addresses
+            privacy_mode: Privacy mode (normal, anonymized, private)
         """
         self.sensor_id = sensor_id
         self.iface = iface
@@ -178,7 +182,9 @@ class SensorController:
         self.normalizer = TelemetryNormalizer(
             sensor_id=sensor_id,
             capture_method="scapy" if not mock_mode else "mock",
-            anonymize_ssid=anonymize_ssid
+            anonymize_ssid=anonymize_ssid,
+            store_raw_mac=store_raw_mac,
+            privacy_mode=privacy_mode
         )
 
         self.buffer = BufferManager(
@@ -484,6 +490,14 @@ Examples:
         '--anonymize-ssid',
         action='store_true',
         help='Hash SSIDs')
+    parser.add_argument(
+        '--store-raw-mac',
+        action='store_true',
+        help='Store raw MAC addresses')
+    parser.add_argument(
+        '--privacy-mode',
+        default='anonymized',
+        help='Privacy mode')
 
     # Logging
     parser.add_argument('--log-level', default='INFO',
@@ -517,7 +531,9 @@ Examples:
         batch_size=args.batch_size,
         upload_interval=args.upload_interval,
         mock_mode=args.mock_mode,
-        anonymize_ssid=args.anonymize_ssid
+        anonymize_ssid=args.anonymize_ssid,
+        store_raw_mac=args.store_raw_mac,
+        privacy_mode=args.privacy_mode
     )
 
     # Signal handlers

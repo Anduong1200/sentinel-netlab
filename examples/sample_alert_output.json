@@ -1,0 +1,35 @@
+{
+    "alert_id": "alert-evil-twin-001",
+    "sensor_id": "sensor-01",
+    "created_at": 1706432100.789,
+    "created_at_iso": "2026-01-28T10:35:00.789Z",
+    "alert_type": "evil_twin",
+    "severity": "High",
+    "title": "Evil Twin Detected: CorpNetwork",
+    "description": "Multiple BSSIDs broadcasting SSID 'CorpNetwork'. This may indicate a rogue access point attempting to impersonate the legitimate network.",
+    "bssid": "DE:AD:BE:EF:00:01",
+    "ssid": "CorpNetwork",
+    "mac_src": null,
+    "channel": 6,
+    "evidence": {
+        "legitimate_bssid": "AA:BB:CC:11:22:33",
+        "rogue_bssid": "DE:AD:BE:EF:00:01",
+        "bssid_count": 2,
+        "all_bssids": [
+            "AA:BB:CC:11:22:33",
+            "DE:AD:BE:EF:00:01"
+        ],
+        "first_seen": "2026-01-28T10:34:55Z",
+        "frame_count": 15
+    },
+    "frame_ids": [
+        "a1b2c3d4",
+        "e5f6g7h8",
+        "i9j0k1l2"
+    ],
+    "risk_score": 85.0,
+    "confidence": 0.92,
+    "mitre_attack": "T1557.001",
+    "status": "open",
+    "resolved_at": null
+}

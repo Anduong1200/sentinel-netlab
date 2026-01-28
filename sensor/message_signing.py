@@ -21,7 +21,7 @@ import hashlib
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import requests
 
 logger = logging.getLogger(__name__)

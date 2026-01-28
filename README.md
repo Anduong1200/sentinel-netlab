@@ -52,37 +52,51 @@ sentinel-netlab/
 │   ├── capture_driver.py      # Monitor mode driver
 │   ├── frame_parser.py        # 802.11 frame decoder
 │   ├── normalizer.py          # Telemetry normalization
-│   ├── buffer_manager.py      # Ring buffer + journal
 │   ├── transport_client.py    # Upload with retry
 │   ├── detection.py           # Threat detection logic
 │   ├── risk.py                # Risk scoring engine
-│   ├── geo_mapping.py         # 📍 Trilateration & Heatmaps
-│   ├── attacks.py             # ⚔️ Active Defense (Lab)
-│   ├── wardrive.py            # 🚗 Wardriving CLI
+│   ├── attacks.py             # ⚔️ Active Defense (Lab only)
 │   ├── audit.py               # 📋 Security Audit
-│   ├── wids_detectors.py      # Advanced WIDS rules
-│   ├── utils/                 # OUI lookup, time sync
-│   ├── schema/                # JSON schemas
-│   └── tests/                 # Unit & integration tests
+│   └── schema/                # JSON schemas
 │
 ├── controller/                 # 🖥️ Central Server
-│   └── (Flask API - planned)
+│   ├── api_server.py          # Flask REST API
+│   ├── models.py              # SQLAlchemy models
+│   └── migrations/            # Alembic migrations
+│
+├── common/                     # 🔗 Shared Code
+│   ├── contracts.py           # Pydantic data models
+│   ├── frame_constants.py     # 802.11 constants
+│   ├── privacy.py             # MAC anonymization
+│   ├── risk_engine.py         # Risk scoring
+│   └── metrics.py             # Prometheus metrics
 │
 ├── docs/                       # 📚 Documentation
-│   ├── getting-started/       # Installation & quickstart
-│   ├── architecture/          # System design & diagrams
-│   ├── operations/            # Deployment & monitoring
-│   └── research/              # Academic materials
+│   ├── quickstart.md          # Getting started
+│   ├── architecture.md        # System design
+│   ├── api_ingest.md          # API contract
+│   ├── data_schema.md         # Data models
+│   └── adr/                   # Architecture decisions
 │
-├── ops/                        # ⚙️ Operations
-│   └── systemd/               # Service files
+├── ops/                        # ⚙️ Docker & Operations
+│   ├── docker-compose.yml     # Full stack deployment
+│   ├── Dockerfile.controller  # Controller image
+│   ├── Dockerfile.sensor      # Sensor image
+│   └── nginx/                 # Reverse proxy config
 │
-├── scripts/                    # 🔧 Utilities
-│   ├── setup.sh               # Installation script
-│   └── upgrade.sh             # Update script
+├── examples/                   # 📝 Sample Data
+│   ├── sample_telemetry.json  # Telemetry example
+│   └── sample_alert.json      # Alert example
 │
-└── research/                   # 🔬 Test Data
-    └── pcaps/                 # Sample captures
+├── tests/                      # 🧪 Test Suite
+│   ├── unit/                  # Unit tests
+│   └── integration/           # Integration tests
+│
+├── config.example.yaml         # Configuration template
+├── requirements.txt            # Runtime dependencies
+├── requirements-dev.txt        # Dev dependencies
+├── pyproject.toml              # Build configuration
+└── Makefile                    # Build/test commands
 ```
 
 ---
@@ -108,7 +122,7 @@ sudo ./scripts/setup.sh
 # Or manual installation
 python3 -m venv venv
 source venv/bin/activate
-pip install -r sensor/requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Configure WiFi Adapter

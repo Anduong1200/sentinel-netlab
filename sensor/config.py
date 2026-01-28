@@ -69,12 +69,22 @@ class RiskConfig:
 
 
 @dataclass
+class PrivacyConfig:
+    """Privacy and data retention settings."""
+    mode: str = "anonymized"  # normal, anonymized, private
+    store_raw_mac: bool = False
+    anonymize_ssid: bool = False
+    retention_days: int = 30
+
+
+@dataclass
 class Config:
     """Main configuration container."""
     capture: CaptureConfig = field(default_factory=CaptureConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     api: APIConfig = field(default_factory=APIConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
+    privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
 

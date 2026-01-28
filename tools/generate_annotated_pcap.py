@@ -16,7 +16,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -348,7 +348,7 @@ def main():
     print(f"   - {args.output}/sample_benign.pcap")
     print(f"   - {args.output}/sample_evil_twin.pcap")
     print(f"   - {args.output}/sample_deauth.pcap")
-    print(f"   - Plus JSON manifests with annotations")
+    print("   - Plus JSON manifests with annotations")
 
 
 if __name__ == '__main__':

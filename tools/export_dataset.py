@@ -8,7 +8,6 @@ import csv
 import json
 import logging
 import argparse
-from typing import List, Dict
 
 # Add parent dir to path
 import sys

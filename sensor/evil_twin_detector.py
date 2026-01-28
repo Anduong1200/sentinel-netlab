@@ -17,7 +17,6 @@ from datetime import datetime, timezone
 from collections import defaultdict
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Set, Tuple, Any
-from difflib import SequenceMatcher
 
 logger = logging.getLogger(__name__)
 
@@ -515,7 +514,7 @@ class AdvancedEvilTwinDetector:
             )
         else:
             return (
-                f"Monitor: Unusual duplicate SSID detected. Review if legitimate roaming or guest AP."
+                "Monitor: Unusual duplicate SSID detected. Review if legitimate roaming or guest AP."
             )
 
     def _cleanup(self):

@@ -177,5 +177,10 @@ pcap-gen:
 ci: lint-check test security
 	@echo "CI pipeline complete"
 
+pre-commit-install:
+	pre-commit install
+	pre-commit install --hook-type commit-msg
+	@echo "Pre-commit hooks installed"
+
 pre-commit: lint-check typecheck test-unit
 	@echo "Pre-commit checks complete"

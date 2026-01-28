@@ -133,6 +133,36 @@ security:
   sequence_validation: true
 
 # =============================================================================
+# PRIVACY (GDPR / PII Protection)
+# =============================================================================
+privacy:
+  # MAC address handling mode: normal, anonymized, hashed
+  # - normal: Full MAC stored (forensic mode only)
+  # - anonymized: OUI preserved, rest masked (AA:BB:CC:XX:XX:XX)
+  # - hashed: One-way hashed (recommended)
+  mode: "hashed"
+
+  # Store raw MAC addresses (MUST be false by default!)
+  # Only enable for authorized forensic investigation
+  store_raw_mac: false
+
+  # Salt for hashing (prefer env var PRIVACY_SALT)
+  # Generate with: openssl rand -hex 16
+  # hash_salt: ""
+
+  # SSID anonymization
+  anonymize_ssid: false
+
+  # Data retention
+  retention:
+    # Days to keep normalized frames (0 = forever)
+    normalized_frames_days: 30
+    # Days to keep alerts
+    alerts_days: 90
+    # Days to keep raw data in forensic mode
+    forensic_raw_days: 7
+
+# =============================================================================
 # CONTROLLER-SPECIFIC (when running controller)
 # =============================================================================
 controller_server:

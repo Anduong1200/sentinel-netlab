@@ -189,6 +189,12 @@ class SensorCLI:
                 return jsonify({"events": self.storage.get_events(limit=50)})
             return jsonify({"events": self.parser.security_events[-50:]})
 
+        @app.route('/metrics')
+        def metrics():
+            from common.metrics import generate_latest_metrics
+            data, content_type = generate_latest_metrics()
+            return data, 200, {'Content-Type': content_type}
+
         def run_api():
             app.run(
                 host=self.args.host,

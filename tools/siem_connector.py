@@ -4,13 +4,11 @@ Sentinel NetLab - SIEM Connector
 Forward alerts from Controller/Sensor to Elasticsearch or Splunk.
 """
 
-import os
 import time
-import json
 import logging
 import argparse
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(
@@ -89,7 +87,6 @@ def main():
     logger.info(f"Starting SIEM Connector: {args.source} -> {args.target}")
     
     # Polling loop
-    last_poll = time.time()
     seen_ids = set()
     
     while True:

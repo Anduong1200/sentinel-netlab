@@ -1,0 +1,144 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-netlab"
+version = "1.0.0"
+description = "Lightweight Hybrid Wireless Intrusion Detection System"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Sentinel Team", email = "anduong1200@gmail.com"}
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+]
+keywords = ["wifi", "security", "wids", "intrusion-detection", "wireless"]
+
+dependencies = [
+    "scapy>=2.5.0",
+    "requests>=2.28.0",
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "flask-limiter>=3.5.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "prometheus-client>=0.19.0",
+    "jinja2>=3.1.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.9",
+    "mypy>=1.8.0",
+    "bandit>=1.7.7",
+    "pre-commit>=3.6.0",
+    "types-requests>=2.31.0",
+]
+ml = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Anduong1200/sentinel-netlab"
+Documentation = "https://github.com/Anduong1200/sentinel-netlab/tree/main/docs"
+Repository = "https://github.com/Anduong1200/sentinel-netlab.git"
+Issues = "https://github.com/Anduong1200/sentinel-netlab/issues"
+
+[project.scripts]
+sentinel-sensor = "sensor.cli:main"
+sentinel-audit = "sensor.audit:main"
+
+# =============================================================================
+# TOOL CONFIGURATION
+# =============================================================================
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "S101",  # assert used
+    "S603",  # subprocess calls (needed for sensor)
+    "S607",  # partial path
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+"sensor/attacks.py" = ["S"]  # Security checks relaxed for attack code
+
+[tool.ruff.lint.isort]
+known-first-party = ["sensor", "controller"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+exclude = ["tests/", "venv/", ".venv/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["sensor", "controller"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101", "B603", "B607"]

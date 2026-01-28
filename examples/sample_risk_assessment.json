@@ -1,0 +1,48 @@
+{
+    "entity_id": "DE:AD:BE:EF:00:01",
+    "timestamp": 1706432100.0,
+    "total_score": 85.5,
+    "risk_level": "high_risk",
+    "confidence": 0.88,
+    "factors": [
+        {
+            "name": "evil_twin",
+            "description": "SSID 'CorpNetwork' has 2 different BSSIDs",
+            "score": 85.5,
+            "mitre_id": "T1557.001",
+            "weight": 0.95,
+            "evidence": {
+                "ssid": "CorpNetwork",
+                "bssid_count": 2,
+                "bssids": [
+                    "AA:BB:CC:11:22:33",
+                    "DE:AD:BE:EF:00:01"
+                ]
+            }
+        },
+        {
+            "name": "rssi_anomaly",
+            "description": "RSSI changed by 25 dB",
+            "score": 45.0,
+            "mitre_id": null,
+            "weight": 0.6,
+            "evidence": {
+                "delta_db": 25,
+                "previous": -70,
+                "current": -45
+            }
+        }
+    ],
+    "actions": [
+        "Alert",
+        "Capture evidence",
+        "Prepare containment"
+    ],
+    "baseline_stats": {
+        "first_seen": 1706431000.0,
+        "last_seen": 1706432100.0,
+        "frame_count": 1500,
+        "rssi_mean": -55.2,
+        "rssi_stdev": 8.3
+    }
+}

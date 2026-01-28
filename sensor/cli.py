@@ -109,6 +109,8 @@ def merge_config(args: argparse.Namespace,
         },
         'privacy': {
             'anonymize_ssid': args.anonymize_ssid or file_config.get('privacy', {}).get('anonymize_ssid', False),
+            'store_raw_mac': args.store_raw_mac or file_config.get('privacy', {}).get('store_raw_mac', False),
+            'mode': args.privacy_mode or file_config.get('privacy', {}).get('mode', 'anonymized'),
         },
         'logging': {
             'level': args.log_level or file_config.get('logging', {}).get('level', 'INFO'),
@@ -207,6 +209,15 @@ Examples:
         '--anonymize-ssid',
         action='store_true',
         help='Hash SSIDs')
+    parser.add_argument(
+        '--store-raw-mac',
+        action='store_true',
+        help='Store raw MAC addresses (warning: privacy risk)')
+    parser.add_argument(
+        '--privacy-mode',
+        choices=['normal', 'anonymized', 'private'],
+        default='anonymized',
+        help='Privacy mode for data retention')
 
     # GPS
     parser.add_argument('--gps-device', help='GPS NMEA device path')
@@ -267,7 +278,9 @@ Examples:
             batch_size=config['upload']['batch_size'],
             upload_interval=config['upload']['interval_sec'],
             mock_mode=config['mock_mode'],
-            anonymize_ssid=config['privacy']['anonymize_ssid']
+            anonymize_ssid=config['privacy']['anonymize_ssid'],
+            store_raw_mac=config['privacy']['store_raw_mac'],
+            privacy_mode=config['privacy']['mode']
         )
 
         if controller.start():

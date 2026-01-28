@@ -8,7 +8,8 @@ import hashlib
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
-from .schema import TelemetryFrame, Capabilities
+from .schema import TelemetryItem, Capabilities
+from common.privacy import anonymize_mac_oui, hash_mac, anonymize_ssid as priv_anonymize_ssid
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,9 @@ class TelemetryNormalizer:
         sensor_id: str,
         capture_method: str = "scapy",
         oui_db: Optional[Dict[str, str]] = None,
-        anonymize_ssid: bool = False
+        anonymize_ssid: bool = False,
+        store_raw_mac: bool = False,
+        privacy_mode: str = "anonymized"
     ):
         """
         Initialize normalizer.
@@ -68,29 +71,45 @@ class TelemetryNormalizer:
             capture_method: Capture method identifier
             oui_db: OUI database for vendor lookup
             anonymize_ssid: Hash SSIDs for privacy
+            store_raw_mac: If True, keep raw MAC. If False, apply privacy mode.
+            privacy_mode: 'normal', 'anonymized' (OUI kept), or 'private' (full hash)
         """
         self.sensor_id = sensor_id
         self.capture_method = capture_method
         self.oui_db = oui_db or self.DEFAULT_OUI_DB
         self.anonymize_ssid = anonymize_ssid
+        self.store_raw_mac = store_raw_mac
+        self.privacy_mode = privacy_mode
 
         self._sequence_id = 0
         self._start_time = datetime.now(timezone.utc)
 
-    def normalize(self, parsed_frame: Any) -> TelemetryFrame:
+    def normalize(self, parsed_frame: Any) -> TelemetryItem:
         """
-        Convert parsed frame to TelemetryFrame.
+        Convert parsed frame to TelemetryItem.
 
         Args:
             parsed_frame: ParsedFrame from FrameParser
 
         Returns:
-            TelemetryFrame with canonical fields
+            TelemetryItem with canonical fields
         """
         self._sequence_id += 1
 
-        # Get vendor info
-        vendor_oui = self._extract_oui(parsed_frame.bssid)
+        # Handle Privacy (MAC Address)
+        bssid = parsed_frame.bssid
+        if not self.store_raw_mac:
+            if self.privacy_mode == "private":
+                bssid = hash_mac(bssid)
+            else:
+                # Default to anonymized (keep OUI)
+                bssid = anonymize_mac_oui(bssid)
+
+        # Get vendor info (use original BSSID for lookup if possible, or extract from anonymized if OUI preserved)
+        # Note: If we anonymized getting OUI might still work if we kept it.
+        # But if we fully hashed, we can't get OUI.
+        vendor_oui = self._extract_oui(parsed_frame.bssid) # Use raw for lookup BEFORE anonymization if permissible? 
+        # Ideally we only use what we store, but for lookup lookup it's transient.
         vendor_name = self._lookup_vendor(vendor_oui)
 
         # Calculate frequency
@@ -98,8 +117,9 @@ class TelemetryNormalizer:
 
         # Handle SSID
         ssid = parsed_frame.ssid
-        if self.anonymize_ssid and ssid:
-            ssid = self._anonymize(ssid)
+        if self.anonymize_ssid:
+            ssid = priv_anonymize_ssid(ssid)
+
 
         # Build capabilities
         caps = Capabilities(
@@ -131,25 +151,22 @@ class TelemetryNormalizer:
                 timezone.utc)
             - self._start_time).total_seconds()
 
-        return TelemetryFrame(
-            sensor_id=self.sensor_id,
-            timestamp_utc=datetime.now(timezone.utc).isoformat(),
-            sequence_id=self._sequence_id,
-            capture_method=self.capture_method,
-            frame_type=parsed_frame.frame_type,
-            bssid=parsed_frame.bssid,
+        return TelemetryItem(
+            bssid=bssid,
             ssid=ssid,
-            rssi_dbm=parsed_frame.rssi_dbm,
             channel=parsed_frame.channel,
+            rssi_dbm=parsed_frame.rssi_dbm,
             frequency_mhz=frequency,
-            vendor_oui=vendor_oui,
-            vendor_name=vendor_name,
+            
             capabilities=caps,
-            ie=ie,
-            local_uptime_seconds=uptime,
-            time_sync=True,
-            parse_error=parsed_frame.parse_error,
-            ssid_decoding_error=parsed_frame.ssid_decoding_error
+            vendor_oui=vendor_oui,
+            
+            # Map IE dict to count
+            ie_count=len(ie) if ie else 0,
+            beacon_interval=parsed_frame.beacon_interval,
+            
+            # Use current timestamp
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
 
     def _extract_oui(self, mac: str) -> Optional[str]:

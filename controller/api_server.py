@@ -5,7 +5,6 @@ Production-ready with mTLS, Pydantic validation, rate limiting, and observabilit
 """
 
 import os
-import json
 import time
 import hmac
 import hashlib
@@ -13,11 +12,11 @@ import logging
 import secrets
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict, field
+from typing import Dict, List, Optional
+from dataclasses import dataclass, asdict
 from enum import Enum
 
-from flask import Flask, jsonify, request, Response, g
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -620,7 +619,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    logger.info(f"Starting Controller API v2.0.0")
+    logger.info("Starting Controller API v2.0.0")
     logger.info(f"TLS required: {Config.REQUIRE_TLS}")
     logger.info(f"HMAC required: {Config.REQUIRE_HMAC}")
     logger.info(f"Rate limit: {Config.RATE_LIMIT_DEFAULT}")

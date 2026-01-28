@@ -6,7 +6,6 @@ WiFi Scanner GUI - Run on Windows
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import requests
-import json
 from datetime import datetime
 import threading
 import queue
@@ -421,9 +420,8 @@ Confidence: {net.get('confidence', 0):.0%}
                 conf_text
             ))
 
-def main():
     root = tk.Tk()
-    app = WiFiScannerGUI(root)
+    WiFiScannerGUI(root)
     root.mainloop()
 
 if __name__ == "__main__":
