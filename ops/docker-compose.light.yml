@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Controller (Lightweight Mode)
+  # ===========================================================================
+  controller:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-controller
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:////app/data/sentinel.db
+      - REDIS_URL=redis://redis:6379/0
+      - REQUIRE_HMAC=${REQUIRE_HMAC:-true}
+      - CONTROLLER_HMAC_SECRET=${CONTROLLER_HMAC_SECRET:-change_me_in_prod}
+    volumes:
+      - controller-data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # Redis (Required for Rate Limiting)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # Dashboard (Optional UI)
+  # ===========================================================================
+  dashboard:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.dashboard
+    image: ghcr.io/anduong1200/sentinel-dashboard:${VERSION:-latest}
+    container_name: sentinel-dashboard
+    restart: unless-stopped
+    ports:
+      - "8050:8050"
+    environment:
+      CONTROLLER_URL: http://controller:5000
+    depends_on:
+      controller:
+        condition: service_healthy
+    networks:
+      - sentinel-net
+
+networks:
+  sentinel-net:
+    driver: bridge
+
+volumes:
+  controller-data:

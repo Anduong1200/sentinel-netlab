@@ -5,6 +5,8 @@ Sentinel NetLab - Deauth Flood Detector
 
 import logging
 import time
+import json
+import os
 from datetime import datetime, timezone
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -42,12 +44,16 @@ class DeauthFloodDetector:
         self.window_seconds = window_seconds
         self.cooldown_seconds = cooldown_seconds
 
+        self.cooldown_seconds = cooldown_seconds
+        self.state_file = ".dos_state.json"
+
         # Track deauth frames: (bssid, client) -> [timestamps]
         self.deauth_history: Dict[Tuple[str, str],
                                   List[float]] = defaultdict(list)
 
         # Cooldown tracking
         self.last_alert: Dict[Tuple[str, str], float] = {}
+        self._load_state()
 
         self.alert_count = 0
 
@@ -101,6 +107,7 @@ class DeauthFloodDetector:
 
         if rate >= self.threshold_per_sec:
             self.last_alert[key] = now
+            self._save_state()
             return self._create_alert(
                 bssid, client_mac, count, rate, sensor_id)
 
@@ -137,3 +144,36 @@ class DeauthFloodDetector:
             'total_recent_frames': total_tracked,
             'alerts_generated': self.alert_count
         }
+
+    def _save_state(self):
+        """Persist cooldown state to file"""
+        try:
+            # Convert keys from tuple to string for JSON
+            state = {
+                f"{k[0]}|{k[1]}": v 
+                for k, v in self.last_alert.items()
+            }
+            with open(self.state_file, 'w') as f:
+                json.dump(state, f)
+        except Exception as e:
+            logger.warning(f"Failed to save state: {e}")
+
+    def _load_state(self):
+        """Load cooldown state from file"""
+        if not os.path.exists(self.state_file):
+            return
+            
+        try:
+            with open(self.state_file, 'r') as f:
+                state = json.load(f)
+                
+            now = time.time()
+            for k_str, timestamp in state.items():
+                # Only load if still in cooldown window (plus buffer)
+                if now - timestamp < self.cooldown_seconds:
+                    parts = k_str.split('|')
+                    if len(parts) == 2:
+                        self.last_alert[(parts[0], parts[1])] = timestamp
+        except Exception as e:
+            logger.warning(f"Failed to load state: {e}")
+

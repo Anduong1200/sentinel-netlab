@@ -24,7 +24,7 @@ Sentinel is designed to detect the following attacks (aligned with OWASP & MITRE
 ### B. System Threats (Risks to Sentinel itself)
 | Threat | Risk | Mitigation |
 | :--- | :--- | :--- |
-| **Sensor Spoofing** | Attacker impersonates a sensor to feed false data. | Authentication tokens & HMAC signing (Planned) |
+| **Sensor Spoofing** | Attacker impersonates a sensor to feed false data. | Authentication tokens & HMAC signing (Implemented) |
 | **API DoS** | Flooding the controller API. | Rate limiting (Redis-based) |
 | **Database Injection** | Malicious SSID strings injecting SQL/HTML. | SQLAlchemy ORM & Auto-escaping in Dash |
 | **Physical Tampering** | Theft of sensor hardware. | Disk encryption (OS level) - Out of scope for app |

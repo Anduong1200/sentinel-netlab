@@ -65,8 +65,9 @@ Repository = "https://github.com/Anduong1200/sentinel-netlab.git"
 Issues = "https://github.com/Anduong1200/sentinel-netlab/issues"
 
 [project.scripts]
-sentinel-sensor = "sensor.cli:main"
-sentinel-audit = "sensor.audit:main"
+sentinel-netlab = "sentinel:main"
+sentinel-sensor = "sensor.cli:main" # Legacy/Direct
+sentinel-wardrive = "sensor.wardrive:main" # Legacy/Direct
 
 # =============================================================================
 # TOOL CONFIGURATION

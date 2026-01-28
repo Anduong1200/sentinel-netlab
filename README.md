@@ -138,26 +138,30 @@ sentinel-netlab/
    pip install -r requirements-dev.txt
    ```
 
-4. **Configuration**
+4. **Install Logic**
+   ```bash
+   pip install -e .
+   ```
+
+5. **Configuration**
    ```bash
    cp config.example.yaml config.yaml
-   # Edit config.yaml with your specific settings (API key, interface, etc.)
+   # Edit config.yaml with specific settings
    ```
 
 ### Usage
 
-### Usage
-
 **1. Assessment Mode (Wardriving):**
-Capture WiFi networks with GPS tagging (stops when you cancel).
+Capture WiFi networks with GPS tagging.
 ```bash
-python sentinel.py scan --iface wlan0mon --gps /dev/ttyUSB0 --output walk_session.json
+sentinel-netlab scan --iface wlan0mon --gps /dev/ttyUSB0 --output walk_session.json
+# Or legacy wrapper: python sentinel.py scan ...
 ```
 
 **2. Monitor Mode (WIDS):**
 Run as a continuous sensor (with API and real-time detection).
 ```bash
-python sentinel.py monitor --interface wlan0 --api --buffered-storage
+sentinel-netlab monitor --interface wlan0 --api --buffered-storage
 ```
 
 
