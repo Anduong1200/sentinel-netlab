@@ -15,7 +15,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 ### 1. Fork & Clone
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sentinel-netlab.git
+git clone https://github.com/Anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 ```
 

@@ -77,3 +77,10 @@ docker-compose.override.yml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Tools
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
