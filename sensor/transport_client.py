@@ -1,8 +1,20 @@
 """
 Sentinel NetLab - Transport Client
 Uploads telemetry batches to controller with retry and backoff.
+
+Security Notes:
+- All secrets (auth_token, hmac_secret) should be loaded from environment variables
+- TLS is enabled by default (verify_ssl=True); disable only for testing
+- HMAC signing provides payload integrity verification
+
+Environment Variables:
+- SENSOR_AUTH_TOKEN: Bearer token for API authentication
+- SENSOR_HMAC_SECRET: Optional HMAC-SHA256 secret for payload signing
+- CONTROLLER_URL: Controller API endpoint (https://...)
+- SENSOR_VERIFY_SSL: Set to 'false' only for self-signed certs in dev
 """
 
+import os
 import gzip
 import json
 import time
@@ -14,6 +26,16 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+
+def load_config_from_env() -> Dict[str, Any]:
+    """Load transport configuration from environment variables."""
+    return {
+        'upload_url': os.environ.get('CONTROLLER_URL', 'https://localhost:5000/api/v1/telemetry'),
+        'auth_token': os.environ.get('SENSOR_AUTH_TOKEN'),
+        'hmac_secret': os.environ.get('SENSOR_HMAC_SECRET'),
+        'verify_ssl': os.environ.get('SENSOR_VERIFY_SSL', 'true').lower() != 'false',
+    }
 
 
 class TransportClient:

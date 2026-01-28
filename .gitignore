@@ -1,11 +1,26 @@
-# Python bytecode
+# Sentinel NetLab - Git Ignore
+
+# =============================================================================
+# SECRETS & CONFIGURATION (NEVER COMMIT)
+# =============================================================================
+.env
+.env.*
+!.env.example
+config.yaml
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+
+# =============================================================================
+# PYTHON
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-
-# Build/Distribution
 build/
 develop-eggs/
 dist/
@@ -25,10 +40,23 @@ wheels/
 # Virtual environments
 venv/
 ENV/
-env/
 .venv/
 
-# IDE
+# =============================================================================
+# TESTING & COVERAGE
+# =============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+
+# =============================================================================
+# IDE / EDITORS
+# =============================================================================
 .idea/
 .vscode/
 *.swp
@@ -37,72 +65,52 @@ env/
 .project
 .pydevproject
 .settings/
+*.sublime-workspace
+*.sublime-project
 
-# Logs
-*.log
-controller.log
-sensor.log
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-wifi_scans.db
-
-# PCAP files (large, binary)
+# =============================================================================
+# DATA & ARTIFACTS (Large files)
+# =============================================================================
+data/pcap/
+data/spool/
+data/large/
 *.pcap
 *.pcapng
-pcaps/
+!data/pcap_annotated/*.pcap  # Keep small sample pcaps
 
-# Test artifacts (can be regenerated)
-artifacts/*.json
-artifacts/*.csv
-artifacts/*.txt
-artifacts/*.pcap
-!artifacts/.gitkeep
+# Notebooks with outputs
+*.ipynb
+notebooks/
 
-# Tests output
-!tests/.gitkeep
+# ML models (use releases/git-lfs)
+models/*.pkl
+models/*.h5
+models/*.pt
+models/*.onnx
 
-# Config with secrets
-config.json
-!config.example.json
-
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Temporary files
+# =============================================================================
+# BUILD & PACKAGING
+# =============================================================================
+*.log
 *.tmp
-*.temp
 *.bak
-*.orig
-
-# Coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# mypy
+*.cache
+.ruff_cache/
 .mypy_cache/
 
-# SSL certificates (generated)
-*.pem
-*.crt
-*.key
+# Docker
+docker-compose.override.yml
 
-# Reports (generated)
-security_report_*.txt
-wifi_scan_*.csv
-wifi_scan_*.json
+# =============================================================================
+# REPORTS (regeneratable)
+# =============================================================================
+bandit_report.json
+safety_report.json
+pip_audit_report.json
+
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+Thumbs.db
+Desktop.ini

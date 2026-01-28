@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>{{ report.title }}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;margin:0;color:#222;background:#f6f7fb}
+    .container{max-width:900px;margin:28px auto;padding:24px;background:#fff;border-radius:8px;box-shadow:0 6px 20px rgba(16,24,40,0.08)}
+    h1{font-size:22px;margin:0 0 8px}
+    h2{font-size:18px;margin:20px 0 10px;border-bottom:1px solid #e5e7eb;padding-bottom:6px}
+    h3{font-size:15px;margin:12px 0 6px}
+    .meta{color:#6b7280;font-size:13px;margin-bottom:12px}
+    .summary{background:#f1f5f9;padding:12px;border-radius:6px;margin-bottom:16px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:600;font-size:12px}
+    .sev-critical{background:#fee2e2;color:#991b1b}
+    .sev-high{background:#ffedd5;color:#7c2d12}
+    .sev-medium{background:#fff7ed;color:#92400e}
+    .sev-low{background:#ecfccb;color:#365314}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left;font-size:13px}
+    th{background:#f8fafc;color:#111827}
+    .evidence{font-family:monospace;background:#0f172a;color:#fff;padding:8px;border-radius:6px;display:block;white-space:pre-wrap;font-size:12px;overflow-x:auto}
+    .section{margin-top:20px}
+    .commands{background:#0b1220;color:#e6f0ff;padding:8px;border-radius:6px;font-family:monospace;white-space:pre-wrap;font-size:12px}
+    .footer{color:#94a3b8;font-size:12px;margin-top:18px;text-align:center}
+    .muted{color:#6b7280;font-size:13px}
+    .two-col{display:flex;gap:12px}
+    .col{flex:1;text-align:center}
+    .finding-card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:16px}
+    .finding-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    ul{margin:8px 0;padding-left:20px}
+    li{margin:4px 0}
+    a{color:#2563eb;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .status-open{color:#dc2626}
+    .status-mitigated{color:#16a34a}
+    .status-accepted{color:#ca8a04}
+    @media print{
+      body{background:#fff}
+      .container{box-shadow:none;margin:0;max-width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>{{ report.title }}</h1>
+    <div class="meta">
+      Report ID: {{ report.id }} &nbsp;•&nbsp;
+      Date: {{ report.date }} &nbsp;•&nbsp;
+      Sensor: {{ report.sensor_id or 'N/A' }} &nbsp;•&nbsp;
+      Analyst: {{ report.author or 'Sentinel NetLab' }}
+    </div>
+
+    <div class="summary">
+      <strong>Executive Summary</strong>
+      <p class="muted">{{ report.exec_summary }}</p>
+      <div class="two-col" style="margin-top:12px">
+        <div class="col">
+          <span class="badge sev-critical">CRITICAL</span>
+          <div style="font-size:24px;font-weight:700;margin-top:4px">{{ summary.counts.critical }}</div>
+        </div>
+        <div class="col">
+          <span class="badge sev-high">HIGH</span>
+          <div style="font-size:24px;font-weight:700;margin-top:4px">{{ summary.counts.high }}</div>
+        </div>
+        <div class="col">
+          <span class="badge sev-medium">MEDIUM</span>
+          <div style="font-size:24px;font-weight:700;margin-top:4px">{{ summary.counts.medium }}</div>
+        </div>
+        <div class="col">
+          <span class="badge sev-low">LOW</span>
+          <div style="font-size:24px;font-weight:700;margin-top:4px">{{ summary.counts.low }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Findings Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Severity</th>
+            <th>Title</th>
+            <th>Evidence</th>
+            <th>Remediation</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for f in findings %}
+          <tr>
+            <td><a href="#{{ f.id }}">{{ f.id }}</a></td>
+            <td>
+              {% if f.severity == 'Critical' %}
+                <span class="badge sev-critical">CRITICAL</span>
+              {% elif f.severity == 'High' %}
+                <span class="badge sev-high">HIGH</span>
+              {% elif f.severity == 'Medium' %}
+                <span class="badge sev-medium">MEDIUM</span>
+              {% else %}
+                <span class="badge sev-low">LOW</span>
+              {% endif %}
+            </td>
+            <td>{{ f.title }}</td>
+            <td style="max-width:180px;font-size:12px">{{ f.evidence_summary }}</td>
+            <td style="max-width:180px;font-size:12px">{{ f.remediation_summary }}</td>
+            <td>
+              <span class="status-{{ f.status|lower }}">{{ f.status }}</span>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Detailed Findings</h2>
+      {% for f in findings %}
+        <div class="finding-card" id="{{ f.id }}">
+          <div class="finding-header">
+            <h3>{{ f.id }} — {{ f.title }}</h3>
+            {% if f.severity == 'Critical' %}
+              <span class="badge sev-critical">CRITICAL</span>
+            {% elif f.severity == 'High' %}
+              <span class="badge sev-high">HIGH</span>
+            {% elif f.severity == 'Medium' %}
+              <span class="badge sev-medium">MEDIUM</span>
+            {% else %}
+              <span class="badge sev-low">LOW</span>
+            {% endif %}
+          </div>
+          
+          <div class="muted" style="margin-bottom:8px">
+            Score: {{ f.score }} &nbsp;•&nbsp;
+            Timeline: {{ f.timeline or 'N/A' }} &nbsp;•&nbsp;
+            Status: <span class="status-{{ f.status|lower }}">{{ f.status }}</span>
+          </div>
+          
+          <p>{{ f.description }}</p>
+
+          <strong>Evidence</strong>
+          <ul>
+            {% for e in f.evidence %}
+              <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+
+          {% if f.evidence_raw %}
+            <pre class="evidence">{{ f.evidence_raw }}</pre>
+          {% endif %}
+
+          <strong>Remediation</strong>
+          <p>{{ f.remediation }}</p>
+
+          {% if f.remediation_commands %}
+            <div class="commands">{% for cmd in f.remediation_commands %}{{ cmd }}
+{% endfor %}</div>
+          {% endif %}
+
+          {% if f.references %}
+            <div style="margin-top:8px">
+              <strong>References</strong>
+              <ul>
+                {% for r in f.references %}
+                  <li><a href="{{ r.url }}" target="_blank">{{ r.title }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if actions %}
+    <div class="section">
+      <h2>Action Plan</h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Task</th><th>Owner</th><th>Due Date</th><th>Priority</th></tr>
+        </thead>
+        <tbody>
+        {% for a in actions %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ a.task }}</td>
+            <td>{{ a.owner }}</td>
+            <td>{{ a.due }}</td>
+            <td>{{ a.priority or 'Normal' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if appendix %}
+    <div class="section">
+      <h2>Appendix</h2>
+      {% if appendix.telemetry_file %}
+        <p><strong>Raw Telemetry:</strong> <code>{{ appendix.telemetry_file }}</code></p>
+      {% endif %}
+      {% if appendix.pcap_files %}
+        <p><strong>PCAP Files:</strong></p>
+        <ul>
+          {% for pcap in appendix.pcap_files %}
+            <li><code>{{ pcap }}</code></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if appendix.screenshots %}
+        <p><strong>Screenshots:</strong></p>
+        <ul>
+          {% for ss in appendix.screenshots %}
+            <li>{{ ss }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+      Generated by <strong>Sentinel NetLab</strong> · 
+      <span class="muted">Ensure authorization before performing active tests.</span>
+      <br>
+      <span class="muted">Report generated: {{ report.date }}</span>
+    </div>
+  </div>
+</body>
+</html>

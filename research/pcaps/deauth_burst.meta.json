@@ -1,0 +1,40 @@
+{
+    "pcap": "deauth_burst.pcap",
+    "description": "Deauthentication flood attack simulation for DoS detection testing",
+    "expected_frame_count": 100,
+    "attack_scenario": "Attacker sending deauth frames to disrupt clients",
+    "expected_bssids": {
+        "fa:ce:fa:ce:fa:ce": {
+            "role": "attacker",
+            "frame_type": "deauth/disassoc",
+            "target": "broadcast",
+            "reason_codes": [
+                7,
+                1,
+                3
+            ]
+        }
+    },
+    "burst_characteristics": {
+        "frames_in_2s_window": 30,
+        "inter_frame_interval_ms": 50,
+        "total_duration_seconds": 3.5
+    },
+    "detection_criteria": {
+        "frame_type": [
+            "disassoc",
+            "deauth",
+            "other_management"
+        ],
+        "min_count_threshold": 20,
+        "time_window_seconds": 2,
+        "alert_type": "deauth_flood"
+    },
+    "test_purposes": [
+        "Deauth flood detection",
+        "Burst pattern analysis",
+        "Frame rate threshold testing"
+    ],
+    "sanitization": "All MAC addresses are synthetic",
+    "license": "CC0-1.0"
+}

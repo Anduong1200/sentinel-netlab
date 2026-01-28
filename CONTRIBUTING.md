@@ -1,189 +1,214 @@
 # Contributing to Sentinel NetLab
 
-Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing! This guide will help you get started.
 
 ---
 
 ## Code of Conduct
 
-- Be respectful and constructive
-- Focus on the technical merits of contributions
-- Help maintain a welcoming environment for all contributors
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ---
 
-## How to Contribute
+## Getting Started
 
-### Reporting Issues
-
-1. **Search existing issues** to avoid duplicates
-2. **Use issue templates** when available
-3. **Provide details**:
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - System information (OS, Python version, adapter model)
-   - Relevant logs
-
-### Submitting Pull Requests
-
-1. **Fork** the repository
-2. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make changes** following our style guide
-4. **Add tests** for new functionality
-5. **Run tests** locally:
-   ```bash
-   cd sensor
-   pytest tests/unit/ -v
-   ```
-6. **Commit** with clear messages:
-   ```bash
-   git commit -m "feat: add deauth rate limiting"
-   ```
-7. **Push** and open a pull request
-
----
-
-## Development Setup
+### 1. Fork & Clone
 
 ```bash
-# Clone your fork
 git clone https://github.com/YOUR_USERNAME/sentinel-netlab.git
 cd sentinel-netlab
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r sensor/requirements.txt
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest sensor/tests/unit/ -v
 ```
 
----
-
-## Code Style
-
-### Python
-
-- Follow **PEP 8** style guide
-- Maximum line length: **120 characters**
-- Use **type hints** where possible
-- Write **docstrings** for public functions
-
-```python
-def calculate_risk_score(network: dict, weights: dict) -> float:
-    """
-    Calculate weighted risk score for a network.
-    
-    Args:
-        network: Network record dictionary
-        weights: Weight configuration from risk_weights.yaml
-        
-    Returns:
-        Risk score between 0 and 100
-    """
-    ...
-```
-
-### Commit Messages
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-[optional footer]
-```
-
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation
-- `test`: Tests
-- `refactor`: Code refactoring
-- `chore`: Maintenance
-
-Examples:
-```
-feat(parser): add WPA3 IE parsing
-fix(buffer): prevent memory leak on flush
-docs(readme): update installation instructions
-```
-
----
-
-## Testing
-
-### Writing Tests
-
-- Place unit tests in `sensor/tests/unit/`
-- Use pytest fixtures for common setup
-- Test edge cases and error conditions
-
-```python
-def test_parse_beacon_extracts_ssid(parser):
-    """Parser should extract SSID from beacon frame."""
-    frame = create_mock_beacon(ssid="TestNetwork")
-    result = parser.parse(frame)
-    
-    assert result.ssid == "TestNetwork"
-```
-
-### Running Tests
+### 2. Set Up Development Environment
 
 ```bash
-# All tests
-pytest sensor/tests/ -v
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 
-# With coverage
-pytest sensor/tests/ --cov=sensor --cov-report=html
+# Install dependencies
+make dev
 
-# Specific file
-pytest sensor/tests/unit/test_parser.py -v
+# Run tests to verify setup
+make test
+```
+
+### 3. Create a Branch
+
+```bash
+git checkout -b feature/your-feature-name
+# or
+git checkout -b fix/issue-123
 ```
 
 ---
 
-## Documentation
+## Development Workflow
 
-- Update docs when changing functionality
-- Use Markdown for documentation
-- Include code examples
-- Add mermaid diagrams for complex flows
+### Code Style
+
+- **Linting**: We use [Ruff](https://github.com/astral-sh/ruff) for linting
+- **Formatting**: Use `ruff format` or `black`
+- **Type hints**: Add type hints to new code
+
+```bash
+# Run linter
+make lint
+
+# Auto-fix issues
+ruff check --fix .
+```
+
+### Testing
+
+```bash
+# Run all tests
+make test
+
+# Run specific tests
+pytest tests/unit/test_risk.py -v
+
+# Run with coverage
+make test-cov
+```
+
+### Pre-commit Checks
+
+Before committing, run:
+
+```bash
+make pre-commit
+```
 
 ---
 
 ## Pull Request Process
 
-1. Ensure all tests pass
-2. Update relevant documentation
-3. Add entry to CHANGELOG if significant
+### 1. Commit Guidelines
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style (formatting, no logic change)
+- `refactor`: Code refactoring
+- `test`: Adding/updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(detector): add WPS attack detection
+fix(parser): handle malformed beacon frames
+docs: update quickstart guide
+```
+
+### 2. Create Pull Request
+
+1. Push your branch: `git push origin feature/your-feature`
+2. Open a PR against `develop` (or `main` for hotfixes)
+3. Fill out the PR template
 4. Request review from maintainers
-5. Address feedback promptly
-6. Squash commits if requested
+
+### 3. Review Checklist
+
+Before requesting review, ensure:
+
+- [ ] Tests pass (`make test`)
+- [ ] Linting passes (`make lint`)
+- [ ] Security scan passes (`make bandit`)
+- [ ] Documentation updated (if needed)
+- [ ] CHANGELOG updated (for features/breaking changes)
 
 ---
 
-## Release Process
+## What to Contribute
 
-Releases are managed by maintainers following semantic versioning:
+### Good First Issues
 
-- **MAJOR**: Breaking changes
-- **MINOR**: New features, backward compatible
-- **PATCH**: Bug fixes, backward compatible
+Look for issues labeled [`good first issue`](https://github.com/Anduong1200/sentinel-netlab/labels/good%20first%20issue).
+
+### Feature Ideas
+
+- New detection algorithms
+- Additional WiFi frame parsers
+- Dashboard improvements
+- Documentation translations
+- Performance optimizations
+
+### Security Contributions
+
+If you find a security vulnerability:
+
+1. **DO NOT** open a public issue
+2. Email security concerns to: security@example.com
+3. See [SECURITY.md](SECURITY.md) for details
+
+---
+
+## Architecture Overview
+
+```
+sentinel-netlab/
+├── sensor/           # Sensor code (runs on edge devices)
+│   ├── main.py       # Entry point
+│   ├── parser.py     # Frame parsing
+│   ├── wids_*.py     # Detection engines
+│   └── schema.py     # Data models (Pydantic)
+├── controller/       # Controller API (central server)
+│   └── api_server.py # Flask API
+├── tests/            # Test suite
+│   ├── unit/
+│   └── integration/
+├── ops/              # Deployment configs
+│   ├── docker-compose.yml
+│   └── grafana/
+└── docs/             # Documentation
+```
+
+---
+
+## Adding a New Detector
+
+1. Create detector class in `sensor/wids_detectors.py`:
+
+```python
+from sensor.detector_base import BaseDetector, DetectorAlert
+
+class MyDetector(BaseDetector):
+    NAME = "my_detector"
+    DESCRIPTION = "Detects XYZ attacks"
+    
+    def ingest(self, data):
+        if self._is_suspicious(data):
+            return self.create_alert(...)
+        return None
+```
+
+2. Register in detector registry
+3. Add tests in `tests/unit/test_wids.py`
+4. Update documentation
+
+---
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
 
 ---
 
 ## Questions?
 
-- Open a [GitHub Discussion](https://github.com/Anduong1200/sentinel-netlab/discussions)
-- Check existing documentation
+- Open a [Discussion](https://github.com/Anduong1200/sentinel-netlab/discussions)
+- Join our community chat (if available)
 
 Thank you for contributing! 🎉

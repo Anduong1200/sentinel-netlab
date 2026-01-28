@@ -1,0 +1,48 @@
+{
+    "pcap": "beacon_basic.pcap",
+    "description": "Multiple vendor beacons for parser testing - WPA2, Enterprise, Open, WPS, Hidden SSID",
+    "expected_frame_count": 6,
+    "expected_bssids": {
+        "02:11:22:33:44:55": {
+            "ssid": "HomeWiFi",
+            "security": "WPA2-PSK",
+            "channel": 6,
+            "band": "2.4GHz"
+        },
+        "00:16:3e:aa:bb:01": {
+            "ssid": "CorpNet",
+            "security": "WPA2-Enterprise",
+            "channel": 36,
+            "band": "5GHz"
+        },
+        "12:34:56:78:9a:bc": {
+            "ssid": "Coffee-Shop",
+            "security": "Open",
+            "channel": 11,
+            "band": "2.4GHz"
+        },
+        "de:ad:be:ef:00:01": {
+            "ssid": "GuestNet",
+            "security": "WPA2-PSK",
+            "wps": true,
+            "channel": 1,
+            "band": "2.4GHz"
+        },
+        "aa:bb:cc:dd:ee:ff": {
+            "ssid": null,
+            "security": "WPA2-PSK",
+            "hidden": true,
+            "channel": 44,
+            "band": "5GHz"
+        }
+    },
+    "test_purposes": [
+        "SSID decoding",
+        "RSN/WPA IE parsing",
+        "WPS detection",
+        "Hidden SSID handling",
+        "Multi-vendor coverage"
+    ],
+    "sanitization": "All MAC addresses are synthetic, no real device identifiers",
+    "license": "CC0-1.0"
+}

@@ -1,0 +1,47 @@
+{
+    "pcap": "evil_twin_sim.pcap",
+    "description": "Evil twin simulation - duplicate SSID from different BSSIDs with beacon anomalies",
+    "expected_frame_count": 30,
+    "attack_scenario": "Rogue AP impersonating legitimate network with stronger signal",
+    "expected_bssids": {
+        "10:aa:10:aa:10:aa": {
+            "ssid": "CorpGuest",
+            "security": "WPA2-PSK",
+            "role": "legitimate",
+            "expected_rssi_range": [
+                -65,
+                -55
+            ],
+            "channel": 6
+        },
+        "b0:bb:b0:bb:b0:bb": {
+            "ssid": "CorpGuest",
+            "security": "Open",
+            "role": "evil_twin",
+            "expected_rssi_range": [
+                -35,
+                -25
+            ],
+            "channel": 6,
+            "anomalies": [
+                "beacon_interval_jitter",
+                "missing_ht_capability",
+                "suspicious_vendor_ie"
+            ]
+        }
+    },
+    "detection_criteria": {
+        "duplicate_ssid": true,
+        "bssid_mismatch": true,
+        "rssi_delta_threshold_db": 20,
+        "beacon_interval_variance": "high"
+    },
+    "test_purposes": [
+        "Evil twin detection",
+        "SSID deduplication handling",
+        "RSSI delta analysis",
+        "Beacon interval anomaly detection"
+    ],
+    "sanitization": "All MAC addresses are synthetic",
+    "license": "CC0-1.0"
+}

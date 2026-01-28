@@ -1,0 +1,207 @@
+{
+    "metadata": {
+        "dataset_id": "sentinel-sample-v1",
+        "version": "1.0.0",
+        "created_at": "2026-01-28T00:00:00Z",
+        "author": "Sentinel NetLab Team",
+        "description": "Sample labeled dataset for WiFi intrusion detection ML training",
+        "license": "CC-BY-4.0",
+        "collection_method": "Controlled lab environment with simulated attacks",
+        "environment": {
+            "type": "lab",
+            "sensor_count": 2,
+            "duration_hours": 24,
+            "ap_count": 10
+        },
+        "label_distribution": {
+            "benign": 150,
+            "evil_twin": 25,
+            "deauth_flood": 15,
+            "rogue_ap": 10
+        },
+        "feature_list": [
+            "rssi_dbm",
+            "channel",
+            "encryption",
+            "wps_enabled",
+            "pmf_enabled",
+            "beacon_interval",
+            "vendor_oui",
+            "duplicate_ssid_count",
+            "rssi_zscore",
+            "vendor_mismatch",
+            "security_mismatch",
+            "is_new_appearance"
+        ]
+    },
+    "records": [
+        {
+            "id": "rec-001",
+            "timestamp_utc": "2026-01-27T10:00:01Z",
+            "sensor_id": "sensor-01",
+            "bssid": "AA:BB:CC:11:22:33",
+            "ssid": "CorpNet",
+            "channel": 6,
+            "frequency_mhz": 2437,
+            "rssi_dbm": -55,
+            "vendor_oui": "AA:BB:CC",
+            "encryption": "wpa2_ccmp",
+            "capabilities": {
+                "privacy": true,
+                "pmf": true,
+                "wps": false,
+                "ht": true
+            },
+            "rsn_info": {
+                "akm": [
+                    "PSK"
+                ],
+                "pairwise": [
+                    "CCMP"
+                ],
+                "group": "CCMP"
+            },
+            "beacon_interval": 100,
+            "ie_count": 12,
+            "vendor_ie_count": 3,
+            "label": "benign",
+            "label_confidence": 1.0,
+            "label_source": "ground_truth",
+            "label_notes": "Known corporate AP in inventory",
+            "features": {
+                "rssi_zscore": 0.2,
+                "duplicate_ssid_count": 1,
+                "vendor_mismatch": false,
+                "security_mismatch": false,
+                "beacon_jitter": 1.5,
+                "is_new_appearance": false,
+                "ie_anomaly_score": 0.0
+            },
+            "pcap_reference": {
+                "file": "sample_benign.pcap",
+                "frame_number": 15
+            }
+        },
+        {
+            "id": "rec-002",
+            "timestamp_utc": "2026-01-27T10:05:00Z",
+            "sensor_id": "sensor-01",
+            "bssid": "DE:AD:BE:EF:00:01",
+            "ssid": "CorpNet",
+            "channel": 6,
+            "frequency_mhz": 2437,
+            "rssi_dbm": -30,
+            "vendor_oui": "DE:AD:BE",
+            "encryption": "wpa2_ccmp",
+            "capabilities": {
+                "privacy": true,
+                "pmf": false,
+                "wps": false,
+                "ht": true
+            },
+            "rsn_info": {
+                "akm": [
+                    "PSK"
+                ],
+                "pairwise": [
+                    "CCMP"
+                ],
+                "group": "CCMP"
+            },
+            "beacon_interval": 102,
+            "ie_count": 10,
+            "vendor_ie_count": 1,
+            "label": "evil_twin",
+            "label_confidence": 0.95,
+            "label_source": "ground_truth",
+            "label_notes": "Attacker AP with same SSID, stronger signal, different vendor",
+            "features": {
+                "rssi_zscore": 3.5,
+                "duplicate_ssid_count": 2,
+                "vendor_mismatch": true,
+                "security_mismatch": false,
+                "beacon_jitter": 5.2,
+                "is_new_appearance": true,
+                "ie_anomaly_score": 0.6
+            },
+            "pcap_reference": {
+                "file": "sample_evil_twin.pcap",
+                "frame_number": 42
+            }
+        },
+        {
+            "id": "rec-003",
+            "timestamp_utc": "2026-01-27T10:10:00Z",
+            "sensor_id": "sensor-02",
+            "bssid": "AA:BB:CC:44:55:66",
+            "ssid": "GuestWiFi",
+            "channel": 1,
+            "frequency_mhz": 2412,
+            "rssi_dbm": -65,
+            "vendor_oui": "AA:BB:CC",
+            "encryption": "open",
+            "capabilities": {
+                "privacy": false,
+                "pmf": false,
+                "wps": false
+            },
+            "beacon_interval": 100,
+            "ie_count": 8,
+            "label": "benign",
+            "label_confidence": 1.0,
+            "label_source": "ground_truth",
+            "label_notes": "Known guest network - open by design"
+        },
+        {
+            "id": "rec-004",
+            "timestamp_utc": "2026-01-27T10:15:00Z",
+            "sensor_id": "sensor-01",
+            "bssid": "FF:FF:FF:FF:FF:FF",
+            "ssid": null,
+            "channel": 6,
+            "frequency_mhz": 2437,
+            "rssi_dbm": -40,
+            "vendor_oui": null,
+            "encryption": null,
+            "label": "deauth_flood",
+            "label_confidence": 0.99,
+            "label_source": "ground_truth",
+            "label_notes": "Deauth burst targeting AA:BB:CC:11:22:33, 50+ frames/sec",
+            "features": {
+                "deauth_rate_per_sec": 52,
+                "target_bssid": "AA:BB:CC:11:22:33",
+                "is_broadcast": true
+            },
+            "pcap_reference": {
+                "file": "sample_deauth.pcap",
+                "frame_number": 100
+            }
+        },
+        {
+            "id": "rec-005",
+            "timestamp_utc": "2026-01-27T10:20:00Z",
+            "sensor_id": "sensor-01",
+            "bssid": "11:22:33:AA:BB:CC",
+            "ssid": "FreePublicWiFi",
+            "channel": 11,
+            "frequency_mhz": 2462,
+            "rssi_dbm": -35,
+            "vendor_oui": "11:22:33",
+            "encryption": "open",
+            "capabilities": {
+                "privacy": false,
+                "wps": true
+            },
+            "beacon_interval": 100,
+            "label": "rogue_ap",
+            "label_confidence": 0.85,
+            "label_source": "manual",
+            "label_notes": "Suspicious open AP with WPS, not in inventory",
+            "features": {
+                "duplicate_ssid_count": 1,
+                "is_new_appearance": true,
+                "ie_anomaly_score": 0.4
+            }
+        }
+    ]
+}

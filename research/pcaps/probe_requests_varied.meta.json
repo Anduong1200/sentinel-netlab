@@ -1,0 +1,43 @@
+{
+    "pcap": "probe_requests_varied.pcap",
+    "description": "Diverse probe requests for parser robustness and privacy testing",
+    "expected_frame_count": 50,
+    "expected_probe_types": {
+        "wildcard": {
+            "count": 15,
+            "ssid": null,
+            "note": "Broadcast probe with no specific SSID"
+        },
+        "directed": {
+            "count": 30,
+            "example_ssids": [
+                "OfficeNet",
+                "HomeWiFi",
+                "Starbucks"
+            ],
+            "note": "Privacy-sensitive: reveals previously connected networks"
+        },
+        "non_utf8": {
+            "count": 5,
+            "note": "Non-UTF8 bytes in SSID field for decoder robustness testing"
+        }
+    },
+    "privacy_implications": {
+        "ssids_reveal_history": true,
+        "recommended_action": "anonymize_ssid option in normalizer",
+        "anonymization_scheme": "ANON_sha256:first8chars"
+    },
+    "test_purposes": [
+        "Wildcard probe handling",
+        "SSID privacy leak detection",
+        "Non-UTF8 decoder robustness",
+        "Anonymization verification"
+    ],
+    "sanitization": {
+        "note": "SSIDs have been replaced with synthetic names",
+        "mac_addresses": "randomized",
+        "original_data": "not included"
+    },
+    "min_distinct_ssids": 10,
+    "license": "CC0-1.0"
+}

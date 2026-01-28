@@ -1,0 +1,103 @@
+groups:
+  - name: sentinel_alerts
+    interval: 30s
+    rules:
+      # ---------------------------------------------------------------------------
+      # SENSOR HEALTH
+      # ---------------------------------------------------------------------------
+      - alert: SensorOffline
+        expr: time() - sentinel_sensor_last_seen_timestamp > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sensor {{ $labels.sensor_id }} offline"
+          description: "No heartbeat from sensor for 5+ minutes"
+
+      - alert: SensorHighCPU
+        expr: sentinel_sensor_cpu_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on sensor {{ $labels.sensor_id }}"
+          description: "CPU usage above 80% for 10 minutes"
+
+      # ---------------------------------------------------------------------------
+      # DETECTION ALERTS
+      # ---------------------------------------------------------------------------
+      - alert: EvilTwinDetected
+        expr: increase(sentinel_alerts_total{alert_type="evil_twin"}[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Evil Twin AP detected"
+          description: "Potential rogue AP impersonating legitimate network"
+
+      - alert: DeauthFloodDetected
+        expr: increase(sentinel_alerts_total{alert_type="deauth_flood"}[2m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deauth flood attack detected"
+          description: "High volume of deauthentication frames detected"
+
+      - alert: HighAlertRate
+        expr: rate(sentinel_alerts_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High alert rate"
+          description: "More than 10 alerts per minute average"
+
+      # ---------------------------------------------------------------------------
+      # CONTROLLER HEALTH
+      # ---------------------------------------------------------------------------
+      - alert: ControllerDown
+        expr: up{job="controller"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Controller API down"
+          description: "Controller not responding to scrapes"
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(sentinel_api_latency_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency above 1 second"
+
+      - alert: TelemetryBacklog
+        expr: sentinel_telemetry_buffer_size > 8000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Telemetry buffer filling up"
+          description: "More than 8000 items in buffer, possible processing delay"
+
+      # ---------------------------------------------------------------------------
+      # SECURITY
+      # ---------------------------------------------------------------------------
+      - alert: AuthFailuresHigh
+        expr: rate(sentinel_auth_failures_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate"
+          description: "More than 1 auth failure per minute"
+
+      - alert: SuspiciousRateLimitHits
+        expr: rate(sentinel_rate_limit_hits_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit hits"
+          description: "Possible abuse or misconfigured sensor"

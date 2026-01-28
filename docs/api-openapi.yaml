@@ -1,0 +1,473 @@
+openapi: 3.0.3
+info:
+  title: Sentinel NetLab Controller API
+  description: |
+    REST API for the Sentinel NetLab wireless security monitoring system.
+
+    ## Authentication
+    All endpoints (except `/health` and `/time`) require authentication via Bearer token:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Message Signing (Optional)
+    For enhanced security, requests can include HMAC-SHA256 signatures:
+    - `X-Signature`: HMAC-SHA256 of request body
+    - `X-Timestamp`: ISO8601 timestamp
+    - `X-Sequence`: Monotonic counter
+  version: 1.0.0
+  contact:
+    name: Sentinel NetLab
+    url: https://github.com/Anduong1200/sentinel-netlab
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Development server
+  - url: https://controller.example.com/api/v1
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health and status endpoints
+  - name: Telemetry
+    description: Sensor telemetry ingestion
+  - name: Alerts
+    description: Alert management
+  - name: Sensors
+    description: Sensor management
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns controller health status
+      security: []
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /time:
+    get:
+      tags: [Health]
+      summary: Get server time
+      description: Returns server UTC time for sensor synchronization
+      security: []
+      responses:
+        "200":
+          description: Server time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeResponse"
+
+  /telemetry:
+    post:
+      tags: [Telemetry]
+      summary: Submit telemetry batch
+      description: Ingest a batch of telemetry data from a sensor
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XSignature"
+        - $ref: "#/components/parameters/XTimestamp"
+        - $ref: "#/components/parameters/XSequence"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelemetryBatch"
+      responses:
+        "200":
+          description: Telemetry accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelemetryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: List alerts
+      description: Get paginated list of security alerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [Critical, High, Medium, Low, Info]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, resolved, acknowledged]
+      responses:
+        "200":
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Alerts]
+      summary: Create alert
+      description: Submit a new security alert
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertCreate"
+      responses:
+        "201":
+          description: Alert created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /alerts/{alert_id}:
+    get:
+      tags: [Alerts]
+      summary: Get alert details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sensors:
+    get:
+      tags: [Sensors]
+      summary: List sensors
+      description: Get all registered sensors
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sensor list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SensorList"
+
+  /sensors/heartbeat:
+    post:
+      tags: [Sensors]
+      summary: Sensor heartbeat
+      description: Update sensor status and metrics
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+      responses:
+        "200":
+          description: Heartbeat acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeartbeatResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API token
+
+  parameters:
+    XSignature:
+      name: X-Signature
+      in: header
+      description: HMAC-SHA256 signature of request body
+      schema:
+        type: string
+    XTimestamp:
+      name: X-Timestamp
+      in: header
+      description: ISO8601 timestamp
+      schema:
+        type: string
+    XSequence:
+      name: X-Sequence
+      in: header
+      description: Monotonic sequence number
+      schema:
+        type: integer
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+
+    TimeResponse:
+      type: object
+      properties:
+        time_utc:
+          type: string
+          format: date-time
+        unix_timestamp:
+          type: number
+
+    TelemetryBatch:
+      type: object
+      required: [sensor_id, timestamp_utc, items]
+      properties:
+        sensor_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+        batch_id:
+          type: string
+        timestamp_utc:
+          type: string
+          format: date-time
+        sequence_number:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          maxItems: 1000
+          items:
+            $ref: "#/components/schemas/TelemetryItem"
+
+    TelemetryItem:
+      type: object
+      required: [bssid]
+      properties:
+        bssid:
+          type: string
+          pattern: "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+        ssid:
+          type: string
+          maxLength: 32
+        channel:
+          type: integer
+          minimum: 1
+          maximum: 200
+        rssi_dbm:
+          type: integer
+          minimum: -120
+          maximum: 0
+        security:
+          type: string
+          enum: [open, wep, wpa, wpa2_tkip, wpa2_ccmp, wpa3]
+
+    TelemetryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        items_processed:
+          type: integer
+        ack_id:
+          type: string
+
+    AlertCreate:
+      type: object
+      required: [alert_type, severity, title]
+      properties:
+        alert_type:
+          type: string
+          enum:
+            [
+              evil_twin,
+              deauth_flood,
+              rogue_ap,
+              wps_attack,
+              probe_flood,
+              unknown,
+            ]
+        severity:
+          type: string
+          enum: [Critical, High, Medium, Low, Info]
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        bssid:
+          type: string
+        ssid:
+          type: string
+        evidence:
+          type: object
+        mitre_attack:
+          type: string
+          pattern: '^T\d{4}(\.\d{3})?$'
+
+    Alert:
+      allOf:
+        - $ref: "#/components/schemas/AlertCreate"
+        - type: object
+          properties:
+            id:
+              type: string
+            sensor_id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            status:
+              type: string
+              enum: [open, resolved, acknowledged]
+
+    AlertList:
+      type: object
+      properties:
+        count:
+          type: integer
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+
+    SensorList:
+      type: object
+      properties:
+        count:
+          type: integer
+        sensors:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Sensor"
+
+    Sensor:
+      type: object
+      properties:
+        sensor_id:
+          type: string
+        status:
+          type: string
+          enum: [online, degraded, offline]
+        last_heartbeat:
+          type: string
+          format: date-time
+
+    HeartbeatRequest:
+      type: object
+      required: [sensor_id]
+      properties:
+        sensor_id:
+          type: string
+        status:
+          type: string
+          enum: [online, degraded, offline]
+        metrics:
+          type: object
+          properties:
+            cpu_percent:
+              type: number
+            memory_percent:
+              type: number
+            frames_captured:
+              type: integer
+
+    HeartbeatResponse:
+      type: object
+      properties:
+        ack:
+          type: boolean
+        server_time:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              retry_after:
+                type: integer
+
+security:
+  - bearerAuth: []

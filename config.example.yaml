@@ -1,0 +1,156 @@
+# Sentinel NetLab - Configuration File
+# This is the canonical configuration format.
+# Environment variables override these values.
+#
+# Copy to config.yaml and customize for your deployment.
+
+# =============================================================================
+# SENSOR CONFIGURATION
+# =============================================================================
+sensor:
+  # Unique sensor identifier
+  id: "sensor-01"
+
+  # Human-readable name
+  name: "Office Sensor 1"
+
+  # Sensor profile: home, sme, enterprise
+  profile: "sme"
+
+  # WiFi interface for monitor mode
+  wifi_interface: "wlan0"
+
+  # Channel hopping settings
+  channel_hop:
+    enabled: true
+    interval_ms: 500
+    channels: [1, 6, 11] # Empty for all channels
+
+# =============================================================================
+# CONTROLLER CONNECTION
+# =============================================================================
+controller:
+  # Controller URL
+  url: "https://controller.local:5000"
+
+  # Authentication (prefer env var SENSOR_AUTH_TOKEN)
+  # auth_token: ""
+
+  # HMAC secret for signing (prefer env var SENSOR_HMAC_SECRET)
+  # hmac_secret: ""
+
+  # TLS settings
+  verify_ssl: true
+  ca_cert: ""
+
+  # Connection settings
+  timeout_seconds: 30
+  retry:
+    max_attempts: 5
+    backoff_base: 2
+    max_delay: 60
+
+# =============================================================================
+# TELEMETRY
+# =============================================================================
+telemetry:
+  # Batch settings
+  batch_size: 100
+  flush_interval_seconds: 10
+
+  # Buffer (in-memory before upload)
+  buffer:
+    max_size: 10000
+    overflow_policy: "drop_oldest" # drop_oldest, drop_newest, block
+
+  # Disk spool for offline mode
+  spool:
+    enabled: true
+    path: "data/spool"
+    max_size_mb: 500
+
+# =============================================================================
+# DETECTION
+# =============================================================================
+detection:
+  # Enable WIDS detectors
+  enabled: true
+
+  # Deauth flood detection
+  deauth_flood:
+    enabled: true
+    threshold: 10
+    window_seconds: 5
+
+  # Evil twin detection
+  evil_twin:
+    enabled: true
+    ssid_similarity: 0.85
+    rssi_threshold: 20
+
+  # Rogue AP detection
+  rogue_ap:
+    enabled: true
+    whitelist_file: "data/ap_whitelist.json"
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+
+  # Format: json, text
+  format: "json"
+
+  # Log file (optional)
+  file: ""
+
+  # Rotation settings
+  max_bytes: 10485760 # 10MB
+  backup_count: 5
+
+# =============================================================================
+# METRICS
+# =============================================================================
+metrics:
+  # Prometheus metrics endpoint
+  enabled: true
+  port: 9090
+  path: "/metrics"
+
+# =============================================================================
+# SECURITY
+# =============================================================================
+security:
+  # Require HMAC signing
+  require_hmac: true
+
+  # Max time drift for timestamp validation (seconds)
+  max_time_drift: 300
+
+  # Enable sequence number (replay protection)
+  sequence_validation: true
+
+# =============================================================================
+# CONTROLLER-SPECIFIC (when running controller)
+# =============================================================================
+controller_server:
+  # Bind address
+  host: "0.0.0.0"
+  port: 5000
+
+  # Rate limiting
+  rate_limit:
+    default: "100 per minute"
+    sensor: "200 per minute"
+
+  # Database
+  database:
+    # url from env: DATABASE_URL
+    pool_size: 10
+
+  # Redis (for rate limiting)
+  redis:
+    # url from env: REDIS_URL
+    enabled: true

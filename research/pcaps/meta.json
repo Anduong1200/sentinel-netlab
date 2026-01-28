@@ -1,0 +1,59 @@
+{
+    "description": "Sample pcap files for Sentinel NetLab parser and detector testing",
+    "pcaps": [
+        {
+            "filename": "beacon_basic.pcap",
+            "description": "Multiple vendor beacons - WPA2, Enterprise, Open, WPS, Hidden SSID",
+            "frame_count": 6,
+            "test_purposes": [
+                "SSID decoding",
+                "RSN/WPA IE parsing",
+                "WPS detection",
+                "Hidden SSID handling"
+            ]
+        },
+        {
+            "filename": "evil_twin_sim.pcap",
+            "description": "Duplicate SSID from different BSSIDs (evil twin simulation)",
+            "frame_count": 30,
+            "test_purposes": [
+                "Evil twin detection",
+                "RSSI delta analysis",
+                "Beacon interval anomaly"
+            ]
+        },
+        {
+            "filename": "deauth_burst.pcap",
+            "description": "Burst of deauthentication frames simulating DoS attack",
+            "frame_count": 100,
+            "test_purposes": [
+                "Deauth flood detection",
+                "Burst pattern analysis"
+            ]
+        },
+        {
+            "filename": "probe_requests_varied.pcap",
+            "description": "Diverse probe requests with wildcard, directed, non-UTF8 SSIDs",
+            "frame_count": 50,
+            "test_purposes": [
+                "Wildcard probe handling",
+                "Privacy leak detection",
+                "Decoder robustness"
+            ]
+        }
+    ],
+    "matching_rules": {
+        "timestamp_tolerance_ms": 500,
+        "rssi_tolerance_db": 3,
+        "exact_match_fields": [
+            "bssid",
+            "frame_type",
+            "channel",
+            "frequency_mhz"
+        ],
+        "vendor_oui_from_bssid": "first 3 octets"
+    },
+    "test_vectors_location": "sensor/tests/unit/test_vectors/",
+    "license": "CC0-1.0",
+    "ethics_note": "All pcaps contain synthetic data. MAC addresses are randomized, SSIDs are anonymized. No real device identifiers or PII."
+}

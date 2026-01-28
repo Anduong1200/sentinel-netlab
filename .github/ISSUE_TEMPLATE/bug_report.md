@@ -1,41 +1,43 @@
 ---
 name: Bug Report
-about: Report a bug in Sentinel NetLab
+about: Report a bug or unexpected behavior
 title: '[BUG] '
-labels: 'bug'
+labels: bug
 assignees: ''
 ---
 
 ## Bug Description
-A clear description of the bug.
+
+<!-- A clear and concise description of the bug -->
 
 ## Steps to Reproduce
+
 1. 
 2. 
 3. 
 
 ## Expected Behavior
-What you expected to happen.
+
+<!-- What you expected to happen -->
 
 ## Actual Behavior
-What actually happened.
+
+<!-- What actually happened -->
 
 ## Environment
-- OS: 
-- Python version: 
-- Sensor version: 
-- WiFi adapter: 
-- Driver version: 
+
+- **OS**: [e.g., Ubuntu 22.04, Raspberry Pi OS]
+- **Python version**: [e.g., 3.11.2]
+- **Sentinel version**: [e.g., v1.2.0 or commit hash]
+- **WiFi adapter**: [e.g., Alfa AWUS036ACH]
+- **Deployment**: [Docker / bare metal / other]
 
 ## Logs
-```
-Paste relevant logs here
-```
 
-## Captured PCAP
-If relevant, attach a sanitized pcap file demonstrating the issue.
-
-> **Note**: Before attaching pcaps, please remove or anonymize any sensitive information (SSIDs, MAC addresses, location data).
+```
+# Paste relevant logs here
+```
 
 ## Additional Context
-Any other relevant information.
+
+<!-- Any other context, screenshots, or relevant information -->

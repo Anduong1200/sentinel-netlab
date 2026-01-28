@@ -1,0 +1,186 @@
+[
+    {
+        "id": "HOME-001",
+        "category": "Authentication & Encryption",
+        "title": "Encryption Type Check",
+        "description": "Verify encryption is WPA2 or WPA3; flag Open/WEP as critical",
+        "severity_map": {
+            "open": "Critical",
+            "wep": "Critical",
+            "wpa": "High",
+            "wpa2_tkip": "High",
+            "wpa2_ccmp": "Low",
+            "wpa3": "Low"
+        },
+        "score_map": {
+            "Critical": 90,
+            "High": 70,
+            "Medium": 40,
+            "Low": 10
+        },
+        "evidence_fields": [
+            "rsn_info",
+            "capabilities.privacy",
+            "wpa_info"
+        ],
+        "detection_rule": "capabilities.privacy == false OR rsn_info.pairwise contains 'TKIP'",
+        "remediation_text": "Enable WPA2/WPA3 with AES-CCMP. If WEP, replace immediately.",
+        "remediation_commands": [
+            "# hostapd config",
+            "wpa=2",
+            "wpa_key_mgmt=WPA-PSK",
+            "rsn_pairwise=CCMP",
+            "wpa_passphrase=YourStrongPassphrase12+"
+        ],
+        "recommended_timeline": "Immediate",
+        "references": [
+            "https://csrc.nist.gov/publications/detail/sp/800-153/final"
+        ]
+    },
+    {
+        "id": "HOME-002",
+        "category": "Authentication & Encryption",
+        "title": "WPS Enabled",
+        "description": "WPS is vulnerable to brute-force attacks",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "capabilities.wps",
+            "wps_info"
+        ],
+        "detection_rule": "capabilities.wps == true",
+        "remediation_text": "Disable WPS in router admin panel",
+        "remediation_commands": [
+            "# Web UI: Wireless > WPS > Disable",
+            "# hostapd: wps_state=0"
+        ],
+        "recommended_timeline": "24-72h",
+        "references": [
+            "https://nvd.nist.gov/vuln/detail/CVE-2011-5053"
+        ]
+    },
+    {
+        "id": "HOME-003",
+        "category": "SSID & Network Exposure",
+        "title": "SSID Contains PII",
+        "description": "SSID reveals personal information (name, address, phone)",
+        "severity": "Medium",
+        "score": 40,
+        "evidence_fields": [
+            "ssid"
+        ],
+        "detection_rule": "ssid matches PII patterns",
+        "remediation_text": "Rename SSID to non-identifying name",
+        "remediation_commands": [],
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "HOME-004",
+        "category": "SSID & Network Exposure",
+        "title": "Hidden SSID",
+        "description": "Hidden SSID provides no real security and complicates client config",
+        "severity": "Low",
+        "score": 10,
+        "evidence_fields": [
+            "ssid",
+            "capabilities.hidden_ssid"
+        ],
+        "detection_rule": "ssid == null OR ssid == ''",
+        "remediation_text": "Hidden SSID is not a security measure. Consider making visible.",
+        "recommended_timeline": "Optional"
+    },
+    {
+        "id": "HOME-005",
+        "category": "Default Credentials",
+        "title": "Default Admin Credentials",
+        "description": "Router may have factory default admin password",
+        "severity": "Critical",
+        "score": 90,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Change default admin password to strong unique passphrase",
+        "remediation_commands": [
+            "# Access router admin (usually 192.168.1.1)",
+            "# Navigate to Administration > Password",
+            "# Set password >= 12 characters with mixed case, numbers, symbols"
+        ],
+        "recommended_timeline": "Immediate"
+    },
+    {
+        "id": "HOME-006",
+        "category": "Default Credentials",
+        "title": "Remote Management Enabled",
+        "description": "WAN-side admin access exposes router to internet attacks",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Disable remote management (WAN admin, Telnet, SSH from WAN)",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "HOME-007",
+        "category": "Firmware",
+        "title": "Outdated Firmware",
+        "description": "Firmware may contain known vulnerabilities",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Update to latest vendor firmware",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "HOME-008",
+        "category": "Channel & Power",
+        "title": "Channel Overlap",
+        "description": "Multiple APs on same channel cause interference",
+        "severity": "Low",
+        "score": 10,
+        "evidence_fields": [
+            "channel",
+            "frequency_mhz"
+        ],
+        "detection_rule": "multiple_aps_same_channel",
+        "remediation_text": "Use channels 1, 6, or 11 for 2.4GHz; enable auto-channel",
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "HOME-009",
+        "category": "Channel & Power",
+        "title": "Signal Leakage",
+        "description": "WiFi signal extends beyond property perimeter",
+        "severity": "Medium",
+        "score": 40,
+        "evidence_fields": [
+            "rssi_dbm",
+            "gps"
+        ],
+        "detection_rule": "rssi_dbm > -70 outside_perimeter",
+        "remediation_text": "Reduce transmit power to minimize coverage outside property",
+        "remediation_commands": [
+            "iw dev wlan0 set txpower fixed 1500  # 15 dBm"
+        ],
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "HOME-010",
+        "category": "Segmentation",
+        "title": "IoT on Main Network",
+        "description": "IoT devices share LAN with sensitive devices",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Create guest/VLAN for IoT devices; enable client isolation",
+        "recommended_timeline": "24-72h"
+    }
+]

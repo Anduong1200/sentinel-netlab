@@ -1,32 +1,27 @@
 ---
 name: Feature Request
-about: Suggest a new feature
+about: Suggest a new feature or enhancement
 title: '[FEATURE] '
-labels: 'enhancement'
+labels: enhancement
 assignees: ''
 ---
 
-## Feature Description
-A clear description of the feature you're proposing.
-
 ## Problem Statement
-What problem does this solve? Why is it needed?
+
+<!-- Describe the problem or limitation you're experiencing -->
 
 ## Proposed Solution
-Describe your proposed implementation.
+
+<!-- Describe your proposed solution or feature -->
 
 ## Alternatives Considered
-What other solutions did you consider?
 
-## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+<!-- List any alternative solutions or features you've considered -->
 
-## Impact Assessment
-- **Code changes**: Low / Medium / High
-- **Performance impact**: None / Low / Medium / High
-- **Breaking changes**: Yes / No
+## Use Case
+
+<!-- Who would benefit from this feature? How would it be used? -->
 
 ## Additional Context
-Any other information, mockups, or references.
+
+<!-- Any other context, mockups, or examples -->

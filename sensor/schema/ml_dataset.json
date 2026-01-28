@@ -1,0 +1,264 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Sentinel NetLab ML Dataset Schema",
+    "description": "Schema for labeled WiFi security dataset for machine learning",
+    "type": "object",
+    "required": [
+        "metadata",
+        "records"
+    ],
+    "properties": {
+        "metadata": {
+            "type": "object",
+            "required": [
+                "dataset_id",
+                "version",
+                "created_at",
+                "author"
+            ],
+            "properties": {
+                "dataset_id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string",
+                    "default": "CC-BY-4.0"
+                },
+                "collection_method": {
+                    "type": "string"
+                },
+                "environment": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "lab",
+                                "home",
+                                "office",
+                                "outdoor"
+                            ]
+                        },
+                        "sensor_count": {
+                            "type": "integer"
+                        },
+                        "duration_hours": {
+                            "type": "number"
+                        },
+                        "ap_count": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "label_distribution": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "feature_list": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "records": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "timestamp_utc",
+                    "bssid",
+                    "label"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "timestamp_utc": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "sensor_id": {
+                        "type": "string"
+                    },
+                    "bssid": {
+                        "type": "string",
+                        "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+                    },
+                    "ssid": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "channel": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 200
+                    },
+                    "frequency_mhz": {
+                        "type": "integer"
+                    },
+                    "rssi_dbm": {
+                        "type": "integer",
+                        "minimum": -120,
+                        "maximum": 0
+                    },
+                    "vendor_oui": {
+                        "type": "string"
+                    },
+                    "encryption": {
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "wep",
+                            "wpa",
+                            "wpa2_tkip",
+                            "wpa2_ccmp",
+                            "wpa3"
+                        ]
+                    },
+                    "capabilities": {
+                        "type": "object",
+                        "properties": {
+                            "privacy": {
+                                "type": "boolean"
+                            },
+                            "pmf": {
+                                "type": "boolean"
+                            },
+                            "wps": {
+                                "type": "boolean"
+                            },
+                            "ht": {
+                                "type": "boolean"
+                            },
+                            "vht": {
+                                "type": "boolean"
+                            },
+                            "he": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "rsn_info": {
+                        "type": "object",
+                        "properties": {
+                            "akm": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "pairwise": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "group": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "beacon_interval": {
+                        "type": "integer"
+                    },
+                    "ie_count": {
+                        "type": "integer"
+                    },
+                    "vendor_ie_count": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string",
+                        "enum": [
+                            "benign",
+                            "evil_twin",
+                            "deauth_flood",
+                            "rogue_ap",
+                            "wps_attack",
+                            "probe_scan",
+                            "unknown"
+                        ]
+                    },
+                    "label_confidence": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                    },
+                    "label_source": {
+                        "type": "string",
+                        "enum": [
+                            "manual",
+                            "automated",
+                            "ground_truth",
+                            "inferred"
+                        ]
+                    },
+                    "label_notes": {
+                        "type": "string"
+                    },
+                    "features": {
+                        "type": "object",
+                        "description": "Computed features for ML",
+                        "properties": {
+                            "rssi_zscore": {
+                                "type": "number"
+                            },
+                            "duplicate_ssid_count": {
+                                "type": "integer"
+                            },
+                            "vendor_mismatch": {
+                                "type": "boolean"
+                            },
+                            "security_mismatch": {
+                                "type": "boolean"
+                            },
+                            "beacon_jitter": {
+                                "type": "number"
+                            },
+                            "is_new_appearance": {
+                                "type": "boolean"
+                            },
+                            "ie_anomaly_score": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "pcap_reference": {
+                        "type": "object",
+                        "properties": {
+                            "file": {
+                                "type": "string"
+                            },
+                            "frame_number": {
+                                "type": "integer"
+                            },
+                            "offset_bytes": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

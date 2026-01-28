@@ -1,0 +1,190 @@
+[
+    {
+        "id": "SME-001",
+        "category": "Authentication & EAP",
+        "title": "802.1X Enterprise Authentication",
+        "description": "WPA2/WPA3 Enterprise with 802.1X required for employee SSID",
+        "severity": "Critical",
+        "score": 90,
+        "evidence_fields": [
+            "rsn_info.akm",
+            "rsn_info"
+        ],
+        "detection_rule": "rsn_info.akm does not contain '802.1X'",
+        "remediation_text": "Migrate from PSK to 802.1X with RADIUS. Deploy EAP-TLS for strongest security.",
+        "remediation_commands": [
+            "# hostapd enterprise config",
+            "wpa_key_mgmt=WPA-EAP",
+            "ieee8021x=1",
+            "auth_server_addr=radius.company.local",
+            "auth_server_port=1812",
+            "auth_server_shared_secret=RADIUS_SECRET"
+        ],
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "SME-002",
+        "category": "Authentication & EAP",
+        "title": "RADIUS Certificate Validity",
+        "description": "RADIUS server certificate expired or weak",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Rotate certificates before expiry. Use 2048-bit RSA or ECDSA. Verify CN/SAN.",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-003",
+        "category": "Encryption",
+        "title": "TKIP Cipher Enabled",
+        "description": "TKIP is deprecated and vulnerable",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "rsn_info.pairwise",
+            "wpa_info"
+        ],
+        "detection_rule": "rsn_info.pairwise contains 'TKIP'",
+        "remediation_text": "Disable TKIP; use AES-CCMP only",
+        "remediation_commands": [
+            "rsn_pairwise=CCMP"
+        ],
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-004",
+        "category": "Rogue AP Detection",
+        "title": "Duplicate SSID Detected",
+        "description": "Multiple BSSIDs advertising same SSID - potential Evil Twin",
+        "severity": "Critical",
+        "score": 90,
+        "evidence_fields": [
+            "ssid",
+            "bssid",
+            "rssi_dbm",
+            "vendor_oui"
+        ],
+        "detection_rule": "duplicate_ssid_different_bssid",
+        "remediation_text": "Investigate on-site. Enable WIDS alerting. Consider automated deauth of rogue.",
+        "recommended_timeline": "Immediate"
+    },
+    {
+        "id": "SME-005",
+        "category": "Rogue AP Detection",
+        "title": "Unknown BSSID in Zone",
+        "description": "AP not in inventory detected within coverage area",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "bssid",
+            "rssi_dbm"
+        ],
+        "detection_rule": "bssid not in baseline_inventory",
+        "remediation_text": "Physically locate AP. If unauthorized, disconnect and investigate.",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-006",
+        "category": "Management Plane",
+        "title": "Management VLAN Separation",
+        "description": "AP management traffic should be isolated from user traffic",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Place AP management interfaces on dedicated VLAN. ACL to allow only bastion hosts.",
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "SME-007",
+        "category": "Logging & SIEM",
+        "title": "Central Log Forwarding",
+        "description": "AP/Controller logs should forward to SIEM",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Enable syslog over TLS to Elasticsearch/Splunk. Include 802.11 management events.",
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "SME-008",
+        "category": "Network Segmentation",
+        "title": "VLAN Segmentation",
+        "description": "Guest, IoT, and Corporate should be on separate VLANs",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Configure VLANs with inter-VLAN firewall rules. Micro-segment critical assets.",
+        "recommended_timeline": "1-4 weeks"
+    },
+    {
+        "id": "SME-009",
+        "category": "Firmware & Supply Chain",
+        "title": "Firmware EOL/CVE Check",
+        "description": "AP firmware may be end-of-life or have known CVEs",
+        "severity": "High",
+        "score": 70,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Check vendor support status. Plan hardware refresh if EOL. Patch known CVEs.",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-010",
+        "category": "Config Hygiene",
+        "title": "Default SNMP Community Strings",
+        "description": "Default 'public'/'private' SNMP strings allow unauthorized access",
+        "severity": "Medium",
+        "score": 40,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Change or disable SNMP community strings. Use SNMPv3 with auth/encryption.",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-011",
+        "category": "Config Hygiene",
+        "title": "UPnP Enabled",
+        "description": "UPnP can be exploited for port forwarding attacks",
+        "severity": "Medium",
+        "score": 40,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Disable UPnP on router/gateway",
+        "recommended_timeline": "24-72h"
+    },
+    {
+        "id": "SME-012",
+        "category": "Compliance",
+        "title": "PCI-DSS / HIPAA Wireless Requirements",
+        "description": "If handling PCI/PHI, verify WPA/802.1X, logging, retention",
+        "severity": "Critical",
+        "score": 90,
+        "evidence_fields": [
+            "manual_check"
+        ],
+        "detection_rule": "manual",
+        "remediation_text": "Ensure WPA2-Enterprise or WPA3, quarterly wireless scans, log retention per standard.",
+        "recommended_timeline": "Immediate",
+        "references": [
+            "https://www.pcisecuritystandards.org/document_library"
+        ]
+    }
+]

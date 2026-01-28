@@ -1,0 +1,46 @@
+# =============================================================================
+# Sentinel NetLab - Mock Sensor Dockerfile
+# For testing and CI integration
+# =============================================================================
+
+FROM python:3.11-slim-bookworm
+
+LABEL org.opencontainers.image.title="Sentinel NetLab Mock Sensor"
+LABEL org.opencontainers.image.description="Mock sensor for testing without hardware"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Create venv and install
+RUN python -m venv /opt/venv && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy sensor code
+COPY sensor/ ./sensor/
+COPY config.example.yaml ./config.yaml
+
+# Create non-root user
+RUN groupadd --gid 1000 sensor && \
+    useradd --uid 1000 --gid sensor --shell /bin/bash sensor && \
+    chown -R sensor:sensor /app
+
+USER sensor
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -sf http://localhost:9090/health || exit 1
+
+# Default: run in mock mode
+CMD ["python", "-m", "sensor.main", "--mock", "--controller-url", "${CONTROLLER_URL:-http://controller:5000}"]

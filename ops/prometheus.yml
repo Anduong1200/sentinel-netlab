@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Controller API
+  - job_name: "controller"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["controller:5000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "controller"
+
+  # Sensors (add dynamically or via service discovery)
+  - job_name: "sensors"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: [] # Add sensor IPs here
+    # Example file-based discovery:
+    # file_sd_configs:
+    #   - files:
+    #     - /etc/prometheus/sensors.json
