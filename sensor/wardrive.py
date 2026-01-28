@@ -70,27 +70,60 @@ class GPSReader:
         self.device = device
         self.mock = mock
         self._last_fix: Optional[GPSFix] = None
+        self._running = False
+        self._thread = None
 
     def get_fix(self) -> Optional[GPSFix]:
         """Get current GPS fix"""
         if self.mock:
             self._last_fix = GPSFix.mock()
             return self._last_fix
-
-        # TODO: Implement real GPS reading via gpsd or serial
-        # For now, return None if no mock
         return self._last_fix
 
     def start(self):
         """Start GPS reading"""
         if self.mock:
             logger.info("GPS: Using mock mode")
-        else:
+        elif self.device:
             logger.info(f"GPS: Connecting to {self.device}")
+            import threading
+            self._running = True
+            self._thread = threading.Thread(target=self._read_serial, daemon=True)
+            self._thread.start()
+        else:
+             logger.warning("GPS: No device specified, using null")
 
     def stop(self):
         """Stop GPS reading"""
-        pass
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1.0)
+
+    def _read_serial(self):
+        """Read NMEA data from serial port"""
+        import serial
+        import pynmea2
+        
+        try:
+            with serial.Serial(self.device, 9600, timeout=1) as ser:
+                while self._running:
+                    line = ser.readline().decode('ascii', errors='replace').strip()
+                    if line.startswith('$GPGGA') or line.startswith('$GNGGA'):
+                        try:
+                            msg = pynmea2.parse(line)
+                            if msg.lat and msg.lon:
+                                self._last_fix = GPSFix(
+                                    lat=msg.latitude,
+                                    lon=msg.longitude,
+                                    alt=msg.altitude,
+                                    speed=0.0, # NMEA GGA doesn't have speed, need RMC
+                                    accuracy_m=float(msg.horizontal_dil) if msg.horizontal_dil else 5.0,
+                                    timestamp=datetime.now(timezone.utc).isoformat()
+                                )
+                        except pynmea2.ParseError:
+                            continue
+        except Exception as e:
+            logger.error(f"GPS Error: {e}")
 
 
 class WardriveSession:

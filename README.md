@@ -24,9 +24,9 @@
 Sentinel NetLab is a distributed wireless intrusion detection system designed for:
 
 - **Security Research** — Study WiFi attack patterns and defensive techniques
+- **Security Assessment** — Wardriving and network mapping (Assessment Mode)
 - **Lab Environments** — Train security professionals in controlled settings
-- **Network Auditing** — Assess wireless security posture (with authorization)
-- **Academic Projects** — Support thesis research on WiFi security
+- **Continuous Monitoring** — Distributed WIDS (Monitor Mode)
 
 ### Key Capabilities
 
@@ -146,10 +146,20 @@ sentinel-netlab/
 
 ### Usage
 
-**Start the Sensor:**
+### Usage
+
+**1. Assessment Mode (Wardriving):**
+Capture WiFi networks with GPS tagging (stops when you cancel).
 ```bash
-python -m sensor.cli --sensor-id lab-sensor-01 --iface wlan0
+python sentinel.py scan --iface wlan0mon --gps /dev/ttyUSB0 --output walk_session.json
 ```
+
+**2. Monitor Mode (WIDS):**
+Run as a continuous sensor (with API and real-time detection).
+```bash
+python sentinel.py monitor --interface wlan0 --api --buffered-storage
+```
+
 
 **Run Tests:**
 ```bash
