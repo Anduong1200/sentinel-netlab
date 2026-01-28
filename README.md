@@ -40,7 +40,8 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Geo-Location** | Trilateration & Heatmaps for physical source tracking |
 | **Active Defense** | Deauth & FakeAP generation (Lab/Authorized only) |
 | **Wardriving** | GPS-correlated mobile network mapping |
-| **ML Integration** | Export labeled data for machine learning workflows |
+| **Hybrid ML Analysis** | Rule-based engine boosted by Autoencoder Anomaly Detection |
+| **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
 
 ---
 
@@ -60,6 +61,16 @@ sentinel-netlab/
 │   ├── attacks.py             # ⚔️ Active Defense (Lab only)
 │   ├── audit.py               # 📋 Security Audit
 │   └── schema/                # JSON schemas
+│
+├── dashboard/                  # 📊 Web UI (Dash/Plotly)
+│   └── app.py                 # Dashboard Entry Point
+│
+├── ml/                         # 🧠 Machine Learning
+│   └── anomaly_model.py       # PyTorch Autoencoder
+│
+├── data/                       # 💾 Datasets & PCAPs
+│   ├── datasets/              # CSV/JSON exports
+│   └── pcap_annotated/        # Training data
 │
 ├── algos/                      # 🧠 Detection Algorithms
 │   ├── evil_twin.py           # Evil Twin V2
@@ -163,6 +174,13 @@ Run as a continuous sensor (with API and real-time detection).
 ```bash
 sentinel-netlab monitor --interface wlan0 --api --buffered-storage
 ```
+
+**3. Dashboard:**
+Access the real-time dashboard at `http://localhost:8050` (requires Docker).
+
+**4. Deployment:**
+*   **Full Stack** (Server): `docker-compose -f ops/docker-compose.yml up -d`
+*   **Lightweight** (RPi): `docker-compose -f ops/docker-compose.light.yml up -d`
 
 
 **Run Tests:**

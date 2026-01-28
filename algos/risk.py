@@ -39,10 +39,26 @@ class EnhancedRiskScorer:
     """
 
     def __init__(self, config_path: str = "sensor/risk_weights.yaml",
-                 whitelist: Optional[List[str]] = None):
+                 whitelist: Optional[List[str]] = None,
+                 ml_model_path: Optional[str] = None):
         self.config = self._load_config(config_path)
         self.weights = self.config.get('weights', {})
         self.whitelist = set(whitelist or [])
+        
+        # Load ML Model if available
+        self.ml_model = None
+        if ml_model_path:
+            try:
+                # Add project root to path to find ml module
+                import sys
+                import os
+                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from ml.anomaly_model import load_model, detect_anomaly
+                # 10 features assumed from FeatureExtractor
+                self.ml_model = load_model(ml_model_path, input_dim=10) 
+                self.detect_anomaly_fn = detect_anomaly
+            except Exception as e:
+                logger.warning(f"ML Model load failed: {e}")
 
         # Initialize modular Feature Extractor
         from .features import FeatureExtractor
@@ -110,6 +126,24 @@ class EnhancedRiskScorer:
             # Fallback if missing in yaml
             + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
+        
+        # ML Anomaly Boost
+        if self.ml_model:
+            try:
+                # Construct vector matching input_dim=10
+                vec = [
+                    features.get("enc_score", 0), features.get("rssi_norm", 0),
+                    features.get("ssid_suspicious", 0), features.get("ssid_hidden", 0),
+                    features.get("vendor_trust", 0), features.get("channel_unusual", 0),
+                    features.get("beacon_anomaly", 0), features.get("wps_flag", 0),
+                    features.get("temporal_new", 0), features.get("privacy_concern", 0)
+                ]
+                is_anomaly, loss = self.detect_anomaly_fn(self.ml_model, [vec])
+                if is_anomaly:
+                     raw_score += 0.2  # 20% boost for anomalies
+                     features['ml_anomaly'] = 1.0
+            except Exception as e:
+                logger.debug(f"ML Scoring failed: {e}")
 
         # Normalize to 0-100
         risk_score = min(100, int(raw_score * 100))
