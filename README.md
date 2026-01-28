@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/images/logo.png" alt="Sentinel NetLab" width="200" height="200">
-</p>
-
 <h1 align="center">Sentinel NetLab</h1>
 
 <p align="center">
