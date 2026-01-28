@@ -5,10 +5,11 @@ Analyzes captured PCAP files to detect Deauth floods, Evil Twins, etc.
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from collections import defaultdict
-from scapy.all import rdpcap, Dot11, Dot11Beacon, Dot11Deauth, Dot11ProbeResp, Dot11Elt
+from datetime import datetime
+from typing import Any, Optional
+
+from scapy.all import Dot11, Dot11Beacon, Dot11Deauth, Dot11Elt, Dot11ProbeResp, rdpcap
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ class ForensicAnalyzer:
             return False
 
     def detect_deauth_flood(self, threshold: int = 10,
-                            window_seconds: float = 1.0) -> List[Dict[str, Any]]:
+                            window_seconds: float = 1.0) -> list[dict[str, Any]]:
         """
         Detect Deauthentication flood attacks.
 
@@ -108,7 +109,7 @@ class ForensicAnalyzer:
         return alerts
 
     def detect_evil_twin(
-            self, known_networks: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+            self, known_networks: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Detect Evil Twin / Rogue AP attacks.
         An Evil Twin has same SSID but different BSSID/Encryption.
@@ -165,7 +166,7 @@ class ForensicAnalyzer:
 
         return alerts
 
-    def get_client_list(self) -> List[Dict[str, Any]]:
+    def get_client_list(self) -> list[dict[str, Any]]:
         """
         Extract list of client devices from PCAP (Probe Requests).
 
@@ -208,7 +209,7 @@ class ForensicAnalyzer:
         return list(clients.values())
 
     def generate_report(
-            self, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
+            self, known_networks: Optional[dict] = None) -> dict[str, Any]:
         """
         Generate comprehensive forensic report.
 
@@ -255,7 +256,7 @@ class ForensicAnalyzer:
 
 
 def analyze_pcap(
-        file_path: str, known_networks: Optional[Dict] = None) -> Dict[str, Any]:
+        file_path: str, known_networks: Optional[dict] = None) -> dict[str, Any]:
     """
     Convenience function for quick PCAP analysis.
 

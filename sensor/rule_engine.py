@@ -4,15 +4,15 @@ Sentinel NetLab - Rule-Based Detection Engine
 JSON-configurable rules with Python evaluator for WIDS alerts.
 """
 
-import re
 import json
 import logging
 import operator
+import re
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Any, Optional
 from enum import Enum
+from pathlib import Path
+from typing import Any, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class Evidence:
     """Evidence item for an alert"""
     type: str  # frame, network, metric, correlation
     timestamp: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     description: str = ""
 
 
@@ -68,11 +68,11 @@ class Alert:
     ssid: Optional[str]
     sensor_id: str
     description: str
-    evidence: List[Evidence] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)
     mitre_attack: Optional[MitreAttack] = None
     score: float = 0.0
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         result = asdict(self)
         result['severity'] = self.severity.value
         result['status'] = self.status.value
@@ -92,10 +92,10 @@ class DetectionRule:
     enabled: bool = True
 
     # Conditions (all must match for rule to fire)
-    conditions: List[Dict[str, Any]] = field(default_factory=list)
+    conditions: list[dict[str, Any]] = field(default_factory=list)
 
     # Thresholds
-    threshold: Optional[Dict[str, Any]] = None
+    threshold: Optional[dict[str, Any]] = None
 
     # Time window for aggregation
     window_seconds: int = 0
@@ -109,7 +109,7 @@ class DetectionRule:
     cooldown_seconds: int = 300
 
     @classmethod
-    def from_dict(cls, data: Dict) -> 'DetectionRule':
+    def from_dict(cls, data: dict) -> 'DetectionRule':
         return cls(
             rule_id=data['rule_id'],
             name=data['name'],
@@ -149,7 +149,7 @@ class ConditionEvaluator:
         'exists': lambda a, b: a is not None if b else a is None,
     }
 
-    def evaluate(self, condition: Dict, data: Dict) -> bool:
+    def evaluate(self, condition: dict, data: dict) -> bool:
         """Evaluate a single condition against data"""
         field = condition.get('field')
         op = condition.get('op', 'eq')
@@ -170,13 +170,13 @@ class ConditionEvaluator:
             logger.debug(f"Condition evaluation error: {e}")
             return False
 
-    def evaluate_all(self, conditions: List[Dict], data: Dict) -> bool:
+    def evaluate_all(self, conditions: list[dict], data: dict) -> bool:
         """Evaluate all conditions (AND logic)"""
         if not conditions:
             return False
         return all(self.evaluate(c, data) for c in conditions)
 
-    def _get_field(self, data: Dict, field: str) -> Any:
+    def _get_field(self, data: dict, field: str) -> Any:
         """Get nested field value using dot notation"""
         if not field:
             return None
@@ -197,9 +197,9 @@ class RuleEngine:
     """Rule-based detection engine"""
 
     def __init__(self, rules_path: Optional[Path] = None):
-        self.rules: Dict[str, DetectionRule] = {}
+        self.rules: dict[str, DetectionRule] = {}
         self.evaluator = ConditionEvaluator()
-        self.last_fired: Dict[str, datetime] = {}  # For cooldown
+        self.last_fired: dict[str, datetime] = {}  # For cooldown
         self.alert_count = 0
 
         if rules_path:
@@ -207,7 +207,7 @@ class RuleEngine:
 
     def load_rules(self, path: Path):
         """Load rules from JSON file"""
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         for rule_data in data.get('rules', []):
@@ -221,7 +221,7 @@ class RuleEngine:
         """Add a rule programmatically"""
         self.rules[rule.rule_id] = rule
 
-    def evaluate(self, data: Dict, sensor_id: str = "") -> List[Alert]:
+    def evaluate(self, data: dict, sensor_id: str = "") -> list[Alert]:
         """Evaluate all rules against data, return triggered alerts"""
         alerts = []
 
@@ -255,7 +255,7 @@ class RuleEngine:
     def _create_alert(
             self,
             rule: DetectionRule,
-            data: Dict,
+            data: dict,
             sensor_id: str) -> Alert:
         """Create alert from triggered rule"""
         self.alert_count += 1

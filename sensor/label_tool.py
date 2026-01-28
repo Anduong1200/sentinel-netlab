@@ -6,13 +6,12 @@ Usage:
     python label_tool.py --input data/networks.json --output data/labeled.json
 """
 
-import json
 import argparse
+import json
 import os
-from typing import Dict
 
 
-def display_network(net: Dict, index: int, total: int) -> None:
+def display_network(net: dict, index: int, total: int) -> None:
     """Print network info for labeling."""
     print("\n" + "=" * 60)
     print(f"  Network {index + 1} / {total}")
@@ -47,7 +46,7 @@ def get_label() -> str:
 def run_labeling(input_path: str, output_path: str) -> None:
     """Main labeling loop."""
     # Load data
-    with open(input_path, 'r') as f:
+    with open(input_path) as f:
         networks = json.load(f)
 
     if isinstance(networks, dict) and 'networks' in networks:

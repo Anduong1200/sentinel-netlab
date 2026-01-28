@@ -4,11 +4,9 @@ Sentinel NetLab - Unified CLI
 Wrapper for Wardriving (Assessment) and Sensor (WIDS) modes.
 """
 
-import sys
 import argparse
 import os
-import signal
-from pathlib import Path
+import sys
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -59,10 +57,10 @@ def run_monitor_wrapper(args):
 def main():
     parser = argparse.ArgumentParser(description="Sentinel NetLab Unified CLI")
     subparsers = parser.add_subparsers(dest='command', required=True)
-    
+
     setup_wardrive_parser(subparsers)
     setup_monitor_parser(subparsers)
-    
+
     args = parser.parse_args()
     if hasattr(args, 'func'):
         args.func(args)

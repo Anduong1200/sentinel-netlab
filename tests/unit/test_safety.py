@@ -1,10 +1,12 @@
-import unittest
 import os
-from unittest.mock import patch, MagicMock
+import unittest
+from unittest.mock import patch
+
 from sensor.attacks import LabSafetyChecker, LabSafetyConfig, LabSafetyError
 
+
 class TestLabSafety(unittest.TestCase):
-    
+
     def setUp(self):
         self.config = LabSafetyConfig(
             enabled=True,

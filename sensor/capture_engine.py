@@ -5,11 +5,11 @@ Implements CaptureEngine with support for Scapy and Tshark backends.
 Includes queue-based processing and robust error handling.
 """
 
-import threading
-import queue
-import time
-import subprocess
 import logging
+import queue
+import subprocess
+import threading
+import time
 from threading import Event
 
 # Local imports

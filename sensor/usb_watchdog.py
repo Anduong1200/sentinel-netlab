@@ -4,13 +4,13 @@ USB Watchdog - Monitor USB WiFi Adapter Connection
 Auto-detects disconnection and attempts recovery.
 """
 
-import subprocess
-import threading
-import time
 import logging
 import os
+import subprocess
 import sys
-from typing import Optional, Callable, Dict, Any
+import threading
+import time
+from typing import Any, Callable, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -185,7 +185,7 @@ class USBWatchdog:
         self.running = False
         logger.info("USB Watchdog stopped")
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get watchdog status."""
         return {
             "interface": self.interface,

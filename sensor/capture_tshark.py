@@ -4,14 +4,14 @@ Tshark Capture Engine - High Performance Alternative to Scapy
 Uses tshark (C/C++) subprocess for packet capture, Python for parsing.
 """
 
-import subprocess
-import threading
-import time
 import json
 import logging
 import os
-from typing import Optional, Callable, List, Dict, Any
+import subprocess
+import threading
+import time
 from datetime import datetime
+from typing import Any, Callable, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class TsharkCaptureEngine:
     def start_capture(
         self,
         packet_callback: Optional[Callable] = None,
-        channels: Optional[List[int]] = None,
+        channels: Optional[list[int]] = None,
         enable_channel_hop: bool = True,
         ring_buffer_files: int = 5,
         ring_buffer_size_mb: int = 10
@@ -217,7 +217,7 @@ class TsharkCaptureEngine:
 
         logger.info("Tshark capture stopped")
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get capture status."""
         return {
             "engine": "tshark",
@@ -229,7 +229,7 @@ class TsharkCaptureEngine:
         }
 
 
-def parse_tshark_packet(tshark_json: Dict) -> Optional[Dict[str, Any]]:
+def parse_tshark_packet(tshark_json: dict) -> Optional[dict[str, Any]]:
     """
     Convert tshark JSON output to our network dictionary format.
     """

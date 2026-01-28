@@ -11,12 +11,13 @@ Implements:
 - Heatmap export (PNG/SVG)
 """
 
-import math
 import json
 import logging
-from datetime import datetime, timezone
+import math
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
+from datetime import datetime, timezone
+from typing import Optional
+
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
@@ -71,7 +72,7 @@ class NTPSyncManager:
     """
 
     def __init__(self):
-        self.sensor_offsets: Dict[str, float] = {}  # sensor_id -> offset_ms
+        self.sensor_offsets: dict[str, float] = {}  # sensor_id -> offset_ms
         self.reference_time: Optional[datetime] = None
 
     def register_sensor(self, sensor_id: str, ntp_offset_ms: float = 0.0):
@@ -86,7 +87,7 @@ class NTPSyncManager:
         from datetime import timedelta
         return timestamp - timedelta(milliseconds=offset_ms)
 
-    def get_sync_status(self) -> Dict:
+    def get_sync_status(self) -> dict:
         """Get synchronization status for all sensors"""
         return {'sensors': len(self.sensor_offsets),
                 'offsets': dict(self.sensor_offsets),
@@ -208,8 +209,8 @@ class TrilaterationSolver:
     def __init__(self, min_sensors: int = 3):
         self.min_sensors = min_sensors
 
-    def solve(self, sensors: List[SensorPosition],
-              distances: List[float]) -> Optional[PositionEstimate]:
+    def solve(self, sensors: list[SensorPosition],
+              distances: list[float]) -> Optional[PositionEstimate]:
         """
         Solve for target position.
 
@@ -287,8 +288,8 @@ class TrilaterationSolver:
 
     def solve_from_rssi(
             self,
-            sensors: List[SensorPosition],
-            samples: List[RSSISample],
+            sensors: list[SensorPosition],
+            samples: list[RSSISample],
             path_loss: PathLossModel) -> Optional[PositionEstimate]:
         """
         Solve position from RSSI samples.
@@ -385,7 +386,7 @@ class KalmanPositionFilter:
         # Predict covariance
         self.P = F @ self.P @ F.T + self.Q
 
-    def update(self, x: float, y: float) -> Tuple[float, float, float]:
+    def update(self, x: float, y: float) -> tuple[float, float, float]:
         """
         Update step with new measurement.
 
@@ -432,7 +433,7 @@ class KalmanPositionFilter:
         uncertainty = math.sqrt(self.P[0, 0] + self.P[1, 1])
         return self.state[0], self.state[1], uncertainty
 
-    def get_velocity(self) -> Tuple[float, float]:
+    def get_velocity(self) -> tuple[float, float]:
         """Get current velocity estimate"""
         return self.state[2], self.state[3]
 
@@ -504,8 +505,8 @@ class HeatmapGenerator:
             self.grid = self.grid[tuple(indices)]
 
     def export_png(self, filepath: str,
-                   sensors: List[SensorPosition] = None,
-                   targets: List[PositionEstimate] = None):
+                   sensors: list[SensorPosition] = None,
+                   targets: list[PositionEstimate] = None):
         """
         Export heatmap as PNG.
 
@@ -604,8 +605,8 @@ class GeoMapper:
         self.ntp_sync = NTPSyncManager()
         self.path_loss = PathLossModel(environment=environment)
         self.trilateration = TrilaterationSolver()
-        self.filters: Dict[str, KalmanPositionFilter] = {}  # bssid -> filter
-        self.sensors: Dict[str, SensorPosition] = {}
+        self.filters: dict[str, KalmanPositionFilter] = {}  # bssid -> filter
+        self.sensors: dict[str, SensorPosition] = {}
         self.heatmap: Optional[HeatmapGenerator] = None
 
     def register_sensor(self, sensor_id: str, x: float, y: float,
@@ -623,7 +624,7 @@ class GeoMapper:
 
     def process_samples(
             self,
-            samples: List[RSSISample]) -> Optional[PositionEstimate]:
+            samples: list[RSSISample]) -> Optional[PositionEstimate]:
         """
         Process RSSI samples to estimate position.
 

@@ -11,8 +11,8 @@ Changes from v1:
 """
 
 import logging
-from typing import Dict, List, Optional
 from dataclasses import dataclass
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,23 +39,23 @@ class EnhancedRiskScorer:
     """
 
     def __init__(self, config_path: str = "sensor/risk_weights.yaml",
-                 whitelist: Optional[List[str]] = None,
+                 whitelist: Optional[list[str]] = None,
                  ml_model_path: Optional[str] = None):
         self.config = self._load_config(config_path)
         self.weights = self.config.get('weights', {})
         self.whitelist = set(whitelist or [])
-        
+
         # Load ML Model if available
         self.ml_model = None
         if ml_model_path:
             try:
                 # Add project root to path to find ml module
-                import sys
                 import os
+                import sys
                 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                from ml.anomaly_model import load_model, detect_anomaly
+                from ml.anomaly_model import detect_anomaly, load_model
                 # 10 features assumed from FeatureExtractor
-                self.ml_model = load_model(ml_model_path, input_dim=10) 
+                self.ml_model = load_model(ml_model_path, input_dim=10)
                 self.detect_anomaly_fn = detect_anomaly
             except Exception as e:
                 logger.warning(f"ML Model load failed: {e}")
@@ -67,9 +67,9 @@ class EnhancedRiskScorer:
         # Metrics for validation
         self.predictions = []
 
-    def _load_config(self, path: str) -> Dict:
+    def _load_config(self, path: str) -> dict:
         try:
-            with open(path, 'r') as f:
+            with open(path) as f:
                 import yaml
                 return yaml.safe_load(f)
         except Exception as e:
@@ -89,8 +89,8 @@ class EnhancedRiskScorer:
                 }
             }
 
-    def calculate_risk(self, network: Dict,
-                       ground_truth_label: Optional[str] = None) -> Dict:
+    def calculate_risk(self, network: dict,
+                       ground_truth_label: Optional[str] = None) -> dict:
         """
         Calculate risk score using modular features and configurable weights.
         """
@@ -126,7 +126,7 @@ class EnhancedRiskScorer:
             # Fallback if missing in yaml
             + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
-        
+
         # ML Anomaly Boost
         if self.ml_model:
             try:
@@ -209,7 +209,7 @@ class EnhancedRiskScorer:
         }
         return mapping.get(weight_key)
 
-    def get_validation_metrics(self) -> Dict:
+    def get_validation_metrics(self) -> dict:
         """
         Calculate validation metrics from labeled predictions.
         Returns precision, recall, F1, false positive rate.
@@ -255,7 +255,7 @@ class EnhancedRiskScorer:
         }
 
     def calibrate_weights_from_data(
-            self, labeled_data: List[Dict]) -> ScoringWeights:
+            self, labeled_data: list[dict]) -> ScoringWeights:
         """
         Simple weight calibration using labeled data.
         """
@@ -263,7 +263,7 @@ class EnhancedRiskScorer:
         # (Simplified logic - no sklearn dependency for now)
         return self.weights
 
-    def export_for_ml_training(self) -> List[Dict]:
+    def export_for_ml_training(self) -> list[dict]:
         """
         Export feature vectors for external ML training.
         """

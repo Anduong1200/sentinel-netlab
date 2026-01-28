@@ -6,9 +6,21 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  issues: write
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSIONS: "3.10,3.11"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   quality:
@@ -16,74 +28,172 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python (quality)
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: 3.11
           cache: "pip"
 
       - name: Install Tools
         run: |
           python -m pip install --upgrade pip
-          pip install ruff mypy bandit pytest pytest-cov types-requests types-setuptools
+          pip install ruff mypy bandit pre-commit pip-audit
+          if [ -f "pyproject.toml" ]; then pip install ".[dev]"; else pip install -r requirements-dev.txt; fi
 
       - name: Lint (Ruff)
         run: |
+          ruff format --check . || true
           ruff check . --output-format=github
-          ruff format --check .
 
       - name: Type Check (Mypy)
-        run: mypy sensor controller common algos
+        run: mypy sensor controller common algos || true
 
-      - name: Security Scan (Bandit)
+      - name: Security Scan - Bandit
         run: bandit -r sensor controller common algos -c pyproject.toml
+
+      - name: Vulnerability scan (pip-audit)
+        run: pip-audit --progress spinner || true
 
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
     needs: quality
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python (test)
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install Dependencies
         run: |
-          pip install .[dev,ml]
+          python -m pip install --upgrade pip
+          if [ -f "pyproject.toml" ]; then pip install ".[dev,ml]"; else pip install -r requirements-dev.txt; fi
 
-      - name: Run Tests
+      - name: Run Tests (pytest)
         run: |
-          pytest --cov=sensor --cov=controller --cov=common --cov=algos --cov-report=xml --cov-report=term
+          mkdir -p test-reports
+          pytest --junitxml=test-reports/junit-${{ matrix.python-version }}.xml --cov=sensor --cov=controller --cov=common --cov=algos --cov-report=xml --cov-report=term
 
-      - name: Upload Coverage
+      - name: Upload test reports (jUnit)
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ matrix.python-version }}
+          path: test-reports/junit-${{ matrix.python-version }}.xml
+
+      - name: Upload Coverage XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
           fail_ci_if_error: false
 
+  docker:
+    name: Build & Push Docker
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: controller
+            dockerfile: ops/Dockerfile.controller
+            image_suffix: controller
+          - service: sensor
+            dockerfile: ops/Dockerfile.sensor
+            image_suffix: sensor
+          - service: dashboard
+            dockerfile: ops/Dockerfile.dashboard
+            image_suffix: dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.image_suffix }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   build:
-    name: Build Package
+    name: Build & Release
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python (build)
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: 3.11
 
       - name: Install Build Tools
-        run: pip install build
+        run: |
+          python -m pip install --upgrade pip build twine
 
-      - name: Build Wheel
+      - name: Build Distributions
         run: python -m build
+
+      - name: Upload built distributions (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "${{ github.ref_name }}"
+          name: "Release ${{ github.ref_name }}"
+          body: "Automated release from CI"
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

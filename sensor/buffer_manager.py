@@ -3,16 +3,16 @@ Sentinel NetLab - Buffer Manager
 In-memory ring buffer with disk journal for telemetry batching.
 """
 
-import os
 import gzip
 import json
 import logging
+import os
 import threading
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
-from collections import deque
-from pathlib import Path
 import uuid
+from collections import deque
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class BufferManager:
         # Create storage directory
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-    def append(self, telemetry: Dict[str, Any]) -> bool:
+    def append(self, telemetry: dict[str, Any]) -> bool:
         """
         Add telemetry item to buffer.
 
@@ -79,7 +79,7 @@ class BufferManager:
             self._total_appended += 1
             return True
 
-    def append_batch(self, telemetry_list: List[Dict[str, Any]]) -> int:
+    def append_batch(self, telemetry_list: list[dict[str, Any]]) -> int:
         """
         Add multiple items.
 
@@ -96,7 +96,7 @@ class BufferManager:
         self,
         max_count: int = 200,
         max_bytes: int = 256 * 1024
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """
         Get batch of items for upload.
 
@@ -138,7 +138,7 @@ class BufferManager:
                 'items': batch_items
             }
 
-    def peek_batch(self, max_count: int = 200) -> List[Dict[str, Any]]:
+    def peek_batch(self, max_count: int = 200) -> list[dict[str, Any]]:
         """
         Peek at items without removing.
         """
@@ -171,7 +171,7 @@ class BufferManager:
         if items:
             self._write_journal(items)
 
-    def _write_journal(self, items: List[Dict]) -> str:
+    def _write_journal(self, items: list[dict]) -> str:
         """Write items to gzipped journal file"""
         timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
         unique = uuid.uuid4().hex[:8]
@@ -198,7 +198,7 @@ class BufferManager:
             logger.error(f"Failed to write journal: {e}")
             return ""
 
-    def load_pending_journals(self) -> List[Dict]:
+    def load_pending_journals(self) -> list[dict]:
         """
         Load all pending journal files.
 
@@ -255,7 +255,7 @@ class BufferManager:
             except Exception:
                 pass
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get buffer statistics"""
         with self._lock:
             buffer_size = len(self._buffer)

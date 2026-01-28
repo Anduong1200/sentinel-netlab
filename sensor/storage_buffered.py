@@ -4,13 +4,13 @@ Buffered Storage - High Performance SQLite with Batch Writes
 Reduces I/O overhead by buffering packets before bulk insert.
 """
 
+import json
+import logging
 import sqlite3
 import threading
 import time
-import json
-import logging
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class BufferedStorage:
         self.buffer_size = buffer_size
         self.flush_interval = flush_interval
 
-        self.buffer: List[Dict[str, Any]] = []
+        self.buffer: list[dict[str, Any]] = []
         self.buffer_lock = threading.Lock()
 
         self.flush_thread: Optional[threading.Thread] = None
@@ -126,7 +126,7 @@ class BufferedStorage:
             time.sleep(self.flush_interval)
             self.flush()
 
-    def add_network(self, network: Dict[str, Any]):
+    def add_network(self, network: dict[str, Any]):
         """Add network to buffer."""
         with self.buffer_lock:
             self.buffer.append({
@@ -139,7 +139,7 @@ class BufferedStorage:
             if len(self.buffer) >= self.buffer_size:
                 self._do_flush()
 
-    def add_event(self, event: Dict[str, Any]):
+    def add_event(self, event: dict[str, Any]):
         """Add security event to buffer."""
         with self.buffer_lock:
             self.buffer.append({
@@ -227,7 +227,7 @@ class BufferedStorage:
         except Exception as e:
             logger.error(f"Flush error: {e}")
 
-    def get_networks(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_networks(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get networks from database."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -242,7 +242,7 @@ class BufferedStorage:
 
         return [dict(row) for row in rows]
 
-    def get_events(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_events(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get security events from database."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -257,7 +257,7 @@ class BufferedStorage:
 
         return [dict(row) for row in rows]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get buffer statistics."""
         with self.buffer_lock:
             return {

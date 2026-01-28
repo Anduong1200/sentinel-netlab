@@ -17,11 +17,11 @@ Risk Levels:
 - CRITICAL (81-100): Active attack, immediate action
 """
 
+import statistics
+import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Optional
-import time
-import statistics
+from typing import Optional
 
 
 class RiskLevel(str, Enum):
@@ -42,7 +42,7 @@ class RiskFactor:
     score: float   # 0 - 100 (before weight applied)
     evidence: dict = field(default_factory=dict)
     mitre_id: Optional[str] = None
-    
+
     @property
     def weighted_score(self) -> float:
         return self.score * self.weight
@@ -53,18 +53,18 @@ class RiskAssessment:
     """Complete risk assessment for a network/entity"""
     entity_id: str  # BSSID or MAC
     timestamp: float
-    
+
     # Scores
     total_score: float
     risk_level: RiskLevel
     confidence: float  # 0.0 - 1.0
-    
+
     # Contributing factors
     factors: list[RiskFactor] = field(default_factory=list)
-    
+
     # Recommendations
     actions: list[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> dict:
         return {
             "entity_id": self.entity_id,
@@ -91,7 +91,7 @@ class RiskAssessment:
 
 class RiskRule:
     """Base class for risk detection rules"""
-    
+
     def __init__(
         self,
         name: str,
@@ -105,7 +105,7 @@ class RiskRule:
         self.weight = weight
         self.base_score = base_score
         self.mitre_id = mitre_id
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         """Evaluate rule against context, return factor if triggered"""
         raise NotImplementedError
@@ -113,7 +113,7 @@ class RiskRule:
 
 class DeauthFloodRule(RiskRule):
     """Detect deauthentication flood attacks"""
-    
+
     def __init__(self):
         super().__init__(
             name="deauth_flood",
@@ -123,16 +123,16 @@ class DeauthFloodRule(RiskRule):
             mitre_id="T1498",
         )
         self.threshold = 10  # frames per second
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         deauth_count = context.get("deauth_count", 0)
         window_sec = context.get("window_seconds", 60)
-        
+
         if window_sec == 0:
             return None
-            
+
         rate = deauth_count / window_sec
-        
+
         if rate >= self.threshold:
             score = min(100, self.base_score + (rate - self.threshold) * 2)
             return RiskFactor(
@@ -152,7 +152,7 @@ class DeauthFloodRule(RiskRule):
 
 class EvilTwinRule(RiskRule):
     """Detect evil twin / rogue AP attacks"""
-    
+
     def __init__(self):
         super().__init__(
             name="evil_twin",
@@ -161,10 +161,10 @@ class EvilTwinRule(RiskRule):
             base_score=90.0,
             mitre_id="T1557.001",
         )
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         ssid_bssid_map = context.get("ssid_bssid_map", {})
-        
+
         for ssid, bssids in ssid_bssid_map.items():
             if len(bssids) > 1:
                 return RiskFactor(
@@ -184,7 +184,7 @@ class EvilTwinRule(RiskRule):
 
 class RSSIAnomalyRule(RiskRule):
     """Detect sudden RSSI changes (potential evil twin)"""
-    
+
     def __init__(self):
         super().__init__(
             name="rssi_anomaly",
@@ -193,13 +193,13 @@ class RSSIAnomalyRule(RiskRule):
             base_score=50.0,
         )
         self.threshold_db = 20  # dB change threshold
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         rssi_history = context.get("rssi_history", [])
-        
+
         if len(rssi_history) < 2:
             return None
-        
+
         # Check for sudden changes
         for i in range(1, len(rssi_history)):
             delta = abs(rssi_history[i] - rssi_history[i-1])
@@ -220,7 +220,7 @@ class RSSIAnomalyRule(RiskRule):
 
 class SequenceAnomalyRule(RiskRule):
     """Detect sequence number anomalies (replay attacks)"""
-    
+
     def __init__(self):
         super().__init__(
             name="sequence_anomaly",
@@ -229,13 +229,13 @@ class SequenceAnomalyRule(RiskRule):
             base_score=60.0,
             mitre_id="T1040",
         )
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         seq_numbers = context.get("sequence_numbers", [])
-        
+
         if len(seq_numbers) < 3:
             return None
-        
+
         # Check for resets or large jumps
         anomalies = 0
         for i in range(1, len(seq_numbers)):
@@ -245,7 +245,7 @@ class SequenceAnomalyRule(RiskRule):
                 diff = (seq_numbers[i] - seq_numbers[i-1]) % 4096
                 if diff > 10 or seq_numbers[i] < seq_numbers[i-1]:
                     anomalies += 1
-        
+
         if anomalies > 2:
             return RiskFactor(
                 name=self.name,
@@ -263,7 +263,7 @@ class SequenceAnomalyRule(RiskRule):
 
 class WeakSecurityRule(RiskRule):
     """Flag networks with weak security"""
-    
+
     def __init__(self):
         super().__init__(
             name="weak_security",
@@ -272,10 +272,10 @@ class WeakSecurityRule(RiskRule):
             base_score=40.0,
         )
         self.weak_types = {"open", "wep", "wpa"}
-    
+
     def evaluate(self, context: dict) -> Optional[RiskFactor]:
         security_type = context.get("security_type", "unknown")
-        
+
         if security_type in self.weak_types:
             scores = {"open": 60, "wep": 50, "wpa": 30}
             return RiskFactor(
@@ -295,28 +295,28 @@ class WeakSecurityRule(RiskRule):
 class RiskEngine:
     """
     Risk scoring engine with pluggable rules.
-    
+
     Usage:
         engine = RiskEngine()
         engine.add_rule(DeauthFloodRule())
         engine.add_rule(EvilTwinRule())
-        
+
         assessment = engine.assess(bssid, context)
         print(f"Risk: {assessment.risk_level} ({assessment.total_score})")
     """
-    
+
     def __init__(self):
         self.rules: list[RiskRule] = []
         self.baselines: dict[str, dict] = {}  # Entity baselines
-    
+
     def add_rule(self, rule: RiskRule) -> None:
         """Add detection rule"""
         self.rules.append(rule)
-    
+
     def remove_rule(self, name: str) -> None:
         """Remove rule by name"""
         self.rules = [r for r in self.rules if r.name != name]
-    
+
     @staticmethod
     def _score_to_level(score: float) -> RiskLevel:
         """Convert numeric score to risk level"""
@@ -330,7 +330,7 @@ class RiskEngine:
             return RiskLevel.HIGH_RISK
         else:
             return RiskLevel.CRITICAL
-    
+
     @staticmethod
     def _level_to_actions(level: RiskLevel) -> list[str]:
         """Get recommended actions for risk level"""
@@ -342,45 +342,45 @@ class RiskEngine:
             RiskLevel.CRITICAL: ["Immediate alert", "Isolate if possible", "Incident response"],
         }
         return actions.get(level, [])
-    
+
     def assess(self, entity_id: str, context: dict) -> RiskAssessment:
         """
         Assess risk for an entity given context.
-        
+
         Args:
             entity_id: BSSID, MAC, or other identifier
             context: Dict with frame stats, history, etc.
-        
+
         Returns:
             RiskAssessment with score, level, and factors
         """
         factors = []
-        
+
         # Evaluate all rules
         for rule in self.rules:
             try:
                 factor = rule.evaluate(context)
                 if factor is not None:
                     factors.append(factor)
-            except Exception as e:
+            except Exception:
                 # Log but don't fail
                 pass
-        
+
         # Calculate total score (sum of weighted scores, capped at 100)
         if factors:
             total_score = min(100, sum(f.weighted_score for f in factors))
         else:
             total_score = 0.0
-        
+
         # Determine risk level
         risk_level = self._score_to_level(total_score)
-        
+
         # Calculate confidence based on evidence quality
         confidence = self._calculate_confidence(factors, context)
-        
+
         # Get recommended actions
         actions = self._level_to_actions(risk_level)
-        
+
         return RiskAssessment(
             entity_id=entity_id,
             timestamp=time.time(),
@@ -390,33 +390,33 @@ class RiskEngine:
             factors=factors,
             actions=actions,
         )
-    
+
     def _calculate_confidence(
         self, factors: list[RiskFactor], context: dict
     ) -> float:
         """Calculate confidence in assessment"""
         if not factors:
             return 1.0  # High confidence in "clean"
-        
+
         # More evidence = higher confidence
         evidence_count = sum(len(f.evidence) for f in factors)
         frame_count = context.get("frame_count", 0)
-        
+
         # Base confidence
         confidence = 0.5
-        
+
         # Boost for more evidence
         if evidence_count > 5:
             confidence += 0.2
         if frame_count > 100:
             confidence += 0.2
-        
+
         # Boost for multiple corroborating rules
         if len(factors) >= 2:
             confidence += 0.1
-        
+
         return min(1.0, confidence)
-    
+
     def update_baseline(self, entity_id: str, metrics: dict) -> None:
         """Update statistical baseline for an entity"""
         if entity_id not in self.baselines:
@@ -425,36 +425,36 @@ class RiskEngine:
                 "frame_count": 0,
                 "first_seen": time.time(),
             }
-        
+
         baseline = self.baselines[entity_id]
-        
+
         # Update RSSI history
         if "rssi" in metrics:
             baseline["rssi_values"].append(metrics["rssi"])
             # Keep last 100 values
             baseline["rssi_values"] = baseline["rssi_values"][-100:]
-        
+
         baseline["frame_count"] += metrics.get("frame_count", 1)
         baseline["last_seen"] = time.time()
-    
+
     def get_baseline_stats(self, entity_id: str) -> dict:
         """Get baseline statistics for an entity"""
         if entity_id not in self.baselines:
             return {}
-        
+
         baseline = self.baselines[entity_id]
         rssi_values = baseline.get("rssi_values", [])
-        
+
         stats = {
             "first_seen": baseline.get("first_seen"),
             "last_seen": baseline.get("last_seen"),
             "frame_count": baseline.get("frame_count", 0),
         }
-        
+
         if rssi_values:
             stats["rssi_mean"] = statistics.mean(rssi_values)
             stats["rssi_stdev"] = statistics.stdev(rssi_values) if len(rssi_values) > 1 else 0
-        
+
         return stats
 
 

@@ -1,15 +1,14 @@
-import os
 import shutil
-import sys
 from pathlib import Path
+
 
 def cleanup_project():
     print("🧹 Starting Project Cleanup for Operation...")
-    
+
     # Base directory (current script is in scripts/, so go up one level)
     root = Path(__file__).resolve().parent.parent
     print(f"📂 Project Root: {root}")
-    
+
     # 1. Define Operational Directories
     op_dirs = [
         "data",          # For SQLite database (wifi_scanner.db)
@@ -26,7 +25,7 @@ def cleanup_project():
         "sensor",        # Sensor source code
         "controller"     # Controller source code
     ]
-    
+
     # 2. Create Directories
     for d in op_dirs:
         path = root / d
@@ -38,7 +37,7 @@ def cleanup_project():
                 print(f"❌ Failed to create {d}: {e}")
         else:
             print(f"   Directory exists: {d}/")
-            
+
     # 3. Clean up Temporary Files
     patterns = [
         "__pycache__",
@@ -50,14 +49,14 @@ def cleanup_project():
         "*.log",  # Maybe keep logs? User said cleanup. Let's keep logs in logs/ but del elsewhere.
         "*.tmp"
     ]
-    
+
     print("\n🗑️ Removing temporary files...")
     for pattern in patterns:
         for path in root.rglob(pattern):
             # Skip if specified in specific operational dirs if needed, but usually safe to delete cache
             if "logs" in str(path) and path.suffix == ".log":
-                continue 
-                
+                continue
+
             try:
                 if path.is_dir():
                     shutil.rmtree(path)
@@ -71,7 +70,7 @@ def cleanup_project():
     # If config.json is in root, move to config/ or sensor/
     # For now, sensor expects config in its dir or passed via args.
     # We will just ensure config.example.json exists in config/
-    
+
     config_example = root / "config" / "config.example.json"
     if not config_example.exists():
         example_content = """{
@@ -87,14 +86,14 @@ def cleanup_project():
         print("✅ Created config/config.example.json")
 
     # 5. Create Ready-to-Run Scripts
-    
+
     # Windows Run Controller
     run_controller_bat = root / "run_controller.bat"
     if not run_controller_bat.exists():
         with open(run_controller_bat, "w") as f:
             f.write('@echo off\ncd controller\npython scanner_gui.py\npause')
         print("✅ Created run_controller.bat")
-        
+
     print("\n✨ Project is ready for operation!")
     print("   - Run 'run_controller.bat' to start the GUI (Windows)")
     print("   - On Linux sensor: 'python sensor/sensor_cli.py --api'")

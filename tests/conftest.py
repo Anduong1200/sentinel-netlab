@@ -10,13 +10,12 @@ Usage:
 """
 
 import os
-import json
-import time
-import pytest
 import secrets
+import time
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 # =============================================================================
 # NETWORK DATA FIXTURES
@@ -259,7 +258,7 @@ def temp_data_dir(tmp_path):
 def freeze_time():
     """Fixture to freeze time for deterministic tests"""
     fixed_time = datetime(2026, 1, 28, 12, 0, 0, tzinfo=timezone.utc)
-    
+
     with patch('datetime.datetime') as mock_dt:
         mock_dt.now.return_value = fixed_time
         mock_dt.fromisoformat = datetime.fromisoformat

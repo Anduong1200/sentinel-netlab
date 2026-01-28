@@ -1,11 +1,12 @@
-import dash
-from dash import dcc, html, Input, Output
-import dash_bootstrap_components as dbc
-from flask import Flask
-import requests
-import plotly.express as px
-import pandas as pd
 import os
+
+import dash
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+import requests
+from dash import Input, Output, dcc, html
+from flask import Flask
 
 # Initialize Flask (wrapped by controller or standalone)
 server = Flask(__name__)
@@ -30,7 +31,7 @@ app.layout = html.Div([
         dark=True,
         className="mb-4"
     ),
-    
+
     dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -42,7 +43,7 @@ app.layout = html.Div([
                     ])
                 ], className="mb-4")
             ], width=4),
-            
+
             dbc.Col([
                 html.H2("Risk Overview", className="mb-3"),
                 dbc.Card([
@@ -52,7 +53,7 @@ app.layout = html.Div([
                     ])
                 ], className="mb-4")
             ], width=4),
-            
+
             dbc.Col([
                 html.H2("System", className="mb-3"),
                 dbc.Card([
@@ -63,7 +64,7 @@ app.layout = html.Div([
                 ], className="mb-4")
             ], width=4),
         ]),
-        
+
         dbc.Row([
             dbc.Col([
                 html.H3("Wardriving Heatmap (GPS)", className="mb-3"),
@@ -72,14 +73,14 @@ app.layout = html.Div([
                 )
             ], width=12, className="mb-5")
         ]),
-        
+
         dbc.Row([
             dbc.Col([
                 html.H3("Recent Security Alerts", className="mb-3"),
                 html.Div(id='alerts-table')
             ], width=12)
         ]),
-        
+
         dcc.Interval(
             id='interval-component',
             interval=10*1000, # 10 seconds
@@ -98,41 +99,41 @@ app.layout = html.Div([
 def update_metrics(n):
     # Default outputs
     empty_map = px.scatter_mapbox(
-        pd.DataFrame({'lat': [], 'lon': []}), 
-        lat='lat', lon='lon', 
+        pd.DataFrame({'lat': [], 'lon': []}),
+        lat='lat', lon='lon',
         mapbox_style="carto-darkmatter",
         zoom=0
     )
     empty_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    
+
     try:
         # 1. Get Wardriving/Network Data
         resp_net = requests.get(f"{CONTROLLER_API}/api/v1/networks", timeout=2)
         networks = resp_net.json().get('networks', []) if resp_net.status_code == 200 else []
-        
+
         # 2. Get Alerts
         resp_alerts = requests.get(f"{CONTROLLER_API}/api/v1/alerts", timeout=2)
         alerts = resp_alerts.json().get('alerts', []) if resp_alerts.status_code == 200 else []
-        
+
         # Process Map
         if networks:
             # Filter for nets with GPS
             data = [
                 {
-                    'lat': n.get('lat', 0), 
-                    'lon': n.get('lon', 0), 
+                    'lat': n.get('lat', 0),
+                    'lon': n.get('lon', 0),
                     'ssid': n.get('ssid', 'Unknown'),
                     'risk': n.get('risk_score', 0)
-                } 
+                }
                 for n in networks if n.get('lat')
             ]
-            
+
             if data:
                 df = pd.DataFrame(data)
                 fig = px.density_mapbox(
                     df, lat='lat', lon='lon', z='risk',
                     radius=20,
-                    center=dict(lat=df.lat.mean(), lon=df.lon.mean()),
+                    center={'lat': df.lat.mean(), 'lon': df.lon.mean()},
                     zoom=13,
                     mapbox_style="carto-darkmatter"
                 )
@@ -141,7 +142,7 @@ def update_metrics(n):
                 fig = empty_map
         else:
             fig = empty_map
-            
+
         # Process Alerts Table
         if alerts:
             table_header = [
@@ -156,14 +157,14 @@ def update_metrics(n):
                     html.Td(a.get('message')),
                     html.Td(a.get('recommendation'))
                 ], className=row_class))
-            
+
             table_body = [html.Tbody(rows)]
             table = dbc.Table(table_header + table_body, bordered=True, dark=True, hover=True, responsive=True)
         else:
             table = dbc.Alert("No active alerts detected.", color="success")
-            
-        return fig, str(len(set(n.get('sensor_id') for n in networks))), str(len(alerts)), table
-        
+
+        return fig, str(len({n.get('sensor_id') for n in networks})), str(len(alerts)), table
+
     except Exception as e:
         print(f"Dashboard Update Error: {e}")
         return empty_map, "ERR", "ERR", dbc.Alert(f"Connection Error: {e}", color="danger")

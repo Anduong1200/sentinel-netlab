@@ -5,8 +5,8 @@ Lookup vendor names from MAC address OUI prefixes.
 
 import json
 import logging
-from typing import Optional, Dict
 from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class OUIDatabase:
         Args:
             oui_file: Path to JSON OUI database file
         """
-        self._db: Dict[str, str] = dict(self.EMBEDDED_OUI)
+        self._db: dict[str, str] = dict(self.EMBEDDED_OUI)
 
         if oui_file and Path(oui_file).exists():
             self._load_file(oui_file)

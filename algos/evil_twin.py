@@ -11,12 +11,12 @@ Features:
 """
 
 import logging
-import time
 import statistics
-from datetime import datetime, timezone
+import time
 from collections import defaultdict
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Set, Tuple, Any
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +67,8 @@ class APProfile:
     channel: int
     vendor_oui: str
     security_type: str  # OPEN, WEP, WPA2, WPA3
-    rsn_capabilities: Dict = field(default_factory=dict)
-    wpa_info: Dict = field(default_factory=dict)
+    rsn_capabilities: dict = field(default_factory=dict)
+    wpa_info: dict = field(default_factory=dict)
     pmf_required: bool = False
     wps_enabled: bool = False
 
@@ -76,16 +76,16 @@ class APProfile:
     first_seen: float = 0.0
     last_seen: float = 0.0
     observation_count: int = 0
-    sensor_ids: Set[str] = field(default_factory=set)
+    sensor_ids: set[str] = field(default_factory=set)
 
     # Metrics
-    rssi_samples: List[int] = field(default_factory=list)
-    beacon_intervals: List[int] = field(default_factory=list)
-    channels_seen: Set[int] = field(default_factory=set)
+    rssi_samples: list[int] = field(default_factory=list)
+    beacon_intervals: list[int] = field(default_factory=list)
+    channels_seen: set[int] = field(default_factory=set)
 
     # IEs present
-    ies_present: List[str] = field(default_factory=list)
-    vendor_ies: List[str] = field(default_factory=list)
+    ies_present: list[str] = field(default_factory=list)
+    vendor_ies: list[str] = field(default_factory=list)
 
     @property
     def avg_rssi(self) -> float:
@@ -123,16 +123,16 @@ class EvilTwinEvidence:
     duplicate_count: int
 
     # Raw data
-    original_profile: Dict
-    suspect_profile: Dict
+    original_profile: dict
+    suspect_profile: dict
 
     # Samples
-    sample_beacons: List[Dict] = field(default_factory=list)
-    ie_differences: List[str] = field(default_factory=list)
+    sample_beacons: list[dict] = field(default_factory=list)
+    ie_differences: list[str] = field(default_factory=list)
 
     # Sensor info
-    sensor_ids: List[str] = field(default_factory=list)
-    gps_coords: Optional[Tuple[float, float]] = None
+    sensor_ids: list[str] = field(default_factory=list)
+    gps_coords: Optional[tuple[float, float]] = None
 
 
 @dataclass
@@ -151,7 +151,7 @@ class EvilTwinAlert:
     mitre_technique: str
     mitre_tactic: str
 
-    evidence: Dict
+    evidence: dict
     recommendation: str
 
 
@@ -176,20 +176,20 @@ class AdvancedEvilTwinDetector:
         self.config = config or EvilTwinConfig()
 
         # State
-        self.ap_profiles: Dict[str, APProfile] = {}  # bssid -> profile
-        self.ssid_to_bssids: Dict[str, Set[str]] = defaultdict(set)
+        self.ap_profiles: dict[str, APProfile] = {}  # bssid -> profile
+        self.ssid_to_bssids: dict[str, set[str]] = defaultdict(set)
 
         # Baseline (known-good APs)
-        self.baseline_profiles: Dict[str, APProfile] = {}
+        self.baseline_profiles: dict[str, APProfile] = {}
 
         # Pending alerts (for confirmation)
-        self.pending_alerts: Dict[str, Dict] = {}  # key -> {alert, first_seen, count}
+        self.pending_alerts: dict[str, dict] = {}  # key -> {alert, first_seen, count}
 
         # Stats
         self.alerts_generated = 0
         self._last_cleanup = time.time()
 
-    def ingest(self, telemetry: Dict[str, Any]) -> List[EvilTwinAlert]:
+    def ingest(self, telemetry: dict[str, Any]) -> list[EvilTwinAlert]:
         """
         Process single telemetry record.
 
@@ -243,7 +243,7 @@ class AdvancedEvilTwinDetector:
 
         return alerts
 
-    def _update_profile(self, bssid: str, telemetry: Dict) -> APProfile:
+    def _update_profile(self, bssid: str, telemetry: dict) -> APProfile:
         """Update or create AP profile"""
         now = time.time()
 
@@ -293,7 +293,7 @@ class AdvancedEvilTwinDetector:
 
         return profile
 
-    def _parse_security(self, telemetry: Dict) -> str:
+    def _parse_security(self, telemetry: dict) -> str:
         """Parse security type from telemetry"""
         caps = telemetry.get('capabilities', {})
         rsn = telemetry.get('rsn_info', {})
@@ -312,7 +312,7 @@ class AdvancedEvilTwinDetector:
         self,
         original: APProfile,
         suspect: APProfile
-    ) -> Tuple[int, EvilTwinEvidence]:
+    ) -> tuple[int, EvilTwinEvidence]:
         """
         Calculate Evil Twin score using weighted features.
 
@@ -391,7 +391,7 @@ class AdvancedEvilTwinDetector:
 
         return min(100, score), evidence
 
-    def _diff_ies(self, original: APProfile, suspect: APProfile) -> List[str]:
+    def _diff_ies(self, original: APProfile, suspect: APProfile) -> list[str]:
         """Find IE differences between profiles"""
         diffs = []
 
@@ -534,7 +534,7 @@ class AdvancedEvilTwinDetector:
         for bssid in stale:
             del self.ap_profiles[bssid]
             # Update SSID mapping
-            for ssid, bssids in self.ssid_to_bssids.items():
+            for _, bssids in self.ssid_to_bssids.items():
                 bssids.discard(bssid)
 
         # Remove empty SSID entries
@@ -554,7 +554,7 @@ class AdvancedEvilTwinDetector:
         """Add known-good AP to baseline (reduces FP)"""
         self.baseline_profiles[bssid.upper()] = profile
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get detector statistics"""
         return {
             'tracked_aps': len(self.ap_profiles),

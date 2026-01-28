@@ -7,16 +7,16 @@ Usage:
     python wardrive.py --iface wlan0 --gps /dev/ttyUSB0 --output session.json
 """
 
+import argparse
+import json
+import logging
+import signal
 import sys
 import time
-import json
-import signal
-import logging
-import argparse
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from dataclasses import dataclass, asdict
-from typing import Optional, Dict, List
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(
@@ -101,9 +101,9 @@ class GPSReader:
 
     def _read_serial(self):
         """Read NMEA data from serial port"""
-        import serial
         import pynmea2
-        
+        import serial
+
         try:
             with serial.Serial(self.device, 9600, timeout=1) as ser:
                 while self._running:
@@ -132,7 +132,7 @@ class WardriveSession:
     def __init__(self, sensor_id: str, output_path: Path):
         self.sensor_id = sensor_id
         self.output_path = output_path
-        self.sightings: List[WardriveSighting] = []
+        self.sightings: list[WardriveSighting] = []
         self.unique_bssids: set = set()
         self.start_time = datetime.now(timezone.utc)
         self._running = False
@@ -203,30 +203,30 @@ class WardriveCapture:
         """Stop capture"""
         self._running = False
 
-    def get_networks(self) -> List[Dict]:
+    def get_networks(self) -> list[dict]:
         """Get currently visible networks"""
         if self.mock:
             return self._mock_networks()
 
         # Real Capture using Scapy
         try:
-            from scapy.all import sniff, Dot11Beacon, Dot11, RadioTap
-            
+            from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, sniff
+
             # Sniff for a short duration
             packets = sniff(iface=self.iface, timeout=self.timeout, count=50, verbose=False)
-            
+
             networks = []
             seen_bssids = set()
-            
+
             for pkt in packets:
                 if pkt.haslayer(Dot11Beacon):
                     bssid = pkt[Dot11].addr2
                     if bssid in seen_bssids:
                         continue
                     seen_bssids.add(bssid)
-                    
+
                     ssid = pkt[Dot11Elt].info.decode('utf-8', errors='ignore') if pkt.haslayer(Dot11Elt) else "<Hidden>"
-                    
+
                     # Extract RSSI (Signal Strength)
                     rssi = -100
                     if pkt.haslayer(RadioTap):
@@ -234,20 +234,20 @@ class WardriveCapture:
                             rssi = pkt[RadioTap].dBm_AntSignal
                         except:
                             pass
-                            
+
                     # Extract Channel
                     channel = 0
                     try:
                         channel = int(ord(pkt[Dot11Elt:3].info))
                     except:
                         pass
-                        
+
                     # Determine Security
                     security = "Open"
                     cap = pkt.sprintf("{Dot11Beacon:%Dot11Beacon.cap%}")
                     if "privacy" in cap:
                         security = "WPA2" # Simplified assumption for wardriving
-                        
+
                     networks.append({
                         'bssid': bssid,
                         'ssid': ssid,
@@ -255,9 +255,9 @@ class WardriveCapture:
                         'channel': channel,
                         'security': security
                     })
-                    
+
             return networks
-            
+
         except ImportError:
             if not self.mock:
                 logger.critical("Scapy not installed but required for real capture. Run: pip install scapy")
@@ -267,12 +267,12 @@ class WardriveCapture:
             logger.error(f"Capture error: {e}")
             return []
 
-    def _mock_networks(self) -> List[Dict]:
+    def _mock_networks(self) -> list[dict]:
         """Generate mock network data"""
         import random
 
         networks = []
-        for i in range(random.randint(1, 5)):
+        for _i in range(random.randint(1, 5)):
             networks.append({
                 'bssid': f"AA:BB:CC:{random.randint(0,255):02X}:{random.randint(0,255):02X}:{random.randint(0,255):02X}",
                 'ssid': random.choice(['CafeWiFi', 'HomeNet', 'Office_5G', None, 'FreeWiFi']),

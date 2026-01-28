@@ -7,8 +7,8 @@ Implements GDPR-friendly data handling patterns.
 
 import hashlib
 import hmac
-import secrets
 import re
+import secrets
 from typing import Optional
 
 # Global salt (regenerate per deployment)
@@ -56,17 +56,17 @@ def hash_mac(mac: str, salt: Optional[str] = None) -> str:
     """
     One-way hash MAC address for privacy.
     Uses SHA-256 with salt, returns 16-char hex string.
-    
+
     Args:
         mac: MAC address (any format)
         salt: Optional salt (uses global if not provided)
-    
+
     Returns:
         16-character hex hash (collision-resistant, irreversible)
     """
     if salt is None:
         salt = get_privacy_salt()
-    
+
     normalized = normalize_mac(mac)
     return hashlib.sha256((salt + normalized).encode()).hexdigest()[:16]
 
@@ -84,7 +84,7 @@ def anonymize_mac_oui(mac: str) -> str:
     """
     Anonymize MAC address while preserving OUI (vendor prefix).
     Replaces last 3 octets with XX.
-    
+
     Example: "AA:BB:CC:11:22:33" → "AA:BB:CC:XX:XX:XX"
     """
     normalized = normalize_mac(mac)
@@ -98,7 +98,7 @@ def anonymize_mac_full(mac: str) -> str:
     """
     Fully anonymize MAC address (hash entire address).
     Returns a pseudo-MAC that looks real but is hashed.
-    
+
     Example: "AA:BB:CC:11:22:33" → "A1:B2:C3:D4:E5:F6"
     """
     hashed = hash_mac(mac)
@@ -138,17 +138,17 @@ def get_oui(mac: str) -> str:
 def anonymize_ssid(ssid: str, keep_length: bool = True) -> str:
     """
     Anonymize SSID while optionally preserving length info.
-    
+
     Args:
         ssid: Original SSID
         keep_length: If True, returns same-length string of asterisks
-    
+
     Returns:
         Anonymized SSID
     """
     if not ssid:
         return ""
-    
+
     if keep_length:
         return "*" * len(ssid)
     else:
@@ -166,7 +166,7 @@ def is_hidden_ssid(ssid: Optional[str]) -> bool:
 
 class RetentionPolicy:
     """Data retention configuration"""
-    
+
     def __init__(
         self,
         raw_frames_days: int = 7,
@@ -178,7 +178,7 @@ class RetentionPolicy:
         self.normalized_days = normalized_days
         self.alerts_days = alerts_days
         self.anonymize_after_days = anonymize_after_days
-    
+
     @classmethod
     def gdpr_compliant(cls) -> "RetentionPolicy":
         """GDPR-compliant retention policy"""
@@ -188,7 +188,7 @@ class RetentionPolicy:
             alerts_days=30,
             anonymize_after_days=0,  # Immediate anonymization
         )
-    
+
     @classmethod
     def forensic_mode(cls) -> "RetentionPolicy":
         """Extended retention for incident investigation"""
@@ -206,12 +206,12 @@ class RetentionPolicy:
 
 class PrivacyMode:
     """Privacy mode configuration for data handling"""
-    
+
     NORMAL = "normal"           # Full data, for authorized testing
     ANONYMIZED = "anonymized"   # OUI preserved, rest hashed
     PRIVATE = "private"         # Fully hashed, no raw data
     FORENSIC = "forensic"       # Full data with extended retention
-    
+
     @staticmethod
     def get_transformer(mode: str):
         """Get data transformer for privacy mode"""

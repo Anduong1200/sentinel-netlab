@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # check_driver.py - Diagnostic script
-import subprocess, sys, os
+import os
+import subprocess
+
 
 def run(cmd):
-    p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    p = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return p.stdout + p.stderr
 
 print("=== LSUSB ===")

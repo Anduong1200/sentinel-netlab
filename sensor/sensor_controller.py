@@ -4,26 +4,25 @@ Sentinel NetLab - Sensor Controller
 Main orchestrator for capture, processing, and upload.
 """
 
-import os
-import sys
-import time
-import signal
-import logging
-import threading
 import argparse
-from typing import Optional, List, Dict, Any
+import logging
+import os
+import signal
+import sys
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Optional
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
 
 from buffer_manager import BufferManager
-from transport_client import TransportClient
-from normalizer import TelemetryNormalizer  # noqa: E402
 from capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
 from frame_parser import FrameParser
-
+from normalizer import TelemetryNormalizer  # noqa: E402
+from transport_client import TransportClient
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class ChannelHopper:
     def __init__(
         self,
         driver: CaptureDriver,
-        channels: Optional[List[int]] = None,
+        channels: Optional[list[int]] = None,
         dwell_ms: int = 200,
         settle_ms: int = 50,
         adaptive: bool = False
@@ -52,8 +51,7 @@ class ChannelHopper:
         self._current_idx = 0
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        self._channel_activity: Dict[int, float] = {
-            ch: 1.0 for ch in self.channels}
+        self._channel_activity: dict[int, float] = dict.fromkeys(self.channels, 1.0)
 
     def start(self) -> None:
         """Start channel hopping thread"""
@@ -137,7 +135,7 @@ class SensorController:
         self,
         sensor_id: str,
         iface: str,
-        channels: Optional[List[int]] = None,
+        channels: Optional[list[int]] = None,
         dwell_ms: int = 200,
         upload_url: str = "http://localhost:5000/api/v1/telemetry",
         auth_token: str = "sentinel-dev-2024",
@@ -297,7 +295,7 @@ class SensorController:
 
         logger.info("Sensor stopped")
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         """Get sensor status"""
         uptime = 0
         if self._start_time:
@@ -402,7 +400,7 @@ class SensorController:
             except Exception as e:
                 logger.debug(f"Heartbeat error: {e}")
 
-    def _handle_command(self, cmd: Dict[str, Any]) -> None:
+    def _handle_command(self, cmd: dict[str, Any]) -> None:
         """Handle command from controller"""
         cmd_type = cmd.get('type')
 

@@ -38,10 +38,13 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Risk Scoring** | Weighted threat assessment with explainability |
 | **Distributed Architecture** | Multiple sensors → centralized controller |
 | **Geo-Location** | Trilateration & Heatmaps for physical source tracking |
-| **Active Defense** | Deauth & FakeAP generation (Lab/Authorized only) |
+| **Active Defense** | *Opt-in* Deauth & FakeAP generation (**Strictly Lab/Authorized Only**) |
 | **Wardriving** | GPS-correlated mobile network mapping |
 | **Hybrid ML Analysis** | Rule-based engine boosted by Autoencoder Anomaly Detection |
 | **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
+
+> [!IMPORTANT]
+> **WIDS vs WIPS**: Sentinel NetLab functions primarily as a Passive Wireless Intrusion Detection System (WIDS). "Active Defense" features (WIPS) are **disabled by default** and must be explicitly enabled in configuration. These features should only be used in controlled lab environments or with explicit authorization.
 
 ---
 

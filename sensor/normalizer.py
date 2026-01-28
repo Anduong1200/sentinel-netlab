@@ -3,13 +3,15 @@ Sentinel NetLab - Telemetry Normalizer
 Converts parsed frames to canonical telemetry format.
 """
 
-import logging
 import hashlib
-from typing import Optional, Dict, Any
+import logging
 from datetime import datetime, timezone
+from typing import Any, Optional
 
-from schema import TelemetryItem, Capabilities
-from common.privacy import anonymize_mac_oui, hash_mac, anonymize_ssid as priv_anonymize_ssid
+from schema import Capabilities, TelemetryItem
+
+from common.privacy import anonymize_mac_oui, hash_mac
+from common.privacy import anonymize_ssid as priv_anonymize_ssid
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class TelemetryNormalizer:
         self,
         sensor_id: str,
         capture_method: str = "scapy",
-        oui_db: Optional[Dict[str, str]] = None,
+        oui_db: Optional[dict[str, str]] = None,
         anonymize_ssid: bool = False,
         store_raw_mac: bool = False,
         privacy_mode: str = "anonymized"
@@ -108,9 +110,9 @@ class TelemetryNormalizer:
         # Get vendor info (use original BSSID for lookup if possible, or extract from anonymized if OUI preserved)
         # Note: If we anonymized getting OUI might still work if we kept it.
         # But if we fully hashed, we can't get OUI.
-        vendor_oui = self._extract_oui(parsed_frame.bssid) # Use raw for lookup BEFORE anonymization if permissible? 
+        vendor_oui = self._extract_oui(parsed_frame.bssid) # Use raw for lookup BEFORE anonymization if permissible?
         # Ideally we only use what we store, but for lookup lookup it's transient.
-        vendor_name = self._lookup_vendor(vendor_oui)
+        self._lookup_vendor(vendor_oui)
 
         # Calculate frequency
         frequency = self._channel_to_freq(parsed_frame.channel)
@@ -146,7 +148,7 @@ class TelemetryNormalizer:
             ie.update(parsed_frame.ies)
 
         # Calculate uptime
-        uptime = (
+        (
             datetime.now(
                 timezone.utc)
             - self._start_time).total_seconds()
@@ -157,14 +159,14 @@ class TelemetryNormalizer:
             channel=parsed_frame.channel,
             rssi_dbm=parsed_frame.rssi_dbm,
             frequency_mhz=frequency,
-            
+
             capabilities=caps,
             vendor_oui=vendor_oui,
-            
+
             # Map IE dict to count
             ie_count=len(ie) if ie else 0,
             beacon_interval=parsed_frame.beacon_interval,
-            
+
             # Use current timestamp
             timestamp=datetime.now(timezone.utc).isoformat()
         )
@@ -198,7 +200,7 @@ class TelemetryNormalizer:
         hash_val = hashlib.sha256(ssid.encode()).hexdigest()[:8]
         return f"ANON_{len(ssid)}_{hash_val}"
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get normalizer statistics"""
         return {
             'sensor_id': self.sensor_id,

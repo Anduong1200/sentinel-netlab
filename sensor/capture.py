@@ -4,11 +4,12 @@ WiFi Capture Module - Monitor mode control and channel hopping
 Run on Linux VM with compatible Wi-Fi adapter (e.g., TL-WN722N v1)
 """
 
-import subprocess
-import time
-import threading
 import logging
-from typing import Optional, List, Callable
+import subprocess
+import threading
+import time
+from typing import Callable, Optional
+
 from scapy.all import AsyncSniffer
 
 logging.basicConfig(level=logging.INFO)
@@ -175,7 +176,7 @@ class CaptureEngine:
     def start_capture(
         self,
         packet_callback: Callable,
-        channels: Optional[List[int]] = None,
+        channels: Optional[list[int]] = None,
         dwell_time: float = 0.4,
         enable_channel_hop: bool = True
     ) -> bool:

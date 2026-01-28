@@ -4,26 +4,26 @@ Sentinel NetLab - Enhanced Controller API
 Production-ready with mTLS, Pydantic validation, rate limiting, and observability.
 """
 
-import os
-import time
-import hmac
 import hashlib
+import hmac
 import logging
+import os
 import secrets
-from datetime import datetime, timezone, timedelta
-from functools import wraps
-from typing import Dict, List, Optional
-from dataclasses import dataclass, asdict
+import time
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
 from enum import Enum
+from functools import wraps
+from typing import Optional
 
-from flask import Flask, jsonify, request, g
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 # Try pydantic for validation
 try:
-    from pydantic import BaseModel, Field, validator, ValidationError
+    from pydantic import BaseModel, Field, ValidationError, validator
     PYDANTIC_AVAILABLE = True
 except ImportError:
     PYDANTIC_AVAILABLE = False
@@ -42,30 +42,30 @@ logger = logging.getLogger(__name__)
 
 class Config:
     """Server configuration - all from environment, no hardcoded secrets"""
-    
+
     # Required secrets (MUST be set in production)
     SECRET_KEY = os.environ.get('CONTROLLER_SECRET_KEY')
     HMAC_SECRET = os.environ.get('CONTROLLER_HMAC_SECRET')
-    
+
     # Security settings
     MAX_TIME_DRIFT_SECONDS = int(os.environ.get('MAX_TIME_DRIFT', '300'))
     TOKEN_EXPIRY_HOURS = int(os.environ.get('TOKEN_EXPIRY_HOURS', '720'))
     REQUIRE_HMAC = os.environ.get('REQUIRE_HMAC', 'true').lower() == 'true'
     REQUIRE_TLS = os.environ.get('REQUIRE_TLS', 'true').lower() == 'true'
-    
+
     # mTLS settings
     TLS_CERT_PATH = os.environ.get('TLS_CERT_PATH', '')
     TLS_KEY_PATH = os.environ.get('TLS_KEY_PATH', '')
     TLS_CA_PATH = os.environ.get('TLS_CA_PATH', '')  # For client cert validation
     MTLS_ENABLED = os.environ.get('MTLS_ENABLED', 'false').lower() == 'true'
-    
+
     # Database
     DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///data/sentinel.db')
-    
+
     # Rate limiting
     RATE_LIMIT_DEFAULT = os.environ.get('RATE_LIMIT_DEFAULT', '100 per minute')
     RATE_LIMIT_SENSOR = os.environ.get('RATE_LIMIT_SENSOR', '200 per minute')
-    
+
     @classmethod
     def validate(cls):
         """Validate required config on startup"""
@@ -76,14 +76,14 @@ class Config:
             else:
                 cls.SECRET_KEY = secrets.token_hex(32)
                 logger.warning("Using auto-generated SECRET_KEY (dev mode)")
-        
+
         if not cls.HMAC_SECRET:
             if os.environ.get('FLASK_ENV') == 'production':
                 errors.append("CONTROLLER_HMAC_SECRET must be set in production")
             else:
                 cls.HMAC_SECRET = 'dev-hmac-secret'
                 logger.warning("Using default HMAC_SECRET (dev mode)")
-        
+
         if errors:
             raise ValueError("Configuration errors:\n" + "\n".join(errors))
 
@@ -103,7 +103,7 @@ if PYDANTIC_AVAILABLE:
         channel: Optional[int] = Field(None, ge=1, le=200)
         rssi_dbm: Optional[int] = Field(None, ge=-120, le=0)
         timestamp: Optional[str] = None
-        
+
         class Config:
             extra = 'allow'
 
@@ -113,8 +113,8 @@ if PYDANTIC_AVAILABLE:
         batch_id: Optional[str] = Field(None, max_length=64)
         timestamp_utc: str
         sequence_number: Optional[int] = Field(None, ge=0)
-        items: List[TelemetryItem] = Field(..., max_items=1000)
-        
+        items: list[TelemetryItem] = Field(..., max_items=1000)
+
         @validator('timestamp_utc')
         def validate_timestamp(cls, v):
             try:
@@ -130,13 +130,13 @@ if PYDANTIC_AVAILABLE:
         title: str = Field(..., max_length=200)
         description: Optional[str] = Field(None, max_length=2000)
         bssid: Optional[str] = None
-        evidence: Optional[Dict] = None
+        evidence: Optional[dict] = None
 
     class HeartbeatRequest(BaseModel):
         """Sensor heartbeat"""
         sensor_id: str
         status: str = Field('online', regex=r'^(online|degraded|offline)$')
-        metrics: Optional[Dict] = None
+        metrics: Optional[dict] = None
         sequence_number: Optional[int] = None
 
 
@@ -147,7 +147,7 @@ def validate_json(model_class):
         def decorated_function(*args, **kwargs):
             if not PYDANTIC_AVAILABLE:
                 return f(*args, **kwargs)
-            
+
             try:
                 data = request.get_json()
                 validated = model_class(**data)
@@ -159,7 +159,7 @@ def validate_json(model_class):
                 }), 400
             except Exception as e:
                 return jsonify({"error": f"Invalid JSON: {str(e)}"}), 400
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -230,21 +230,21 @@ class APIToken:
     last_sequence: int = 0  # For replay protection
 
 
-TOKEN_STORE: Dict[str, APIToken] = {}
-SENSOR_REGISTRY: Dict[str, Dict] = {}
+TOKEN_STORE: dict[str, APIToken] = {}
+SENSOR_REGISTRY: dict[str, dict] = {}
 
 
 def init_default_tokens():
     """Initialize default tokens (dev only)"""
     if os.environ.get('FLASK_ENV') == 'production':
         return
-    
+
     tokens = [
         ("admin-token-dev", "Admin Token", Role.ADMIN, None),
         ("sensor-01-token", "Sensor 01", Role.SENSOR, "sensor-01"),
         ("analyst-token", "Analyst Token", Role.ANALYST, None),
     ]
-    
+
     for token, name, role, sensor_id in tokens:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         TOKEN_STORE[token_hash] = APIToken(
@@ -264,14 +264,14 @@ init_default_tokens()
 def verify_token(token: str) -> Optional[APIToken]:
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     token_obj = TOKEN_STORE.get(token_hash)
-    
+
     if not token_obj or not token_obj.is_active:
         return None
-    
+
     expires = datetime.fromisoformat(token_obj.expires_at.replace('Z', '+00:00'))
     if datetime.now(timezone.utc) > expires:
         return None
-    
+
     token_obj.last_used = datetime.now(timezone.utc).isoformat()
     return token_obj
 
@@ -308,27 +308,27 @@ def require_auth(permission: Permission = None):
             if Config.REQUIRE_TLS and not request.is_secure:
                 if request.headers.get('X-Forwarded-Proto') != 'https':
                     return jsonify({"error": "HTTPS required"}), 403
-            
+
             # Token auth
             auth_header = request.headers.get('Authorization', '')
             token = auth_header[7:] if auth_header.startswith('Bearer ') else request.headers.get('X-API-Key')
-            
+
             if not token:
                 return jsonify({"error": "Missing authentication"}), 401
-            
+
             token_obj = verify_token(token)
             if not token_obj:
                 return jsonify({"error": "Invalid or expired token"}), 401
-            
+
             g.token = token_obj
             g.role = token_obj.role
-            
+
             # Permission check
             if permission:
                 perms = ROLE_PERMISSIONS.get(token_obj.role, [])
                 if permission not in perms and Permission.ADMIN not in perms:
                     return jsonify({"error": "Insufficient permissions"}), 403
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -341,20 +341,20 @@ def require_signed():
         def decorated_function(*args, **kwargs):
             if not Config.REQUIRE_HMAC:
                 return f(*args, **kwargs)
-            
+
             signature = request.headers.get('X-Signature')
             timestamp = request.headers.get('X-Timestamp')
             sequence = request.headers.get('X-Sequence')
-            
+
             if not signature:
                 return jsonify({"error": "Missing signature"}), 400
-            
+
             if not timestamp or not verify_timestamp(timestamp):
                 return jsonify({"error": "Invalid/expired timestamp"}), 400
-            
+
             if not verify_hmac(request.get_data(), signature):
                 return jsonify({"error": "Invalid signature"}), 401
-            
+
             # Sequence check (replay protection)
             if sequence and hasattr(g, 'token'):
                 try:
@@ -363,7 +363,7 @@ def require_signed():
                         return jsonify({"error": "Invalid sequence (replay?)"}), 400
                 except ValueError:
                     pass
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -373,8 +373,8 @@ def require_signed():
 # DATA STORES
 # =============================================================================
 
-TELEMETRY_BUFFER: List[Dict] = []
-ALERTS_BUFFER: List[Dict] = []
+TELEMETRY_BUFFER: list[dict] = []
+ALERTS_BUFFER: list[dict] = []
 
 
 # =============================================================================
@@ -411,14 +411,14 @@ def ingest_telemetry():
         data = g.validated_data.dict()
     else:
         data = request.get_json()
-    
+
     sensor_id = data.get('sensor_id')
     items = data.get('items', [])
     batch_id = data.get('batch_id', secrets.token_hex(8))
-    
+
     if g.token.sensor_id and g.token.sensor_id != sensor_id:
         return jsonify({"error": "Sensor ID mismatch"}), 403
-    
+
     accepted = 0
     for item in items:
         if isinstance(item, dict):
@@ -427,18 +427,18 @@ def ingest_telemetry():
             item['_batch_id'] = batch_id
             TELEMETRY_BUFFER.append(item)
             accepted += 1
-        
+
         if len(TELEMETRY_BUFFER) > 10000:
             TELEMETRY_BUFFER.pop(0)
-    
+
     SENSOR_REGISTRY[sensor_id] = {
         "last_seen": datetime.now(timezone.utc).isoformat(),
         "status": "online",
         "last_batch": batch_id
     }
-    
+
     logger.info(f"Ingested {accepted} items from {sensor_id}")
-    
+
     return jsonify({"success": True, "ack_id": batch_id, "accepted": accepted})
 
 
@@ -447,11 +447,11 @@ def ingest_telemetry():
 def get_telemetry():
     limit = min(int(request.args.get('limit', 100)), 1000)
     sensor_id = request.args.get('sensor_id')
-    
+
     results = TELEMETRY_BUFFER[-limit:]
     if sensor_id:
         results = [r for r in results if r.get('_sensor_id') == sensor_id]
-    
+
     return jsonify({"count": len(results), "items": results})
 
 
@@ -465,7 +465,7 @@ def create_alert():
         data = g.validated_data.dict()
     else:
         data = request.get_json()
-    
+
     alert = {
         "id": secrets.token_hex(8),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -473,10 +473,10 @@ def create_alert():
         **data
     }
     ALERTS_BUFFER.append(alert)
-    
+
     if len(ALERTS_BUFFER) > 1000:
         ALERTS_BUFFER.pop(0)
-    
+
     return jsonify({"success": True, "alert_id": alert["id"]})
 
 
@@ -485,11 +485,11 @@ def create_alert():
 def get_alerts():
     limit = min(int(request.args.get('limit', 50)), 500)
     severity = request.args.get('severity')
-    
+
     results = ALERTS_BUFFER[-limit:]
     if severity:
         results = [a for a in results if a.get('severity', '').lower() == severity.lower()]
-    
+
     return jsonify({"count": len(results), "items": results})
 
 
@@ -508,15 +508,15 @@ def sensor_heartbeat():
         data = g.validated_data.dict()
     else:
         data = request.get_json() or {}
-    
+
     sensor_id = data.get('sensor_id') or g.token.sensor_id or 'unknown'
-    
+
     SENSOR_REGISTRY[sensor_id] = {
         "last_heartbeat": datetime.now(timezone.utc).isoformat(),
         "status": data.get('status', 'online'),
         "metrics": data.get('metrics', {})
     }
-    
+
     return jsonify({
         "success": True,
         "server_time": datetime.now(timezone.utc).isoformat()
@@ -538,16 +538,16 @@ def list_tokens():
 @require_auth(Permission.ADMIN)
 def create_token():
     data = request.get_json() or {}
-    
+
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    
+
     role = data.get('role', 'sensor')
     try:
         role_enum = Role(role)
     except ValueError:
         return jsonify({"error": f"Invalid role: {role}"}), 400
-    
+
     token_obj = APIToken(
         token_id=secrets.token_hex(8),
         token_hash=token_hash,
@@ -558,7 +558,7 @@ def create_token():
         expires_at=(datetime.now(timezone.utc) + timedelta(hours=Config.TOKEN_EXPIRY_HOURS)).isoformat()
     )
     TOKEN_STORE[token_hash] = token_obj
-    
+
     return jsonify({
         "success": True,
         "token": raw_token,
@@ -611,18 +611,18 @@ def openapi_spec():
 
 if __name__ == '__main__':
     import argparse
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='0.0.0.0')
     parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--debug', action='store_true')
-    
+
     args = parser.parse_args()
-    
+
     logger.info("Starting Controller API v2.0.0")
     logger.info(f"TLS required: {Config.REQUIRE_TLS}")
     logger.info(f"HMAC required: {Config.REQUIRE_HMAC}")
     logger.info(f"Rate limit: {Config.RATE_LIMIT_DEFAULT}")
-    
+
     # For production, use Gunicorn with TLS
     app.run(host=args.host, port=args.port, debug=args.debug)

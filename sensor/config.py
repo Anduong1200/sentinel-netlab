@@ -4,12 +4,12 @@ WiFi Scanner Configuration Module
 Centralized configuration settings for the sensor
 """
 
-import os
 import json
 import logging
+import os
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, Any, Optional
-from dataclasses import dataclass, asdict, field
+from typing import Any, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class ConfigManager:
         """Load configuration from file or use defaults."""
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path) as f:
                     data = json.load(f)
                 self._apply_dict(data)
                 logger.info(f"Config loaded from {self.config_path}")
@@ -130,7 +130,7 @@ class ConfigManager:
         # Also check for environment variables
         self._apply_env_vars()
 
-    def _apply_dict(self, data: Dict[str, Any]):
+    def _apply_dict(self, data: dict[str, Any]):
         """Apply dictionary values to config."""
         if "capture" in data:
             for key, value in data["capture"].items():
@@ -163,20 +163,20 @@ class ConfigManager:
         env_mappings = {
             # Legacy Prefixes
             "WIFI_SCANNER_INTERFACE": ("capture", "interface"),
-            
+
             # Docker Standard Prefixes (from docker-compose.yml)
             "SENSOR_INTERFACE": ("capture", "interface"),
             "SENSOR_ID": ("api", "api_key"), # Using ID as key/token for simplicity in mapping
             "SENSOR_AUTH_TOKEN": ("api", "api_key"),
-            
+
             "WIFI_SCANNER_PORT": ("api", "port", int),
             "SERVER_PORT": ("api", "port", int),
-            
+
             "WIFI_SCANNER_API_KEY": ("api", "api_key"),
-            
+
             "WIFI_SCANNER_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
             "SENSOR_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
-            
+
             "WIFI_SCANNER_DEBUG": ("api", "debug", lambda x: x.lower() == "true"),
             "WIFI_SCANNER_DB_PATH": ("storage", "db_path"),
             "WIFI_SCANNER_LOG_LEVEL": ("log_level", None),
@@ -232,7 +232,7 @@ class ConfigManager:
 
         logger.info(f"Config saved to {save_path}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Export configuration as dictionary."""
         return {
             "capture": asdict(self.config.capture),
@@ -243,7 +243,7 @@ class ConfigManager:
             "log_level": self.config.log_level,
         }
 
-    def get_safe_dict(self) -> Dict[str, Any]:
+    def get_safe_dict(self) -> dict[str, Any]:
         """Export configuration without sensitive values (for logging/API)."""
         data = self.to_dict()
         # Mask API key

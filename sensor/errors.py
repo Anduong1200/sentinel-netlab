@@ -7,15 +7,14 @@ Usage:
     from sensor.errors import (
         SensorError, FrameParseError, RadioFailure, NetworkSendError
     )
-    
+
     try:
         parse_frame(data)
     except FrameParseError as e:
         logger.warning(f"Malformed frame: {e}")
 """
 
-from typing import Dict, Any
-
+from typing import Any
 
 # =============================================================================
 # BASE ERRORS
@@ -23,13 +22,13 @@ from typing import Dict, Any
 
 class SentinelError(Exception):
     """Base exception for all Sentinel NetLab errors"""
-    
-    def __init__(self, message: str, code: str = None, details: Dict[str, Any] = None):
+
+    def __init__(self, message: str, code: str = None, details: dict[str, Any] = None):
         super().__init__(message)
         self.code = code or self.__class__.__name__
         self.details = details or {}
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "error": self.code,
             "message": str(self),
@@ -53,7 +52,7 @@ class ControllerError(SentinelError):
 
 class FrameParseError(SensorError):
     """Error parsing WiFi frame data"""
-    
+
     def __init__(self, message: str, frame_type: str = None, offset: int = None):
         super().__init__(message, details={
             "frame_type": frame_type,
@@ -84,7 +83,7 @@ class CorruptedDataError(FrameParseError):
 
 class RadioFailure(SensorError):
     """WiFi radio/adapter failure"""
-    
+
     def __init__(self, message: str, interface: str = None, driver: str = None):
         super().__init__(message, details={
             "interface": interface,
@@ -120,7 +119,7 @@ class CaptureError(RadioFailure):
 
 class NetworkSendError(SensorError):
     """Failed to send data to controller"""
-    
+
     def __init__(self, message: str, url: str = None, status_code: int = None):
         super().__init__(message, details={
             "url": url,
@@ -204,7 +203,7 @@ class SecretNotFoundError(ConfigurationError):
 
 class ValidationError(ControllerError):
     """Request validation failed"""
-    
+
     def __init__(self, message: str, field: str = None, value: Any = None):
         super().__init__(message, details={
             "field": field,
@@ -226,7 +225,7 @@ class TokenExpiredError(ControllerError):
 
 class PermissionDeniedError(ControllerError):
     """Insufficient permissions"""
-    
+
     def __init__(self, message: str, required: str = None, actual: str = None):
         super().__init__(message, details={
             "required": required,

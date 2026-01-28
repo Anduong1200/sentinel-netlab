@@ -5,8 +5,8 @@ Parses raw 802.11 management frames and extracts fields.
 
 import logging
 import struct
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ class ParsedFrame:
     ibss: bool = False
 
     # Information Elements
-    ies: Dict[str, Any] = field(default_factory=dict)
-    ies_present: List[str] = field(default_factory=list)
+    ies: dict[str, Any] = field(default_factory=dict)
+    ies_present: list[str] = field(default_factory=list)
 
     # HT/VHT/HE
     ht_capable: bool = False
@@ -57,8 +57,8 @@ class ParsedFrame:
     wps_enabled: bool = False
     pmf_required: bool = False
     pmf_capable: bool = False
-    rsn_info: Dict[str, Any] = field(default_factory=dict)
-    wpa_info: Dict[str, Any] = field(default_factory=dict)
+    rsn_info: dict[str, Any] = field(default_factory=dict)
+    wpa_info: dict[str, Any] = field(default_factory=dict)
 
     # Raw data
     raw_radiotap: Optional[bytes] = None
@@ -119,7 +119,7 @@ class FrameParser:
         (0, 13): "action",
     }
 
-    def __init__(self, oui_db: Optional[Dict[str, str]] = None):
+    def __init__(self, oui_db: Optional[dict[str, str]] = None):
         """
         Initialize parser.
 
@@ -127,7 +127,7 @@ class FrameParser:
             oui_db: Optional OUI database for vendor lookup
         """
         self.oui_db = oui_db or {}
-        self._dedup_cache: Dict[str, float] = {}
+        self._dedup_cache: dict[str, float] = {}
         self._dedup_window = 5.0  # seconds
 
     def parse(

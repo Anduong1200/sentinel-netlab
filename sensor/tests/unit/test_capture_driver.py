@@ -3,9 +3,10 @@ Sentinel NetLab - Unit Tests for Capture Driver
 Tests capture_driver.py with MockCaptureDriver.
 """
 
-import pytest
-from pathlib import Path
 import time
+from pathlib import Path
+
+import pytest
 
 try:
     from capture_driver import CaptureDriver, MockCaptureDriver, RawFrame

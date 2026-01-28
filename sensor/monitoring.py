@@ -4,9 +4,16 @@ Handles Prometheus metrics and JSON logging configuration.
 """
 
 import logging
-from pythonjsonlogger import jsonlogger
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+
 from flask import Response
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    generate_latest,
+)
+from pythonjsonlogger import jsonlogger
 
 # -----------------------------------------------------------------------------
 # Prometheus Metrics Definitions

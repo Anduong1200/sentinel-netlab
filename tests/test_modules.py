@@ -3,9 +3,9 @@
 Unit tests for WiFi Scanner Sensor modules
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add sensor to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sensor'))
@@ -13,11 +13,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sensor'))
 
 class TestRiskScoring(unittest.TestCase):
     """Test risk scoring module"""
-    
+
     def setUp(self):
         from risk import RiskScorer
         self.scorer = RiskScorer()
-    
+
     def test_open_network_high_risk(self):
         """Open networks should have high risk"""
         network = {
@@ -29,7 +29,7 @@ class TestRiskScoring(unittest.TestCase):
         }
         result = self.scorer.calculate_risk(network)
         self.assertGreaterEqual(result['risk_score'], 70)
-    
+
     def test_wpa3_low_risk(self):
         """WPA3 networks should have lower risk"""
         network = {
@@ -41,7 +41,7 @@ class TestRiskScoring(unittest.TestCase):
         }
         result = self.scorer.calculate_risk(network)
         self.assertLess(result['risk_score'], 50)
-    
+
     def test_score_range(self):
         """Score should be between 0 and 100"""
         network = {
@@ -58,18 +58,18 @@ class TestRiskScoring(unittest.TestCase):
 
 class TestParser(unittest.TestCase):
     """Test parser module"""
-    
+
     def setUp(self):
         from parser import WiFiParser
         self.parser = WiFiParser()
-    
+
     def test_vendor_lookup(self):
         """Test OUI vendor lookup"""
         # TP-Link OUI
         vendor = self.parser.get_vendor("TP:LI:NK:11:22:33")
         # Should return something (might be Unknown if not in DB)
         self.assertIsInstance(vendor, str)
-    
+
     def test_unknown_vendor(self):
         """Unknown OUI should return 'Unknown'"""
         vendor = self.parser.get_vendor("00:00:00:00:00:00")
@@ -78,11 +78,11 @@ class TestParser(unittest.TestCase):
 
 class TestStorage(unittest.TestCase):
     """Test storage module (in-memory only)"""
-    
+
     def setUp(self):
         from storage import MemoryStorage
         self.storage = MemoryStorage()
-    
+
     def test_add_network(self):
         """Test adding a network"""
         network = {
@@ -91,7 +91,7 @@ class TestStorage(unittest.TestCase):
         }
         self.storage.update(network)
         self.assertEqual(self.storage.count(), 1)
-    
+
     def test_update_network(self):
         """Test updating existing network"""
         network = {
@@ -100,14 +100,14 @@ class TestStorage(unittest.TestCase):
             "signal": -60
         }
         self.storage.update(network)
-        
+
         # Update with new signal
         network["signal"] = -50
         self.storage.update(network)
-        
+
         # Should still be 1 network
         self.assertEqual(self.storage.count(), 1)
-    
+
     def test_clear(self):
         """Test clearing storage"""
         self.storage.update({"ssid": "Test", "bssid": "11:22:33:44:55:66"})

@@ -4,14 +4,10 @@ Integration tests with mock mode for CI.
 Run: pytest tests/integration/ -v --tb=short
 """
 
-import pytest
-import json
 import time
-import threading
-import requests
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
 
+import pytest
 
 # =============================================================================
 # FIXTURES
@@ -79,7 +75,7 @@ class TestFullPipelineMock:
         from algos.risk import RiskScorer
 
         scorer = RiskScorer()
-        
+
         results = []
         for network in mock_networks:
             score = scorer.score(network)
@@ -88,11 +84,11 @@ class TestFullPipelineMock:
                 'security': network['security'],
                 'risk_score': score
             })
-        
+
         # Open network should have highest risk
         open_net = [r for r in results if r['security'] == 'Open'][0]
         secure_net = [r for r in results if r['security'] == 'WPA2'][0]
-        
+
         assert open_net['risk_score'] > secure_net['risk_score']
         assert len(results) == 3
 
@@ -101,7 +97,7 @@ class TestFullPipelineMock:
         from algos.evil_twin import AdvancedEvilTwinDetector as EvilTwinDetector
 
         detector = EvilTwinDetector()
-        
+
         alerts = []
         for network in mock_networks:
             result = detector.ingest({
@@ -113,17 +109,17 @@ class TestFullPipelineMock:
             })
             if result:
                 alerts.append(result)
-        
+
         # Should detect the evil twin (same SSID, different BSSID)
         # Note: Detection depends on implementation details
         assert len(alerts) >= 0  # Relaxed assertion for CI
 
     def test_audit_full_cycle(self, mock_networks):
         """Test: Full audit cycle"""
-        from sensor.audit import SecurityAuditor, NetworkInfo
+        from sensor.audit import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor", profile="home")
-        
+
         for net in mock_networks:
             network = NetworkInfo(
                 bssid=net['bssid'],
@@ -134,9 +130,9 @@ class TestFullPipelineMock:
                 capabilities=net.get('capabilities', {})
             )
             auditor.audit_network(network)
-        
+
         report_data = auditor.generate_report_data(duration_sec=5.0)
-        
+
         # Verify report structure
         assert 'report' in report_data
         assert 'findings' in report_data
@@ -163,7 +159,7 @@ class TestControllerAPIMock:
         """Test health check"""
         response = app_client.get('/api/v1/health')
         assert response.status_code == 200
-        
+
         data = response.get_json()
         assert data['status'] == 'ok'
         assert 'timestamp' in data
@@ -172,7 +168,7 @@ class TestControllerAPIMock:
         """Test time sync"""
         response = app_client.get('/api/v1/time')
         assert response.status_code == 200
-        
+
         data = response.get_json()
         assert 'server_time' in data
         assert 'unix_timestamp' in data
@@ -193,7 +189,7 @@ class TestControllerAPIMock:
                 'X-Signature': 'dummy'  # HMAC disabled for testing
             }
         )
-        
+
         # Should work with valid token (HMAC may fail in test)
         assert response.status_code in [200, 400, 401]
 
@@ -218,13 +214,13 @@ class TestDeauthFloodIntegration:
         from algos.dos import DeauthFloodDetector
 
         detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
-        
+
         target_bssid = "AA:BB:CC:11:22:33"
         alerts_triggered = []
-        
+
         # Simulate flood of 20 deauth frames
-        base_time = time.time()
-        for i in range(20):
+        time.time()
+        for _i in range(20):
             # DeauthFloodDetector.ingest not available, must use record_deauth
             # But tests used ingest(event). I need to adapt the test to use record_deauth(bssid, client...)
             alert = detector.record_deauth(
@@ -234,10 +230,10 @@ class TestDeauthFloodIntegration:
             )
             if alert:
                 alerts_triggered.append(alert)
-        
+
         # Should have triggered at least one alert
         assert len(alerts_triggered) >= 1
-        
+
         # Verify alert content
         alert = alerts_triggered[0]
         assert target_bssid in str(alert)
@@ -247,10 +243,10 @@ class TestDeauthFloodIntegration:
         from algos.dos import DeauthFloodDetector
 
         detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
-        
+
         # Only 5 deauths (below threshold)
-        base_time = time.time()
-        for i in range(5):
+        time.time()
+        for _i in range(5):
             alert = detector.record_deauth(
                 bssid="AA:BB:CC:11:22:33",
                 client_mac="11:22:33:44:55:66",
@@ -268,22 +264,23 @@ class TestMessageSigningIntegration:
 
     def test_sign_and_verify_roundtrip(self):
         """Test signing roundtrip"""
-        from sensor.message_signing import SecureTransport
-        import hmac as hmac_lib
         import hashlib
+        import hmac as hmac_lib
+
+        from sensor.message_signing import SecureTransport
 
         secret = "test-shared-secret"
-        
+
         transport = SecureTransport(
             controller_url="http://localhost:5000",
             auth_token="test-token",
             hmac_secret=secret,
             verify_ssl=False
         )
-        
+
         payload = b'{"sensor_id": "test", "data": [1,2,3]}'
         signature = transport.sign_payload(payload)
-        
+
         # Verify manually
         expected = hmac_lib.new(secret.encode(), payload, hashlib.sha256).hexdigest()
         assert signature == expected

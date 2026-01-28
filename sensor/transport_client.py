@@ -14,21 +14,21 @@ Environment Variables:
 - SENSOR_VERIFY_SSL: Set to 'false' only for self-signed certs in dev
 """
 
-import os
 import gzip
-import json
-import time
-import logging
-import threading
 import hashlib
 import hmac
-from typing import Optional, Dict, Any
+import json
+import logging
+import os
+import threading
+import time
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
-def load_config_from_env() -> Dict[str, Any]:
+def load_config_from_env() -> dict[str, Any]:
     """Load transport configuration from environment variables."""
     return {
         'upload_url': os.environ.get('CONTROLLER_URL', 'https://localhost:5000/api/v1/telemetry'),
@@ -102,9 +102,9 @@ class TransportClient:
 
     def upload(
         self,
-        batch: Dict[str, Any],
+        batch: dict[str, Any],
         compress: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Upload batch to controller.
 
@@ -250,7 +250,7 @@ class TransportClient:
                 logger.warning(
                     "Circuit breaker opened due to repeated failures")
 
-    def heartbeat(self, status: Dict[str, Any]) -> Dict[str, Any]:
+    def heartbeat(self, status: dict[str, Any]) -> dict[str, Any]:
         """
         Send heartbeat to controller.
 
@@ -284,7 +284,7 @@ class TransportClient:
 
         return {'success': False, 'commands': []}
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get transport statistics"""
         with self._lock:
             return {

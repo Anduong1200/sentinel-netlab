@@ -4,12 +4,13 @@ Sentinel NetLab Sensor - CLI Entry Point
 Validates flags, loads config, and starts sensor controller.
 """
 
-import sys
-import yaml
-import logging
 import argparse
+import logging
+import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Optional
+
+import yaml
 
 # Setup path
 # Add sensor and project root to path
@@ -18,7 +19,7 @@ sys.path.insert(0, str(SENSOR_DIR))
 sys.path.insert(0, str(SENSOR_DIR.parent))
 
 
-def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
+def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
     """Load configuration from YAML file"""
     if config_file and Path(config_file).exists():
         with open(config_file) as f:
@@ -82,7 +83,7 @@ def validate_preconditions(args: argparse.Namespace) -> bool:
 
 
 def merge_config(args: argparse.Namespace,
-                 file_config: Dict) -> Dict[str, Any]:
+                 file_config: dict) -> dict[str, Any]:
     """Merge CLI args with file config (CLI takes precedence)"""
     config = {
         'sensor': {
@@ -131,7 +132,7 @@ def setup_logging(level: str) -> None:
     )
 
 
-def print_banner(config: Dict) -> None:
+def print_banner(config: dict) -> None:
     """Print startup banner"""
     print("=" * 60)
     print("  Sentinel NetLab Sensor")

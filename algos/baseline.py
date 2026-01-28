@@ -5,7 +5,7 @@ Sentinel NetLab - Time-Series Baseline
 
 import logging
 from datetime import datetime, timezone
-from typing import Dict, Set, Optional
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,13 +21,13 @@ class TimeSeriesBaseline:
         self.min_observations = min_observations
 
         # Baselines per BSSID
-        self.baselines: Dict[str, Dict] = {}
+        self.baselines: dict[str, dict] = {}
 
         # Learning state
         self.learning_start = datetime.now(timezone.utc)
         self.is_learning = True
 
-    def update(self, bssid: str, data: Dict) -> Optional[Dict]:
+    def update(self, bssid: str, data: dict) -> Optional[dict]:
         """
         Update baseline with new observation.
         Returns anomaly dict if deviation detected.
@@ -53,7 +53,7 @@ class TimeSeriesBaseline:
 
         return None
 
-    def _init_baseline(self) -> Dict:
+    def _init_baseline(self) -> dict:
         """Initialize baseline structure"""
         return {
             'observations': 0,
@@ -77,7 +77,7 @@ class TimeSeriesBaseline:
             'hourly_activity': [0] * 24
         }
 
-    def _update_stats(self, baseline: Dict, data: Dict):
+    def _update_stats(self, baseline: dict, data: dict):
         """Update baseline statistics"""
         baseline['observations'] += 1
         baseline['last_seen'] = datetime.now(timezone.utc).isoformat()
@@ -108,7 +108,7 @@ class TimeSeriesBaseline:
         hour = datetime.now(timezone.utc).hour
         baseline['hourly_activity'][hour] += 1
 
-    def _check_anomalies(self, baseline: Dict, data: Dict) -> Optional[Dict]:
+    def _check_anomalies(self, baseline: dict, data: dict) -> Optional[dict]:
         """Check for deviations from baseline"""
         anomalies = []
         n = baseline['observations']
@@ -150,7 +150,7 @@ class TimeSeriesBaseline:
 
         return None
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         """Get baseline learning status"""
         elapsed = (datetime.now(timezone.utc)
                    - self.learning_start).total_seconds() / 3600

@@ -8,12 +8,11 @@ Use ONLY on networks you own or have written authorization to test.
 See ETHICS.md for legal guidelines.
 """
 
-import os
-import sys
 import logging
-import time
+import os
 import random
-from typing import List
+import sys
+import time
 from dataclasses import dataclass
 
 logging.basicConfig(level=logging.INFO)
@@ -31,8 +30,8 @@ class LabSafetyConfig:
     require_confirmation: bool = True
     max_deauth_count: int = 100
     max_beacon_count: int = 500
-    allowed_bssid_prefixes: List[str] = None  # None = check disabled
-    forbidden_bssid_prefixes: List[str] = None
+    allowed_bssid_prefixes: list[str] = None  # None = check disabled
+    forbidden_bssid_prefixes: list[str] = None
     rate_limit_per_sec: float = 10.0
 
     def __post_init__(self):
@@ -65,15 +64,15 @@ class LabSafetyChecker:
             raise LabSafetyError(
                 "Lab mode not enabled. Set SENTINEL_LAB_MODE=true to enable attacks.\n"
                 "WARNING: Only use on networks you own or have authorization to test.")
-        
+
         # Additional Authentication Check (Double Lock)
         auth_key = os.environ.get('SENTINEL_AUTH_KEY', '')
         # In production this should be a strong secret, for lab defaults we check it's set
-        if not auth_key or auth_key == 'change_me': 
+        if not auth_key or auth_key == 'change_me':
              raise LabSafetyError(
                 "Authentication key required. Set SENTINEL_AUTH_KEY to a secure value.\n"
                 "Refusing to run active attacks without authorization key.")
-                
+
         return True
 
     def check_bssid(self, bssid: str) -> bool:
@@ -159,7 +158,7 @@ class LabSafetyChecker:
         self.confirm_attack("Deauthentication", target_bssid, count)
         return True
 
-    def validate_beacon_flood(self, ssid_list: List[str], count: int) -> bool:
+    def validate_beacon_flood(self, ssid_list: list[str], count: int) -> bool:
         """Full validation for beacon flood"""
         self.check_environment()
         self.check_count(count, self.config.max_beacon_count, "Beacon flood")
@@ -189,7 +188,14 @@ class AttackEngine:
         """Lazy import scapy to avoid import errors on systems without it"""
         if not self._scapy_imported:
             global Dot11, Dot11Beacon, Dot11Elt, RadioTap, Dot11Deauth, sendp
-            from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, Dot11Deauth, sendp
+            from scapy.all import (
+                Dot11,
+                Dot11Beacon,
+                Dot11Deauth,
+                Dot11Elt,
+                RadioTap,
+                sendp,
+            )
             self._scapy_imported = True
 
     def deauth(
@@ -226,7 +232,7 @@ class AttackEngine:
 
             rate_delay = 1.0 / self.safety.config.rate_limit_per_sec
 
-            for i in range(count):
+            for _i in range(count):
                 sendp(packet, iface=self.interface, verbose=False)
                 time.sleep(rate_delay)
 
@@ -239,7 +245,7 @@ class AttackEngine:
             logger.error(f"[ATTACK] Deauth failed: {e}")
             raise
 
-    def beacon_flood(self, ssid_list: List[str], count: int = 100):
+    def beacon_flood(self, ssid_list: list[str], count: int = 100):
         """
         Perform Beacon Flood (Fake AP) attack.
 
@@ -261,14 +267,10 @@ class AttackEngine:
 
             rate_delay = 1.0 / self.safety.config.rate_limit_per_sec
 
-            for i in range(count):
+            for _i in range(count):
                 ssid = random.choice(ssid_list)
                 # Random BSSID with locally administered bit set
-                src_mac = "02:00:00:%02x:%02x:%02x" % (
-                    random.randint(0, 255),
-                    random.randint(0, 255),
-                    random.randint(0, 255)
-                )
+                src_mac = f"02:00:00:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}"
 
                 # Create Beacon
                 dot11 = Dot11(

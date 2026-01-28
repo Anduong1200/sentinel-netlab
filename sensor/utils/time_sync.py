@@ -3,11 +3,11 @@ Sentinel NetLab - Time Sync Utilities
 NTP and GPS time synchronization helpers.
 """
 
-import time
 import logging
 import subprocess
-from typing import Optional, Tuple
+import time
 from datetime import datetime, timezone
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class TimeSync:
         self._is_synced = False
         self._sync_source: Optional[str] = None
 
-    def check_ntp_sync(self) -> Tuple[bool, str]:
+    def check_ntp_sync(self) -> tuple[bool, str]:
         """
         Check if system is NTP synchronized.
 

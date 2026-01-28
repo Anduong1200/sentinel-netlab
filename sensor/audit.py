@@ -8,16 +8,16 @@ Usage:
     python audit.py --profile sme --format html --output report.html
 """
 
-import sys
+import argparse
 import json
 import logging
-import argparse
 import re
+import sys
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
-from dataclasses import dataclass, asdict, field
-from typing import Optional, Dict, List, Any
 from enum import Enum
+from pathlib import Path
+from typing import Any, Optional
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,13 +65,13 @@ class Finding:
     status: str
     description: str
     evidence_summary: str = ""
-    evidence: List[str] = field(default_factory=list)
+    evidence: list[str] = field(default_factory=list)
     evidence_raw: Optional[str] = None
     remediation: str = ""
     remediation_summary: str = ""
-    remediation_commands: List[str] = field(default_factory=list)
+    remediation_commands: list[str] = field(default_factory=list)
     timeline: str = ""
-    references: List[Dict[str, str]] = field(default_factory=list)
+    references: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -86,8 +86,8 @@ class NetworkInfo:
     pmf_enabled: bool = False
     hidden: bool = False
     vendor_oui: Optional[str] = None
-    rsn_info: Dict = field(default_factory=dict)
-    capabilities: Dict = field(default_factory=dict)
+    rsn_info: dict = field(default_factory=dict)
+    capabilities: dict = field(default_factory=dict)
 
 
 # =============================================================================
@@ -102,7 +102,7 @@ class ChecklistLoader:
             rules_dir = Path(__file__).parent / "rules"
         self.rules_dir = rules_dir
 
-    def load_checklist(self, profile: str) -> List[Dict]:
+    def load_checklist(self, profile: str) -> list[dict]:
         """Load checklist for profile (home/sme)"""
         filename = f"audit-{profile}-checklist.json"
         filepath = self.rules_dir / filename
@@ -111,10 +111,10 @@ class ChecklistLoader:
             logger.warning(f"Checklist not found: {filepath}")
             return []
 
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding='utf-8') as f:
             return json.load(f)
 
-    def get_profiles(self) -> List[str]:
+    def get_profiles(self) -> list[str]:
         """List available profiles"""
         profiles = []
         for f in self.rules_dir.glob("audit-*-checklist.json"):
@@ -134,16 +134,16 @@ class SecurityAuditor:
     def __init__(self, sensor_id: str, profile: str = "home"):
         self.sensor_id = sensor_id
         self.profile = profile
-        self.findings: List[Finding] = []
-        self.networks: List[NetworkInfo] = []
-        self.manual_findings: List[Finding] = []
+        self.findings: list[Finding] = []
+        self.networks: list[NetworkInfo] = []
+        self.manual_findings: list[Finding] = []
 
         # Load checklist
         loader = ChecklistLoader()
         self.checklist = loader.load_checklist(profile)
         logger.info(f"Loaded {len(self.checklist)} rules for profile '{profile}'")
 
-    def evaluate_network(self, network: NetworkInfo) -> List[Finding]:
+    def evaluate_network(self, network: NetworkInfo) -> list[Finding]:
         """Evaluate a network against checklist rules"""
         findings = []
 
@@ -154,7 +154,7 @@ class SecurityAuditor:
 
         return findings
 
-    def _evaluate_rule(self, rule: Dict, network: NetworkInfo) -> Optional[Finding]:
+    def _evaluate_rule(self, rule: dict, network: NetworkInfo) -> Optional[Finding]:
         """Evaluate single rule against network"""
         rule_id = rule.get('id', 'UNKNOWN')
         detection = rule.get('detection_rule', '')
@@ -243,7 +243,7 @@ class SecurityAuditor:
             if not any(f.id == finding.id for f in self.findings):
                 self.findings.append(finding)
 
-    def _run_legacy_checks(self, network: NetworkInfo) -> List[Finding]:
+    def _run_legacy_checks(self, network: NetworkInfo) -> list[Finding]:
         """Built-in checks for backward compatibility"""
         findings = []
 
@@ -286,7 +286,7 @@ class SecurityAuditor:
         self.manual_findings.append(finding)
         self.findings.append(finding)
 
-    def generate_report_data(self, duration_sec: float) -> Dict[str, Any]:
+    def generate_report_data(self, duration_sec: float) -> dict[str, Any]:
         """Generate report data structure for template rendering"""
         # Sort findings by severity
         severity_order = ['Critical', 'High', 'Medium', 'Low', 'Info']
@@ -325,7 +325,7 @@ class SecurityAuditor:
             }
         }
 
-    def _generate_exec_summary(self, counts: Dict[str, int]) -> str:
+    def _generate_exec_summary(self, counts: dict[str, int]) -> str:
         """Generate executive summary text"""
         total = sum(counts.values())
         if total == 0:
@@ -343,7 +343,7 @@ class SecurityAuditor:
 
         return f"Phát hiện {total} vấn đề bảo mật: {', '.join(parts)}. Xem chi tiết bên dưới."
 
-    def _generate_action_plan(self, findings: List[Finding]) -> List[Dict]:
+    def _generate_action_plan(self, findings: list[Finding]) -> list[dict]:
         """Generate prioritized action plan"""
         actions = []
         seen_titles = set()
@@ -383,7 +383,7 @@ class ReportGenerator:
             templates_dir = Path(__file__).parent / "templates"
         self.templates_dir = templates_dir
 
-    def render_html(self, data: Dict[str, Any]) -> str:
+    def render_html(self, data: dict[str, Any]) -> str:
         """Render HTML report using Jinja2"""
         try:
             from jinja2 import Environment, FileSystemLoader
@@ -398,11 +398,11 @@ class ReportGenerator:
         template = env.get_template("report_template.html")
         return template.render(**data)
 
-    def render_json(self, data: Dict[str, Any]) -> str:
+    def render_json(self, data: dict[str, Any]) -> str:
         """Render JSON report"""
         return json.dumps(data, indent=2, ensure_ascii=False)
 
-    def save_report(self, data: Dict[str, Any], output_path: Path, format: str = "json"):
+    def save_report(self, data: dict[str, Any], output_path: Path, format: str = "json"):
         """Save report to file"""
         if format == "html":
             content = self.render_html(data)
@@ -419,7 +419,7 @@ class ReportGenerator:
 # MOCK DATA
 # =============================================================================
 
-def scan_mock_networks() -> List[NetworkInfo]:
+def scan_mock_networks() -> list[NetworkInfo]:
     """Generate mock networks for testing"""
     return [
         NetworkInfo(

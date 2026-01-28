@@ -4,38 +4,42 @@ WiFi Scanner API Server - Run in Kali VM
 # Integrated version using modular components.
 """
 
-from flask import Flask, jsonify, request, Response
+import logging
+import os
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from datetime import datetime
-import logging
-import os
-import time
-import sys
-from pathlib import Path
 
 # Add project root to path for "algos" import
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modular components
-from capture import CaptureEngine, check_monitor_support
 from parser import WiFiParser
-from storage import WiFiStorage, MemoryStorage
-from algos.risk import RiskScorer
+
 from attacks import AttackEngine
+from capture import CaptureEngine, check_monitor_support
 from forensics import analyze_pcap
 
 # Import monitoring
 from monitoring import (
-    setup_json_logging,
-    prometheus_metrics_endpoint,
-    REQUESTS,
-    LATENCY,
-    SCAN_DURATION,
-    NETWORKS_FOUND,
     ACTIVE_ALERTS,
-    SYSTEM_INFO)
+    LATENCY,
+    NETWORKS_FOUND,
+    REQUESTS,
+    SCAN_DURATION,
+    SYSTEM_INFO,
+    prometheus_metrics_endpoint,
+    setup_json_logging,
+)
+from storage import MemoryStorage, WiFiStorage
+
+from algos.risk import RiskScorer
 
 # Setup JSON logging
 setup_json_logging()
@@ -252,7 +256,7 @@ def get_simulation_data():
     encryptions = ["Open", "WEP", "WPA2-PSK", "WPA3-SAE"]
 
     networks = []
-    for i in range(random.randint(3, 8)):
+    for _i in range(random.randint(3, 8)):
         vendor = random.choice(vendors)
         networks.append({
             "ssid": f"{vendor}_{random.randint(100, 999)}",

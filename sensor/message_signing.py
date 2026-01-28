@@ -5,7 +5,7 @@ HMAC-SHA256 signing for sensor→controller messages.
 
 Usage:
     from message_signing import SecureTransport
-    
+
     transport = SecureTransport(
         controller_url='https://controller:5000',
         auth_token='sensor-token',
@@ -14,14 +14,15 @@ Usage:
     transport.send_telemetry(batch)
 """
 
-import os
-import time
-import hmac
 import hashlib
+import hmac
 import json
 import logging
+import os
+import time
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Any
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -50,11 +51,11 @@ class SecureTransport:
         self.sensor_id = sensor_id or os.environ.get('SENSOR_ID', 'unknown')
         self.verify_ssl = verify_ssl
         self.timeout = timeout
-        
+
         # Time offset from server
         self._time_offset = 0.0
         self._last_sync = 0
-        
+
     def sync_time(self) -> bool:
         """Sync time with controller"""
         try:
@@ -73,16 +74,16 @@ class SecureTransport:
         except Exception as e:
             logger.warning(f"Time sync failed: {e}")
         return False
-    
+
     def get_server_time(self) -> datetime:
         """Get estimated server time"""
         # Sync every 5 minutes
         if time.time() - self._last_sync > 300:
             self.sync_time()
-        
+
         adjusted = time.time() + self._time_offset
         return datetime.fromtimestamp(adjusted, tz=timezone.utc)
-    
+
     def sign_payload(self, payload: bytes) -> str:
         """Sign payload with HMAC-SHA256"""
         signature = hmac.new(
@@ -91,11 +92,11 @@ class SecureTransport:
             hashlib.sha256
         )
         return signature.hexdigest()
-    
-    def _build_headers(self, payload: bytes) -> Dict[str, str]:
+
+    def _build_headers(self, payload: bytes) -> dict[str, str]:
         """Build request headers with auth and signature"""
         timestamp = self.get_server_time().isoformat()
-        
+
         headers = {
             'Authorization': f'Bearer {self.auth_token}',
             'Content-Type': 'application/json',
@@ -104,20 +105,20 @@ class SecureTransport:
             'X-Sensor-ID': self.sensor_id
         }
         return headers
-    
-    def send_telemetry(self, batch: Dict[str, Any]) -> Dict[str, Any]:
+
+    def send_telemetry(self, batch: dict[str, Any]) -> dict[str, Any]:
         """
         Send telemetry batch with signing.
-        
+
         Args:
             batch: {sensor_id, items, ...}
-            
+
         Returns:
             {success, ack_id, accepted} or {success:False, error}
         """
         payload = json.dumps(batch).encode()
         headers = self._build_headers(payload)
-        
+
         try:
             response = requests.post(
                 f"{self.controller_url}/api/v1/telemetry",
@@ -126,7 +127,7 @@ class SecureTransport:
                 timeout=self.timeout,
                 verify=self.verify_ssl
             )
-            
+
             if response.status_code == 200:
                 return response.json()
             else:
@@ -134,19 +135,19 @@ class SecureTransport:
                     'success': False,
                     'error': f"HTTP {response.status_code}: {response.text[:200]}"
                 }
-                
+
         except requests.exceptions.Timeout:
             return {'success': False, 'error': 'Request timeout'}
         except requests.exceptions.ConnectionError as e:
             return {'success': False, 'error': f'Connection error: {str(e)[:100]}'}
         except Exception as e:
             return {'success': False, 'error': str(e)[:100]}
-    
-    def send_alert(self, alert: Dict[str, Any]) -> Dict[str, Any]:
+
+    def send_alert(self, alert: dict[str, Any]) -> dict[str, Any]:
         """Send alert to controller"""
         payload = json.dumps(alert).encode()
         headers = self._build_headers(payload)
-        
+
         try:
             response = requests.post(
                 f"{self.controller_url}/api/v1/alerts",
@@ -158,8 +159,8 @@ class SecureTransport:
             return response.json() if response.status_code == 200 else {'success': False}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-    
-    def heartbeat(self, status: Dict[str, Any] = None) -> Dict[str, Any]:
+
+    def heartbeat(self, status: dict[str, Any] = None) -> dict[str, Any]:
         """Send heartbeat to controller"""
         data = {
             'sensor_id': self.sensor_id,
@@ -168,7 +169,7 @@ class SecureTransport:
         }
         payload = json.dumps(data).encode()
         headers = self._build_headers(payload)
-        
+
         try:
             response = requests.post(
                 f"{self.controller_url}/api/v1/sensors/heartbeat",
@@ -200,14 +201,14 @@ def create_from_env() -> SecureTransport:
 def main():
     """Test secure transport"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Test Secure Transport')
     parser.add_argument('--url', default='http://localhost:5000', help='Controller URL')
     parser.add_argument('--token', default='sensor-01-token', help='Auth token')
     parser.add_argument('--secret', default='dev-hmac-secret', help='HMAC secret')
-    
+
     args = parser.parse_args()
-    
+
     transport = SecureTransport(
         controller_url=args.url,
         auth_token=args.token,
@@ -215,10 +216,10 @@ def main():
         sensor_id='test-sensor',
         verify_ssl=False
     )
-    
+
     print("[+] Syncing time...")
     transport.sync_time()
-    
+
     print("[+] Sending test telemetry...")
     result = transport.send_telemetry({
         'sensor_id': 'test-sensor',
@@ -227,7 +228,7 @@ def main():
         ]
     })
     print(f"    Result: {result}")
-    
+
     print("[+] Sending heartbeat...")
     result = transport.heartbeat({'cpu': 15, 'memory': 45})
     print(f"    Result: {result}")

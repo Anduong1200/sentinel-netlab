@@ -4,13 +4,13 @@ WiFi Storage Module - SQLite database and PCAP file management
 Handles persistence of network data and packet captures
 """
 
-import os
-import sqlite3
 import json
 import logging
+import os
+import sqlite3
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
 from pathlib import Path
+from typing import Any, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ class WiFiStorage:
         self.pcap_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"PCAP directory: {self.pcap_dir}")
 
-    def store_networks(self, networks: List[Dict[str, Any]]) -> int:
+    def store_networks(self, networks: list[dict[str, Any]]) -> int:
         """
         Store or update network records in database.
 
@@ -172,7 +172,7 @@ class WiFiStorage:
         limit: int = 100,
         offset: int = 0,
         order_by: str = "last_seen DESC"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve networks from database.
 
@@ -201,13 +201,13 @@ class WiFiStorage:
             SELECT * FROM networks
             ORDER BY {order_by}
             LIMIT ? OFFSET ?
-        """, (limit, offset))
+        """, (limit, offset))  # noqa: S608
 
         networks = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return networks
 
-    def get_network_by_bssid(self, bssid: str) -> Optional[Dict[str, Any]]:
+    def get_network_by_bssid(self, bssid: str) -> Optional[dict[str, Any]]:
         """Get a single network by BSSID."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -254,7 +254,7 @@ class WiFiStorage:
         conn.close()
         return scan_id
 
-    def get_scan_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_scan_history(self, limit: int = 20) -> list[dict[str, Any]]:
         """Get recent scan history."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
@@ -364,7 +364,7 @@ class WiFiStorage:
             except Exception as e:
                 logger.warning(f"Failed to delete {oldest}: {e}")
 
-    def get_pcap_stats(self) -> Dict[str, Any]:
+    def get_pcap_stats(self) -> dict[str, Any]:
         """Get statistics about stored PCAP files."""
         if not self.pcap_dir.exists():
             return {
@@ -420,16 +420,16 @@ class MemoryStorage:
     """
 
     def __init__(self):
-        self.networks: Dict[str, Dict[str, Any]] = {}
+        self.networks: dict[str, dict[str, Any]] = {}
         self.scan_start: Optional[datetime] = None
 
-    def update(self, network: Dict[str, Any]):
+    def update(self, network: dict[str, Any]):
         """Update or add a network."""
         bssid = network.get("bssid", "").upper()
         if bssid:
             self.networks[bssid] = network
 
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> list[dict[str, Any]]:
         """Get all networks."""
         return list(self.networks.values())
 

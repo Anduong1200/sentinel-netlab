@@ -8,11 +8,11 @@ Usage:
 3. Deploy model for inference using `detect_anomaly()`
 """
 
-import torch
-import torch.nn as nn
-import numpy as np
 import logging
 import os
+
+import torch
+import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +49,16 @@ def train_model(data_matrix, epochs=50, lr=0.001, save_path='model.pth'):
     if data_matrix.size == 0:
         logger.error("No data to train on")
         return None
-        
+
     input_dim = data_matrix.shape[1]
     model = SimpleAutoencoder(input_dim)
-    
+
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    
+
     # Convert to tensor
     tensor_data = torch.tensor(data_matrix, dtype=torch.float32)
-    
+
     model.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
@@ -66,15 +66,15 @@ def train_model(data_matrix, epochs=50, lr=0.001, save_path='model.pth'):
         loss = criterion(output, tensor_data)
         loss.backward()
         optimizer.step()
-        
+
         if epoch % 10 == 0:
             logger.info(f"Epoch {epoch}/{epochs}, Loss: {loss.item():.4f}")
-            
+
     # Save
     if save_path:
         torch.save(model.state_dict(), save_path)
         logger.info(f"Model saved to {save_path}")
-        
+
     return model
 
 def load_model(path, input_dim):
@@ -93,10 +93,10 @@ def detect_anomaly(model, new_vector, threshold=0.05):
     """
     if model is None:
         return False, 0.0
-        
+
     with torch.no_grad():
         inputs = torch.tensor(new_vector, dtype=torch.float32)
         reconstruction = model(inputs)
         loss = torch.mean((inputs - reconstruction) ** 2).item()
-        
+
     return loss > threshold, loss

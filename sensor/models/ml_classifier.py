@@ -6,16 +6,16 @@ Currently a STUB - provides fallback to heuristic scoring.
 To enable full ML: pip install scikit-learn joblib
 """
 
-import os
 import logging
-from typing import Dict, List, Optional
+import os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 MODEL_PATH = "models/risk_classifier.joblib"
 
 
-def predict_risk(features: Dict[str, float]) -> Dict:
+def predict_risk(features: dict[str, float]) -> dict:
     """
     Predict risk using ML model if available, else return None.
 
@@ -45,7 +45,7 @@ def predict_risk(features: Dict[str, float]) -> Dict:
     return None
 
 
-def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
+def train_model(labeled_data: list[dict], save_path: str = MODEL_PATH) -> dict:
     """
     Train a simple Logistic Regression model from labeled data.
 
@@ -57,10 +57,10 @@ def train_model(labeled_data: List[Dict], save_path: str = MODEL_PATH) -> Dict:
         Dict with training metrics
     """
     try:
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.model_selection import cross_val_score
         import joblib
         import numpy as np
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.model_selection import cross_val_score
 
         # Prepare data
         X = [list(d["features"].values()) for d in labeled_data]
@@ -113,7 +113,7 @@ class RiskClassifier:
         except Exception as e:
             logger.warning(f"Could not load model: {e}")
 
-    def predict(self, features: Dict[str, float]) -> Optional[Dict]:
+    def predict(self, features: dict[str, float]) -> Optional[dict]:
         if self.model is None:
             return None
         try:

@@ -3,9 +3,9 @@ Feature Extraction Module for Wireless Risk Analysis.
 Transforms raw network metadata into normalized numerical feature vectors (0.0 to 1.0).
 """
 
-import re
 import logging
-from typing import Dict, Any
+import re
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class FeatureExtractor:
     Extracts features from network dictionaries for use in Risk Scoring or ML.
     """
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: dict[str, Any] = None):
         self.config = config or {}
         self.mappings = self.config.get('feature_mappings', {})
 
@@ -33,7 +33,7 @@ class FeatureExtractor:
             "meraki",
             "ruckus"]
 
-    def extract(self, network: Dict[str, Any]) -> Dict[str, float]:
+    def extract(self, network: dict[str, Any]) -> dict[str, float]:
         """
         Main extraction entry point.
         Returns a dictionary of normalized float features.
@@ -54,7 +54,7 @@ class FeatureExtractor:
 
         return features
 
-    def _extract_encryption(self, network: Dict) -> float:
+    def _extract_encryption(self, network: dict) -> float:
         enc_str = str(network.get('encryption', 'OPEN')).upper()
         mapping = self.mappings.get('encryption', {})
 
@@ -69,7 +69,7 @@ class FeatureExtractor:
             return mapping.get('WEP', 0.9)
         return mapping.get('OPEN', 1.0)
 
-    def _extract_rssi(self, network: Dict) -> float:
+    def _extract_rssi(self, network: dict) -> float:
         try:
             rssi = float(network.get('signal', -100))
         except (ValueError, TypeError):
@@ -82,7 +82,7 @@ class FeatureExtractor:
         val = (rssi + 100.0) / 50.0
         return max(0.0, min(1.0, val))
 
-    def _extract_vendor(self, network: Dict) -> float:
+    def _extract_vendor(self, network: dict) -> float:
         vendor = str(network.get('vendor', '')).lower()
         if not vendor or vendor == 'unknown':
             return 0.5
@@ -92,7 +92,7 @@ class FeatureExtractor:
 
         return 0.3  # Consumer/Common
 
-    def _extract_ssid_suspicion(self, network: Dict) -> float:
+    def _extract_ssid_suspicion(self, network: dict) -> float:
         ssid = str(network.get('ssid', '')).lower()
         if not ssid:
             return 0.0
@@ -102,7 +102,7 @@ class FeatureExtractor:
                 return 1.0  # Matched suspicious pattern
         return 0.0
 
-    def _extract_channel(self, network: Dict) -> float:
+    def _extract_channel(self, network: dict) -> float:
         try:
             ch = int(network.get('channel', 0))
         except (ValueError, TypeError):
@@ -120,7 +120,7 @@ class FeatureExtractor:
             return 0.1
         return 0.5  # Unknown
 
-    def _extract_beacon_anomaly(self, network: Dict) -> float:
+    def _extract_beacon_anomaly(self, network: dict) -> float:
         # Placeholder for real anomaly detection logic
         # Here we just look at Beacon Interval deviation if available
         # Standard is often 100 TU (102.4 ms)
@@ -137,7 +137,7 @@ class FeatureExtractor:
                 pass
         return 0.0
 
-    def _extract_temporal(self, network: Dict) -> float:
+    def _extract_temporal(self, network: dict) -> float:
         # If first_seen == last_seen (within small delta), it's new
         # This requires formatted timestamp string parsing or raw timestamp usage
         # Assuming timestamps are strings, we simplisticly check equality
@@ -147,7 +147,7 @@ class FeatureExtractor:
             return 0.5
         return 0.0
 
-    def _extract_privacy(self, network: Dict) -> float:
+    def _extract_privacy(self, network: dict) -> float:
         caps = str(network.get('capabilities', ''))
         score = 0.0
         if 'ESS' not in caps:

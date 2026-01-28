@@ -3,10 +3,11 @@ Sentinel NetLab - Unit Tests for Buffer Manager
 Tests buffer_manager.py ring buffer and journal.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
+
+import pytest
 
 try:
     from buffer_manager import BufferManager

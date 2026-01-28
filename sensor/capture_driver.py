@@ -4,15 +4,15 @@ Abstract interface and implementations for 802.11 frame capture.
 Supports monitor mode, channel hopping, and raw frame extraction.
 """
 
-import os
-import time
 import logging
+import os
 import subprocess
 import threading
+import time
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
 from dataclasses import dataclass
-from queue import Queue, Empty
+from queue import Empty, Queue
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class CaptureDriver(ABC):
         self._original_mode: Optional[str] = None
 
     @abstractmethod
-    def enable_monitor_mode(self) -> Tuple[bool, str]:
+    def enable_monitor_mode(self) -> tuple[bool, str]:
         """
         Enable monitor mode on interface.
         Returns: (success, error_message)
@@ -47,7 +47,7 @@ class CaptureDriver(ABC):
         pass
 
     @abstractmethod
-    def disable_monitor_mode(self) -> Tuple[bool, str]:
+    def disable_monitor_mode(self) -> tuple[bool, str]:
         """
         Restore interface to original state.
         Returns: (success, error_message)
@@ -77,7 +77,7 @@ class CaptureDriver(ABC):
         """Stop capture loop"""
         pass
 
-    def get_supported_channels(self) -> List[int]:
+    def get_supported_channels(self) -> list[int]:
         """Get list of channels supported by interface"""
         # Default implementation - can be overridden
         return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 2.4 GHz
@@ -95,7 +95,7 @@ class IwCaptureDriver(CaptureDriver):
         self._frame_queue: Queue = Queue(maxsize=10000)
         self._capture_thread: Optional[threading.Thread] = None
 
-    def enable_monitor_mode(self) -> Tuple[bool, str]:
+    def enable_monitor_mode(self) -> tuple[bool, str]:
         """Enable monitor mode using iw/ip commands"""
         try:
             # Check if interface exists
@@ -143,7 +143,7 @@ class IwCaptureDriver(CaptureDriver):
         except Exception as e:
             return False, str(e)
 
-    def disable_monitor_mode(self) -> Tuple[bool, str]:
+    def disable_monitor_mode(self) -> tuple[bool, str]:
         """Restore interface to managed mode"""
         try:
             subprocess.run(
@@ -245,7 +245,7 @@ class IwCaptureDriver(CaptureDriver):
             self._capture_thread.join(timeout=3)
         logger.info("Capture stopped")
 
-    def get_supported_channels(self) -> List[int]:
+    def get_supported_channels(self) -> list[int]:
         """Get channels from iw"""
         try:
             result = subprocess.run(
@@ -285,12 +285,12 @@ class MockCaptureDriver(CaptureDriver):
         self._frame_generator = None
         self._running = False
 
-    def enable_monitor_mode(self) -> Tuple[bool, str]:
+    def enable_monitor_mode(self) -> tuple[bool, str]:
         self.is_monitor_mode = True
         logger.info(f"Mock monitor mode enabled on {self.iface}")
         return True, ""
 
-    def disable_monitor_mode(self) -> Tuple[bool, str]:
+    def disable_monitor_mode(self) -> tuple[bool, str]:
         self.is_monitor_mode = False
         return True, ""
 

@@ -71,6 +71,13 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .mypy_cache/
+test-reports/
+htmlcov/
+*_report.json
+test_output_*.txt
+test_flow_*.txt
+bandit_report.json
+safety_report.json
 
 # Docker
 docker-compose.override.yml

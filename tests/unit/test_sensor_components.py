@@ -4,12 +4,8 @@ Unit tests for sensor components.
 Run: pytest tests/unit/ -v
 """
 
-import pytest
-import json
-import time
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
 
+import pytest
 
 # =============================================================================
 # TEST: WiFi Parser
@@ -23,15 +19,9 @@ class TestWiFiParser:
         from sensor.parser import WiFiParser
 
         parser = WiFiParser()
-        
+
         # Mock beacon data
-        beacon = {
-            'wlan.bssid': 'aa:bb:cc:11:22:33',
-            'wlan.ssid': 'TestNetwork',
-            'radiotap.channel.freq': '2437',
-            'wlan.fixed.capabilities': '0x0411',
-        }
-        
+
         # Just test instantiation
         assert parser is not None
 
@@ -39,8 +29,8 @@ class TestWiFiParser:
         """Test RSSI extraction from radiotap"""
         from sensor.parser import WiFiParser
 
-        parser = WiFiParser()
-        
+        WiFiParser()
+
         # Mock frame with RSSI
         rssi = -65
         assert isinstance(rssi, int)
@@ -59,7 +49,7 @@ class TestRiskScorer:
         from algos.risk import RiskScorer
 
         scorer = RiskScorer()
-        
+
         # Test network data
         network = {
             'bssid': 'AA:BB:CC:11:22:33',
@@ -69,7 +59,7 @@ class TestRiskScorer:
             'rssi_dbm': -55,
             'capabilities': {'privacy': True}
         }
-        
+
         score = scorer.score(network)
         assert isinstance(score, (int, float))
         assert 0 <= score <= 100
@@ -79,24 +69,24 @@ class TestRiskScorer:
         from algos.risk import RiskScorer
 
         scorer = RiskScorer()
-        
+
         open_network = {
             'bssid': 'AA:BB:CC:11:22:33',
             'ssid': 'OpenNet',
             'security': 'Open',
             'capabilities': {'privacy': False}
         }
-        
+
         secure_network = {
             'bssid': 'AA:BB:CC:44:55:66',
             'ssid': 'SecureNet',
             'security': 'WPA3',
             'capabilities': {'privacy': True, 'pmf': True}
         }
-        
+
         open_score = scorer.score(open_network)
         secure_score = scorer.score(secure_network)
-        
+
         assert open_score > secure_score
 
 
@@ -109,14 +99,14 @@ class TestDetection:
 
     def test_levenshtein_distance(self):
         """Test fuzzy string matching"""
-        from algos.detection import levenshtein_distance, ssid_similarity
+        from algos.detection import levenshtein_distance
 
         # Identical strings
         assert levenshtein_distance("test", "test") == 0
-        
+
         # One character difference
         assert levenshtein_distance("test", "tests") == 1
-        
+
         # Completely different
         assert levenshtein_distance("abc", "xyz") == 3
 
@@ -136,11 +126,11 @@ class TestDetection:
         from algos.detection import BloomFilter
 
         bf = BloomFilter(size=1000, hash_count=3)
-        
+
         bf.add("AA:BB:CC:11:22:33")
-        
-        assert bf.contains("AA:BB:CC:11:22:33") == True
-        assert bf.contains("XX:YY:ZZ:00:00:00") == False
+
+        assert bf.contains("AA:BB:CC:11:22:33")
+        assert not bf.contains("XX:YY:ZZ:00:00:00")
 
 
 # =============================================================================
@@ -159,16 +149,16 @@ class TestWIDSDetectors:
             threshold_per_sec=10,
             window_seconds=5
         )
-        
+
         # Simulate deauth flood
         bssid = "AA:BB:CC:11:22:33"
-        for i in range(15):
-            alert = detector.record_deauth(
+        for _i in range(15):
+            detector.record_deauth(
                 bssid=bssid,
                 client_mac="FF:FF:FF:FF:FF:FF",
                 sensor_id="test"
             )
-        
+
         # Should trigger alert after threshold
         assert detector.alert_count > 0
 
@@ -189,10 +179,10 @@ class TestAudit:
 
     def test_security_auditor(self):
         """Test security auditor"""
-        from sensor.audit import SecurityAuditor, NetworkInfo
+        from sensor.audit import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor", profile="home")
-        
+
         # Test network
         network = NetworkInfo(
             bssid="AA:BB:CC:11:22:33",
@@ -201,18 +191,18 @@ class TestAudit:
             rssi_dbm=-55,
             security="WPA2"
         )
-        
+
         auditor.audit_network(network)
-        
+
         # Should have processed the network
         assert len(auditor.networks) == 1
 
     def test_wep_detection(self):
         """Test WEP detection creates critical finding"""
-        from sensor.audit import SecurityAuditor, NetworkInfo
+        from sensor.audit import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor")
-        
+
         wep_network = NetworkInfo(
             bssid="AA:BB:CC:77:88:99",
             ssid="OldRouter",
@@ -220,9 +210,9 @@ class TestAudit:
             rssi_dbm=-70,
             security="WEP"
         )
-        
+
         auditor.audit_network(wep_network)
-        
+
         # Should have critical finding for WEP
         critical_findings = [f for f in auditor.findings if f.severity == "Critical"]
         assert len(critical_findings) > 0
@@ -246,10 +236,10 @@ class TestTransport:
             sensor_id="test-sensor",
             verify_ssl=False
         )
-        
+
         payload = b'{"test": "data"}'
         signature = transport.sign_payload(payload)
-        
+
         # Signature should be hex string
         assert len(signature) == 64  # SHA256 hex
         assert all(c in '0123456789abcdef' for c in signature)
@@ -264,9 +254,9 @@ class TestTransport:
             hmac_secret="test-secret",
             verify_ssl=False
         )
-        
+
         headers = transport._build_headers(b'test')
-        
+
         assert 'Authorization' in headers
         assert 'X-Timestamp' in headers
         assert 'X-Signature' in headers

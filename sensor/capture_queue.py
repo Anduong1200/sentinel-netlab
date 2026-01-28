@@ -5,13 +5,13 @@ High-performance packet capture using multiprocessing queue.
 Separates capture (fast) from processing (slow) to prevent packet loss.
 """
 
+import logging
 import multiprocessing as mp
+import queue
 import subprocess
 import threading
-import queue
 import time
-import logging
-from typing import Optional, Callable, Dict, Any, List
+from typing import Any, Callable, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class CaptureProducer(mp.Process):
         self,
         packet_queue: mp.Queue,
         interface: str,
-        channels: List[int],
+        channels: list[int],
         stop_event: mp.Event,
         dwell_time: float = 0.5
     ):
@@ -136,7 +136,7 @@ class CaptureProducer(mp.Process):
                             })
                         except (queue.Full, queue.Empty):
                             pass
-            except (IOError, OSError):
+            except OSError:
                 time.sleep(0.01)
 
         # Cleanup
@@ -210,7 +210,7 @@ class CaptureConsumer(threading.Thread):
 
         logger.info(f"Consumer stopped. Stats: {self.stats}")
 
-    def _process_batch(self, batch: List[Dict]):
+    def _process_batch(self, batch: list[dict]):
         """Process a batch of packets."""
         for pkt in batch:
             try:
@@ -232,7 +232,7 @@ class ProducerConsumerEngine:
         self,
         interface: str = "wlan0",
         queue_size: int = 10000,
-        channels: Optional[List[int]] = None
+        channels: Optional[list[int]] = None
     ):
         self.interface = interface
         self.queue_size = queue_size
@@ -293,7 +293,7 @@ class ProducerConsumerEngine:
         self.is_capturing = False
         logger.info("Producer-Consumer engine stopped")
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get engine status."""
         return {
             "engine": "producer-consumer",

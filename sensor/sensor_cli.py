@@ -5,15 +5,13 @@ Combines all sensor features with toggleable options.
 """
 
 import argparse
+import logging
+import os
+import sys
 import threading
 import time
-import sys
-import os
-import logging
 
 # Add sensor to path
-import sys
-import os
 # Add common to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -82,8 +80,8 @@ class SensorCLI:
 
     def setup_risk_scorer(self):
         """Initialize risk scorer."""
-        from algos.risk import RiskScorer
         from algos.evil_twin import AdvancedEvilTwinDetector
+        from algos.risk import RiskScorer
         self.risk_scorer = RiskScorer()
         self.evil_twin_detector = AdvancedEvilTwinDetector()
         logger.info("Initialized Risk Scorer and Evil Twin Detector")
@@ -124,7 +122,7 @@ class SensorCLI:
                     risk = self.risk_scorer.calculate_risk(result)
                     result["risk_score"] = risk["risk_score"]
                     result["risk_level"] = risk["risk_level"]
-                    
+
                     # Generate Advice
                     recs = generate_recommendations(result, risk)
                     result["recommendations"] = recs
@@ -148,7 +146,7 @@ class SensorCLI:
                 if self.evil_twin_detector and "bssid" in result:
                     # Ingest into stateful detector
                     alerts = self.evil_twin_detector.ingest(result)
-                    
+
                     if alerts:
                         for alert in alerts:
                             logger.critical(f"⚠️ EVIL TWIN DETECTED: {alert.ssid} ({alert.suspect_bssid})")

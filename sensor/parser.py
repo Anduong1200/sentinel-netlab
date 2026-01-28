@@ -5,9 +5,17 @@ Parses Beacon and Probe Response frames to extract network information
 """
 
 import logging
-from typing import Dict, List, Optional, Any
 from datetime import datetime
-from scapy.all import Dot11, Dot11Beacon, Dot11ProbeResp, Dot11Elt, RadioTap, Dot11Deauth
+from typing import Any, Optional
+
+from scapy.all import (
+    Dot11,
+    Dot11Beacon,
+    Dot11Deauth,
+    Dot11Elt,
+    Dot11ProbeResp,
+    RadioTap,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -86,9 +94,9 @@ class WiFiParser:
 
     def __init__(self):
         """Initialize the parser with an empty networks dictionary."""
-        self.networks: Dict[str, Dict[str, Any]] = {}
+        self.networks: dict[str, dict[str, Any]] = {}
         # Deauth, Evil Twin events
-        self.security_events: List[Dict[str, Any]] = []
+        self.security_events: list[dict[str, Any]] = []
         self.packet_count = 0
         self.last_update = datetime.now()
 
@@ -195,7 +203,7 @@ class WiFiParser:
                 pass
         return -100  # Default weak signal
 
-    def parse_deauth(self, packet) -> Optional[Dict[str, Any]]:
+    def parse_deauth(self, packet) -> Optional[dict[str, Any]]:
         """
         Parse Deauthentication frame to detect potential attack.
 
@@ -231,7 +239,7 @@ class WiFiParser:
             logger.debug(f"Error parsing deauth: {e}")
             return None
 
-    def process_packet(self, packet) -> Optional[Dict[str, Any]]:
+    def process_packet(self, packet) -> Optional[dict[str, Any]]:
         """
         Process a captured 802.11 packet and extract network info.
 
@@ -346,7 +354,7 @@ class WiFiParser:
             logger.debug(f"Error parsing packet: {e}")
             return None
 
-    def get_networks(self) -> List[Dict[str, Any]]:
+    def get_networks(self) -> list[dict[str, Any]]:
         """
         Get all discovered networks as a list.
 
@@ -365,7 +373,7 @@ class WiFiParser:
         self.packet_count = 0
         logger.info("Parser cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get parser statistics."""
         handshake_count = sum(
             1 for n in self.networks.values() if n.get("handshake_captured"))
@@ -377,9 +385,9 @@ class WiFiParser:
             "encryption_summary": self._get_encryption_summary()
         }
 
-    def _get_encryption_summary(self) -> Dict[str, int]:
+    def _get_encryption_summary(self) -> dict[str, int]:
         """Count networks by encryption type."""
-        summary: Dict[str, int] = {}
+        summary: dict[str, int] = {}
         for network in self.networks.values():
             enc = network.get("encryption", "Unknown")
             # Simplify to base type
@@ -389,7 +397,7 @@ class WiFiParser:
 
 
 # Convenience function for parsing a single packet
-def parse_beacon(packet) -> Optional[Dict[str, Any]]:
+def parse_beacon(packet) -> Optional[dict[str, Any]]:
     """
     Parse a single beacon/probe response packet.
 

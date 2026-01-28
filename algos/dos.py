@@ -3,14 +3,14 @@
 Sentinel NetLab - Deauth Flood Detector
 """
 
-import logging
-import time
 import json
+import logging
 import os
-from datetime import datetime, timezone
+import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class DeauthFloodAlert:
     frame_count: int
     window_seconds: float
     rate_per_sec: float
-    evidence: Dict
+    evidence: dict
 
 
 class DeauthFloodDetector:
@@ -48,11 +48,11 @@ class DeauthFloodDetector:
         self.state_file = ".dos_state.json"
 
         # Track deauth frames: (bssid, client) -> [timestamps]
-        self.deauth_history: Dict[Tuple[str, str],
-                                  List[float]] = defaultdict(list)
+        self.deauth_history: dict[tuple[str, str],
+                                  list[float]] = defaultdict(list)
 
         # Cooldown tracking
-        self.last_alert: Dict[Tuple[str, str], float] = {}
+        self.last_alert: dict[tuple[str, str], float] = {}
         self._load_state()
 
         self.alert_count = 0
@@ -77,7 +77,7 @@ class DeauthFloodDetector:
         # Check for flood
         return self._check_flood(key, bssid, client_mac, sensor_id, now)
 
-    def _cleanup(self, key: Tuple[str, str], now: float):
+    def _cleanup(self, key: tuple[str, str], now: float):
         """Remove entries outside the window"""
         cutoff = now - self.window_seconds * 2  # Keep 2x window for analysis
         self.deauth_history[key] = [
@@ -85,7 +85,7 @@ class DeauthFloodDetector:
         ]
 
     def _check_flood(self,
-                     key: Tuple[str, str],
+                     key: tuple[str, str],
                      bssid: str,
                      client_mac: str,
                      sensor_id: str,
@@ -136,7 +136,7 @@ class DeauthFloodDetector:
                 'threshold_per_sec': self.threshold_per_sec,
                 'is_broadcast': client_mac == "ff:ff:ff:ff:ff:ff"})
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get current detection statistics"""
         total_tracked = sum(len(v) for v in self.deauth_history.values())
         return {
@@ -150,7 +150,7 @@ class DeauthFloodDetector:
         try:
             # Convert keys from tuple to string for JSON
             state = {
-                f"{k[0]}|{k[1]}": v 
+                f"{k[0]}|{k[1]}": v
                 for k, v in self.last_alert.items()
             }
             with open(self.state_file, 'w') as f:
@@ -162,11 +162,11 @@ class DeauthFloodDetector:
         """Load cooldown state from file"""
         if not os.path.exists(self.state_file):
             return
-            
+
         try:
-            with open(self.state_file, 'r') as f:
+            with open(self.state_file) as f:
                 state = json.load(f)
-                
+
             now = time.time()
             for k_str, timestamp in state.items():
                 # Only load if still in cooldown window (plus buffer)
