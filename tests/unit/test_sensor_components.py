@@ -56,7 +56,7 @@ class TestRiskScorer:
 
     def test_score_calculation(self):
         """Test basic score calculation"""
-        from sensor.risk import RiskScorer
+        from algos.risk import RiskScorer
 
         scorer = RiskScorer()
         
@@ -76,7 +76,7 @@ class TestRiskScorer:
 
     def test_open_network_high_risk(self):
         """Open networks should have higher risk"""
-        from sensor.risk import RiskScorer
+        from algos.risk import RiskScorer
 
         scorer = RiskScorer()
         
@@ -109,7 +109,7 @@ class TestDetection:
 
     def test_levenshtein_distance(self):
         """Test fuzzy string matching"""
-        from sensor.detection import levenshtein_distance, ssid_similarity
+        from algos.detection import levenshtein_distance, ssid_similarity
 
         # Identical strings
         assert levenshtein_distance("test", "test") == 0
@@ -122,7 +122,7 @@ class TestDetection:
 
     def test_ssid_similarity(self):
         """Test SSID similarity detection"""
-        from sensor.detection import ssid_similarity
+        from algos.detection import ssid_similarity
 
         # Similar SSIDs (evil twin pattern)
         sim = ssid_similarity("CorpNet", "C0rpNet")
@@ -133,7 +133,7 @@ class TestDetection:
 
     def test_bloom_filter(self):
         """Test bloom filter for MAC tracking"""
-        from sensor.detection import BloomFilter
+        from algos.detection import BloomFilter
 
         bf = BloomFilter(size=1000, hash_count=3)
         
@@ -152,30 +152,29 @@ class TestWIDSDetectors:
 
     def test_deauth_flood_detection(self):
         """Test deauth flood detector"""
-        from sensor.wids_detectors import DeauthFloodDetector, DeauthEvent
+        from algos.dos import DeauthFloodDetector
+
 
         detector = DeauthFloodDetector(
-            threshold=10,
+            threshold_per_sec=10,
             window_seconds=5
         )
         
         # Simulate deauth flood
         bssid = "AA:BB:CC:11:22:33"
         for i in range(15):
-            event = DeauthEvent(
-                timestamp=time.time(),
+            alert = detector.record_deauth(
                 bssid=bssid,
                 client_mac="FF:FF:FF:FF:FF:FF",
-                reason_code=3
+                sensor_id="test"
             )
-            alert = detector.ingest(event)
         
         # Should trigger alert after threshold
-        assert detector.get_alert_count() > 0
+        assert detector.alert_count > 0
 
     def test_evil_twin_basic(self):
         """Test evil twin detector basics"""
-        from sensor.wids_detectors import EvilTwinDetector
+        from algos.evil_twin import AdvancedEvilTwinDetector as EvilTwinDetector
 
         detector = EvilTwinDetector()
         assert detector is not None

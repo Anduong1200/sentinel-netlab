@@ -20,7 +20,9 @@ def cleanup_project():
         "docs",          # Documentation
         "tests",         # Test scripts
         "scripts",       # Helper scripts
-        "docker",        # Docker files
+        "scripts",       # Helper scripts
+        "ops",           # Operations/Docker files
+        "algos",         # Algorithms
         "sensor",        # Sensor source code
         "controller"     # Controller source code
     ]

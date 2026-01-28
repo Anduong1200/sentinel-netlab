@@ -239,42 +239,38 @@ The `ActiveDefense` module requires explicit safety overrides to operate (`ALLOW
 
 ### Option A: Raspberry Pi (Recommended)
 
-```
-┌─────────────────────┐
-│   Raspberry Pi 4    │
-│  ┌───────────────┐  │
-│  │ Sensor Agent  │  │
-│  └───────┬───────┘  │
-│          │          │
-│  ┌───────┴───────┐  │
-│  │  USB WiFi     │  │
-│  │  (RTL8812AU)  │  │
-│  └───────────────┘  │
-└─────────┬───────────┘
-          │ HTTP/S
-          ▼
-    [Controller]
+```mermaid
+graph TD
+    subgraph "Raspberry Pi 4"
+        Agent[Sensor Agent]
+    end
+    
+    subgraph "Hardware"
+        USB[USB WiFi<br/>(RTL8812AU)]
+    end
+    
+    subgraph "Server"
+        Ctrl[Controller]
+    end
+
+    Agent --- USB
+    Agent -->|HTTP/S| Ctrl
 ```
 
 ### Option B: Virtual Machine
 
-```
-┌─────────────────────────────────────┐
-│         Windows/macOS Host          │
-│  ┌───────────────────────────────┐  │
-│  │      VirtualBox / VMware      │  │
-│  │  ┌─────────────────────────┐  │  │
-│  │  │      Ubuntu Guest       │  │  │
-│  │  │  ┌───────────────────┐  │  │  │
-│  │  │  │   Sensor Agent    │  │  │  │
-│  │  │  └─────────┬─────────┘  │  │  │
-│  │  │            │            │  │  │
-│  │  │  ┌─────────┴─────────┐  │  │  │
-│  │  │  │   USB Passthrough │  │  │  │
-│  │  │  └───────────────────┘  │  │  │
-│  │  └─────────────────────────┘  │  │
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Host (Windows/macOS)"
+        subgraph "VirtualBox / VMware"
+            subgraph "Ubuntu Guest"
+                Agent[Sensor Agent]
+            end
+        end
+        USB[USB Passthrough]
+    end
+
+    Agent --- USB
 ```
 
 ---

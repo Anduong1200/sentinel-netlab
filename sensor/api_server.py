@@ -12,12 +12,17 @@ from datetime import datetime
 import logging
 import os
 import time
+import sys
+from pathlib import Path
+
+# Add project root to path for "algos" import
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modular components
 from capture import CaptureEngine, check_monitor_support
 from parser import WiFiParser
 from storage import WiFiStorage, MemoryStorage
-from risk import RiskScorer
+from algos.risk import RiskScorer
 from attacks import AttackEngine
 from forensics import analyze_pcap
 

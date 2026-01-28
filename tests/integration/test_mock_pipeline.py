@@ -76,7 +76,7 @@ class TestFullPipelineMock:
 
     def test_scan_to_risk_pipeline(self, mock_networks):
         """Test: Scan → Parse → Risk Score pipeline"""
-        from sensor.risk import RiskScorer
+        from algos.risk import RiskScorer
 
         scorer = RiskScorer()
         
@@ -98,9 +98,9 @@ class TestFullPipelineMock:
 
     def test_evil_twin_detection_pipeline(self, mock_networks):
         """Test: Evil twin detection through WIDS pipeline"""
-        from sensor.wids_detectors import EvilTwinDetector
+        from algos.evil_twin import AdvancedEvilTwinDetector as EvilTwinDetector
 
-        detector = EvilTwinDetector(ssid_similarity_threshold=0.8)
+        detector = EvilTwinDetector()
         
         alerts = []
         for network in mock_networks:
@@ -215,9 +215,9 @@ class TestDeauthFloodIntegration:
 
     def test_deauth_flood_trigger(self):
         """Simulate deauth flood and verify detection"""
-        from sensor.wids_detectors import DeauthFloodDetector, DeauthEvent
+        from algos.dos import DeauthFloodDetector
 
-        detector = DeauthFloodDetector(threshold=10, window_seconds=5)
+        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
         
         target_bssid = "AA:BB:CC:11:22:33"
         alerts_triggered = []
@@ -225,13 +225,13 @@ class TestDeauthFloodIntegration:
         # Simulate flood of 20 deauth frames
         base_time = time.time()
         for i in range(20):
-            event = DeauthEvent(
-                timestamp=base_time + (i * 0.1),
+            # DeauthFloodDetector.ingest not available, must use record_deauth
+            # But tests used ingest(event). I need to adapt the test to use record_deauth(bssid, client...)
+            alert = detector.record_deauth(
                 bssid=target_bssid,
                 client_mac="FF:FF:FF:FF:FF:FF",
-                reason_code=3
+                sensor_id="test"
             )
-            alert = detector.ingest(event)
             if alert:
                 alerts_triggered.append(alert)
         
@@ -244,20 +244,18 @@ class TestDeauthFloodIntegration:
 
     def test_normal_traffic_no_alert(self):
         """Normal deauth traffic should not trigger alerts"""
-        from sensor.wids_detectors import DeauthFloodDetector, DeauthEvent
+        from algos.dos import DeauthFloodDetector
 
-        detector = DeauthFloodDetector(threshold=10, window_seconds=5)
+        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
         
         # Only 5 deauths (below threshold)
         base_time = time.time()
         for i in range(5):
-            event = DeauthEvent(
-                timestamp=base_time + (i * 0.5),
+            alert = detector.record_deauth(
                 bssid="AA:BB:CC:11:22:33",
                 client_mac="11:22:33:44:55:66",
-                reason_code=3
+                sensor_id="test"
             )
-            alert = detector.ingest(event)
             assert alert is None, "Should not trigger on normal traffic"
 
 

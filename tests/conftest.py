@@ -202,7 +202,7 @@ def mock_transport():
 def risk_scorer():
     """RiskScorer instance"""
     try:
-        from sensor.risk import RiskScorer
+        from algos.risk import RiskScorer
         return RiskScorer()
     except ImportError:
         pytest.skip("RiskScorer not available")
@@ -212,8 +212,9 @@ def risk_scorer():
 def evil_twin_detector():
     """EvilTwinDetector instance"""
     try:
-        from sensor.wids_detectors import EvilTwinDetector
-        return EvilTwinDetector(ssid_similarity_threshold=0.8)
+        from algos.evil_twin import AdvancedEvilTwinDetector as EvilTwinDetector
+        # Use simpler config for tests if needed, or default
+        return EvilTwinDetector()
     except ImportError:
         pytest.skip("EvilTwinDetector not available")
 
@@ -222,8 +223,8 @@ def evil_twin_detector():
 def deauth_detector():
     """DeauthFloodDetector instance"""
     try:
-        from sensor.wids_detectors import DeauthFloodDetector
-        return DeauthFloodDetector(threshold=10, window_seconds=5)
+        from algos.dos import DeauthFloodDetector
+        return DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
     except ImportError:
         pytest.skip("DeauthFloodDetector not available")
 

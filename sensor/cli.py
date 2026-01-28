@@ -12,8 +12,10 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 # Setup path
+# Add sensor and project root to path
 SENSOR_DIR = Path(__file__).parent
 sys.path.insert(0, str(SENSOR_DIR))
+sys.path.insert(0, str(SENSOR_DIR.parent))
 
 
 def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:

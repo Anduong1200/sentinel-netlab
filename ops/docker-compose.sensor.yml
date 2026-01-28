@@ -9,7 +9,7 @@ services:
   sensor-alpine:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.alpine
+      dockerfile: ops/Dockerfile.sensor.alpine
     container_name: sentinel-sensor
     privileged: true  # Required for monitor mode
     network_mode: host  # Required for wireless access
@@ -34,7 +34,7 @@ services:
   sensor-debian:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.debian
+      dockerfile: ops/Dockerfile.sensor.debian
     container_name: sentinel-sensor-debian
     privileged: true
     network_mode: host

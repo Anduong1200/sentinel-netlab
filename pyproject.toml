@@ -11,22 +11,14 @@ license = {text = "MIT"}
 authors = [
     {name = "Sentinel Team", email = "anduong1200@gmail.com"}
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Intended Audience :: Information Technology",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Topic :: Security",
-    "Topic :: System :: Networking :: Monitoring",
+    "License :: OSI Approved :: MIT License",
 ]
-keywords = ["wifi", "security", "wids", "intrusion-detection", "wireless"]
+
 
 dependencies = [
     "scapy>=2.5.0",
@@ -42,6 +34,12 @@ dependencies = [
     "psycopg2-binary>=2.9.9",
     "redis>=5.0.0",
 ]
+
+[tool.setuptools]
+packages = ["sensor", "controller", "common", "algos"]
+
+
+
 
 [project.optional-dependencies]
 dev = [
@@ -109,7 +107,7 @@ ignore = [
 "sensor/attacks.py" = ["S"]  # Security checks relaxed for attack code
 
 [tool.ruff.lint.isort]
-known-first-party = ["sensor", "controller"]
+known-first-party = ["sensor", "controller", "algos"]
 
 [tool.mypy]
 python_version = "3.9"
@@ -128,7 +126,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["sensor", "controller"]
+source = ["sensor", "controller", "algos"]
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]

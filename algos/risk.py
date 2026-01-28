@@ -45,7 +45,7 @@ class EnhancedRiskScorer:
         self.whitelist = set(whitelist or [])
 
         # Initialize modular Feature Extractor
-        from features import FeatureExtractor
+        from .features import FeatureExtractor
         self.feature_extractor = FeatureExtractor(config=self.config)
 
         # Metrics for validation

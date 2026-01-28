@@ -19,11 +19,11 @@ import json
 import sys
 from pathlib import Path
 
-# Add sensor to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "sensor"))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
-    from risk import EnhancedRiskScorer, ScoringWeights
+    from algos.risk import EnhancedRiskScorer, ScoringWeights
 except ImportError:
     print("Error: Cannot import from risk.py. Make sure sensor/risk.py exists.")
     sys.exit(1)

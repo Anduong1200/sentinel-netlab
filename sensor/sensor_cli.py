@@ -12,7 +12,9 @@ import os
 import logging
 
 # Add sensor to path
+# Add sensor and project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,7 +78,7 @@ class SensorCLI:
 
     def setup_risk_scorer(self):
         """Initialize risk scorer."""
-        from risk import RiskScorer
+        from algos.risk import RiskScorer
         self.risk_scorer = RiskScorer()
 
     def setup_watchdog(self):

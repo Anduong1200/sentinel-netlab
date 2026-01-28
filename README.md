@@ -5,10 +5,12 @@
 </p>
 
 <p align="center">
+<p align="center">
   <a href="https://github.com/Anduong1200/sentinel-netlab/actions"><img src="https://img.shields.io/github/actions/workflow/status/Anduong1200/sentinel-netlab/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%2B-blue.svg?style=flat-square" alt="Python"></a>
-  <a href="ETHICS.md"><img src="https://img.shields.io/badge/use-authorized%20only-red.svg?style=flat-square" alt="Ethics"></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square" alt="Code Style"></a>
+</p>
 </p>
 
 <p align="center">
@@ -59,6 +61,12 @@ sentinel-netlab/
 │   ├── audit.py               # 📋 Security Audit
 │   └── schema/                # JSON schemas
 │
+├── algos/                      # 🧠 Detection Algorithms
+│   ├── evil_twin.py           # Evil Twin V2
+│   ├── dos.py                 # DoS Detector
+│   ├── risk.py                # Risk Engine
+│   └── baseline.py            # Behavioral Baseline
+│
 ├── controller/                 # 🖥️ Central Server
 │   ├── api_server.py          # Flask REST API
 │   ├── models.py              # SQLAlchemy models
@@ -79,10 +87,11 @@ sentinel-netlab/
 │   └── adr/                   # Architecture decisions
 │
 ├── ops/                        # ⚙️ Docker & Operations
+├── ops/                        # ⚙️ Operations & Docker
 │   ├── docker-compose.yml     # Full stack deployment
 │   ├── Dockerfile.controller  # Controller image
 │   ├── Dockerfile.sensor      # Sensor image
-│   └── nginx/                 # Reverse proxy config
+│   └── systemd/               # Systemd services
 │
 ├── examples/                   # 📝 Sample Data
 │   ├── sample_telemetry.json  # Telemetry example
@@ -104,86 +113,93 @@ sentinel-netlab/
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- Python 3.9+
-- Linux (Debian/Ubuntu recommended)
-- WiFi adapter with monitor mode support ([see compatibility](docs/operations/hardware.md))
+- Python 3.10+
+- Linux (for Monitor Mode) or Windows (Development)
+- WiFi Adapter supporting Monitor Mode (e.g., Alfa AWUS036ACM)
 
 ### Installation
 
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Anduong1200/sentinel-netlab.git
+   cd sentinel-netlab
+   ```
+
+2. **Set up Virtual Environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   ```
+
+3. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   # For development tools (testing, linting):
+   pip install -r requirements-dev.txt
+   ```
+
+4. **Configuration**
+   ```bash
+   cp config.example.yaml config.yaml
+   # Edit config.yaml with your specific settings (API key, interface, etc.)
+   ```
+
+### Usage
+
+**Start the Sensor:**
 ```bash
-# Clone repository
-git clone https://github.com/Anduong1200/sentinel-netlab.git
-cd sentinel-netlab
-
-# Run setup script (Debian/Ubuntu)
-sudo ./scripts/setup.sh
-
-# Or manual installation
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+python -m sensor.cli --sensor-id lab-sensor-01 --iface wlan0
 ```
 
-### Configure WiFi Adapter
-
+**Run Tests:**
 ```bash
-# Enable monitor mode
-sudo ip link set wlan0 down
-sudo iw wlan0 set type monitor
-sudo ip link set wlan0 up
-```
-
-### Start Sensor
-
-```bash
-cd sensor
-
-# Production mode (requires root)
-sudo python cli.py --sensor-id lab-sensor-01 --iface wlan0
-
-# Development mode (mock capture)
-python cli.py --sensor-id dev-01 --iface mock0 --mock-mode
+pytest tests/
 ```
 
 ---
 
 ## 📊 Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        SENSOR LAYER                              │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │
-│  │  Sensor #1  │   │  Sensor #2  │   │  Sensor #3  │            │
-│  │  (Pi/VM)    │   │  (Pi/VM)    │   │  (Pi/VM)    │            │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘            │
-│         │ HTTPS           │ HTTPS           │ HTTPS              │
-└─────────┼─────────────────┼─────────────────┼────────────────────┘
-          │                 │                 │
-          └────────────────┬┘─────────────────┘
-                           │
-┌──────────────────────────┼───────────────────────────────────────┐
-│                          ▼         CONTROLLER LAYER              │
-│                   ┌─────────────┐                                │
-│                   │  Controller │                                │
-│                   │  (Flask)    │                                │
-│                   └──────┬──────┘                                │
-│                          │                                       │
-│           ┌──────────────┼──────────────┐                       │
-│           ▼              ▼              ▼                       │
-│    ┌───────────┐  ┌───────────┐  ┌───────────┐                 │
-│    │  SQLite   │  │   Redis   │  │ Prometheus│                 │
-│    │  Storage  │  │   Queue   │  │  Metrics  │                 │
-│    └───────────┘  └───────────┘  └───────────┘                 │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Sensor Layer (Edge)"
+        S1[Sensor #1<br/>RPi] 
+        S2[Sensor #2<br/>VM]
+        S3[Sensor #3]
+    end
+
+    subgraph "Controller Layer (Core)"
+        API[API Server]
+        Auth[Auth Service]
+    end
+
+    subgraph "Data & Processing"
+        DB[(PostgreSQL)]
+        Redis[(Redis Queue)]
+        Prom[Prometheus]
+    end
+
+    S1 & S2 & S3 -->|HTTPS/JSON| API
+    API --> Auth
+    API --> DB
+    API --> Redis
+    API --> Prom
 ```
 
 ### Data Flow
 
-```
-[WiFi Adapter] → [CaptureDriver] → [FrameParser] → [Normalizer]
-                                                         ↓
-[Controller] ← [TransportClient] ← [BufferManager] ← [RiskEngine]
+```mermaid
+sequenceDiagram
+    participant W as WiFi Adapter
+    participant D as Driver
+    participant P as Parser
+    participant N as Normalizer
+    participant C as Controller
+
+    W->>D: 802.11 Mgmt Frames
+    D->>P: Raw Packets
+    P->>N: Extracted Metadata
+    N->>C: Telemetry Batch (JSON)
 ```
 
 ---
@@ -197,24 +213,27 @@ python cli.py --sensor-id dev-01 --iface mock0 --mock-mode
 
 ### Architecture
 - [System Design](docs/architecture/system-design.md)
-- [Risk Scoring Model](docs/architecture/risk-scoring.md)
+- [Risk Scoring Model](docs/architecture/risk_scoring.md)
 - [Detection Algorithms](docs/architecture/detection.md)
+- [Threat Model](docs/architecture/threat_model.md)
+- [Data Schema](docs/architecture/data_schema.md)
 
 ### Operations
 - [Deployment Guide](docs/operations/deployment.md)
 - [Hardware Compatibility](docs/operations/hardware.md)
 - [Monitoring & Metrics](docs/operations/monitoring.md)
-- [Troubleshooting](docs/operations/troubleshooting.md)
+- [Operator Handbook](docs/operations/handbook.md)
 
 ### Research
 - [WiFi Security Analysis](docs/research/wifi-security.md)
-- [IEEE Report Template](docs/research/ieee-report.md)
-- [Test Vectors](sensor/tests/unit/test_vectors/)
+- [IEEE Report Template](docs/research/IEEE_Sentinel_NetLab_Report.md)
+- [IEEE Addendum](docs/research/IEEE_addendum.md)
 
 ### Reference
-- [API Documentation](docs/api-reference.md)
-- [CLI Reference](docs/cli-reference.md)
-- [JSON Schemas](sensor/schema/)
+- [API Documentation](docs/reference/api_overview.md)
+- [API Ingest Contract](docs/reference/api_ingest.md)
+- [OpenAPI Spec](docs/reference/openapi.yaml)
+- [Repository Index](docs/reference/repo_index.csv)
 
 ---
 

@@ -29,6 +29,7 @@ RUN python -m venv /opt/venv && \
 
 # Copy sensor code
 COPY sensor/ ./sensor/
+COPY algos/ ./algos/
 COPY config.example.yaml ./config.yaml
 
 # Create non-root user

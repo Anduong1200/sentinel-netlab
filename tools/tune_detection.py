@@ -14,9 +14,11 @@ from pathlib import Path
 
 # Add parent dir to path
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent / "sensor"))
+# Add parent dir to path
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from risk import RiskScorer
+from algos.risk import RiskScorer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -45,6 +45,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy sensor code
 # ============================================================
 COPY sensor/ ./sensor/
+COPY algos/ ./algos/
+
 COPY scripts/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh

@@ -1,0 +1,36 @@
+{
+    "sensor_id": "sensor-dev-01",
+    "batch_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp_utc": "2026-01-28T10:00:00Z",
+    "sequence_number": 105,
+    "items": [
+        {
+            "bssid": "00:11:22:33:44:55",
+            "ssid": "Corp_WiFi",
+            "channel": 6,
+            "rssi_dbm": -55,
+            "frequency_mhz": 2437,
+            "security": "wpa2_ccmp",
+            "capabilities": {
+                "privacy": true,
+                "wps": false,
+                "pmf": true
+            },
+            "vendor_oui": "001122",
+            "timestamp": "2026-01-28T09:59:58Z"
+        },
+        {
+            "bssid": "AA:BB:CC:DD:EE:FF",
+            "ssid": "Guest_Net",
+            "channel": 1,
+            "rssi_dbm": -80,
+            "frequency_mhz": 2412,
+            "security": "open",
+            "capabilities": {
+                "privacy": false,
+                "wps": true
+            },
+            "timestamp": "2026-01-28T09:59:59Z"
+        }
+    ]
+}

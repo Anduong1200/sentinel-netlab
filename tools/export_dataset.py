@@ -12,7 +12,8 @@ import argparse
 # Add parent dir to path
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent / "sensor"))
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Mock storage or import real if available
 # For this tool, we assume input is the raw JSON logs or DB

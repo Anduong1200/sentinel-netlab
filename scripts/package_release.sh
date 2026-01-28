@@ -23,6 +23,7 @@ mkdir -p "$DIST_DIR"/{bin,config,logs,data,docs}
 # 3. Copy Assets
 echo "COPYING: Core modules..."
 cp -r sensor "$DIST_DIR/"
+cp -r algos "$DIST_DIR/"
 cp -r scripts "$DIST_DIR/"
 cp -r ops "$DIST_DIR/"
 cp requirements.txt "$DIST_DIR/"

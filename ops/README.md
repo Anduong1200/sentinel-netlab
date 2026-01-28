@@ -6,12 +6,34 @@ This directory contains deployment and monitoring configurations.
 
 ```
 ops/
+├── docker-compose.yml      # Main deployment
+├── Dockerfile.sensor       # Sensor container
+├── Dockerfile.controller   # Controller container
 ├── systemd/
 │   └── wifi-scanner.service    # Linux systemd service
 ├── prometheus/
 │   └── prometheus.yml          # Prometheus scrape config
 └── filebeat/
     └── filebeat.yml            # Log shipping to ELK
+
+## 🐳 Docker Deployment
+
+The recommended way to deploy Sentinel NetLab.
+
+```bash
+# Build and start all services
+docker-compose -f ops/docker-compose.yml up -d --build
+
+# View logs
+docker-compose -f ops/docker-compose.yml logs -f
+
+# Stop
+docker-compose -f ops/docker-compose.yml down
+```
+
+### Build Variants
+- **Standard**: `ops/Dockerfile.sensor` (Debian-based, full feature)
+- **Alpine**: `ops/Dockerfile.sensor.alpine` (Lightweight)
 ```
 
 ## 🚀 Systemd Service

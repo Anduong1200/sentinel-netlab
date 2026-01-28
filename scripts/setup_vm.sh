@@ -135,23 +135,13 @@ log_ok "Created data directories: /var/lib/wifi-scanner"
 source "$VENV_PATH/bin/activate"
 
 log_step "Step 4/5: Installing Python packages..."
-PIP_PACKAGES=(
-    flask
-    flask-cors
-    flask-limiter
-    scapy
-    requests
-    psutil
-    colorama
-    prometheus_client
-    gunicorn
-    python-json-logger
-)
-
 pip install --upgrade pip -q
-for pkg in "${PIP_PACKAGES[@]}"; do
-    pip install "$pkg" -q && log_ok "$pkg" || log_fail "$pkg"
-done
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt -q && log_ok "requirements.txt installed"
+else
+    # Fallback if running from a detached script
+    pip install . -q && log_ok "Package installed"
+fi
 
 # ─────────────────────────── Step 5: Configuration ───────────────────────────
 log_step "Step 5/5: Final configuration..."

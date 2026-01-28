@@ -34,7 +34,7 @@ def load_config_from_env() -> Dict[str, Any]:
         'upload_url': os.environ.get('CONTROLLER_URL', 'https://localhost:5000/api/v1/telemetry'),
         'auth_token': os.environ.get('SENSOR_AUTH_TOKEN'),
         'hmac_secret': os.environ.get('SENSOR_HMAC_SECRET'),
-        'verify_ssl': os.environ.get('SENSOR_VERIFY_SSL', 'true').lower() != 'false',
+        'verify_ssl': os.environ.get('SENSOR_VERIFY_SSL', 'true').lower() == 'true',
     }
 
 
@@ -138,7 +138,9 @@ class TransportClient:
         # Sign if HMAC configured
         headers = {
             'Authorization': f'Bearer {self.auth_token}',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'User-Agent': 'Sentinel-Sensor/1.0',
+            'X-Idempotency-Key': batch.get('batch_id') or str(time.time())
         }
 
         if self.hmac_secret:
