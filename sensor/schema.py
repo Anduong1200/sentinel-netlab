@@ -27,6 +27,19 @@ except ImportError:
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
                 setattr(self, k, v)
+        
+        def dict(self, **kwargs):
+            d = {}
+            for k, v in self.__dict__.items():
+                if hasattr(v, 'dict'):
+                    d[k] = v.dict()
+                elif isinstance(v, list):
+                    d[k] = [x.dict() if hasattr(x, 'dict') else (x.value if hasattr(x, 'value') else x) for x in v]
+                elif hasattr(v, 'value'):
+                    d[k] = v.value
+                else:
+                    d[k] = v
+            return d
 
     def Field(*a, **k):
         return None

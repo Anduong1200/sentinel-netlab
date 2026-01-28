@@ -1,21 +1,4 @@
-# Sentinel NetLab - Git Ignore
-
-# =============================================================================
-# SECRETS & CONFIGURATION (NEVER COMMIT)
-# =============================================================================
-.env
-.env.*
-!.env.example
-config.yaml
-secrets/
-*.pem
-*.key
-*.crt
-*.p12
-
-# =============================================================================
-# PYTHON
-# =============================================================================
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -33,84 +16,64 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual environments
+# Virtual Environment
 venv/
+env/
 ENV/
-.venv/
+.env
+.venv
+env.bak/
+venv.bak/
 
-# =============================================================================
-# TESTING & COVERAGE
-# =============================================================================
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-*.py,cover
-
-# =============================================================================
-# IDE / EDITORS
-# =============================================================================
+# IDE / Editor
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
-.project
-.pydevproject
-.settings/
-*.sublime-workspace
-*.sublime-project
 
-# =============================================================================
-# DATA & ARTIFACTS (Large files)
-# =============================================================================
-data/pcap/
-data/spool/
-data/large/
+# Project Config & Secrets
+config.yaml
+config.yml
+secrets/
+*.pem
+*.key
+*.p12
+*.crt
+creds.json
+token.json
+.streamlit/secrets.toml
+
+# Logs and Databases
+*.log
+*.sqlite
+*.db
+journal/
 *.pcap
 *.pcapng
-!data/pcap_annotated/*.pcap  # Keep small sample pcaps
 
-# Notebooks with outputs
-*.ipynb
-notebooks/
-
-# ML models (use releases/git-lfs)
-models/*.pkl
-models/*.h5
-models/*.pt
-models/*.onnx
-
-# =============================================================================
-# BUILD & PACKAGING
-# =============================================================================
-*.log
-*.tmp
-*.bak
-*.cache
-.ruff_cache/
+# Testing
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
 .mypy_cache/
 
 # Docker
 docker-compose.override.yml
 
-# =============================================================================
-# REPORTS (regeneratable)
-# =============================================================================
-bandit_report.json
-safety_report.json
-pip_audit_report.json
-
-# =============================================================================
-# OS
-# =============================================================================
-.DS_Store
-Thumbs.db
-Desktop.ini
+# Jupyter Notebook
+.ipynb_checkpoints

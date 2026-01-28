@@ -1,0 +1,15 @@
+repo,last_commit_iso,size_kb,lang,has_readme,has_tests,has_ci,is_exploit_flag,is_fork,description
+sentinel-netlab,2026-01-28T03:29:59Z,840,Python,true,true,true,false,false,WiFi threat detection platform
+HoloGuard,2026-01-20T10:16:07Z,72,Python,true,false,false,false,false,Malware Detection Pipeline using Heterogeneous Graph Neural Networks
+antigravity-kit,2026-01-15T16:56:05Z,964,null,true,false,false,false,true,Antigravity kit fork
+bao-chi,2026-01-08T16:51:18Z,247333,Python,true,false,false,false,false,Tool cào báo dạng đưa tin 5 phút
+Windows_Kernel_Parsing,2026-01-04T16:46:04Z,841,Python,true,false,false,false,false,Windows kernel structure parsing
+AdaptixC2,2026-01-01T13:44:09Z,27187,null,true,false,false,true,true,Command and Control framework
+HackGpt,2026-01-01T13:41:57Z,1658,null,true,false,false,true,true,AI-powered penetration testing platform
+BypassAV,2026-01-01T13:41:42Z,9318,null,true,false,false,true,true,AV/EDR bypass techniques map
+pics,2025-12-29T12:36:27Z,111553,null,true,false,false,false,true,File formats dissections
+git,2025-12-23T12:33:05Z,293621,null,true,false,false,false,true,Git Source Code Mirror
+go-cursor-help,2025-12-16T09:24:38Z,26213,null,true,false,false,false,true,Cursor trial limit bypass
+ReverseKit,2025-12-15T05:38:42Z,3968,null,true,false,false,true,true,x64 Dynamic Reverse Engineering Toolkit
+r77-rootkit,2025-12-15T05:38:29Z,6026,null,true,false,false,true,true,Fileless ring 3 rootkit
+khongcogi,2024-02-22T18:21:02Z,1,JavaScript,true,false,false,false,false,Empty placeholder repo

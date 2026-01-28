@@ -8,7 +8,7 @@ import hashlib
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 
-from .schema import TelemetryItem, Capabilities
+from schema import TelemetryItem, Capabilities
 from common.privacy import anonymize_mac_oui, hash_mac, anonymize_ssid as priv_anonymize_ssid
 
 logger = logging.getLogger(__name__)

@@ -17,9 +17,11 @@ from pathlib import Path
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
 
-from transport import BufferManager, TransportClient  # noqa: E402
+from buffer_manager import BufferManager
+from transport_client import TransportClient
 from normalizer import TelemetryNormalizer  # noqa: E402
-from capture import CaptureDriver, IwCaptureDriver, MockCaptureDriver, FrameParser  # noqa: E402
+from capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
+from frame_parser import FrameParser
 
 
 logger = logging.getLogger(__name__)
@@ -345,7 +347,7 @@ class SensorController:
                 telemetry = self.normalizer.normalize(parsed)
 
                 # Add to buffer
-                self.buffer.append(telemetry.to_dict())
+                self.buffer.append(telemetry.dict())
 
                 # Record activity for adaptive hopping
                 self.hopper.record_activity(parsed.channel, 1)
@@ -363,6 +365,9 @@ class SensorController:
                 batch = self.buffer.get_batch(max_count=self.batch_size)
                 if batch is None:
                     continue
+
+                # Add sensor_id to batch
+                batch['sensor_id'] = self.sensor_id
 
                 # Upload
                 result = self.transport.upload(batch)
