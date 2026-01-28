@@ -4,6 +4,7 @@ Sentinel NetLab - Sensor Controller
 Main orchestrator for capture, processing, and upload.
 """
 
+import os
 import sys
 import time
 import signal
@@ -352,8 +353,11 @@ class SensorController:
                 # Record activity for adaptive hopping
                 self.hopper.record_activity(parsed.channel, 1)
 
+            except TimeoutError:
+                 logger.warning("Frame read timeout")
             except Exception as e:
-                logger.error(f"Capture loop error: {e}")
+                logger.error(f"Capture loop error: {e}", exc_info=True)
+                time.sleep(0.1)  # Backoff to avoid spinning
 
     def _upload_loop(self) -> None:
         """Upload batches to controller"""
@@ -474,7 +478,7 @@ Examples:
         '--upload-url',
         default='http://localhost:5000/api/v1/telemetry',
         help='Controller telemetry endpoint')
-    parser.add_argument('--auth-token', default='sentinel-dev-2024',
+    parser.add_argument('--auth-token', default=os.environ.get('SENSOR_AUTH_TOKEN', 'sentinel-dev-2024'),
                         help='Auth token for controller')
 
     # Storage
