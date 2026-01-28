@@ -69,6 +69,14 @@ class RiskConfig:
 
 
 @dataclass
+class MLConfig:
+    """Analysis and ML settings."""
+    enabled: bool = False
+    model_path: str = "models/anomaly_v1.pth"
+    threshold: float = 0.05
+    training_enabled: bool = False
+
+@dataclass
 class PrivacyConfig:
     """Privacy and data retention settings."""
     mode: str = "anonymized"  # normal, anonymized, private
@@ -84,6 +92,7 @@ class Config:
     storage: StorageConfig = field(default_factory=StorageConfig)
     api: APIConfig = field(default_factory=APIConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
+    ml: MLConfig = field(default_factory=MLConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
@@ -152,13 +161,26 @@ class ConfigManager:
     def _apply_env_vars(self):
         """Override config with environment variables."""
         env_mappings = {
+            # Legacy Prefixes
             "WIFI_SCANNER_INTERFACE": ("capture", "interface"),
+            
+            # Docker Standard Prefixes (from docker-compose.yml)
+            "SENSOR_INTERFACE": ("capture", "interface"),
+            "SENSOR_ID": ("api", "api_key"), # Using ID as key/token for simplicity in mapping
+            "SENSOR_AUTH_TOKEN": ("api", "api_key"),
+            
             "WIFI_SCANNER_PORT": ("api", "port", int),
+            "SERVER_PORT": ("api", "port", int),
+            
             "WIFI_SCANNER_API_KEY": ("api", "api_key"),
+            
             "WIFI_SCANNER_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
+            "SENSOR_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
+            
             "WIFI_SCANNER_DEBUG": ("api", "debug", lambda x: x.lower() == "true"),
             "WIFI_SCANNER_DB_PATH": ("storage", "db_path"),
             "WIFI_SCANNER_LOG_LEVEL": ("log_level", None),
+            "LOG_LEVEL": ("log_level", None),
         }
 
         for env_var, mapping in env_mappings.items():

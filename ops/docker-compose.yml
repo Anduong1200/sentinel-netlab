@@ -257,6 +257,26 @@ services:
         condition: service_healthy
     networks:
       - sentinel-net
+  
+  # ===========================================================================
+  # UI: Dash Dashboard
+  # ===========================================================================
+  dashboard:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.dashboard
+    image: ghcr.io/anduong1200/sentinel-dashboard:${VERSION:-latest}
+    container_name: sentinel-dashboard
+    restart: unless-stopped
+    ports:
+      - "8050:8050"
+    environment:
+      CONTROLLER_URL: http://controller:5000
+    depends_on:
+      controller:
+        condition: service_healthy
+    networks:
+      - sentinel-net
 
 # =============================================================================
 # VOLUMES

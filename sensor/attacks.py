@@ -65,6 +65,15 @@ class LabSafetyChecker:
             raise LabSafetyError(
                 "Lab mode not enabled. Set SENTINEL_LAB_MODE=true to enable attacks.\n"
                 "WARNING: Only use on networks you own or have authorization to test.")
+        
+        # Additional Authentication Check (Double Lock)
+        auth_key = os.environ.get('SENTINEL_AUTH_KEY', '')
+        # In production this should be a strong secret, for lab defaults we check it's set
+        if not auth_key or auth_key == 'change_me': 
+             raise LabSafetyError(
+                "Authentication key required. Set SENTINEL_AUTH_KEY to a secure value.\n"
+                "Refusing to run active attacks without authorization key.")
+                
         return True
 
     def check_bssid(self, bssid: str) -> bool:

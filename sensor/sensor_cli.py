@@ -12,9 +12,12 @@ import os
 import logging
 
 # Add sensor to path
-# Add sensor and project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sys
+import os
+# Add common to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from common.recommendations import generate_recommendations
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,6 +40,7 @@ class SensorCLI:
         self.parser = None
         self.storage = None
         self.risk_scorer = None
+        self.evil_twin_detector = None
         self.watchdog = None
         self.api_thread = None
 
@@ -79,7 +83,10 @@ class SensorCLI:
     def setup_risk_scorer(self):
         """Initialize risk scorer."""
         from algos.risk import RiskScorer
+        from algos.evil_twin import AdvancedEvilTwinDetector
         self.risk_scorer = RiskScorer()
+        self.evil_twin_detector = AdvancedEvilTwinDetector()
+        logger.info("Initialized Risk Scorer and Evil Twin Detector")
 
     def setup_watchdog(self):
         """Initialize USB watchdog if enabled."""
@@ -117,6 +124,10 @@ class SensorCLI:
                     risk = self.risk_scorer.calculate_risk(result)
                     result["risk_score"] = risk["risk_score"]
                     result["risk_level"] = risk["risk_level"]
+                    
+                    # Generate Advice
+                    recs = generate_recommendations(result, risk)
+                    result["recommendations"] = recs
 
                 # Store
                 if hasattr(self.storage, 'add_network'):
@@ -132,6 +143,24 @@ class SensorCLI:
                     if self.args.verbose:
                         logger.info(
                             f"📶 {result['ssid'][:20]:20} | {result['bssid']} | Risk: {result.get('risk_score', '?')}")
+
+                # Process Advanced Threat Detection (Evil Twin)
+                if self.evil_twin_detector and "bssid" in result:
+                    # Ingest into stateful detector
+                    alerts = self.evil_twin_detector.ingest(result)
+                    
+                    if alerts:
+                        for alert in alerts:
+                            logger.critical(f"⚠️ EVIL TWIN DETECTED: {alert.ssid} ({alert.suspect_bssid})")
+                            # Add alert to result storage if possible
+                            if hasattr(self.storage, 'add_event'):
+                                self.storage.add_event({
+                                    "type": "evil_twin",
+                                    "severity": alert.severity,
+                                    "details": alert.recommendation,
+                                    "timestamp": alert.timestamp,
+                                    "bssid": alert.suspect_bssid
+                                })
 
         except Exception as e:
             logger.debug(f"Packet processing error: {e}")

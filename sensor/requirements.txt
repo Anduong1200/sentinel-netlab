@@ -10,3 +10,7 @@ prometheus-client>=0.16.0
 psutil>=5.9.0
 pynmea2>=1.18.0
 pyserial>=3.5
+dash>=2.11.0
+dash-bootstrap-components>=1.4.0
+plotly>=5.15.0
+pandas>=2.0.0

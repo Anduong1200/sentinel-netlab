@@ -185,9 +185,10 @@ class WardriveSession:
 class WardriveCapture:
     """Capture networks during wardriving"""
 
-    def __init__(self, iface: str, mock: bool = False):
+    def __init__(self, iface: str, mock: bool = False, timeout: float = 1.0):
         self.iface = iface
         self.mock = mock
+        self.timeout = timeout
         self._running = False
 
     def start(self):
@@ -207,8 +208,62 @@ class WardriveCapture:
         if self.mock:
             return self._mock_networks()
 
-        # TODO: Implement real capture using scapy
-        return []
+        # Real Capture using Scapy
+        try:
+            from scapy.all import sniff, Dot11Beacon, Dot11, RadioTap
+            
+            # Sniff for a short duration
+            packets = sniff(iface=self.iface, timeout=self.timeout, count=50, verbose=False)
+            
+            networks = []
+            seen_bssids = set()
+            
+            for pkt in packets:
+                if pkt.haslayer(Dot11Beacon):
+                    bssid = pkt[Dot11].addr2
+                    if bssid in seen_bssids:
+                        continue
+                    seen_bssids.add(bssid)
+                    
+                    ssid = pkt[Dot11Elt].info.decode('utf-8', errors='ignore') if pkt.haslayer(Dot11Elt) else "<Hidden>"
+                    
+                    # Extract RSSI (Signal Strength)
+                    rssi = -100
+                    if pkt.haslayer(RadioTap):
+                        try:
+                            rssi = pkt[RadioTap].dBm_AntSignal
+                        except:
+                            pass
+                            
+                    # Extract Channel
+                    channel = 0
+                    try:
+                        channel = int(ord(pkt[Dot11Elt:3].info))
+                    except:
+                        pass
+                        
+                    # Determine Security
+                    security = "Open"
+                    cap = pkt.sprintf("{Dot11Beacon:%Dot11Beacon.cap%}")
+                    if "privacy" in cap:
+                        security = "WPA2" # Simplified assumption for wardriving
+                        
+                    networks.append({
+                        'bssid': bssid,
+                        'ssid': ssid,
+                        'rssi_dbm': rssi,
+                        'channel': channel,
+                        'security': security
+                    })
+                    
+            return networks
+            
+        except ImportError:
+            logger.error("Scapy not installed. Run: pip install scapy")
+            return []
+        except Exception as e:
+            logger.error(f"Capture error: {e}")
+            return []
 
     def _mock_networks(self) -> List[Dict]:
         """Generate mock network data"""
