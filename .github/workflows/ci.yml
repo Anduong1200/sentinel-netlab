@@ -23,6 +23,41 @@ env:
   IMAGE_NAME: anduong1200/sentinel-netlab
 
 jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install bandit
+
+      - name: Bandit Security Scan
+        run: bandit -r controller/ sensor/ -ll
+
+      - name: Verify Strict Config (Fail Fast Test)
+        run: |
+          export ENVIRONMENT=production
+          unset CONTROLLER_SECRET_KEY
+          unset CONTROLLER_HMAC_SECRET
+          python -c "
+          import sys
+          from controller.config import init_config
+          try:
+              init_config(strict_production=True)
+              print('FAIL: App started without secrets in PROD')
+              sys.exit(1)
+          except RuntimeError:
+              print('PASS: App refused to start (as expected)')
+              sys.exit(0)
+          "
+
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -32,7 +67,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python (quality)
-        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
           cache: "pip"
@@ -73,7 +108,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python (test)
-        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -170,7 +205,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python (build)
-        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 

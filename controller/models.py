@@ -147,7 +147,9 @@ class AuditLog(Base):
 
 def get_engine(database_url: str = None):
     """Create database engine"""
-    url = database_url or os.environ.get("DATABASE_URL", "sqlite:///data/sentinel.db")
+    from controller.config import init_config
+    config = init_config()
+    url = database_url or config.database.url
     return create_engine(url)
 
 

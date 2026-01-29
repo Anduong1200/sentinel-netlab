@@ -74,39 +74,40 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
     # Load Secrets
     secret_key = os.getenv("CONTROLLER_SECRET_KEY")
     hmac_secret = os.getenv("CONTROLLER_HMAC_SECRET")
-    db_url = os.getenv("DATABASE_URL") or os.getenv("CONTROLLER_DATABASE_URL")
+    db_url = os.getenv("CONTROLLER_DATABASE_URL") or os.getenv("DATABASE_URL")
 
     # Strict Validation for Production
     missing = []
+    
     if not secret_key:
         if is_prod and strict_production:
             missing.append("CONTROLLER_SECRET_KEY")
-        else:
+        elif not is_prod:
             secret_key = "dev-secret-unsafe-do-not-use-in-prod"
-            if not is_prod:
-                logger.warning("Using default INSECURE secret key (Dev Mode)")
+            logger.warning("Using default INSECURE secret key (Dev Mode)")
 
     if not hmac_secret:
         if is_prod and strict_production:
             missing.append("CONTROLLER_HMAC_SECRET")
-        else:
+        elif not is_prod:
             hmac_secret = "dev-hmac-unsafe-do-not-use-in-prod"
-            if not is_prod:
-                logger.warning("Using default INSECURE hmac secret (Dev Mode)")
+            logger.warning("Using default INSECURE hmac secret (Dev Mode)")
     
     if not db_url:
         if is_prod and strict_production:
-            missing.append("DATABASE_URL")
-        else:
+            missing.append("CONTROLLER_DATABASE_URL")
+        elif not is_prod:
             db_url = "sqlite:///data/sentinel.db"
-            if not is_prod:
-                logger.info("Using default SQLite database (Dev Mode)")
+            logger.info("Using default SQLite database (Dev Mode)")
 
     if missing:
-        raise RuntimeError(
-            f"Missing required production configuration: {', '.join(missing)}. "
-            "Set these environment variables or set ENVIRONMENT=development."
+        msg = (
+            f"CRITICAL: Missing required production secrets: {', '.join(missing)}. "
+            "Application refused to start in PRODUCTION mode without these secrets. "
+            "Set them in environment or switch ENVIRONMENT != production."
         )
+        logger.critical(msg)
+        raise RuntimeError(msg)
 
     # Security Config
     security = SecurityConfig(
@@ -126,9 +127,9 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         environment=env,
         security=security,
         database=database,
-        host=os.getenv("HOST", "0.0.0.0"),  # nosec B104
-        port=int(os.getenv("PORT", "5000")),
-        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true" or not is_prod,
+        host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # nosec B104
+        port=int(os.getenv("CONTROLLER_PORT", os.getenv("PORT", "5000"))),
+        debug=os.getenv("CONTROLLER_DEBUG", os.getenv("FLASK_DEBUG", "false")).lower() == "true" or not is_prod,
     )
 
     return cfg
