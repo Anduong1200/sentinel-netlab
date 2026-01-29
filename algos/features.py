@@ -17,12 +17,18 @@ class FeatureExtractor:
 
     def __init__(self, config: dict[str, Any] = None):
         self.config = config or {}
-        self.mappings = self.config.get('feature_mappings', {})
+        self.mappings = self.config.get("feature_mappings", {})
 
         # Default patterns if not in config
         self.suspicious_ssid_patterns = [
-            r"free", r"guest", r"public", r"open",
-            r"linksys", r"netgear", r"default", r"test"
+            r"free",
+            r"guest",
+            r"public",
+            r"open",
+            r"linksys",
+            r"netgear",
+            r"default",
+            r"test",
         ]
 
         self.trusted_vendors = [
@@ -31,7 +37,8 @@ class FeatureExtractor:
             "juniper",
             "fortinet",
             "meraki",
-            "ruckus"]
+            "ruckus",
+        ]
 
     def extract(self, network: dict[str, Any]) -> dict[str, float]:
         """
@@ -40,38 +47,39 @@ class FeatureExtractor:
         """
         features = {}
 
-        features['enc_score'] = self._extract_encryption(network)
-        features['rssi_norm'] = self._extract_rssi(network)
-        features['vendor_trust'] = self._extract_vendor(network)
-        features['ssid_suspicious'] = self._extract_ssid_suspicion(network)
-        features['ssid_hidden'] = 1.0 if not network.get(
-            'ssid') or network.get('ssid') == '<hidden>' else 0.0
-        features['wps_flag'] = 1.0 if network.get('wps_enabled') else 0.0
-        features['channel_unusual'] = self._extract_channel(network)
-        features['beacon_anomaly'] = self._extract_beacon_anomaly(network)
-        features['temporal_new'] = self._extract_temporal(network)
-        features['privacy_concern'] = self._extract_privacy(network)
+        features["enc_score"] = self._extract_encryption(network)
+        features["rssi_norm"] = self._extract_rssi(network)
+        features["vendor_trust"] = self._extract_vendor(network)
+        features["ssid_suspicious"] = self._extract_ssid_suspicion(network)
+        features["ssid_hidden"] = (
+            1.0 if not network.get("ssid") or network.get("ssid") == "<hidden>" else 0.0
+        )
+        features["wps_flag"] = 1.0 if network.get("wps_enabled") else 0.0
+        features["channel_unusual"] = self._extract_channel(network)
+        features["beacon_anomaly"] = self._extract_beacon_anomaly(network)
+        features["temporal_new"] = self._extract_temporal(network)
+        features["privacy_concern"] = self._extract_privacy(network)
 
         return features
 
     def _extract_encryption(self, network: dict) -> float:
-        enc_str = str(network.get('encryption', 'OPEN')).upper()
-        mapping = self.mappings.get('encryption', {})
+        enc_str = str(network.get("encryption", "OPEN")).upper()
+        mapping = self.mappings.get("encryption", {})
 
         # Default logic if mapping missing or partial
-        if 'WPA3' in enc_str:
-            return mapping.get('WPA3', 0.0)
-        if 'WPA2' in enc_str:
-            return mapping.get('WPA2', 0.2)
-        if 'WPA' in enc_str:
-            return mapping.get('WPA', 0.5)
-        if 'WEP' in enc_str:
-            return mapping.get('WEP', 0.9)
-        return mapping.get('OPEN', 1.0)
+        if "WPA3" in enc_str:
+            return mapping.get("WPA3", 0.0)
+        if "WPA2" in enc_str:
+            return mapping.get("WPA2", 0.2)
+        if "WPA" in enc_str:
+            return mapping.get("WPA", 0.5)
+        if "WEP" in enc_str:
+            return mapping.get("WEP", 0.9)
+        return mapping.get("OPEN", 1.0)
 
     def _extract_rssi(self, network: dict) -> float:
         try:
-            rssi = float(network.get('signal', -100))
+            rssi = float(network.get("signal", -100))
         except (ValueError, TypeError):
             rssi = -100.0
 
@@ -83,8 +91,8 @@ class FeatureExtractor:
         return max(0.0, min(1.0, val))
 
     def _extract_vendor(self, network: dict) -> float:
-        vendor = str(network.get('vendor', '')).lower()
-        if not vendor or vendor == 'unknown':
+        vendor = str(network.get("vendor", "")).lower()
+        if not vendor or vendor == "unknown":
             return 0.5
 
         if any(v in vendor for v in self.trusted_vendors):
@@ -93,7 +101,7 @@ class FeatureExtractor:
         return 0.3  # Consumer/Common
 
     def _extract_ssid_suspicion(self, network: dict) -> float:
-        ssid = str(network.get('ssid', '')).lower()
+        ssid = str(network.get("ssid", "")).lower()
         if not ssid:
             return 0.0
 
@@ -104,7 +112,7 @@ class FeatureExtractor:
 
     def _extract_channel(self, network: dict) -> float:
         try:
-            ch = int(network.get('channel', 0))
+            ch = int(network.get("channel", 0))
         except (ValueError, TypeError):
             ch = 0
 
@@ -124,7 +132,7 @@ class FeatureExtractor:
         # Placeholder for real anomaly detection logic
         # Here we just look at Beacon Interval deviation if available
         # Standard is often 100 TU (102.4 ms)
-        bi = network.get('beacon_interval')
+        bi = network.get("beacon_interval")
         if bi:
             try:
                 bi = float(bi)
@@ -141,17 +149,17 @@ class FeatureExtractor:
         # If first_seen == last_seen (within small delta), it's new
         # This requires formatted timestamp string parsing or raw timestamp usage
         # Assuming timestamps are strings, we simplisticly check equality
-        fs = network.get('first_seen')
-        ls = network.get('last_seen')
+        fs = network.get("first_seen")
+        ls = network.get("last_seen")
         if fs and ls and fs == ls:
             return 0.5
         return 0.0
 
     def _extract_privacy(self, network: dict) -> float:
-        caps = str(network.get('capabilities', ''))
+        caps = str(network.get("capabilities", ""))
         score = 0.0
-        if 'ESS' not in caps:
+        if "ESS" not in caps:
             score += 0.3
-        if network.get('wps_enabled'):
+        if network.get("wps_enabled"):
             score += 0.2
         return min(1.0, score)

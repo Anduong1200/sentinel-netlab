@@ -1,6 +1,11 @@
 """
 Monitoring Module for Sentinel NetLab
 Handles Prometheus metrics and JSON logging configuration.
+
+DEPRECATED:
+    The metrics in this file are deprecated in favor of `common.metrics`.
+    Do not use `REQUESTS`, `LATENCY` etc. from here.
+    The JSON logging usage is still valid but should likely move to common.
 """
 
 import logging
@@ -21,38 +26,27 @@ from pythonjsonlogger import jsonlogger
 
 # Request counters
 REQUESTS = Counter(
-    'wifi_api_requests_total',
-    'Total API requests',
-    ['endpoint', 'method', 'status']
+    "wifi_api_requests_total", "Total API requests", ["endpoint", "method", "status"]
 )
 
 # Latency histogram
 LATENCY = Histogram(
-    'wifi_api_request_latency_seconds',
-    'Request latency in seconds',
-    ['endpoint']
+    "wifi_api_request_latency_seconds", "Request latency in seconds", ["endpoint"]
 )
 
 # Operational Gauges
-SCAN_DURATION = Gauge(
-    'wifi_scan_duration_seconds',
-    'Duration of the last WiFi scan'
-)
+SCAN_DURATION = Gauge("wifi_scan_duration_seconds", "Duration of the last WiFi scan")
 
 NETWORKS_FOUND = Gauge(
-    'wifi_networks_found_count',
-    'Number of networks found in the last scan'
+    "wifi_networks_found_count", "Number of networks found in the last scan"
 )
 
 ACTIVE_ALERTS = Gauge(
-    'wifi_active_security_alerts',
-    'Number of active security alerts (e.g. Rogue APs)'
+    "wifi_active_security_alerts", "Number of active security alerts (e.g. Rogue APs)"
 )
 
 SYSTEM_INFO = Gauge(
-    'wifi_sensor_info',
-    'Sensor information',
-    ['version', 'interface', 'engine']
+    "wifi_sensor_info", "Sensor information", ["version", "interface", "engine"]
 )
 
 # -----------------------------------------------------------------------------
@@ -60,7 +54,7 @@ SYSTEM_INFO = Gauge(
 # -----------------------------------------------------------------------------
 
 
-def setup_json_logging(app_name='sentinel-sensor'):
+def setup_json_logging(app_name="sentinel-sensor"):
     """
     Configure structured JSON logging for ELK stack integration.
     """
@@ -69,7 +63,7 @@ def setup_json_logging(app_name='sentinel-sensor'):
 
     # Custom JSON formatter
     formatter = jsonlogger.JsonFormatter(
-        '%(asctime)s %(levelname)s %(name)s %(message)s %(module)s %(funcName)s'
+        "%(asctime)s %(levelname)s %(name)s %(message)s %(module)s %(funcName)s"
     )
     logHandler.setFormatter(formatter)
 
@@ -79,6 +73,7 @@ def setup_json_logging(app_name='sentinel-sensor'):
     logger.setLevel(logging.INFO)
 
     return logger
+
 
 # -----------------------------------------------------------------------------
 # Metrics Endpoint Handler

@@ -17,7 +17,9 @@ from typing import Any
 import requests
 
 
-def measure_latency(url: str, endpoint: str, headers: dict = None, timeout: float = 10.0) -> float:
+def measure_latency(
+    url: str, endpoint: str, headers: dict = None, timeout: float = 10.0
+) -> float:
     """
     Measure latency for a single request.
 
@@ -43,7 +45,7 @@ def run_latency_test(
     base_url: str,
     num_requests: int = 50,
     api_key: str = None,
-    endpoints: list[str] = None
+    endpoints: list[str] = None,
 ) -> dict[str, Any]:
     """
     Run latency test on multiple endpoints.
@@ -62,7 +64,7 @@ def run_latency_test(
         "timestamp": datetime.now().isoformat(),
         "base_url": base_url,
         "num_requests": num_requests,
-        "endpoints": {}
+        "endpoints": {},
     }
 
     for endpoint in endpoints:
@@ -94,13 +96,15 @@ def run_latency_test(
                 "median_ms": round(statistics.median(latencies_ms), 2),
                 "p95_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.95)], 2),
                 "p99_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.99)], 2),
-                "stdev_ms": round(statistics.stdev(latencies_ms), 2) if len(latencies_ms) > 1 else 0
+                "stdev_ms": round(statistics.stdev(latencies_ms), 2)
+                if len(latencies_ms) > 1
+                else 0,
             }
         else:
             endpoint_result = {
                 "successful_requests": 0,
                 "failed_requests": errors,
-                "error": "All requests failed"
+                "error": "All requests failed",
             }
 
         results["endpoints"][endpoint] = endpoint_result
@@ -116,9 +120,9 @@ def generate_report(results: dict[str, Any]) -> str:
                     API LATENCY TEST REPORT
 ================================================================================
 
-Generated: {results['timestamp']}
-Target:    {results['base_url']}
-Requests:  {results['num_requests']} per endpoint
+Generated: {results["timestamp"]}
+Target:    {results["base_url"]}
+Requests:  {results["num_requests"]} per endpoint
 
 --------------------------------------------------------------------------------
                          RESULTS BY ENDPOINT
@@ -144,8 +148,8 @@ Requests:  {results['num_requests']} per endpoint
             report += f"    P95:         {data['p95_ms']:.2f} ms\n"
             report += f"    P99:         {data['p99_ms']:.2f} ms\n"
 
-            all_avg.append(data['avg_ms'])
-            all_p95.append(data['p95_ms'])
+            all_avg.append(data["avg_ms"])
+            all_p95.append(data["p95_ms"])
 
     report += """
 --------------------------------------------------------------------------------
@@ -198,12 +202,20 @@ Requests:  {results['num_requests']} per endpoint
 def main():
     parser = argparse.ArgumentParser(description="API Latency Test")
     parser.add_argument("--url", default="http://localhost:5000", help="Base URL")
-    parser.add_argument("-n", "--requests", type=int, default=50, help="Number of requests")
+    parser.add_argument(
+        "-n", "--requests", type=int, default=50, help="Number of requests"
+    )
     parser.add_argument("--api-key", help="API key for authentication")
-    parser.add_argument("-o", "--output", default="latency_report.txt", help="Output file")
+    parser.add_argument(
+        "-o", "--output", default="latency_report.txt", help="Output file"
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
-    parser.add_argument("--endpoints", nargs="+", default=["/health", "/status", "/networks"],
-                       help="Endpoints to test")
+    parser.add_argument(
+        "--endpoints",
+        nargs="+",
+        default=["/health", "/status", "/networks"],
+        help="Endpoints to test",
+    )
 
     args = parser.parse_args()
 
@@ -219,7 +231,7 @@ def main():
         base_url=args.url,
         num_requests=args.requests,
         api_key=args.api_key,
-        endpoints=args.endpoints
+        endpoints=args.endpoints,
     )
 
     if args.json:
@@ -228,7 +240,7 @@ def main():
         output = generate_report(results)
 
     # Save report
-    with open(args.output, 'w') as f:
+    with open(args.output, "w") as f:
         f.write(output)
 
     print(f"\nReport saved to: {args.output}")
@@ -241,7 +253,9 @@ def main():
     for endpoint, data in results["endpoints"].items():
         if "avg_ms" in data:
             status = "✅" if data["avg_ms"] < 1000 else "⚠️"
-            print(f"  {status} {endpoint}: avg={data['avg_ms']:.0f}ms, p95={data['p95_ms']:.0f}ms")
+            print(
+                f"  {status} {endpoint}: avg={data['avg_ms']:.0f}ms, p95={data['p95_ms']:.0f}ms"
+            )
         else:
             print(f"  ❌ {endpoint}: FAILED")
 

@@ -17,8 +17,17 @@ log() {
     echo "[$timestamp] $1" >> "$LOG_FILE"
 }
 
-# 1. Compress existing PCAPs that aren't compressed
-find "$PCAP_DIR" -name "*.pcap" -mmin +2 -exec gzip {} \; 2>/dev/null
+# 1. Compress existing PCAPs that aren't compressed and NOT in use
+find "$PCAP_DIR" -maxdepth 1 -name "*.pcap" -mmin +2 | while read -r pcap_file; do
+    # Check if file is open by any process (e.g. tshark)
+    if lsof "$pcap_file" >/dev/null 2>&1; then
+        log "Skipping locked file: $pcap_file"
+        continue
+    fi
+    
+    # Compress safely
+    gzip "$pcap_file" && log "Compressed: $pcap_file"
+done
 
 # 2. Rotate (Delete oldest files exceeding retention)
 count=$(ls -1 "$PCAP_DIR"/*.gz 2>/dev/null | wc -l)

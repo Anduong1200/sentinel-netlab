@@ -16,25 +16,24 @@ import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
+
 class SimpleAutoencoder(nn.Module):
     """
     Basic Autoencoder for tabular feature data.
     """
+
     def __init__(self, input_dim):
         super().__init__()
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU()
+            nn.Linear(input_dim, 64), nn.ReLU(), nn.Linear(64, 32), nn.ReLU()
         )
         # Decoder
         self.decoder = nn.Sequential(
             nn.Linear(32, 64),
             nn.ReLU(),
             nn.Linear(64, input_dim),
-            nn.Sigmoid() # Assumes normalized inputs 0-1
+            nn.Sigmoid(),  # Assumes normalized inputs 0-1
         )
 
     def forward(self, x):
@@ -42,7 +41,8 @@ class SimpleAutoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return decoded
 
-def train_model(data_matrix, epochs=50, lr=0.001, save_path='model.pth'):
+
+def train_model(data_matrix, epochs=50, lr=0.001, save_path="model.pth"):
     """
     Train autoencoder on "normal" baseline data.
     """
@@ -77,6 +77,7 @@ def train_model(data_matrix, epochs=50, lr=0.001, save_path='model.pth'):
 
     return model
 
+
 def load_model(path, input_dim):
     """Load trained model."""
     if not os.path.exists(path):
@@ -85,6 +86,7 @@ def load_model(path, input_dim):
     model.load_state_dict(torch.load(path))
     model.eval()
     return model
+
 
 def detect_anomaly(model, new_vector, threshold=0.05):
     """

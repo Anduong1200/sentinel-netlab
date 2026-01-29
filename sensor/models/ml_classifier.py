@@ -8,7 +8,6 @@ To enable full ML: pip install scikit-learn joblib
 
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,7 @@ def predict_risk(features: dict[str, float]) -> dict:
     """
     try:
         import joblib
+
         if os.path.exists(MODEL_PATH):
             model = joblib.load(MODEL_PATH)
             X = [list(features.values())]
@@ -35,7 +35,7 @@ def predict_risk(features: dict[str, float]) -> dict:
             return {
                 "score": int(proba * 100),
                 "probability": round(proba, 3),
-                "model": "LogisticRegression"
+                "model": "LogisticRegression",
             }
     except ImportError:
         logger.debug("scikit-learn not installed, skipping ML prediction")
@@ -71,7 +71,7 @@ def train_model(labeled_data: list[dict], save_path: str = MODEL_PATH) -> dict:
         model.fit(X, y)
 
         # Evaluate with cross-validation
-        scores = cross_val_score(model, X, y, cv=5, scoring='roc_auc')
+        scores = cross_val_score(model, X, y, cv=5, scoring="roc_auc")
 
         # Save
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -82,12 +82,13 @@ def train_model(labeled_data: list[dict], save_path: str = MODEL_PATH) -> dict:
             "samples": len(labeled_data),
             "auc_cv": round(np.mean(scores), 3),
             "auc_std": round(np.std(scores), 3),
-            "model_path": save_path
+            "model_path": save_path,
         }
 
     except ImportError:
         return {
-            "error": "scikit-learn not installed. Run: pip install scikit-learn joblib"}
+            "error": "scikit-learn not installed. Run: pip install scikit-learn joblib"
+        }
     except Exception as e:
         return {"error": str(e)}
 
@@ -107,13 +108,14 @@ class RiskClassifier:
     def _load(self):
         try:
             import joblib
+
             if os.path.exists(self.model_path):
                 self.model = joblib.load(self.model_path)
                 logger.info(f"Loaded ML model from {self.model_path}")
         except Exception as e:
             logger.warning(f"Could not load model: {e}")
 
-    def predict(self, features: dict[str, float]) -> Optional[dict]:
+    def predict(self, features: dict[str, float]) -> dict | None:
         if self.model is None:
             return None
         try:

@@ -250,8 +250,9 @@ services:
     environment:
       CONTROLLER_URL: http://controller:5000
       SENSOR_ID: mock-sensor-01
-      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:-dev-token}
+      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:-sensor-01-token}
       SENSOR_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+
     depends_on:
       controller:
         condition: service_healthy
@@ -272,6 +273,8 @@ services:
       - "8050:8050"
     environment:
       CONTROLLER_URL: http://controller:5000
+      DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:-analyst-token}
+
     depends_on:
       controller:
         condition: service_healthy

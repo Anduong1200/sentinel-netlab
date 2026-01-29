@@ -8,7 +8,7 @@ import sys
 import unittest
 
 # Add sensor to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sensor'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "sensor"))
 
 
 class TestRiskScoring(unittest.TestCase):
@@ -16,6 +16,7 @@ class TestRiskScoring(unittest.TestCase):
 
     def setUp(self):
         from risk import RiskScorer
+
         self.scorer = RiskScorer()
 
     def test_open_network_high_risk(self):
@@ -25,10 +26,10 @@ class TestRiskScoring(unittest.TestCase):
             "bssid": "AA:BB:CC:11:22:33",
             "encryption": "Open",
             "signal": -50,
-            "channel": 6
+            "channel": 6,
         }
         result = self.scorer.calculate_risk(network)
-        self.assertGreaterEqual(result['risk_score'], 70)
+        self.assertGreaterEqual(result["risk_score"], 70)
 
     def test_wpa3_low_risk(self):
         """WPA3 networks should have lower risk"""
@@ -37,10 +38,10 @@ class TestRiskScoring(unittest.TestCase):
             "bssid": "AA:BB:CC:44:55:66",
             "encryption": "WPA3-SAE",
             "signal": -70,
-            "channel": 11
+            "channel": 11,
         }
         result = self.scorer.calculate_risk(network)
-        self.assertLess(result['risk_score'], 50)
+        self.assertLess(result["risk_score"], 50)
 
     def test_score_range(self):
         """Score should be between 0 and 100"""
@@ -49,11 +50,11 @@ class TestRiskScoring(unittest.TestCase):
             "bssid": "11:22:33:44:55:66",
             "encryption": "WPA2",
             "signal": -60,
-            "channel": 1
+            "channel": 1,
         }
         result = self.scorer.calculate_risk(network)
-        self.assertGreaterEqual(result['risk_score'], 0)
-        self.assertLessEqual(result['risk_score'], 100)
+        self.assertGreaterEqual(result["risk_score"], 0)
+        self.assertLessEqual(result["risk_score"], 100)
 
 
 class TestParser(unittest.TestCase):
@@ -61,6 +62,7 @@ class TestParser(unittest.TestCase):
 
     def setUp(self):
         from parser import WiFiParser
+
         self.parser = WiFiParser()
 
     def test_vendor_lookup(self):
@@ -81,24 +83,18 @@ class TestStorage(unittest.TestCase):
 
     def setUp(self):
         from storage import MemoryStorage
+
         self.storage = MemoryStorage()
 
     def test_add_network(self):
         """Test adding a network"""
-        network = {
-            "ssid": "Test",
-            "bssid": "AA:BB:CC:DD:EE:FF"
-        }
+        network = {"ssid": "Test", "bssid": "AA:BB:CC:DD:EE:FF"}
         self.storage.update(network)
         self.assertEqual(self.storage.count(), 1)
 
     def test_update_network(self):
         """Test updating existing network"""
-        network = {
-            "ssid": "Test",
-            "bssid": "AA:BB:CC:DD:EE:FF",
-            "signal": -60
-        }
+        network = {"ssid": "Test", "bssid": "AA:BB:CC:DD:EE:FF", "signal": -60}
         self.storage.update(network)
 
         # Update with new signal
@@ -115,5 +111,5 @@ class TestStorage(unittest.TestCase):
         self.assertEqual(self.storage.count(), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

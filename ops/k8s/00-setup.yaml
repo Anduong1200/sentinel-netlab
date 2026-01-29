@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sentinel
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentinel-secrets
+  namespace: sentinel
+type: Opaque
+stringData:
+  # CHANGE THESE IN PRODUCTION
+  CONTROLLER_SECRET_KEY: "change-me-production-secret-key"
+  CONTROLLER_HMAC_SECRET: "change-me-production-hmac-secret"
+  POSTGRES_PASSWORD: "change-me-db-password"
+  REDIS_PASSWORD: "change-me-redis-password"
+  MINIO_ROOT_PASSWORD: "change-me-minio-password"
+  GRAFANA_ADMIN_PASSWORD: "change-me-grafana-password"
+  DASHBOARD_API_TOKEN: "change-me-dashboard-token"

@@ -2,14 +2,17 @@
 Gunicorn configuration for Sentinel NetLab Sensor
 Run with: gunicorn -c gunicorn_conf.py api_server:app
 """
+
 import multiprocessing
 
 # Binding
 bind = "0.0.0.0:5000"
 
 # Workers (Formula: 2 * CPUs + 1)
+# Workers (Formula: 2 * CPUs + 1)
 workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "sync"
+worker_class = "gthread"
+threads = 4  # Async IO support
 timeout = 120  # Extended timeout for scans
 
 # Logging
@@ -25,10 +28,7 @@ proc_name = "wifi-sensor-api"
 daemon = False
 
 # Environment
-raw_env = [
-    "WIFI_SCANNER_INTERFACE=wlan0",
-    "PYTHONUNBUFFERED=TRUE"
-]
+raw_env = ["WIFI_SCANNER_INTERFACE=wlan0", "PYTHONUNBUFFERED=TRUE"]
 
 
 def on_starting(server):

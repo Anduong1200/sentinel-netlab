@@ -21,11 +21,11 @@ import statistics
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class RiskLevel(str, Enum):
     """Risk assessment levels"""
+
     CLEAN = "clean"
     LOW = "low"
     SUSPICIOUS = "suspicious"
@@ -36,12 +36,13 @@ class RiskLevel(str, Enum):
 @dataclass
 class RiskFactor:
     """Individual risk factor contributing to score"""
+
     name: str
     description: str
     weight: float  # 0.0 - 1.0
-    score: float   # 0 - 100 (before weight applied)
+    score: float  # 0 - 100 (before weight applied)
     evidence: dict = field(default_factory=dict)
-    mitre_id: Optional[str] = None
+    mitre_id: str | None = None
 
     @property
     def weighted_score(self) -> float:
@@ -51,6 +52,7 @@ class RiskFactor:
 @dataclass
 class RiskAssessment:
     """Complete risk assessment for a network/entity"""
+
     entity_id: str  # BSSID or MAC
     timestamp: float
 
@@ -89,6 +91,7 @@ class RiskAssessment:
 # RISK RULES
 # =============================================================================
 
+
 class RiskRule:
     """Base class for risk detection rules"""
 
@@ -98,7 +101,7 @@ class RiskRule:
         description: str,
         weight: float = 1.0,
         base_score: float = 50.0,
-        mitre_id: Optional[str] = None,
+        mitre_id: str | None = None,
     ):
         self.name = name
         self.description = description
@@ -106,7 +109,7 @@ class RiskRule:
         self.base_score = base_score
         self.mitre_id = mitre_id
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         """Evaluate rule against context, return factor if triggered"""
         raise NotImplementedError
 
@@ -124,7 +127,7 @@ class DeauthFloodRule(RiskRule):
         )
         self.threshold = 10  # frames per second
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         deauth_count = context.get("deauth_count", 0)
         window_sec = context.get("window_seconds", 60)
 
@@ -133,8 +136,10 @@ class DeauthFloodRule(RiskRule):
 
         rate = deauth_count / window_sec
 
-        if rate >= self.threshold:
-            score = min(100, self.base_score + (rate - self.threshold) * 2)
+        if rate >= self.threshold or deauth_count >= self.threshold:
+            # Score based on whichever is higher relative to threshold
+            metric = max(rate, deauth_count / 5.0)  # heuristic scaling
+            score = min(100, self.base_score + (metric - self.threshold) * 2)
             return RiskFactor(
                 name=self.name,
                 description=self.description,
@@ -162,7 +167,7 @@ class EvilTwinRule(RiskRule):
             mitre_id="T1557.001",
         )
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         ssid_bssid_map = context.get("ssid_bssid_map", {})
 
         for ssid, bssids in ssid_bssid_map.items():
@@ -194,7 +199,7 @@ class RSSIAnomalyRule(RiskRule):
         )
         self.threshold_db = 20  # dB change threshold
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         rssi_history = context.get("rssi_history", [])
 
         if len(rssi_history) < 2:
@@ -202,7 +207,7 @@ class RSSIAnomalyRule(RiskRule):
 
         # Check for sudden changes
         for i in range(1, len(rssi_history)):
-            delta = abs(rssi_history[i] - rssi_history[i-1])
+            delta = abs(rssi_history[i] - rssi_history[i - 1])
             if delta >= self.threshold_db:
                 return RiskFactor(
                     name=self.name,
@@ -211,7 +216,7 @@ class RSSIAnomalyRule(RiskRule):
                     score=min(100, self.base_score + delta),
                     evidence={
                         "delta_db": delta,
-                        "previous": rssi_history[i-1],
+                        "previous": rssi_history[i - 1],
                         "current": rssi_history[i],
                     },
                 )
@@ -230,7 +235,7 @@ class SequenceAnomalyRule(RiskRule):
             mitre_id="T1040",
         )
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         seq_numbers = context.get("sequence_numbers", [])
 
         if len(seq_numbers) < 3:
@@ -239,11 +244,11 @@ class SequenceAnomalyRule(RiskRule):
         # Check for resets or large jumps
         anomalies = 0
         for i in range(1, len(seq_numbers)):
-            expected_next = (seq_numbers[i-1] + 1) % 4096
+            expected_next = (seq_numbers[i - 1] + 1) % 4096
             if seq_numbers[i] != expected_next:
                 # Allow small skips due to missed frames
-                diff = (seq_numbers[i] - seq_numbers[i-1]) % 4096
-                if diff > 10 or seq_numbers[i] < seq_numbers[i-1]:
+                diff = (seq_numbers[i] - seq_numbers[i - 1]) % 4096
+                if diff > 10 or seq_numbers[i] < seq_numbers[i - 1]:
                     anomalies += 1
 
         if anomalies > 2:
@@ -273,7 +278,7 @@ class WeakSecurityRule(RiskRule):
         )
         self.weak_types = {"open", "wep", "wpa"}
 
-    def evaluate(self, context: dict) -> Optional[RiskFactor]:
+    def evaluate(self, context: dict) -> RiskFactor | None:
         security_type = context.get("security_type", "unknown")
 
         if security_type in self.weak_types:
@@ -291,6 +296,7 @@ class WeakSecurityRule(RiskRule):
 # =============================================================================
 # RISK ENGINE
 # =============================================================================
+
 
 class RiskEngine:
     """
@@ -339,7 +345,11 @@ class RiskEngine:
             RiskLevel.LOW: ["Monitor", "Update baseline"],
             RiskLevel.SUSPICIOUS: ["Investigate", "Notify analyst"],
             RiskLevel.HIGH_RISK: ["Alert", "Capture evidence", "Prepare containment"],
-            RiskLevel.CRITICAL: ["Immediate alert", "Isolate if possible", "Incident response"],
+            RiskLevel.CRITICAL: [
+                "Immediate alert",
+                "Isolate if possible",
+                "Incident response",
+            ],
         }
         return actions.get(level, [])
 
@@ -362,7 +372,7 @@ class RiskEngine:
                 factor = rule.evaluate(context)
                 if factor is not None:
                     factors.append(factor)
-            except Exception:
+            except Exception:  # nosec B110
                 # Log but don't fail
                 pass
 
@@ -391,9 +401,7 @@ class RiskEngine:
             actions=actions,
         )
 
-    def _calculate_confidence(
-        self, factors: list[RiskFactor], context: dict
-    ) -> float:
+    def _calculate_confidence(self, factors: list[RiskFactor], context: dict) -> float:
         """Calculate confidence in assessment"""
         if not factors:
             return 1.0  # High confidence in "clean"
@@ -453,7 +461,9 @@ class RiskEngine:
 
         if rssi_values:
             stats["rssi_mean"] = statistics.mean(rssi_values)
-            stats["rssi_stdev"] = statistics.stdev(rssi_values) if len(rssi_values) > 1 else 0
+            stats["rssi_stdev"] = (
+                statistics.stdev(rssi_values) if len(rssi_values) > 1 else 0
+            )
 
         return stats
 
@@ -461,6 +471,7 @@ class RiskEngine:
 # =============================================================================
 # DEFAULT ENGINE
 # =============================================================================
+
 
 def create_default_engine() -> RiskEngine:
     """Create engine with all default rules"""

@@ -19,21 +19,21 @@ FRAME_TYPES = {
 # MANAGEMENT FRAME SUBTYPES (type=0)
 # =============================================================================
 MANAGEMENT_SUBTYPES = {
-    0: "assoc_req",       # Association Request
-    1: "assoc_resp",      # Association Response
-    2: "reassoc_req",     # Reassociation Request
-    3: "reassoc_resp",    # Reassociation Response
-    4: "probe_req",       # Probe Request
-    5: "probe_resp",      # Probe Response
-    6: "timing_adv",      # Timing Advertisement
+    0: "assoc_req",  # Association Request
+    1: "assoc_resp",  # Association Response
+    2: "reassoc_req",  # Reassociation Request
+    3: "reassoc_resp",  # Reassociation Response
+    4: "probe_req",  # Probe Request
+    5: "probe_resp",  # Probe Response
+    6: "timing_adv",  # Timing Advertisement
     7: "reserved",
-    8: "beacon",          # Beacon
-    9: "atim",            # Announcement Traffic Indication Map
-    10: "disassoc",       # Disassociation
-    11: "auth",           # Authentication
-    12: "deauth",         # Deauthentication
-    13: "action",         # Action
-    14: "action_noack",   # Action No Ack
+    8: "beacon",  # Beacon
+    9: "atim",  # Announcement Traffic Indication Map
+    10: "disassoc",  # Disassociation
+    11: "auth",  # Authentication
+    12: "deauth",  # Deauthentication
+    13: "action",  # Action
+    14: "action_noack",  # Action No Ack
     15: "reserved",
 }
 
@@ -43,42 +43,42 @@ MANAGEMENT_SUBTYPES = {
 CONTROL_SUBTYPES = {
     0: "reserved",
     1: "reserved",
-    2: "trigger",         # Trigger
-    3: "tack",            # TACK
-    4: "beamforming",     # Beamforming Report Poll
-    5: "vht_ndp",         # VHT NDP Announcement
-    6: "ctrl_ext",        # Control Frame Extension
-    7: "ctrl_wrapper",    # Control Wrapper
-    8: "block_ack_req",   # Block Ack Request
-    9: "block_ack",       # Block Ack
-    10: "ps_poll",        # PS-Poll
-    11: "rts",            # Request To Send
-    12: "cts",            # Clear To Send
-    13: "ack",            # Acknowledgment
-    14: "cf_end",         # CF-End
-    15: "cf_end_ack",     # CF-End + CF-Ack
+    2: "trigger",  # Trigger
+    3: "tack",  # TACK
+    4: "beamforming",  # Beamforming Report Poll
+    5: "vht_ndp",  # VHT NDP Announcement
+    6: "ctrl_ext",  # Control Frame Extension
+    7: "ctrl_wrapper",  # Control Wrapper
+    8: "block_ack_req",  # Block Ack Request
+    9: "block_ack",  # Block Ack
+    10: "ps_poll",  # PS-Poll
+    11: "rts",  # Request To Send
+    12: "cts",  # Clear To Send
+    13: "ack",  # Acknowledgment
+    14: "cf_end",  # CF-End
+    15: "cf_end_ack",  # CF-End + CF-Ack
 }
 
 # =============================================================================
 # DATA FRAME SUBTYPES (type=2)
 # =============================================================================
 DATA_SUBTYPES = {
-    0: "data",            # Data
-    1: "data_cf_ack",     # Data + CF-Ack
-    2: "data_cf_poll",    # Data + CF-Poll
-    3: "data_cf_ack_poll", # Data + CF-Ack + CF-Poll
-    4: "null",            # Null (no data)
-    5: "cf_ack",          # CF-Ack (no data)
-    6: "cf_poll",         # CF-Poll (no data)
-    7: "cf_ack_poll",     # CF-Ack + CF-Poll (no data)
-    8: "qos_data",        # QoS Data
-    9: "qos_data_cf_ack", # QoS Data + CF-Ack
-    10: "qos_data_cf_poll", # QoS Data + CF-Poll
-    11: "qos_data_cf_ack_poll", # QoS Data + CF-Ack + CF-Poll
-    12: "qos_null",       # QoS Null (no data)
+    0: "data",  # Data
+    1: "data_cf_ack",  # Data + CF-Ack
+    2: "data_cf_poll",  # Data + CF-Poll
+    3: "data_cf_ack_poll",  # Data + CF-Ack + CF-Poll
+    4: "null",  # Null (no data)
+    5: "cf_ack",  # CF-Ack (no data)
+    6: "cf_poll",  # CF-Poll (no data)
+    7: "cf_ack_poll",  # CF-Ack + CF-Poll (no data)
+    8: "qos_data",  # QoS Data
+    9: "qos_data_cf_ack",  # QoS Data + CF-Ack
+    10: "qos_data_cf_poll",  # QoS Data + CF-Poll
+    11: "qos_data_cf_ack_poll",  # QoS Data + CF-Ack + CF-Poll
+    12: "qos_null",  # QoS Null (no data)
     13: "reserved",
-    14: "qos_cf_poll",    # QoS CF-Poll (no data)
-    15: "qos_cf_ack_poll", # QoS CF-Ack + CF-Poll (no data)
+    14: "qos_cf_poll",  # QoS CF-Poll (no data)
+    15: "qos_cf_ack_poll",  # QoS CF-Ack + CF-Poll (no data)
 }
 
 # =============================================================================
@@ -121,24 +121,24 @@ CIPHER_SUITES = {
     0x01: "wep40",
     0x02: "tkip",
     0x03: "reserved",
-    0x04: "ccmp",       # AES-CCMP
+    0x04: "ccmp",  # AES-CCMP
     0x05: "wep104",
-    0x06: "bip_cmac",   # BIP-CMAC-128
-    0x08: "gcmp",       # GCMP-128
-    0x09: "gcmp256",    # GCMP-256
-    0x0A: "ccmp256",    # CCMP-256
+    0x06: "bip_cmac",  # BIP-CMAC-128
+    0x08: "gcmp",  # GCMP-128
+    0x09: "gcmp256",  # GCMP-256
+    0x0A: "ccmp256",  # CCMP-256
 }
 
 AKM_SUITES = {
-    0x01: "8021x",      # IEEE 802.1X/EAP
-    0x02: "psk",        # Pre-Shared Key
-    0x03: "ft_8021x",   # FT with 802.1X
-    0x04: "ft_psk",     # FT with PSK
+    0x01: "8021x",  # IEEE 802.1X/EAP
+    0x02: "psk",  # Pre-Shared Key
+    0x03: "ft_8021x",  # FT with 802.1X
+    0x04: "ft_psk",  # FT with PSK
     0x05: "8021x_sha256",
     0x06: "psk_sha256",
-    0x08: "sae",        # SAE (WPA3)
-    0x09: "ft_sae",     # FT with SAE
-    0x12: "owe",        # Opportunistic Wireless Encryption
+    0x08: "sae",  # SAE (WPA3)
+    0x09: "ft_sae",  # FT with SAE
+    0x12: "owe",  # Opportunistic Wireless Encryption
 }
 
 # =============================================================================

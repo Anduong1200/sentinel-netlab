@@ -1,214 +1,90 @@
 # Contributing to Sentinel NetLab
 
-Thank you for your interest in contributing! This guide will help you get started.
+Thank you for your interest in contributing to Sentinel NetLab! This project aims to be a robust platform for wireless security research and education.
 
----
+## Development Environment Setup
 
-## Code of Conduct
+We recommend using Docker for a consistent development experience, but you can also run locally for debugging.
 
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+### Prerequisites (Local)
+- Python 3.10+
+- `pip`
+- `make` (optional but recommended)
 
----
+### Quick Start
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Anduong1200/sentinel-netlab.git
+    cd sentinel-netlab
+    ```
 
-## Getting Started
+2.  **Install Production & Dev Dependencies**:
+    The project uses `pyproject.toml`.
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # or venv\Scripts\activate
+    pip install -e .[dev]     # Uses optional-dependencies if defined, or install manually
+    # Or purely:
+    pip install . 
+    pip install pytest ruff black mypy bandit
+    ```
 
-### 1. Fork & Clone
+3.  **Run Tests**:
+    We use `pytest`. You can run tests via Docker (recommended) or locally:
+    ```bash
+    # Standard way (Docker):
+    make test
+    
+    # Local way:
+    pytest tests/
+    ```
 
-```bash
-git clone https://github.com/Anduong1200/sentinel-netlab.git
-cd sentinel-netlab
-```
-
-### 2. Set Up Development Environment
-
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-
-# Install dependencies
-make dev
-
-# Run tests to verify setup
-make test
-```
-
-### 3. Create a Branch
-
-```bash
-git checkout -b feature/your-feature-name
-# or
-git checkout -b fix/issue-123
-```
-
----
-
-## Development Workflow
+## Development Standards
 
 ### Code Style
+We strictly enforce code style using **Ruff** and **Black**.
+- **Linting**: `ruff check sensor/ controller/`
+- **Formatting**: `ruff format sensor/ controller/`
 
-- **Linting**: We use [Ruff](https://github.com/astral-sh/ruff) for linting
-- **Formatting**: Use `ruff format` or `black`
-- **Type hints**: Add type hints to new code
-
-```bash
-# Run linter
-make lint
-
-# Auto-fix issues
-ruff check --fix .
-```
+Please run `make lint` before submitting a PR.
 
 ### Testing
+- **Unit Tests**: All new logic must have unit tests (`tests/unit`).
+- **Integration Tests**: Critical flows (e.g., pipeline ingestion) should have integration tests (`tests/integration`).
+- **Coverage**: We aim for steady improvement in test coverage.
 
-```bash
-# Run all tests
-make test
-
-# Run specific tests
-pytest tests/unit/test_risk.py -v
-
-# Run with coverage
-make test-cov
+### Type Hints
+Use Python type hints. We verify with `mypy`.
+```python
+def process_data(data: dict[str, Any]) -> bool:
+    ...
 ```
-
-### Pre-commit Checks
-
-Before committing, run:
-
-```bash
-make pre-commit
-```
-
----
 
 ## Pull Request Process
 
-### 1. Commit Guidelines
+1.  Create a feature branch from `main`: `git checkout -b feature/my-cool-feature`.
+2.  Implement your changes.
+3.  Add tests.
+4.  Run linting and tests locally (`make lint`, `make test`).
+5.  Update documentation if applicable (e.g., `README.md` or `docs/`).
+6.  Push to your fork and submit a PR to `main`.
+7.  Fill out the PR template describing your changes.
 
-Use [Conventional Commits](https://www.conventionalcommits.org/):
+## Project Structure
 
-```
-<type>(<scope>): <description>
+- `sentinel.py`: Unified CLI entry point (`monitor`, `scan` modes).
+- `sensor/`: Core sensor logic (Capture, Parsing, Normalization).
+- `controller/`: Backend API and Aggregation logic.
+- `common/`: Shared utilities (OUI, Config, Privacy).
+- `algos/`: Detection algorithms (Risk, Evil Twin).
+- `ops/`: Docker and deployment configuration.
 
-[optional body]
+## Reporting Issues
 
-[optional footer]
-```
+Please use the GitHub Issue Tracker.
+- **Bugs**: Provide steps to reproduce, logs, and environment details.
+- **Features**: Describe the use case and expected benefit.
 
-**Types:**
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style (formatting, no logic change)
-- `refactor`: Code refactoring
-- `test`: Adding/updating tests
-- `chore`: Maintenance tasks
+## Security
 
-**Examples:**
-```
-feat(detector): add WPS attack detection
-fix(parser): handle malformed beacon frames
-docs: update quickstart guide
-```
-
-### 2. Create Pull Request
-
-1. Push your branch: `git push origin feature/your-feature`
-2. Open a PR against `develop` (or `main` for hotfixes)
-3. Fill out the PR template
-4. Request review from maintainers
-
-### 3. Review Checklist
-
-Before requesting review, ensure:
-
-- [ ] Tests pass (`make test`)
-- [ ] Linting passes (`make lint`)
-- [ ] Security scan passes (`make bandit`)
-- [ ] Documentation updated (if needed)
-- [ ] CHANGELOG updated (for features/breaking changes)
-
----
-
-## What to Contribute
-
-### Good First Issues
-
-Look for issues labeled [`good first issue`](https://github.com/Anduong1200/sentinel-netlab/labels/good%20first%20issue).
-
-### Feature Ideas
-
-- New detection algorithms
-- Additional WiFi frame parsers
-- Dashboard improvements
-- Documentation translations
-- Performance optimizations
-
-### Security Contributions
-
-If you find a security vulnerability:
-
-1. **DO NOT** open a public issue
-2. Email security concerns to: security@example.com
-3. See [SECURITY.md](SECURITY.md) for details
-
----
-
-## Architecture Overview
-
-```
-sentinel-netlab/
-├── sensor/           # Sensor code (runs on edge devices)
-│   ├── main.py       # Entry point
-│   ├── parser.py     # Frame parsing
-│   ├── wids_*.py     # Detection engines
-│   └── schema.py     # Data models (Pydantic)
-├── controller/       # Controller API (central server)
-│   └── api_server.py # Flask API
-├── tests/            # Test suite
-│   ├── unit/
-│   └── integration/
-├── ops/              # Deployment configs
-│   ├── docker-compose.yml
-│   └── grafana/
-└── docs/             # Documentation
-```
-
----
-
-## Adding a New Detector
-
-1. Create detector class in `sensor/wids_detectors.py`:
-
-```python
-from sensor.detector_base import BaseDetector, DetectorAlert
-
-class MyDetector(BaseDetector):
-    NAME = "my_detector"
-    DESCRIPTION = "Detects XYZ attacks"
-    
-    def ingest(self, data):
-        if self._is_suspicious(data):
-            return self.create_alert(...)
-        return None
-```
-
-2. Register in detector registry
-3. Add tests in `tests/unit/test_wids.py`
-4. Update documentation
-
----
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
-
----
-
-## Questions?
-
-- Open a [Discussion](https://github.com/Anduong1200/sentinel-netlab/discussions)
-- Join our community chat (if available)
-
-Thank you for contributing! 🎉
+If you discover a security vulnerability, please refer to [SECURITY.md](SECURITY.md) instead of opening a public issue.

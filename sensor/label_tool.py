@@ -29,15 +29,14 @@ def display_network(net: dict, index: int, total: int) -> None:
 def get_label() -> str:
     """Prompt user for label."""
     while True:
-        choice = input(
-            "  Label [L]ow / [M]edium / [H]igh / [S]kip: ").strip().upper()
-        if choice in ['L', 'LOW']:
-            return 'LOW'
-        elif choice in ['M', 'MEDIUM']:
-            return 'MEDIUM'
-        elif choice in ['H', 'HIGH']:
-            return 'HIGH'
-        elif choice in ['S', 'SKIP']:
+        choice = input("  Label [L]ow / [M]edium / [H]igh / [S]kip: ").strip().upper()
+        if choice in ["L", "LOW"]:
+            return "LOW"
+        elif choice in ["M", "MEDIUM"]:
+            return "MEDIUM"
+        elif choice in ["H", "HIGH"]:
+            return "HIGH"
+        elif choice in ["S", "SKIP"]:
             return None
         else:
             print("  Invalid input. Use L/M/H/S.")
@@ -49,8 +48,8 @@ def run_labeling(input_path: str, output_path: str) -> None:
     with open(input_path) as f:
         networks = json.load(f)
 
-    if isinstance(networks, dict) and 'networks' in networks:
-        networks = networks['networks']
+    if isinstance(networks, dict) and "networks" in networks:
+        networks = networks["networks"]
 
     labeled = []
     total = len(networks)
@@ -64,14 +63,16 @@ def run_labeling(input_path: str, output_path: str) -> None:
             label = get_label()
 
             if label:
-                labeled.append({
-                    "bssid": net.get("bssid"),
-                    "ssid": net.get("ssid"),
-                    "encryption": net.get("encryption"),
-                    "signal": net.get("signal"),
-                    "vendor": net.get("vendor"),
-                    "label": label
-                })
+                labeled.append(
+                    {
+                        "bssid": net.get("bssid"),
+                        "ssid": net.get("ssid"),
+                        "encryption": net.get("encryption"),
+                        "signal": net.get("signal"),
+                        "vendor": net.get("vendor"),
+                        "label": label,
+                    }
+                )
                 print(f"  -> Labeled as {label}")
             else:
                 print("  -> Skipped")
@@ -80,25 +81,23 @@ def run_labeling(input_path: str, output_path: str) -> None:
         print("\n\nLabeling interrupted.")
 
     # Save
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(labeled, f, indent=2)
 
     print(f"\nSaved {len(labeled)} labeled networks to {output_path}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Label WiFi networks for ML training")
+    parser = argparse.ArgumentParser(description="Label WiFi networks for ML training")
     parser.add_argument(
-        "--input",
-        "-i",
-        required=True,
-        help="Input JSON file with networks")
+        "--input", "-i", required=True, help="Input JSON file with networks"
+    )
     parser.add_argument(
         "--output",
         "-o",
         default="data/labeled_networks.json",
-        help="Output file for labeled data")
+        help="Output file for labeled data",
+    )
 
     args = parser.parse_args()
 

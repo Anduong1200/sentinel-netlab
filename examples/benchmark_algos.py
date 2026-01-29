@@ -19,6 +19,7 @@ from algos.risk import RiskScorer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("benchmark")
 
+
 def run_benchmark():
     logger.info("Initializing detectors...")
 
@@ -41,12 +42,12 @@ def run_benchmark():
 
     # Scenario A: Normal Network
     net_normal = {
-        'ssid': 'Corporate_WiFi',
-        'bssid': 'AA:BB:CC:11:22:33',
-        'security': 'WPA2',
-        'rssi_dbm': -55,
-        'has_pmf': True,
-        'vendor': 'Cisco'
+        "ssid": "Corporate_WiFi",
+        "bssid": "AA:BB:CC:11:22:33",
+        "security": "WPA2",
+        "rssi_dbm": -55,
+        "has_pmf": True,
+        "vendor": "Cisco",
     }
 
     score = risk_scorer.score(net_normal)
@@ -58,6 +59,7 @@ def run_benchmark():
     # This is just a basic instantiation check for this example
 
     logger.info(f"Benchmark complete in {time.time() - start_time:.4f}s")
+
 
 if __name__ == "__main__":
     run_benchmark()

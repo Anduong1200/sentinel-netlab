@@ -20,8 +20,6 @@ from flask_limiter.util import get_remote_address
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modular components
-from parser import WiFiParser
-
 from attacks import AttackEngine
 from capture import CaptureEngine, check_monitor_support
 from forensics import analyze_pcap
@@ -37,6 +35,7 @@ from monitoring import (
     prometheus_metrics_endpoint,
     setup_json_logging,
 )
+from parser import WiFiParser
 from storage import MemoryStorage, WiFiStorage
 
 from algos.risk import RiskScorer
@@ -52,13 +51,10 @@ limiter = Limiter(key_func=get_remote_address, app=app)
 # Configuration
 API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
 if not API_KEY:
-    logger.warning(
-        "WIFI_SCANNER_API_KEY not set! Using default development key.")
+    logger.warning("WIFI_SCANNER_API_KEY not set! Using default development key.")
     API_KEY = "sentinel-dev-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
-ALLOW_ACTIVE_ATTACKS = os.environ.get(
-    "ALLOW_ACTIVE_ATTACKS",
-    "false").lower() == "true"
+ALLOW_ACTIVE_ATTACKS = os.environ.get("ALLOW_ACTIVE_ATTACKS", "false").lower() == "true"
 
 # Initialize components
 capture_engine = CaptureEngine(interface=INTERFACE)
@@ -69,94 +65,94 @@ risk_scorer = RiskScorer()
 attack_engine = AttackEngine(interface=INTERFACE)
 
 # Set static info metric
-SYSTEM_INFO.labels(
-    version="1.0.0",
-    interface=INTERFACE,
-    engine="tshark").set(1)
+SYSTEM_INFO.labels(version="1.0.0", interface=INTERFACE, engine="tshark").set(1)
 
 
-@app.route('/')
+@app.route("/")
 def index():
     """Root endpoint"""
-    return jsonify({
-        "message": "Sentinel NetLab Sensor API",
-        "version": "1.0.0",
-        "docs": "/api/docs"  # Placeholder
-    })
+    return jsonify(
+        {
+            "message": "Sentinel NetLab Sensor API",
+            "version": "1.0.0",
+            "docs": "/api/docs",  # Placeholder
+        }
+    )
 
 
 @app.before_request
 def check_auth():
     """Simple API key authentication"""
     if request.endpoint not in [
-        'health',
-        'status',
-        'metrics',
-            'index']:  # Allow metrics without auth
-        api_key = request.headers.get('X-API-Key')
+        "health",
+        "status",
+        "metrics",
+        "index",
+    ]:  # Allow metrics without auth
+        api_key = request.headers.get("X-API-Key")
         if api_key != API_KEY:
             # Count failed auth
-            REQUESTS.labels(request.path, request.method, '401').inc()
+            REQUESTS.labels(request.path, request.method, "401").inc()
             return jsonify({"error": "Unauthorized"}), 401
 
 
 @app.after_request
 def record_metrics(response):
     """Record request metrics"""
-    if request.endpoint != 'metrics':
-        REQUESTS.labels(
-            request.path,
-            request.method,
-            str(response.status_code)
-        ).inc()
+    if request.endpoint != "metrics":
+        REQUESTS.labels(request.path, request.method, str(response.status_code)).inc()
     return response
 
 
-@app.route('/metrics')
+@app.route("/metrics")
 def metrics():
     """Prometheus metrics endpoint"""
     return prometheus_metrics_endpoint()
 
 
-@app.route('/health')
+@app.route("/health")
 def health():
     """Health check endpoint (no auth required)"""
-    return jsonify({
-        "status": "ok",
-        "timestamp": datetime.now().isoformat(),
-        "interface": INTERFACE,
-        "metrics_url": "/metrics"
-    })
+    return jsonify(
+        {
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "interface": INTERFACE,
+            "metrics_url": "/metrics",
+        }
+    )
 
 
-@app.route('/status')
+@app.route("/status")
 def status():
     """Get sensor status including interface and capture state"""
     try:
         interface_info = check_monitor_support(INTERFACE)
         capture_status = capture_engine.get_status()
 
-        return jsonify({
-            "interface": interface_info,
-            "capture": capture_status,
-            "storage": {
-                "network_count": storage.get_network_count(),
-                "pcap_stats": storage.get_pcap_stats()
+        return jsonify(
+            {
+                "interface": interface_info,
+                "capture": capture_status,
+                "storage": {
+                    "network_count": storage.get_network_count(),
+                    "pcap_stats": storage.get_pcap_stats(),
+                },
             }
-        })
+        )
     except Exception as e:
         logger.error(f"Status check failed: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/scan')
+@app.route("/scan")
 @limiter.limit("10 per minute")
 def scan_networks():
     """Scan for WiFi networks using integrated modules"""
     start_time = time.time()
 
     # Measure latency for scan specifically
-    with LATENCY.labels('/scan').time():
+    with LATENCY.labels("/scan").time():
         try:
             # Clear previous scan data
             parser.clear()
@@ -167,16 +163,17 @@ def scan_networks():
 
         except Exception as e:
             logger.warning(
-                f"Real scan failed or not supported: {e}, activating simulation mode")
+                f"Real scan failed or not supported: {e}, activating simulation mode"
+            )
             networks = get_simulation_data()
 
         # Calculate risk scores using RiskScorer
         alerts_count = 0
         for net in networks:
             risk_result = risk_scorer.calculate_risk(net)
-            net['risk_score'] = risk_result['risk_score']
-            net['risk_level'] = risk_result['risk_level']
-            if net['risk_score'] > 70:
+            net["risk_score"] = risk_result["risk_score"]
+            net["risk_level"] = risk_result["risk_level"]
+            if net["risk_score"] > 70:
                 alerts_count += 1
 
         # Update metrics
@@ -191,13 +188,15 @@ def scan_networks():
         except Exception as e:
             logger.error(f"Storage error: {e}")
 
-        return jsonify({
-            "status": "success",
-            "timestamp": datetime.now().isoformat(),
-            "networks": networks,
-            "count": len(networks),
-            "scan_duration": round(duration, 2)
-        })
+        return jsonify(
+            {
+                "status": "success",
+                "timestamp": datetime.now().isoformat(),
+                "networks": networks,
+                "count": len(networks),
+                "scan_duration": round(duration, 2),
+            }
+        )
 
 
 def perform_real_scan(channels=None, dwell_time=0.5):
@@ -225,11 +224,12 @@ def perform_real_scan(channels=None, dwell_time=0.5):
             packet_callback=packet_callback,
             channels=channels,
             dwell_time=dwell_time,
-            enable_channel_hop=True
+            enable_channel_hop=True,
         )
 
         # Wait for scan to complete (3 passes)
         import time
+
         total_time = len(channels) * dwell_time * 3
         time.sleep(total_time)
 
@@ -252,25 +252,28 @@ def perform_real_scan(channels=None, dwell_time=0.5):
 def get_simulation_data():
     """Generate simulation data for testing or fallback mode"""
     import random
+
     vendors = ["TP-Link", "Asus", "Netgear", "D-Link", "MikroTik"]
     encryptions = ["Open", "WEP", "WPA2-PSK", "WPA3-SAE"]
 
     networks = []
-    for _i in range(random.randint(3, 8)):
-        vendor = random.choice(vendors)
-        networks.append({
-            "ssid": f"{vendor}_{random.randint(100, 999)}",
-            "bssid": f"{random.randint(0xAA, 0xFF):02X}:{random.randint(0xBB, 0xFF):02X}:{random.randint(0xCC, 0xFF):02X}:"
-                     f"{random.randint(0x11, 0x99):02X}:{random.randint(0x22, 0x99):02X}:{random.randint(0x33, 0x99):02X}",
-            "signal": random.randint(-90, -40),
-            "channel": random.choice([1, 6, 11]),
-            "encryption": random.choice(encryptions),
-            "vendor": vendor
-        })
+    for _i in range(random.randint(3, 8)):  # nosec B311
+        vendor = random.choice(vendors)  # nosec B311
+        networks.append(
+            {
+                "ssid": f"{vendor}_{random.randint(100, 999)}",  # nosec B311
+                "bssid": f"{random.randint(0xAA, 0xFF):02X}:{random.randint(0xBB, 0xFF):02X}:{random.randint(0xCC, 0xFF):02X}:"  # nosec B311
+                f"{random.randint(0x11, 0x99):02X}:{random.randint(0x22, 0x99):02X}:{random.randint(0x33, 0x99):02X}",  # nosec B311
+                "signal": random.randint(-90, -40),  # nosec B311
+                "channel": random.choice([1, 6, 11]),  # nosec B311
+                "encryption": random.choice(encryptions),  # nosec B311
+                "vendor": vendor,
+            }
+        )
     return networks
 
 
-@app.route('/history')
+@app.route("/history")
 def get_history():
     """Get scan history from persistent storage"""
     try:
@@ -281,61 +284,62 @@ def get_history():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/export/csv')
+@app.route("/export/csv")
 def export_csv():
     """Export scan data as CSV"""
     try:
         csv_content = storage.export_csv()
         return Response(
             csv_content,
-            mimetype='text/csv',
-            headers={
-                'Content-Disposition': 'attachment; filename=wifi_scan.csv'})
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=wifi_scan.csv"},
+        )
     except Exception as e:
         logger.error(f"Export error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/export/json')
+@app.route("/export/json")
 def export_json():
     """Export scan data as JSON"""
     try:
         json_content = storage.export_json()
         return Response(
             json_content,
-            mimetype='application/json',
-            headers={
-                'Content-Disposition': 'attachment; filename=wifi_scan.json'})
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment; filename=wifi_scan.json"},
+        )
     except Exception as e:
         logger.error(f"Export error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/attack/deauth', methods=['POST'])
+@app.route("/attack/deauth", methods=["POST"])
 def attack_deauth():
     """
     Perform Deauthentication Attack.
     Requires ALLOW_ACTIVE_ATTACKS=true
     """
     if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify(
-            {"error": "Active attacks disabled by configuration"}), 403
+        return jsonify({"error": "Active attacks disabled by configuration"}), 403
 
     try:
         data = request.get_json()
-        target_bssid = data.get('bssid')
-        client_mac = data.get('client', 'FF:FF:FF:FF:FF:FF')
-        count = int(data.get('count', 10))
+        target_bssid = data.get("bssid")
+        client_mac = data.get("client", "FF:FF:FF:FF:FF:FF")
+        count = int(data.get("count", 10))
 
         if not target_bssid:
             return jsonify({"error": "Missing target_bssid"}), 400
 
         success = attack_engine.deauth(target_bssid, client_mac, count)
         if success:
-            return jsonify({
-                "status": "success",
-                "message": f"Deauth sent to {target_bssid} ({count} frames)"
-            })
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": f"Deauth sent to {target_bssid} ({count} frames)",
+                }
+            )
         else:
             return jsonify({"error": "Attack failed"}), 500
 
@@ -344,30 +348,31 @@ def attack_deauth():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/attack/fakeap', methods=['POST'])
+@app.route("/attack/fakeap", methods=["POST"])
 def attack_fakeap():
     """
     Perform Fake AP (Beacon Flood) Attack.
     Requires ALLOW_ACTIVE_ATTACKS=true
     """
     if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify(
-            {"error": "Active attacks disabled by configuration"}), 403
+        return jsonify({"error": "Active attacks disabled by configuration"}), 403
 
     try:
         data = request.get_json()
-        ssids = data.get('ssids', [])
-        count = int(data.get('count', 100))
+        ssids = data.get("ssids", [])
+        count = int(data.get("count", 100))
 
         if not ssids:
             return jsonify({"error": "Missing ssids list"}), 400
 
         success = attack_engine.beacon_flood(ssids, count)
         if success:
-            return jsonify({
-                "status": "success",
-                "message": f"Beacon flood sent ({len(ssids)} SSIDs, {count} frames)"
-            })
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": f"Beacon flood sent ({len(ssids)} SSIDs, {count} frames)",
+                }
+            )
         else:
             return jsonify({"error": "Attack failed"}), 500
 
@@ -376,20 +381,22 @@ def attack_fakeap():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/forensics/events')
+@app.route("/forensics/events")
 def get_security_events():
     """Get realtime security events (Deauth detections, etc.)"""
     try:
-        return jsonify({
-            "status": "success",
-            "events": parser.security_events[-100:]  # Last 100 events
-        })
+        return jsonify(
+            {
+                "status": "success",
+                "events": parser.security_events[-100:],  # Last 100 events
+            }
+        )
     except Exception as e:
         logger.error(f"Error getting events: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/forensics/report/<scan_id>')
+@app.route("/forensics/report/<scan_id>")
 def forensics_report(scan_id):
     """
     Generate forensic report for a specific scan.
@@ -399,8 +406,7 @@ def forensics_report(scan_id):
         # Get PCAP path from storage
         pcap_path = storage.get_pcap_path(scan_id)
         if not pcap_path or not os.path.exists(pcap_path):
-            return jsonify(
-                {"error": f"PCAP not found for scan_id: {scan_id}"}), 404
+            return jsonify({"error": f"PCAP not found for scan_id: {scan_id}"}), 404
 
         # Get known networks for Evil Twin detection
         known_networks = {}
@@ -408,23 +414,19 @@ def forensics_report(scan_id):
             if net.get("ssid"):
                 known_networks[net["ssid"]] = {
                     "bssid": net.get("bssid"),
-                    "encryption": net.get("encryption")
+                    "encryption": net.get("encryption"),
                 }
 
         # Run forensic analysis
         report = analyze_pcap(pcap_path, known_networks)
-        return jsonify({
-            "status": "success",
-            "scan_id": scan_id,
-            "report": report
-        })
+        return jsonify({"status": "success", "scan_id": scan_id, "report": report})
 
     except Exception as e:
         logger.error(f"Forensics error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("=" * 50)
     print("WiFi Scanner API Server (Integrated)")
     print("=" * 50)
@@ -443,4 +445,4 @@ if __name__ == '__main__':
     print("  GET /forensics/report/<id> - Forensic report")
     print("=" * 50)
 
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)  # nosec B104

@@ -29,13 +29,15 @@ class BenchmarkSuite:
         self.results = {
             "timestamp": datetime.now().isoformat(),
             "config": config,
-            "metrics": {}
+            "metrics": {},
         }
         self.base_url = config.get("api_url", "http://localhost:5000")
         self.api_key = config.get("api_key", "")
         self.interface = config.get("interface", "wlan0")
 
-    def _api_request(self, endpoint: str, method: str = "GET", **kwargs) -> Optional[dict]:
+    def _api_request(
+        self, endpoint: str, method: str = "GET", **kwargs
+    ) -> Optional[dict]:
         """Make API request."""
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         headers = {"X-API-Key": self.api_key} if self.api_key else {}
@@ -83,14 +85,18 @@ class BenchmarkSuite:
         result = {
             "ap_count": len(unique_bssids),
             "ssid_count": len(unique_ssids),
-            "hidden_networks": len([n for n in network_list if n.get("ssid") in ["", "<Hidden>"]]),
-            "encryption_breakdown": {}
+            "hidden_networks": len(
+                [n for n in network_list if n.get("ssid") in ["", "<Hidden>"]]
+            ),
+            "encryption_breakdown": {},
         }
 
         # Encryption breakdown
         for net in network_list:
             enc = net.get("encryption", "Unknown")
-            result["encryption_breakdown"][enc] = result["encryption_breakdown"].get(enc, 0) + 1
+            result["encryption_breakdown"][enc] = (
+                result["encryption_breakdown"].get(enc, 0) + 1
+            )
 
         self.results["metrics"]["detection"] = result
         print(f"  Found {result['ap_count']} unique APs")
@@ -109,20 +115,20 @@ class BenchmarkSuite:
 
         # Parse ground truth (airodump-ng CSV)
         gt_bssids = set()
-        with open(gt_file, encoding='utf-8', errors='ignore') as f:
+        with open(gt_file, encoding="utf-8", errors="ignore") as f:
             reader = csv.reader(f)
             in_ap = False
             for row in reader:
                 if not row:
                     continue
-                if 'BSSID' in str(row[0]):
+                if "BSSID" in str(row[0]):
                     in_ap = True
                     continue
-                if 'Station' in str(row[0]):
+                if "Station" in str(row[0]):
                     in_ap = False
                 if in_ap and len(row) >= 1:
                     bssid = row[0].strip().upper()
-                    if len(bssid) == 17 and bssid.count(':') == 5:
+                    if len(bssid) == 17 and bssid.count(":") == 5:
                         gt_bssids.add(bssid)
 
         # Parse PoC JSON
@@ -143,7 +149,11 @@ class BenchmarkSuite:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0
+            else 0
+        )
 
         result = {
             "ground_truth_count": len(gt_bssids),
@@ -153,7 +163,7 @@ class BenchmarkSuite:
             "false_negatives": fn,
             "precision": round(precision, 4),
             "recall": round(recall, 4),
-            "f1_score": round(f1, 4)
+            "f1_score": round(f1, 4),
         }
 
         self.results["metrics"]["recall_precision"] = result
@@ -192,14 +202,14 @@ class BenchmarkSuite:
                     "p50_ms": round(sorted_lat[len(sorted_lat) // 2], 2),
                     "p95_ms": round(sorted_lat[int(len(sorted_lat) * 0.95)], 2),
                     "p99_ms": round(sorted_lat[int(len(sorted_lat) * 0.99)], 2),
-                    "success_rate": len(latencies) / num_requests
+                    "success_rate": len(latencies) / num_requests,
                 }
 
         # Overall average
         all_avg = [r["avg_ms"] for r in all_results.values() if "avg_ms" in r]
         overall = {
             "overall_avg_ms": round(sum(all_avg) / len(all_avg), 2) if all_avg else 0,
-            "endpoints": all_results
+            "endpoints": all_results,
         }
 
         self.results["metrics"]["latency"] = overall
@@ -228,7 +238,7 @@ class BenchmarkSuite:
         result = {
             "avg_seconds": round(sum(times) / len(times), 3) if times else 0,
             "max_seconds": round(max(times), 3) if times else 0,
-            "samples": len(times)
+            "samples": len(times),
         }
 
         self.results["metrics"]["time_to_display"] = result
@@ -249,9 +259,11 @@ class BenchmarkSuite:
             try:
                 result = subprocess.run(
                     ["tshark", "-r", pcap_file, "-T", "fields", "-e", "frame.number"],
-                    capture_output=True, text=True, timeout=60
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
                 )
-                return len(result.stdout.strip().split('\n'))
+                return len(result.stdout.strip().split("\n"))
             except:
                 return 0
 
@@ -266,7 +278,7 @@ class BenchmarkSuite:
         result = {
             "ground_truth_frames": gt_count,
             "poc_frames": poc_count,
-            "packet_loss_percent": round(loss * 100, 2)
+            "packet_loss_percent": round(loss * 100, 2),
         }
 
         self.results["metrics"]["packet_loss"] = result
@@ -294,11 +306,13 @@ class BenchmarkSuite:
         # Get process-specific if possible
         process_cpu = 0
         process_mem = 0
-        for proc in psutil.process_iter(['name', 'cpu_percent', 'memory_info']):
+        for proc in psutil.process_iter(["name", "cpu_percent", "memory_info"]):
             try:
-                if 'python' in proc.info['name'].lower():
-                    process_cpu = max(process_cpu, proc.info['cpu_percent'])
-                    process_mem = max(process_mem, proc.info['memory_info'].rss / 1024 / 1024)
+                if "python" in proc.info["name"].lower():
+                    process_cpu = max(process_cpu, proc.info["cpu_percent"])
+                    process_mem = max(
+                        process_mem, proc.info["memory_info"].rss / 1024 / 1024
+                    )
             except:
                 pass
 
@@ -309,7 +323,7 @@ class BenchmarkSuite:
             "system_ram_max_percent": round(max(mem_samples), 2),
             "python_process_cpu_percent": round(process_cpu, 2),
             "python_process_ram_mb": round(process_mem, 2),
-            "samples": len(cpu_samples)
+            "samples": len(cpu_samples),
         }
 
         self.results["metrics"]["resources"] = result
@@ -317,7 +331,9 @@ class BenchmarkSuite:
         print(f"  System RAM: {result['system_ram_avg_percent']}% avg")
         return result
 
-    def measure_stability(self, duration_min: int = 30, interval_min: int = 2) -> dict[str, Any]:
+    def measure_stability(
+        self, duration_min: int = 30, interval_min: int = 2
+    ) -> dict[str, Any]:
         """
         Measure system stability over time.
         """
@@ -350,7 +366,7 @@ class BenchmarkSuite:
             "successful_checks": success_count,
             "failed_checks": crash_count,
             "uptime_percent": round(uptime, 2),
-            "crash_rate": crash_count
+            "crash_rate": crash_count,
         }
 
         self.results["metrics"]["stability"] = result
@@ -380,10 +396,14 @@ class BenchmarkSuite:
             "total_readings": len(rssi_values),
             "valid_readings": len(valid_rssi),
             "invalid_readings": len(rssi_values) - len(valid_rssi),
-            "validity_rate": round(len(valid_rssi) / len(rssi_values) * 100, 2) if rssi_values else 0,
-            "avg_rssi": round(sum(valid_rssi) / len(valid_rssi), 2) if valid_rssi else 0,
+            "validity_rate": round(len(valid_rssi) / len(rssi_values) * 100, 2)
+            if rssi_values
+            else 0,
+            "avg_rssi": round(sum(valid_rssi) / len(valid_rssi), 2)
+            if valid_rssi
+            else 0,
             "min_rssi": min(valid_rssi) if valid_rssi else 0,
-            "max_rssi": max(valid_rssi) if valid_rssi else 0
+            "max_rssi": max(valid_rssi) if valid_rssi else 0,
         }
 
         self.results["metrics"]["rssi_accuracy"] = result
@@ -402,7 +422,15 @@ class BenchmarkSuite:
 
         network_list = networks.get("networks", [])
 
-        valid_encryptions = ["Open", "WEP", "WPA", "WPA2", "WPA3", "WPA2-PSK", "WPA2-Enterprise"]
+        valid_encryptions = [
+            "Open",
+            "WEP",
+            "WPA",
+            "WPA2",
+            "WPA3",
+            "WPA2-PSK",
+            "WPA2-Enterprise",
+        ]
 
         detected = {}
         unknown = 0
@@ -418,8 +446,10 @@ class BenchmarkSuite:
             "total_networks": total,
             "identified": total - unknown,
             "unknown": unknown,
-            "identification_rate": round((total - unknown) / total * 100, 2) if total > 0 else 0,
-            "breakdown": detected
+            "identification_rate": round((total - unknown) / total * 100, 2)
+            if total > 0
+            else 0,
+            "breakdown": detected,
         }
 
         self.results["metrics"]["encryption_accuracy"] = result
@@ -438,7 +468,7 @@ class BenchmarkSuite:
                     SENTINEL NETLAB BENCHMARK REPORT
 ================================================================================
 
-Generated: {self.results['timestamp']}
+Generated: {self.results["timestamp"]}
 API URL:   {self.base_url}
 
 --------------------------------------------------------------------------------
@@ -455,15 +485,15 @@ API URL:   {self.base_url}
             rp = metrics["recall_precision"]
             report += f"""1. COVERAGE & DETECTION
    ----------------------
-   Recall:     {rp.get('recall', 0):.2%}  (Big Tech: ≥90%, SME: ≥80%, Lab: ≥70%)
-   Precision:  {rp.get('precision', 0):.2%}  (Big Tech: ≥95%, SME: ≥90%, Lab: ≥85%)
-   F1 Score:   {rp.get('f1_score', 0):.2%}
+   Recall:     {rp.get("recall", 0):.2%}  (Big Tech: ≥90%, SME: ≥80%, Lab: ≥70%)
+   Precision:  {rp.get("precision", 0):.2%}  (Big Tech: ≥95%, SME: ≥90%, Lab: ≥85%)
+   F1 Score:   {rp.get("f1_score", 0):.2%}
 
-   Ground Truth: {rp.get('ground_truth_count', 0)} APs
-   Detected:     {rp.get('detected_count', 0)} APs
-   True Positives: {rp.get('true_positives', 0)}
-   False Positives: {rp.get('false_positives', 0)}
-   False Negatives: {rp.get('false_negatives', 0)}
+   Ground Truth: {rp.get("ground_truth_count", 0)} APs
+   Detected:     {rp.get("detected_count", 0)} APs
+   True Positives: {rp.get("true_positives", 0)}
+   False Positives: {rp.get("false_positives", 0)}
+   False Negatives: {rp.get("false_negatives", 0)}
 
 """
 
@@ -472,7 +502,7 @@ API URL:   {self.base_url}
             lat = metrics["latency"]
             report += f"""2. LATENCY & TIMING
    -----------------
-   Overall Avg RTT:  {lat.get('overall_avg_ms', 0):.0f} ms  (Big Tech: <500ms, SME: <1s, Lab: <2s)
+   Overall Avg RTT:  {lat.get("overall_avg_ms", 0):.0f} ms  (Big Tech: <500ms, SME: <1s, Lab: <2s)
 
    By Endpoint:
 """
@@ -485,9 +515,9 @@ API URL:   {self.base_url}
             pl = metrics["packet_loss"]
             report += f"""3. PACKET QUALITY
    ---------------
-   Packet Loss:  {pl.get('packet_loss_percent', 0):.1f}%  (Big Tech: <5%, SME: <10%, Lab: <15%)
-   GT Frames:    {pl.get('ground_truth_frames', 0)}
-   PoC Frames:   {pl.get('poc_frames', 0)}
+   Packet Loss:  {pl.get("packet_loss_percent", 0):.1f}%  (Big Tech: <5%, SME: <10%, Lab: <15%)
+   GT Frames:    {pl.get("ground_truth_frames", 0)}
+   PoC Frames:   {pl.get("poc_frames", 0)}
 
 """
 
@@ -496,10 +526,10 @@ API URL:   {self.base_url}
             res = metrics["resources"]
             report += f"""4. RESOURCE USAGE
    ---------------
-   CPU (avg):   {res.get('system_cpu_avg_percent', 0):.1f}%  (Big Tech: <50%, SME: <70%, Lab: <80%)
-   CPU (max):   {res.get('system_cpu_max_percent', 0):.1f}%
-   RAM (avg):   {res.get('system_ram_avg_percent', 0):.1f}%
-   RAM (max):   {res.get('system_ram_max_percent', 0):.1f}%
+   CPU (avg):   {res.get("system_cpu_avg_percent", 0):.1f}%  (Big Tech: <50%, SME: <70%, Lab: <80%)
+   CPU (max):   {res.get("system_cpu_max_percent", 0):.1f}%
+   RAM (avg):   {res.get("system_ram_avg_percent", 0):.1f}%
+   RAM (max):   {res.get("system_ram_max_percent", 0):.1f}%
 
 """
 
@@ -508,9 +538,9 @@ API URL:   {self.base_url}
             stab = metrics["stability"]
             report += f"""5. STABILITY
    ---------
-   Uptime:      {stab.get('uptime_percent', 0):.1f}%  (Big Tech: 99.9%, SME: 99%, Lab: 95%)
-   Crashes:     {stab.get('crash_rate', 0)}
-   Test Duration: {stab.get('duration_minutes', 0)} minutes
+   Uptime:      {stab.get("uptime_percent", 0):.1f}%  (Big Tech: 99.9%, SME: 99%, Lab: 95%)
+   Crashes:     {stab.get("crash_rate", 0)}
+   Test Duration: {stab.get("duration_minutes", 0)} minutes
 
 """
 
@@ -519,9 +549,9 @@ API URL:   {self.base_url}
             rssi = metrics["rssi_accuracy"]
             report += f"""6. DATA QUALITY - RSSI
    --------------------
-   Validity Rate: {rssi.get('validity_rate', 0):.1f}%
-   Avg RSSI:      {rssi.get('avg_rssi', 0)} dBm
-   Range:         {rssi.get('min_rssi', 0)} to {rssi.get('max_rssi', 0)} dBm
+   Validity Rate: {rssi.get("validity_rate", 0):.1f}%
+   Avg RSSI:      {rssi.get("avg_rssi", 0)} dBm
+   Range:         {rssi.get("min_rssi", 0)} to {rssi.get("max_rssi", 0)} dBm
 
 """
 
@@ -529,7 +559,7 @@ API URL:   {self.base_url}
             enc = metrics["encryption_accuracy"]
             report += f"""7. DATA QUALITY - ENCRYPTION
    --------------------------
-   Identification Rate: {enc.get('identification_rate', 0):.1f}%
+   Identification Rate: {enc.get("identification_rate", 0):.1f}%
 
    Breakdown:
 """
@@ -608,12 +638,12 @@ API URL:   {self.base_url}
 
         # Save JSON
         json_file = os.path.join(output_dir, f"benchmark_{timestamp}.json")
-        with open(json_file, 'w') as f:
+        with open(json_file, "w") as f:
             json.dump(self.results, f, indent=2)
 
         # Save report
         report_file = os.path.join(output_dir, f"benchmark_{timestamp}.txt")
-        with open(report_file, 'w') as f:
+        with open(report_file, "w") as f:
             f.write(self.generate_report())
 
         print(f"\nResults saved to {output_dir}/")
@@ -626,7 +656,9 @@ def main():
     # Test selection
     parser.add_argument("--all", action="store_true", help="Run all benchmarks")
     parser.add_argument("--detection", action="store_true", help="Run detection test")
-    parser.add_argument("--recall", action="store_true", help="Run recall/precision test")
+    parser.add_argument(
+        "--recall", action="store_true", help="Run recall/precision test"
+    )
     parser.add_argument("--latency", action="store_true", help="Run latency test")
     parser.add_argument("--resources", action="store_true", help="Run resource test")
     parser.add_argument("--stability", action="store_true", help="Run stability test")
@@ -638,17 +670,27 @@ def main():
     parser.add_argument("--interface", default="wlan0", help="WiFi interface")
     parser.add_argument("--gt-csv", help="Ground truth CSV (airodump-ng)")
     parser.add_argument("--poc-json", help="PoC JSON output")
-    parser.add_argument("--output", default="benchmark_results", help="Output directory")
-    parser.add_argument("-n", "--requests", type=int, default=50, help="Number of requests for latency test")
-    parser.add_argument("-d", "--duration", type=int, default=5, help="Duration for resource/stability test (minutes)")
+    parser.add_argument(
+        "--output", default="benchmark_results", help="Output directory"
+    )
+    parser.add_argument(
+        "-n",
+        "--requests",
+        type=int,
+        default=50,
+        help="Number of requests for latency test",
+    )
+    parser.add_argument(
+        "-d",
+        "--duration",
+        type=int,
+        default=5,
+        help="Duration for resource/stability test (minutes)",
+    )
 
     args = parser.parse_args()
 
-    config = {
-        "api_url": args.url,
-        "api_key": args.api_key,
-        "interface": args.interface
-    }
+    config = {"api_url": args.url, "api_key": args.api_key, "interface": args.interface}
 
     suite = BenchmarkSuite(config)
 
@@ -656,8 +698,16 @@ def main():
     print("  Sentinel NetLab Benchmark Suite")
     print("=" * 60)
 
-    run_all = args.all or not any([args.detection, args.recall, args.latency,
-                                    args.resources, args.stability, args.quality])
+    run_all = args.all or not any(
+        [
+            args.detection,
+            args.recall,
+            args.latency,
+            args.resources,
+            args.stability,
+            args.quality,
+        ]
+    )
 
     if run_all or args.detection:
         suite.measure_detection()

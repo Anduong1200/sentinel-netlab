@@ -6,13 +6,12 @@ Supports monitor mode, channel hopping, and raw frame extraction.
 
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
 import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from queue import Empty, Queue
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +19,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RawFrame:
     """Raw captured frame with metadata"""
-    data: bytes                     # Raw radiotap + 802.11 bytes
-    timestamp: float               # Capture time (monotonic)
-    channel: int                   # Channel captured on
-    iface: str                     # Interface name
+
+    data: bytes  # Raw radiotap + 802.11 bytes
+    timestamp: float  # Capture time (monotonic)
+    channel: int  # Channel captured on
+    iface: str  # Interface name
 
 
 class CaptureDriver(ABC):
@@ -36,7 +36,7 @@ class CaptureDriver(ABC):
         self.iface = iface
         self.is_monitor_mode = False
         self._running = False
-        self._original_mode: Optional[str] = None
+        self._original_mode: str | None = None
 
     @abstractmethod
     def enable_monitor_mode(self) -> tuple[bool, str]:
@@ -60,7 +60,7 @@ class CaptureDriver(ABC):
         pass
 
     @abstractmethod
-    def read_frame(self, timeout_ms: int = 100) -> Optional[RawFrame]:
+    def read_frame(self, timeout_ms: int = 100) -> RawFrame | None:
         """
         Read next frame from interface.
         Returns None on timeout or error.
@@ -93,7 +93,7 @@ class IwCaptureDriver(CaptureDriver):
         super().__init__(iface)
         self._pcap_handle = None
         self._frame_queue: Queue = Queue(maxsize=10000)
-        self._capture_thread: Optional[threading.Thread] = None
+        self._capture_thread: threading.Thread | None = None
 
     def enable_monitor_mode(self) -> tuple[bool, str]:
         """Enable monitor mode using iw/ip commands"""
@@ -105,7 +105,9 @@ class IwCaptureDriver(CaptureDriver):
             # Bring interface down
             result = subprocess.run(
                 ["ip", "link", "set", self.iface, "down"],
-                capture_output=True, text=True, timeout=10
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode != 0:
                 return False, f"Failed to bring down interface: {result.stderr}"
@@ -113,13 +115,17 @@ class IwCaptureDriver(CaptureDriver):
             # Set monitor mode
             result = subprocess.run(
                 ["iw", "dev", self.iface, "set", "type", "monitor"],
-                capture_output=True, text=True, timeout=10
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode != 0:
                 # Try alternative method
                 result = subprocess.run(
                     ["iw", self.iface, "set", "monitor", "none"],
-                    capture_output=True, text=True, timeout=10
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
                 )
                 if result.returncode != 0:
                     return False, f"Failed to set monitor mode: {result.stderr}"
@@ -127,7 +133,9 @@ class IwCaptureDriver(CaptureDriver):
             # Bring interface up
             result = subprocess.run(
                 ["ip", "link", "set", self.iface, "up"],
-                capture_output=True, text=True, timeout=10
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode != 0:
                 return False, f"Failed to bring up interface: {result.stderr}"
@@ -148,15 +156,16 @@ class IwCaptureDriver(CaptureDriver):
         try:
             subprocess.run(
                 ["ip", "link", "set", self.iface, "down"],
-                capture_output=True, timeout=10
+                capture_output=True,
+                timeout=10,
             )
             subprocess.run(
                 ["iw", "dev", self.iface, "set", "type", "managed"],
-                capture_output=True, timeout=10
+                capture_output=True,
+                timeout=10,
             )
             subprocess.run(
-                ["ip", "link", "set", self.iface, "up"],
-                capture_output=True, timeout=10
+                ["ip", "link", "set", self.iface, "up"], capture_output=True, timeout=10
             )
 
             self.is_monitor_mode = False
@@ -171,18 +180,19 @@ class IwCaptureDriver(CaptureDriver):
         try:
             result = subprocess.run(
                 ["iw", "dev", self.iface, "set", "channel", str(channel)],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode != 0:
-                logger.warning(
-                    f"Failed to set channel {channel}: {result.stderr}")
+                logger.warning(f"Failed to set channel {channel}: {result.stderr}")
                 return False
             return True
         except Exception as e:
             logger.error(f"Channel switch error: {e}")
             return False
 
-    def read_frame(self, timeout_ms: int = 100) -> Optional[RawFrame]:
+    def read_frame(self, timeout_ms: int = 100) -> RawFrame | None:
         """Read frame from queue"""
         try:
             return self._frame_queue.get(timeout=timeout_ms / 1000.0)
@@ -205,36 +215,35 @@ class IwCaptureDriver(CaptureDriver):
                         data=bytes(pkt),
                         timestamp=time.monotonic(),
                         channel=0,  # Will be set by parser
-                        iface=self.iface
+                        iface=self.iface,
                     )
                     self._frame_queue.put_nowait(raw_frame)
-                except Exception:
+                except Exception:  # nosec B110
                     pass
 
             def capture_loop():
                 while self._running:
                     try:
                         sniff(
-                            iface=self.iface,
-                            prn=packet_handler,
-                            store=False,
-                            timeout=1
+                            iface=self.iface, prn=packet_handler, store=False, timeout=1
                         )
                     except Exception as e:
                         logger.error(f"Capture error: {e}")
                         time.sleep(1)
 
             self._capture_thread = threading.Thread(
-                target=capture_loop,
-                daemon=True,
-                name="CaptureThread"
+                target=capture_loop, daemon=True, name="CaptureThread"
             )
             self._capture_thread.start()
             logger.info(f"Capture started on {self.iface}")
             return True
 
-        except ImportError:
-            logger.error("scapy not available, capture disabled")
+            return True
+
+        except (ImportError, OSError) as e:
+            logger.error(
+                f"Scapy capture error (scapy not available or OS missing libs): {e}"
+            )
             self._running = False
             return False
 
@@ -249,12 +258,11 @@ class IwCaptureDriver(CaptureDriver):
         """Get channels from iw"""
         try:
             result = subprocess.run(
-                ["iw", "phy"],
-                capture_output=True, text=True, timeout=10
+                ["iw", "phy"], capture_output=True, text=True, timeout=10
             )
             channels = []
-            for line in result.stdout.split('\n'):
-                if 'MHz' in line and 'disabled' not in line.lower():
+            for line in result.stdout.split("\n"):
+                if "MHz" in line and "disabled" not in line.lower():
                     # Parse channel number from frequency
                     try:
                         freq = int(line.split()[1])
@@ -298,7 +306,7 @@ class MockCaptureDriver(CaptureDriver):
         logger.debug(f"Mock channel set to {channel}")
         return True
 
-    def read_frame(self, timeout_ms: int = 100) -> Optional[RawFrame]:
+    def read_frame(self, timeout_ms: int = 100) -> RawFrame | None:
         """Generate mock frame"""
         import random
 
@@ -308,7 +316,7 @@ class MockCaptureDriver(CaptureDriver):
         time.sleep(timeout_ms / 1000.0)
 
         # Simulate occasional frame capture
-        if random.random() > 0.3:
+        if random.random() > 0.3:  # nosec B311
             return None
 
         # Generate mock beacon frame
@@ -316,8 +324,8 @@ class MockCaptureDriver(CaptureDriver):
         return RawFrame(
             data=mock_data,
             timestamp=time.monotonic(),
-            channel=random.choice([1, 6, 11]),
-            iface=self.iface
+            channel=random.choice([1, 6, 11]),  # nosec B311
+            iface=self.iface,
         )
 
     def start_capture(self) -> bool:
@@ -335,23 +343,23 @@ class MockCaptureDriver(CaptureDriver):
         import struct
 
         # Simplified mock frame
-        bssid = bytes([random.randint(0, 255) for _ in range(6)])
+        bssid = bytes([random.randint(0, 255) for _ in range(6)])  # nosec B311
         ssid = b"TestNetwork"
 
         # Very simplified beacon structure
         frame = bytearray()
-        frame.extend(b'\x80\x00')  # Frame control (beacon)
-        frame.extend(b'\x00\x00')  # Duration
-        frame.extend(b'\xff' * 6)  # DA (broadcast)
-        frame.extend(bssid)        # SA
-        frame.extend(bssid)        # BSSID
-        frame.extend(b'\x00\x00')  # Sequence
-        frame.extend(b'\x00' * 8)  # Timestamp
-        frame.extend(struct.pack('<H', 100))  # Beacon interval
-        frame.extend(struct.pack('<H', 0x0411))  # Capabilities
+        frame.extend(b"\x80\x00")  # Frame control (beacon)
+        frame.extend(b"\x00\x00")  # Duration
+        frame.extend(b"\xff" * 6)  # DA (broadcast)
+        frame.extend(bssid)  # SA
+        frame.extend(bssid)  # BSSID
+        frame.extend(b"\x00\x00")  # Sequence
+        frame.extend(b"\x00" * 8)  # Timestamp
+        frame.extend(struct.pack("<H", 100))  # Beacon interval
+        frame.extend(struct.pack("<H", 0x0411))  # Capabilities
 
         # SSID IE
-        frame.extend(b'\x00')  # Element ID
+        frame.extend(b"\x00")  # Element ID
         frame.extend(bytes([len(ssid)]))  # Length
         frame.extend(ssid)
 

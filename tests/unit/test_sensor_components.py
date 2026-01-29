@@ -4,12 +4,12 @@ Unit tests for sensor components.
 Run: pytest tests/unit/ -v
 """
 
-
 import pytest
 
 # =============================================================================
 # TEST: WiFi Parser
 # =============================================================================
+
 
 class TestWiFiParser:
     """Test WiFi frame parsing"""
@@ -41,6 +41,7 @@ class TestWiFiParser:
 # TEST: Risk Scorer
 # =============================================================================
 
+
 class TestRiskScorer:
     """Test risk scoring logic"""
 
@@ -52,12 +53,12 @@ class TestRiskScorer:
 
         # Test network data
         network = {
-            'bssid': 'AA:BB:CC:11:22:33',
-            'ssid': 'TestNet',
-            'security': 'WPA2',
-            'channel': 6,
-            'rssi_dbm': -55,
-            'capabilities': {'privacy': True}
+            "bssid": "AA:BB:CC:11:22:33",
+            "ssid": "TestNet",
+            "security": "WPA2",
+            "channel": 6,
+            "rssi_dbm": -55,
+            "capabilities": {"privacy": True},
         }
 
         score = scorer.score(network)
@@ -71,17 +72,17 @@ class TestRiskScorer:
         scorer = RiskScorer()
 
         open_network = {
-            'bssid': 'AA:BB:CC:11:22:33',
-            'ssid': 'OpenNet',
-            'security': 'Open',
-            'capabilities': {'privacy': False}
+            "bssid": "AA:BB:CC:11:22:33",
+            "ssid": "OpenNet",
+            "security": "Open",
+            "capabilities": {"privacy": False},
         }
 
         secure_network = {
-            'bssid': 'AA:BB:CC:44:55:66',
-            'ssid': 'SecureNet',
-            'security': 'WPA3',
-            'capabilities': {'privacy': True, 'pmf': True}
+            "bssid": "AA:BB:CC:44:55:66",
+            "ssid": "SecureNet",
+            "security": "WPA3",
+            "capabilities": {"privacy": True, "pmf": True},
         }
 
         open_score = scorer.score(open_network)
@@ -93,6 +94,7 @@ class TestRiskScorer:
 # =============================================================================
 # TEST: Detection
 # =============================================================================
+
 
 class TestDetection:
     """Test detection utilities"""
@@ -137,6 +139,7 @@ class TestDetection:
 # TEST: WIDS Detectors
 # =============================================================================
 
+
 class TestWIDSDetectors:
     """Test WIDS detection engines"""
 
@@ -144,19 +147,13 @@ class TestWIDSDetectors:
         """Test deauth flood detector"""
         from algos.dos import DeauthFloodDetector
 
-
-        detector = DeauthFloodDetector(
-            threshold_per_sec=10,
-            window_seconds=5
-        )
+        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
 
         # Simulate deauth flood
         bssid = "AA:BB:CC:11:22:33"
         for _i in range(15):
             detector.record_deauth(
-                bssid=bssid,
-                client_mac="FF:FF:FF:FF:FF:FF",
-                sensor_id="test"
+                bssid=bssid, client_mac="FF:FF:FF:FF:FF:FF", sensor_id="test"
             )
 
         # Should trigger alert after threshold
@@ -174,6 +171,7 @@ class TestWIDSDetectors:
 # TEST: Audit
 # =============================================================================
 
+
 class TestAudit:
     """Test audit functionality"""
 
@@ -189,7 +187,7 @@ class TestAudit:
             ssid="TestNet",
             channel=6,
             rssi_dbm=-55,
-            security="WPA2"
+            security="WPA2",
         )
 
         auditor.audit_network(network)
@@ -208,7 +206,7 @@ class TestAudit:
             ssid="OldRouter",
             channel=11,
             rssi_dbm=-70,
-            security="WEP"
+            security="WEP",
         )
 
         auditor.audit_network(wep_network)
@@ -222,6 +220,7 @@ class TestAudit:
 # TEST: Transport
 # =============================================================================
 
+
 class TestTransport:
     """Test transport client"""
 
@@ -234,7 +233,7 @@ class TestTransport:
             auth_token="test-token",
             hmac_secret="test-secret",
             sensor_id="test-sensor",
-            verify_ssl=False
+            verify_ssl=False,
         )
 
         payload = b'{"test": "data"}'
@@ -242,7 +241,7 @@ class TestTransport:
 
         # Signature should be hex string
         assert len(signature) == 64  # SHA256 hex
-        assert all(c in '0123456789abcdef' for c in signature)
+        assert all(c in "0123456789abcdef" for c in signature)
 
     def test_headers_include_timestamp(self):
         """Test that headers include timestamp"""
@@ -252,19 +251,19 @@ class TestTransport:
             controller_url="http://localhost:5000",
             auth_token="test-token",
             hmac_secret="test-secret",
-            verify_ssl=False
+            verify_ssl=False,
         )
 
-        headers = transport._build_headers(b'test')
+        headers = transport._build_headers(b"test")
 
-        assert 'Authorization' in headers
-        assert 'X-Timestamp' in headers
-        assert 'X-Signature' in headers
+        assert "Authorization" in headers
+        assert "X-Timestamp" in headers
+        assert "X-Signature" in headers
 
 
 # =============================================================================
 # RUN
 # =============================================================================
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

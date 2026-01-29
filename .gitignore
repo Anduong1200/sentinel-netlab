@@ -78,6 +78,8 @@ test_output_*.txt
 test_flow_*.txt
 bandit_report.json
 safety_report.json
+ruff_errors*.txt
+bandit_output*.txt
 
 # Docker
 docker-compose.override.yml

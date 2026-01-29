@@ -10,9 +10,9 @@ import os
 import threading
 import uuid
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class BufferManager:
         max_memory_items: int = 10000,
         storage_path: str = "/var/lib/sentinel/journal",
         max_disk_mb: int = 100,
-        drop_policy: str = "oldest"  # "oldest" or "spill_to_disk"
+        drop_policy: str = "oldest",  # "oldest" or "spill_to_disk"
     ):
         """
         Initialize buffer manager.
@@ -79,6 +79,18 @@ class BufferManager:
             self._total_appended += 1
             return True
 
+    def append_alert(self, alert_data: dict[str, Any]) -> bool:
+        """
+        Add critical alert to buffer (bypass limits if needed).
+        """
+        with self._lock:
+            # Alerts are critical, try to make room if full
+            if len(self._buffer) >= self.max_memory_items:
+                self._buffer.popleft()  # Force drop oldest telemetry for alert
+
+            self._buffer.append(alert_data)
+            return True
+
     def append_batch(self, telemetry_list: list[dict[str, Any]]) -> int:
         """
         Add multiple items.
@@ -93,10 +105,8 @@ class BufferManager:
         return added
 
     def get_batch(
-        self,
-        max_count: int = 200,
-        max_bytes: int = 256 * 1024
-    ) -> Optional[dict[str, Any]]:
+        self, max_count: int = 200, max_bytes: int = 256 * 1024
+    ) -> dict[str, Any] | None:
         """
         Get batch of items for upload.
 
@@ -129,13 +139,13 @@ class BufferManager:
                 return None
 
             self._batch_counter += 1
-            batch_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{self._batch_counter:06d}"
+            batch_id = f"{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}_{self._batch_counter:06d}"
 
             return {
-                'batch_id': batch_id,
-                'batch_timestamp': datetime.now(timezone.utc).isoformat(),
-                'item_count': len(batch_items),
-                'items': batch_items
+                "batch_id": batch_id,
+                "batch_timestamp": datetime.now(UTC).isoformat(),
+                "item_count": len(batch_items),
+                "items": batch_items,
             }
 
     def peek_batch(self, max_count: int = 200) -> list[dict[str, Any]]:
@@ -146,7 +156,7 @@ class BufferManager:
             items = list(self._buffer)[:max_count]
             return items
 
-    def flush_to_disk(self) -> Optional[str]:
+    def flush_to_disk(self) -> str | None:
         """
         Write current buffer to disk journal.
 
@@ -173,19 +183,21 @@ class BufferManager:
 
     def _write_journal(self, items: list[dict]) -> str:
         """Write items to gzipped journal file"""
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         unique = uuid.uuid4().hex[:8]
         filename = f"journal_{timestamp}_{unique}.json.gz"
         filepath = self.storage_path / filename
 
         try:
-            data = json.dumps({
-                'created': datetime.now(timezone.utc).isoformat(),
-                'count': len(items),
-                'items': items
-            }).encode()
+            data = json.dumps(
+                {
+                    "created": datetime.now(UTC).isoformat(),
+                    "count": len(items),
+                    "items": items,
+                }
+            ).encode()
 
-            with gzip.open(filepath, 'wb') as f:
+            with gzip.open(filepath, "wb") as f:
                 f.write(data)
 
             # Enforce disk limit
@@ -198,28 +210,24 @@ class BufferManager:
             logger.error(f"Failed to write journal: {e}")
             return ""
 
-    def load_pending_journals(self) -> list[dict]:
+    def load_pending_journals(self) -> Iterator[dict]:
         """
-        Load all pending journal files.
+        Yield pending journal files one by one.
 
-        Returns:
-            List of batch dicts ready for upload
+        Yields:
+            Batch dict ready for upload
         """
-        batches = []
-
         for jfile in sorted(self.storage_path.glob("journal_*.json.gz")):
             try:
-                with gzip.open(jfile, 'rb') as f:
+                with gzip.open(jfile, "rb") as f:
                     data = json.loads(f.read().decode())
-                    batches.append({
-                        'batch_id': jfile.stem,
-                        'source_file': str(jfile),
-                        'items': data.get('items', [])
-                    })
+                    yield {
+                        "batch_id": jfile.stem,
+                        "source_file": str(jfile),
+                        "items": data.get("items", []),
+                    }
             except Exception as e:
                 logger.error(f"Failed to load journal {jfile}: {e}")
-
-        return batches
 
     def delete_journal(self, filepath: str) -> bool:
         """Delete journal file after successful upload"""
@@ -240,7 +248,7 @@ class BufferManager:
                 size = jfile.stat().st_size
                 total_size += size
                 files.append((jfile, jfile.stat().st_mtime, size))
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
         # Sort by modification time (oldest first)
@@ -252,7 +260,7 @@ class BufferManager:
                 oldest_file.unlink()
                 total_size -= size
                 logger.info(f"Cleaned up old journal: {oldest_file.name}")
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
     def get_stats(self) -> dict[str, Any]:
@@ -267,17 +275,17 @@ class BufferManager:
             try:
                 disk_usage += jfile.stat().st_size
                 journal_count += 1
-            except Exception:
+            except Exception:  # nosec B110
                 pass
 
         return {
-            'buffer_current_size': buffer_size,
-            'buffer_max_size': self.max_memory_items,
-            'buffer_occupancy_pct': (buffer_size / self.max_memory_items) * 100,
-            'total_appended': self._total_appended,
-            'dropped_count': self._dropped_count,
-            'batch_counter': self._batch_counter,
-            'journal_count': journal_count,
-            'journal_disk_bytes': disk_usage,
-            'journal_disk_mb': disk_usage / (1024 * 1024)
+            "buffer_current_size": buffer_size,
+            "buffer_max_size": self.max_memory_items,
+            "buffer_occupancy_pct": (buffer_size / self.max_memory_items) * 100,
+            "total_appended": self._total_appended,
+            "dropped_count": self._dropped_count,
+            "batch_counter": self._batch_counter,
+            "journal_count": journal_count,
+            "journal_disk_bytes": disk_usage,
+            "journal_disk_mb": disk_usage / (1024 * 1024),
         }

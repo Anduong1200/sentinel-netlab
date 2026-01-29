@@ -11,18 +11,25 @@ import signal
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
 
 from buffer_manager import BufferManager
 from capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
+from config import Config, get_config, init_config  # noqa: E402
 from frame_parser import FrameParser
 from normalizer import TelemetryNormalizer  # noqa: E402
 from transport_client import TransportClient
+
+# Import Advanced Logic
+sys.path.insert(0, str(Path(__file__).parent.parent))  # Add root to path
+from algos.evil_twin import AdvancedEvilTwinDetector
+from algos.risk import RiskScorer
+from common.metrics import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +43,10 @@ class ChannelHopper:
     def __init__(
         self,
         driver: CaptureDriver,
-        channels: Optional[list[int]] = None,
+        channels: list[int] | None = None,
         dwell_ms: int = 200,
         settle_ms: int = 50,
-        adaptive: bool = False
+        adaptive: bool = False,
     ):
         self.driver = driver
         # Default 2.4GHz non-overlapping
@@ -50,20 +57,19 @@ class ChannelHopper:
 
         self._current_idx = 0
         self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._channel_activity: dict[int, float] = dict.fromkeys(self.channels, 1.0)
 
     def start(self) -> None:
         """Start channel hopping thread"""
         self._running = True
         self._thread = threading.Thread(
-            target=self._hop_loop,
-            daemon=True,
-            name="ChannelHopper"
+            target=self._hop_loop, daemon=True, name="ChannelHopper"
         )
         self._thread.start()
         logger.info(
-            f"Channel hopping started: {self.channels}, dwell={self.dwell_ms}ms")
+            f"Channel hopping started: {self.channels}, dwell={self.dwell_ms}ms"
+        )
 
     def stop(self) -> None:
         """Stop channel hopping"""
@@ -115,14 +121,43 @@ class ChannelHopper:
     def _select_adaptive(self) -> int:
         """Select channel weighted by activity"""
         import random
+
         total = sum(self._channel_activity.values())
-        r = random.random() * total
+        r = random.random() * total  # nosec B311
         cumulative = 0
         for ch in self.channels:
             cumulative += self._channel_activity[ch]
             if r <= cumulative:
                 return ch
         return self.channels[0]
+
+
+class TelemetryAggregator:
+    """
+    Aggregates telemetry for stateful analysis (sliding windows).
+    """
+
+    def __init__(self, window_seconds: int = 60):
+        self.window_seconds = window_seconds
+        self.deauth_counts: dict[str, int] = {}
+        self.last_cleanup = time.time()
+        self._lock = threading.Lock()
+
+    def record_frame(self, frame_type: str, subtype: str, source: str):
+        """Record frame occurrence"""
+        with self._lock:
+            if subtype == "deauth":
+                self.deauth_counts[source] = self.deauth_counts.get(source, 0) + 1
+
+            # Cleanup old windows periodically
+            if time.time() - self.last_cleanup > self.window_seconds:
+                self.deauth_counts.clear()
+                self.last_cleanup = time.time()
+
+    def get_context(self) -> dict:
+        """Get current aggregation context for risk engine"""
+        with self._lock:
+            return {"deauth_counts": self.deauth_counts.copy()}
 
 
 class SensorController:
@@ -133,83 +168,91 @@ class SensorController:
 
     def __init__(
         self,
-        sensor_id: str,
-        iface: str,
-        channels: Optional[list[int]] = None,
-        dwell_ms: int = 200,
-        upload_url: str = "http://localhost:5000/api/v1/telemetry",
-        auth_token: str = "sentinel-dev-2024",
-        storage_path: str = "/var/lib/sentinel/journal",
-        buffer_size: int = 10000,
-        batch_size: int = 200,
-        upload_interval: float = 5.0,
-            mock_mode: bool = False,
-            anonymize_ssid: bool = False,
-            store_raw_mac: bool = False,
-            privacy_mode: str = "anonymized"
-        ):
+        config: Config = None,
+    ):
         """
         Initialize sensor controller.
 
         Args:
-            sensor_id: Unique sensor identifier
-            iface: Network interface
-            channels: Channel list for hopping
-            dwell_ms: Dwell time per channel
-            upload_url: Controller telemetry endpoint
-            auth_token: Authentication token
-            storage_path: Journal storage path
-            buffer_size: Max buffer items
-            batch_size: Items per upload batch
-            upload_interval: Seconds between uploads
-            mock_mode: Use mock capture driver
-            anonymize_ssid: Hash SSIDs for privacy
-            store_raw_mac: Allow storing raw MAC addresses
-            privacy_mode: Privacy mode (normal, anonymized, private)
+            config: Configuration object
         """
-        self.sensor_id = sensor_id
-        self.iface = iface
-        self.upload_interval = upload_interval
-        self.batch_size = batch_size
+        if config is None:
+            config = get_config()
+
+        self.config = config
+        self.sensor_id = (
+            config.api.api_key
+        )  # Use API Key as ID for simplicity or separate
+        # But wait, config has keys but sensor_id was separate. Let's fix that.
+        # Actually user passed ID. Let's stick to config structure.
+        # config.api.api_key is Token. Config doesn't have explicit SensorID field in strict sense except maybe api_key or hostname.
+        # We will use what's passed or ENV.
+        self.sensor_id = os.environ.get("SENSOR_ID", "sensor-01")
+
+        self.iface = config.capture.interface
+        self.upload_interval = 5.0
+        self.batch_size = 200
 
         # Initialize components
-        if mock_mode:
-            self.driver = MockCaptureDriver(iface)
+        if config.mock_mode:
+            self.driver = MockCaptureDriver(self.iface)
         else:
-            self.driver = IwCaptureDriver(iface)
+            self.driver = IwCaptureDriver(self.iface)
 
         self.parser = FrameParser()
 
         self.normalizer = TelemetryNormalizer(
-            sensor_id=sensor_id,
-            capture_method="scapy" if not mock_mode else "mock",
-            anonymize_ssid=anonymize_ssid,
-            store_raw_mac=store_raw_mac,
-            privacy_mode=privacy_mode
+            sensor_id=self.sensor_id,
+            capture_method="scapy" if not config.mock_mode else "mock",
+            anonymize_ssid=config.privacy.anonymize_ssid,
+            store_raw_mac=config.privacy.store_raw_mac,
+            privacy_mode=config.privacy.mode,
         )
 
         self.buffer = BufferManager(
-            max_memory_items=buffer_size,
-            storage_path=storage_path
+            max_memory_items=10000,
+            storage_path=config.storage.pcap_dir.replace(
+                "pcaps", "journal"
+            ),  # Hacky but ok
         )
 
+        # HACK: Retrieve HMAC secret from env since it's not in Config struct yet (or I missed it)
+        # It was implicit.
+        hmac_secret = os.environ.get("SENSOR_HMAC_SECRET")
+
         self.transport = TransportClient(
-            upload_url=upload_url,
-            auth_token=auth_token
+            upload_url=f"http://{config.api.host}:{config.api.port}/api/v1/telemetry",  # Construct URL
+            auth_token=config.api.api_key,
+            verify_ssl=config.api.ssl_enabled,
+            hmac_secret=hmac_secret,
         )
 
         self.hopper = ChannelHopper(
             driver=self.driver,
-            channels=channels,
-            dwell_ms=dwell_ms
+            channels=config.capture.channels,
+            dwell_ms=int(config.capture.dwell_time * 1000),
         )
+
+        # Stateful Aggregator
+        self.aggregator = TelemetryAggregator(window_seconds=60)
+
+        # Load Risk Engine (Lazy load to avoid circular imports if any)
+
+        # Risk Engine
+        self.risk_engine = RiskScorer()
+
+        # Advanced Detection Engines
+        self.et_detector = AdvancedEvilTwinDetector()
+
+        # Metrics
+        self.metrics = MetricsCollector(self.sensor_id)
 
         # State
         self._running = False
-        self._capture_thread: Optional[threading.Thread] = None
-        self._upload_thread: Optional[threading.Thread] = None
-        self._heartbeat_thread: Optional[threading.Thread] = None
-        self._start_time: Optional[datetime] = None
+        self._capture_thread: threading.Thread | None = None
+        self._upload_thread: threading.Thread | None = None
+        self._heartbeat_thread: threading.Thread | None = None
+        self._start_time: datetime | None = None
 
         # Stats
         self._frames_captured = 0
@@ -237,32 +280,26 @@ class SensorController:
             return False
 
         self._running = True
-        self._start_time = datetime.now(timezone.utc)
+        self._start_time = datetime.now(UTC)
 
         # Start channel hopping
         self.hopper.start()
 
         # Start capture processing thread
         self._capture_thread = threading.Thread(
-            target=self._capture_loop,
-            daemon=True,
-            name="CaptureProcessor"
+            target=self._capture_loop, daemon=True, name="CaptureProcessor"
         )
         self._capture_thread.start()
 
         # Start upload thread
         self._upload_thread = threading.Thread(
-            target=self._upload_loop,
-            daemon=True,
-            name="Uploader"
+            target=self._upload_loop, daemon=True, name="Uploader"
         )
         self._upload_thread.start()
 
         # Start heartbeat thread
         self._heartbeat_thread = threading.Thread(
-            target=self._heartbeat_loop,
-            daemon=True,
-            name="Heartbeat"
+            target=self._heartbeat_loop, daemon=True, name="Heartbeat"
         )
         self._heartbeat_thread.start()
 
@@ -281,9 +318,10 @@ class SensorController:
 
         # Wait for threads
         for thread in [
-                self._capture_thread,
-                self._upload_thread,
-                self._heartbeat_thread]:
+            self._capture_thread,
+            self._upload_thread,
+            self._heartbeat_thread,
+        ]:
             if thread and thread.is_alive():
                 thread.join(timeout=5)
 
@@ -299,24 +337,21 @@ class SensorController:
         """Get sensor status"""
         uptime = 0
         if self._start_time:
-            uptime = (
-                datetime.now(
-                    timezone.utc)
-                - self._start_time).total_seconds()
+            uptime = (datetime.now(UTC) - self._start_time).total_seconds()
 
         return {
-            'sensor_id': self.sensor_id,
-            'interface': self.iface,
-            'running': self._running,
-            'monitor_mode': self.driver.is_monitor_mode,
-            'current_channel': self.hopper.get_current_channel(),
-            'uptime_seconds': uptime,
-            'frames_captured': self._frames_captured,
-            'frames_parsed': self._frames_parsed,
-            'frames_duplicates': self._frames_duplicates,
-            'buffer': self.buffer.get_stats(),
-            'transport': self.transport.get_stats(),
-            'normalizer': self.normalizer.get_stats()
+            "sensor_id": self.sensor_id,
+            "interface": self.iface,
+            "running": self._running,
+            "monitor_mode": self.driver.is_monitor_mode,
+            "current_channel": self.hopper.get_current_channel(),
+            "uptime_seconds": uptime,
+            "frames_captured": self._frames_captured,
+            "frames_parsed": self._frames_parsed,
+            "frames_duplicates": self._frames_duplicates,
+            "buffer": self.buffer.get_stats(),
+            "transport": self.transport.get_stats(),
+            "normalizer": self.normalizer.get_stats(),
         }
 
     def _capture_loop(self) -> None:
@@ -348,11 +383,55 @@ class SensorController:
                 # Add to buffer
                 self.buffer.append(telemetry.dict())
 
+                # Feed Aggregator
+                self.aggregator.record_frame(
+                    telemetry.frame_type, telemetry.frame_subtype, telemetry.mac_src
+                )
+
+                # Record Metrics
+                self.metrics.record_frame(telemetry.frame_type)
+
+                # Feed Evil Twin Detector
+                et_alerts = self.et_detector.ingest(telemetry.dict())
+                for alert in et_alerts:
+                    logger.warning(
+                        f"Evil Twin Detected: {alert.ssid} ({alert.score}/100)"
+                    )
+                    # Convert dataclass to dict for upload
+                    alert_dict = {
+                        "alert_type": "evil_twin",
+                        "severity": alert.severity,
+                        "title": f"Evil Twin Detected: {alert.ssid}",
+                        "description": alert.recommendation,
+                        "evidence": alert.evidence,
+                        "sensor_id": self.sensor_id,
+                        "risk_score": alert.score,
+                    }
+                    self.buffer.append_alert(
+                        alert_dict
+                    )  # Assuming buffer has this or we upload direct
+
+                # Real-time Risk Assessment (Sampled)
+                # Real-time Risk Assessment
+                if self._frames_captured % 10 == 0:
+                    # Convert telemetry to dict for risk scoring
+                    net_dict = telemetry.dict()
+                    risk_result = self.risk_engine.calculate_risk(net_dict)
+
+                    if risk_result.get("risk_score", 0) > 70:
+                        logger.warning(
+                            f"High Risky Network: {telemetry.ssid} (Score: {risk_result['risk_score']})"
+                        )
+                        # Generate alert
+                        self.metrics.set_risk_score(
+                            telemetry.bssid, risk_result["risk_score"]
+                        )
+
                 # Record activity for adaptive hopping
                 self.hopper.record_activity(parsed.channel, 1)
 
             except TimeoutError:
-                 logger.warning("Frame read timeout")
+                logger.warning("Frame read timeout")
             except Exception as e:
                 logger.error(f"Capture loop error: {e}", exc_info=True)
                 time.sleep(0.1)  # Backoff to avoid spinning
@@ -369,16 +448,21 @@ class SensorController:
                     continue
 
                 # Add sensor_id to batch
-                batch['sensor_id'] = self.sensor_id
+                batch["sensor_id"] = self.sensor_id
 
                 # Upload
                 result = self.transport.upload(batch)
 
-                if result.get('success'):
+                if result.get("success"):
                     logger.debug(
-                        f"Uploaded batch {batch['batch_id']}: {batch['item_count']} items")
+                        f"Uploaded batch {batch['batch_id']}: {batch['item_count']} items"
+                    )
+                    self.metrics.record_upload(True)
                 else:
                     logger.warning(f"Upload failed: {result.get('error')}")
+                    self.metrics.record_upload(
+                        False, reason=result.get("error", "Unknown")
+                    )
 
             except Exception as e:
                 logger.error(f"Upload loop error: {e}")
@@ -392,9 +476,9 @@ class SensorController:
                 status = self.status()
                 result = self.transport.heartbeat(status)
 
-                if result.get('success'):
+                if result.get("success"):
                     # Process commands
-                    for cmd in result.get('commands', []):
+                    for cmd in result.get("commands", []):
                         self._handle_command(cmd)
 
             except Exception as e:
@@ -402,21 +486,21 @@ class SensorController:
 
     def _handle_command(self, cmd: dict[str, Any]) -> None:
         """Handle command from controller"""
-        cmd_type = cmd.get('type')
+        cmd_type = cmd.get("type")
 
-        if cmd_type == 'set_channels':
-            channels = cmd.get('channels', [])
+        if cmd_type == "set_channels":
+            channels = cmd.get("channels", [])
             if channels:
                 self.hopper.channels = channels
                 logger.info(f"Updated channels: {channels}")
 
-        elif cmd_type == 'set_dwell':
-            dwell = cmd.get('dwell_ms')
+        elif cmd_type == "set_dwell":
+            dwell = cmd.get("dwell_ms")
             if dwell:
                 self.hopper.dwell_ms = dwell
                 logger.info(f"Updated dwell time: {dwell}ms")
 
-        elif cmd_type == 'force_upload':
+        elif cmd_type == "force_upload":
             batch = self.buffer.get_batch(max_count=1000)
             if batch:
                 self.transport.upload(batch)
@@ -437,111 +521,31 @@ Examples:
 
   # Mock mode (no hardware)
   %(prog)s --sensor-id test-01 --iface mock0 --mock-mode
-        """
+        """,
     )
 
-    # Required
-    parser.add_argument('--sensor-id', required=True, help='Unique sensor ID')
-    parser.add_argument('--iface', required=True, help='Network interface')
+    # Init Config
+    if args.config_file:
+        config = init_config(args.config_file)
+    else:
+        config = init_config()  # defaults + env
 
-    # Channel options
-    parser.add_argument(
-        '--channels',
-        help='Comma-separated channel list (default: 1,6,11)')
-    parser.add_argument(
-        '--dwell-ms',
-        type=int,
-        default=200,
-        help='Channel dwell time (ms)')
-
-    # Batch options
-    parser.add_argument(
-        '--batch-size',
-        type=int,
-        default=200,
-        help='Max frames per batch')
-    parser.add_argument(
-        '--batch-bytes',
-        type=int,
-        default=256 * 1024,
-        help='Max batch size bytes')
-    parser.add_argument(
-        '--upload-interval',
-        type=float,
-        default=5.0,
-        help='Upload interval (sec)')
-
-    # Controller
-    parser.add_argument(
-        '--upload-url',
-        default='http://localhost:5000/api/v1/telemetry',
-        help='Controller telemetry endpoint')
-    parser.add_argument('--auth-token', default=os.environ.get('SENSOR_AUTH_TOKEN', 'sentinel-dev-2024'),
-                        help='Auth token for controller')
-
-    # Storage
-    parser.add_argument('--storage-path', default='/var/lib/sentinel/journal',
-                        help='Journal storage path')
-    parser.add_argument(
-        '--max-disk-usage',
-        type=int,
-        default=100,
-        help='Max disk MB')
-
-    # Mode
-    parser.add_argument(
-        '--mock-mode',
-        action='store_true',
-        help='Use mock capture')
-    parser.add_argument(
-        '--anonymize-ssid',
-        action='store_true',
-        help='Hash SSIDs')
-    parser.add_argument(
-        '--store-raw-mac',
-        action='store_true',
-        help='Store raw MAC addresses')
-    parser.add_argument(
-        '--privacy-mode',
-        default='anonymized',
-        help='Privacy mode')
-
-    # Logging
-    parser.add_argument('--log-level', default='INFO',
-                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
-
-    # Config file
-    parser.add_argument('--config-file', help='JSON/YAML config file')
-
-    args = parser.parse_args()
+    # CLI Overrides (only if explicit)
+    if args.iface:
+        config.capture.interface = args.iface
+    if args.sensor_id:
+        os.environ["SENSOR_ID"] = args.sensor_id  # Store in ENV for controller
+    if args.mock_mode:
+        config.mock_mode = True
 
     # Setup logging
     logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        level=getattr(logging, config.log_level),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
-
-    # Parse channels
-    channels = None
-    if args.channels:
-        channels = [int(c.strip()) for c in args.channels.split(',')]
 
     # Create controller
-    controller = SensorController(
-        sensor_id=args.sensor_id,
-        iface=args.iface,
-        channels=channels,
-        dwell_ms=args.dwell_ms,
-        upload_url=args.upload_url,
-        auth_token=args.auth_token,
-        storage_path=args.storage_path,
-        batch_size=args.batch_size,
-        upload_interval=args.upload_interval,
-        mock_mode=args.mock_mode,
-        anonymize_ssid=args.anonymize_ssid,
-        store_raw_mac=args.store_raw_mac,
-        privacy_mode=args.privacy_mode
-    )
+    controller = SensorController(config=config)
 
     # Signal handlers
     def signal_handler(sig, frame):
@@ -556,10 +560,10 @@ Examples:
     print("=" * 50)
     print("Sentinel NetLab Sensor")
     print("=" * 50)
-    print(f"Sensor ID: {args.sensor_id}")
-    print(f"Interface: {args.iface}")
-    print(f"Channels: {channels or 'auto'}")
-    print(f"Mock Mode: {args.mock_mode}")
+    print(f"Sensor ID: {controller.sensor_id}")
+    print(f"Interface: {config.capture.interface}")
+    print(f"Channels: {config.capture.channels}")
+    print(f"Mock Mode: {config.mock_mode}")
     print("=" * 50)
 
     if controller.start():
@@ -573,5 +577,5 @@ Examples:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

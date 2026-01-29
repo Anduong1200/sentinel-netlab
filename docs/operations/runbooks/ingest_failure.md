@@ -2,6 +2,9 @@
 
 > Procedure for diagnosing and resolving data ingest failures
 
+> [!WARNING]
+> WORK IN PROGRESS: Some steps reference `postgres` or `admin/flush-queue` endpoints which may not be fully wired in the current stable release. Verify components exist before running commands.
+
 ---
 
 ## Symptoms

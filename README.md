@@ -44,7 +44,11 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
 
 > [!IMPORTANT]
-> **WIDS vs WIPS**: Sentinel NetLab functions primarily as a Passive Wireless Intrusion Detection System (WIDS). "Active Defense" features (WIPS) are **disabled by default** and must be explicitly enabled in configuration. These features should only be used in controlled lab environments or with explicit authorization.
+> **WIDS vs WIPS Scope**:
+> *   **WIDS (Supported)**: Passive detecting, logging, and alerting on threats (Rogue AP, Deauth, Evil Twin). This is the core function of Sentinel NetLab.
+> *   **WIPS (Experimental)**: Active countermeasures (e.g., Deauth containment) are **experimental** and often restricted by hardware/driver support or legal constraints. We provide interfaces for these in `algorithms/active_defense.py` but they are **disabled by default** and not guaranteed to work on all chipsets.
+>
+> Proceed with caution and ensure you have authorization before enabling any active response features.
 
 ---
 
@@ -165,26 +169,45 @@ sentinel-netlab/
 
 ### Usage
 
-**1. Assessment Mode (Wardriving):**
-Capture WiFi networks with GPS tagging.
+Sentinel NetLab operates in two primary modes:
+
+#### A. Standalone Tools (CLI)
+Isolated tools for specific security assessments (Manual/Ad-hoc).
+
+**1. Wardriving (WiFi Mapping)**
+Capture networks with GPS correlation and optionally upload to Controller.
 ```bash
-sentinel-netlab scan --iface wlan0mon --gps /dev/ttyUSB0 --output walk_session.json
-# Or legacy wrapper: python sentinel.py scan ...
+# Capture and save locally
+python sensor/wardrive.py --iface wlan0mon --gps /dev/ttyUSB0 --output session.json
+
+# Capture and upload (Connected Mode)
+python sensor/wardrive.py --iface wlan0mon --upload --api-url http://controller:5000/api/v1
 ```
 
-**2. Monitor Mode (WIDS):**
-Run as a continuous sensor (with API and real-time detection).
+**2. Audit (Security Checklist)**
+Run compliance checks against discovered networks.
 ```bash
-sentinel-netlab monitor --interface wlan0 --api --buffered-storage
+# Security check against Home profile
+python sensor/audit.py --profile home --output report.json
 ```
 
-**3. Dashboard:**
-Access the real-time dashboard at `http://localhost:8050` (requires Docker).
+#### B. WIDS Platform (Continuous Monitoring)
+The core Distributed Wireless Intrusion Detection System.
 
-**4. Deployment:**
-*   **Full Stack** (Server): `docker-compose -f ops/docker-compose.yml up -d`
-*   **Lightweight** (RPi): `docker-compose -f ops/docker-compose.light.yml up -d`
+**1. Run Sensor Agent**
+Starts the continuous monitoring daemon.
+```bash
+python sensor/cli.py --sensor-id sensor-01 --iface wlan0mon --config config.yaml
+```
 
+**2. Deploy Controller**
+Start the central management backend.
+```bash
+docker-compose -f ops/docker-compose.yml up -d
+```
+
+**3. Dashboard**
+View real-time alerts and heatmaps at http://localhost:8050
 
 **Run Tests:**
 ```bash

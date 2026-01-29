@@ -6,72 +6,40 @@ Parses Beacon and Probe Response frames to extract network information
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from scapy.all import (
-    Dot11,
-    Dot11Beacon,
-    Dot11Deauth,
-    Dot11Elt,
-    Dot11ProbeResp,
-    RadioTap,
-)
+try:
+    from scapy.all import (
+        Dot11,
+        Dot11Beacon,
+        Dot11Deauth,
+        Dot11Elt,
+        Dot11ProbeResp,
+        RadioTap,
+    )
+
+    SCAPY_AVAILABLE = True
+except (ImportError, OSError):
+    SCAPY_AVAILABLE = False
+    # Define dummy classes for type hints and avoid NameError
+    Dot11 = Any
+    Dot11Beacon = Any
+    Dot11Deauth = Any
+    Dot11Elt = Any
+    Dot11ProbeResp = Any
+    RadioTap = Any
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 # OUI Database (partial - common vendors)
-OUI_DATABASE = {
-    "00:50:F2": "Microsoft",
-    "00:0C:29": "VMware",
-    "00:1A:2B": "Ayecom",
-    "00:1B:21": "Intel",
-    "00:1E:58": "D-Link",
-    "00:1F:33": "Netgear",
-    "00:21:5D": "Intel",
-    "00:22:6B": "Cisco",
-    "00:23:69": "Cisco",
-    "00:24:D4": "FREEBOX",
-    "00:25:9C": "Cisco",
-    "00:26:5A": "D-Link",
-    "00:E0:4C": "Realtek",
-    "14:CF:E2": "Apple",
-    "18:E8:29": "Apple",
-    "1C:1B:0D": "Apple",
-    "28:CF:E9": "Apple",
-    "3C:15:C2": "Apple",
-    "40:6C:8F": "Apple",
-    "44:D8:84": "Apple",
-    "48:45:20": "Intel",
-    "5C:F9:38": "Apple",
-    "60:03:08": "Apple",
-    "64:A5:C3": "Apple",
-    "68:A8:6D": "Apple",
-    "70:73:CB": "Apple",
-    "78:CA:39": "Apple",
-    "7C:D1:C3": "Apple",
-    "80:86:F2": "Intel",
-    "84:38:35": "Apple",
-    "88:E9:FE": "Apple",
-    "8C:85:90": "Apple",
-    "9C:04:EB": "Apple",
-    "A4:5E:60": "Apple",
-    "AC:22:0B": "ASUSTek",
-    "AC:BC:32": "Apple",
-    "B0:C0:90": "Chicony",
-    "B8:27:EB": "Raspberry Pi",
-    "BC:83:85": "Microsoft",
-    "C8:6F:1D": "Apple",
-    "D0:23:DB": "Apple",
-    "DC:A9:04": "Apple",
-    "E0:B9:A5": "Apple",
-    "E4:C6:3D": "Apple",
-    "F0:18:98": "Apple",
-    "F4:5C:89": "Apple",
-    "F8:1E:DF": "Apple",
-    "FC:E9:98": "Apple",
-}
+# OUI Database moved to common.oui
+try:
+    from common.oui import get_vendor as common_get_vendor
+except ImportError:
+    # Fallback if common not found (e.g. running standalone)
+    common_get_vendor = None
 
 
 class WiFiParser:
@@ -89,7 +57,7 @@ class WiFiParser:
 
     AUTH_SUITES = {
         0x01: "802.1X",  # WPA Enterprise
-        0x02: "PSK",     # WPA Personal
+        0x02: "PSK",  # WPA Personal
     }
 
     def __init__(self):
@@ -110,11 +78,13 @@ class WiFiParser:
         Returns:
             Vendor name or "Unknown"
         """
+        if common_get_vendor:
+            return common_get_vendor(mac)
+
         if not mac:
             return "Unknown"
-
-        oui = mac.upper()[:8]  # First 3 octets (XX:XX:XX)
-        return OUI_DATABASE.get(oui, "Unknown")
+        # Fallback empty logic if import failed
+        return "Unknown"
 
     def parse_encryption(self, packet) -> str:
         """
@@ -123,13 +93,16 @@ class WiFiParser:
         Returns:
             String describing encryption (e.g., "WPA2-PSK", "WEP", "Open")
         """
-        if not packet.haslayer(
-                Dot11Beacon) and not packet.haslayer(Dot11ProbeResp):
+        if not SCAPY_AVAILABLE:
+            return "Unknown"
+
+        if not packet.haslayer(Dot11Beacon) and not packet.haslayer(Dot11ProbeResp):
             return "Unknown"
 
         # Get capability info
-        cap = packet.sprintf("{Dot11Beacon:%Dot11Beacon.cap%}"
-                             "{Dot11ProbeResp:%Dot11ProbeResp.cap%}")
+        cap = packet.sprintf(
+            "{Dot11Beacon:%Dot11Beacon.cap%}{Dot11ProbeResp:%Dot11ProbeResp.cap%}"
+        )
 
         # Check for WPA/WPA2/WPA3
         encryption = "Open"
@@ -143,12 +116,12 @@ class WiFiParser:
                 encryption = "WPA2"
                 try:
                     # Parse RSN info for auth type
-                    if b'\x00\x0f\xac\x02' in elt.info:
+                    if b"\x00\x0f\xac\x02" in elt.info:
                         crypto.add("PSK")
-                    if b'\x00\x0f\xac\x01' in elt.info:
+                    if b"\x00\x0f\xac\x01" in elt.info:
                         crypto.add("802.1X")
                     # Check for SAE (WPA3)
-                    if b'\x00\x0f\xac\x08' in elt.info:
+                    if b"\x00\x0f\xac\x08" in elt.info:
                         encryption = "WPA3"
                         crypto.add("SAE")
                 except (AttributeError, IndexError):
@@ -156,7 +129,7 @@ class WiFiParser:
 
             # WPA (vendor specific)
             elif elt.ID == 221:
-                if elt.info.startswith(b'\x00\x50\xf2\x01'):
+                if elt.info.startswith(b"\x00\x50\xf2\x01"):
                     if encryption == "Open":
                         encryption = "WPA"
                     crypto.add("TKIP")
@@ -203,7 +176,7 @@ class WiFiParser:
                 pass
         return -100  # Default weak signal
 
-    def parse_deauth(self, packet) -> Optional[dict[str, Any]]:
+    def parse_deauth(self, packet) -> dict[str, Any] | None:
         """
         Parse Deauthentication frame to detect potential attack.
 
@@ -220,7 +193,7 @@ class WiFiParser:
             reason = packet[Dot11Deauth].reason
             sender = packet.addr2  # Usually AP or Attacker spoofing AP
             target = packet.addr1  # Victim
-            bssid = packet.addr3   # AP
+            bssid = packet.addr3  # AP
 
             # Common attack reasons: 7 (Class 3 frame from nonassociated STA)
             is_suspicious = reason in [7, 1, 4, 5, 6, 8]
@@ -232,14 +205,14 @@ class WiFiParser:
                 "bssid": bssid,
                 "reason_code": reason,
                 "timestamp": datetime.now().isoformat(),
-                "severity": "HIGH" if is_suspicious else "INFO"
+                "severity": "HIGH" if is_suspicious else "INFO",
             }
             return event
         except Exception as e:
             logger.debug(f"Error parsing deauth: {e}")
             return None
 
-    def process_packet(self, packet) -> Optional[dict[str, Any]]:
+    def process_packet(self, packet) -> dict[str, Any] | None:
         """
         Process a captured 802.11 packet and extract network info.
 
@@ -249,6 +222,9 @@ class WiFiParser:
         Returns:
             Network dictionary if valid beacon/probe, None otherwise
         """
+        if not SCAPY_AVAILABLE:
+            return None
+
         self.packet_count += 1
 
         if not packet.haslayer(Dot11):
@@ -260,7 +236,8 @@ class WiFiParser:
             if deauth_event:
                 self.security_events.append(deauth_event)
                 logger.warning(
-                    f"Deauth detected: {deauth_event['sender']} -> {deauth_event['target']}")
+                    f"Deauth detected: {deauth_event['sender']} -> {deauth_event['target']}"
+                )
                 return deauth_event
 
         # Check for EAPOL (Handshake)
@@ -272,15 +249,15 @@ class WiFiParser:
                 if bssid and bssid in self.networks:
                     self.networks[bssid]["handshake_captured"] = True
                     logger.info(
-                        f"Handshake captured for {self.networks[bssid]['ssid']}")
+                        f"Handshake captured for {self.networks[bssid]['ssid']}"
+                    )
                     return self.networks[bssid]
-            except Exception:
+            except Exception:  # nosec B110
                 pass
             return None
 
         # Only parse Beacons/ProbeResp for network discovery
-        if not (packet.haslayer(Dot11Beacon)
-                or packet.haslayer(Dot11ProbeResp)):
+        if not (packet.haslayer(Dot11Beacon) or packet.haslayer(Dot11ProbeResp)):
             return None
 
         try:
@@ -300,15 +277,14 @@ class WiFiParser:
                 # SSID
                 if elt.ID == 0:
                     try:
-                        ssid = elt.info.decode(
-                            'utf-8', errors='ignore').strip('\x00')
+                        ssid = elt.info.decode("utf-8", errors="ignore").strip("\x00")
                     except (UnicodeDecodeError, AttributeError):
                         ssid = ""
 
                 # Check for WPS (Vendor Specific ID 221 + Microsoft OUI
                 # \x00\x50\xf2\x04)
                 elif elt.ID == 221:
-                    if elt.info.startswith(b'\x00\x50\xf2\x04'):
+                    if elt.info.startswith(b"\x00\x50\xf2\x04"):
                         wps_present = True
 
                 elt = elt.payload.getlayer(Dot11Elt)
@@ -343,7 +319,7 @@ class WiFiParser:
                     "last_seen": now.isoformat(),
                     "beacon_count": 1,
                     "wps": wps_present,
-                    "handshake_captured": False
+                    "handshake_captured": False,
                 }
                 self.networks[bssid] = network
 
@@ -376,13 +352,14 @@ class WiFiParser:
     def get_stats(self) -> dict[str, Any]:
         """Get parser statistics."""
         handshake_count = sum(
-            1 for n in self.networks.values() if n.get("handshake_captured"))
+            1 for n in self.networks.values() if n.get("handshake_captured")
+        )
         return {
             "network_count": len(self.networks),
             "packet_count": self.packet_count,
             "handshake_count": handshake_count,
             "last_update": self.last_update.isoformat(),
-            "encryption_summary": self._get_encryption_summary()
+            "encryption_summary": self._get_encryption_summary(),
         }
 
     def _get_encryption_summary(self) -> dict[str, int]:
@@ -397,7 +374,7 @@ class WiFiParser:
 
 
 # Convenience function for parsing a single packet
-def parse_beacon(packet) -> Optional[dict[str, Any]]:
+def parse_beacon(packet) -> dict[str, Any] | None:
     """
     Parse a single beacon/probe response packet.
 

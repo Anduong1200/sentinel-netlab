@@ -13,7 +13,7 @@ class StructuredFormatter(logging.Formatter):
         super().__init__()
         self.service_name = service_name
         self.version = version
-        self.hostname = os.uname().nodename if hasattr(os, 'uname') else "unknown"
+        self.hostname = os.uname().nodename if hasattr(os, "uname") else "unknown"
 
     def format(self, record: logging.LogRecord) -> str:
         log_obj: dict[str, Any] = {
@@ -26,7 +26,7 @@ class StructuredFormatter(logging.Formatter):
             "host": self.hostname,
             "path": record.pathname,
             "line": record.lineno,
-            "thread": record.threadName
+            "thread": record.threadName,
         }
 
         # Add exception info if present
@@ -39,10 +39,9 @@ class StructuredFormatter(logging.Formatter):
 
         return json.dumps(log_obj)
 
+
 def setup_logger(
-    name: str,
-    level: str = "INFO",
-    service_name: str = "sentinel"
+    name: str, level: str = "INFO", service_name: str = "sentinel"
 ) -> logging.Logger:
     """
     Configure structured logger.

@@ -23,22 +23,26 @@ from algos.risk import RiskScorer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def load_dataset(path: str) -> list[dict]:
     """Load labeled dataset (JSON list of network records with 'label' field)"""
     with open(path) as f:
         return json.load(f)
 
-def evaluate(scorer: RiskScorer, dataset: list[dict], threshold: int = 50) -> dict[str, float]:
+
+def evaluate(
+    scorer: RiskScorer, dataset: list[dict], threshold: int = 50
+) -> dict[str, float]:
     """Calculate metrics for current weights"""
     tp = fp = tn = fn = 0
 
     for record in dataset:
-        true_label = record.get('label', 'benign') # benign or malicious
+        true_label = record.get("label", "benign")  # benign or malicious
         score_result = scorer.calculate_risk(record)
-        score = score_result['score']
+        score = score_result["score"]
 
         predicted_malicious = score >= threshold
-        is_malicious = true_label == 'malicious'
+        is_malicious = true_label == "malicious"
 
         if is_malicious and predicted_malicious:
             tp += 1
@@ -51,14 +55,19 @@ def evaluate(scorer: RiskScorer, dataset: list[dict], threshold: int = 50) -> di
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    f1 = (
+        2 * (precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0
+    )
 
     return {
-        'f1': f1,
-        'precision': precision,
-        'recall': recall,
-        'accuracy': (tp + tn) / len(dataset)
+        "f1": f1,
+        "precision": precision,
+        "recall": recall,
+        "accuracy": (tp + tn) / len(dataset),
     }
+
 
 def optimize(dataset_path: str, config_path: str):
     """Run grid search optimization"""
@@ -67,7 +76,13 @@ def optimize(dataset_path: str, config_path: str):
 
     # Define search space (simplified)
     # Weights must sum to ~1.0
-    weight_keys = ['encryption', 'rssi_norm', 'vendor_risk', 'ssid_suspicion', 'wps_flag']
+    weight_keys = [
+        "encryption",
+        "rssi_norm",
+        "vendor_risk",
+        "ssid_suspicion",
+        "wps_flag",
+    ]
 
     best_f1 = -1.0
     best_weights = {}
@@ -82,34 +97,40 @@ def optimize(dataset_path: str, config_path: str):
         # Generate random weights summing to 1
         raw_weights = np.random.dirichlet(np.ones(len(weight_keys)), size=1)[0]
         # Round to 2 decimals
-        weights = {k: round(float(v), 2) for k, v in zip(weight_keys, raw_weights)}
+        weights = {
+            k: round(float(v), 2) for k, v in zip(weight_keys, raw_weights, strict=True)
+        }
 
         # Setup scorer
         # We Mock the config loader to inject our weights
         scorer = RiskScorer(config_path)
-        scorer.weights = weights # Override
+        scorer.weights = weights  # Override
 
         metrics = evaluate(scorer, dataset)
 
-        if metrics['f1'] > best_f1:
-            best_f1 = metrics['f1']
+        if metrics["f1"] > best_f1:
+            best_f1 = metrics["f1"]
             best_weights = weights
             logger.info(f"New best F1: {best_f1:.3f} with {weights}")
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("Optimization Result")
     print(f"Best F1 Score: {best_f1:.3f}")
     print("Recommended Weights:")
     print(yaml.dump(best_weights))
-    print("="*50)
+    print("=" * 50)
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Risk Weight Tuner')
-    parser.add_argument('--dataset', required=True, help='Path to labeled JSON dataset')
-    parser.add_argument('--config', default='sensor/risk_weights.yaml', help='Base config path')
+    parser = argparse.ArgumentParser(description="Risk Weight Tuner")
+    parser.add_argument("--dataset", required=True, help="Path to labeled JSON dataset")
+    parser.add_argument(
+        "--config", default="sensor/risk_weights.yaml", help="Base config path"
+    )
     args = parser.parse_args()
 
     optimize(args.dataset, args.config)
+
 
 if __name__ == "__main__":
     main()

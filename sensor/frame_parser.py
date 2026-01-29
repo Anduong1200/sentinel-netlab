@@ -6,7 +6,7 @@ Parses raw 802.11 management frames and extracts fields.
 import logging
 import struct
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParsedFrame:
     """Parsed 802.11 management frame"""
+
     # Radio metadata
     timestamp: float
     rssi_dbm: int = -100
@@ -30,8 +31,8 @@ class ParsedFrame:
     dst_addr: str = ""
 
     # Management frame fields
-    ssid: Optional[str] = None
-    ssid_raw: Optional[bytes] = None
+    ssid: str | None = None
+    ssid_raw: bytes | None = None
     ssid_decoding_error: bool = False
 
     # Beacon/Probe specific
@@ -61,10 +62,10 @@ class ParsedFrame:
     wpa_info: dict[str, Any] = field(default_factory=dict)
 
     # Raw data
-    raw_radiotap: Optional[bytes] = None
+    raw_radiotap: bytes | None = None
 
     # Parse status
-    parse_error: Optional[str] = None
+    parse_error: str | None = None
 
 
 class FrameParser:
@@ -101,9 +102,9 @@ class FrameParser:
     IE_EXT = 255
 
     # Vendor OUIs
-    OUI_WPA = b'\x00\x50\xf2\x01'
-    OUI_WPS = b'\x00\x50\xf2\x04'
-    OUI_MICROSOFT = b'\x00\x50\xf2'
+    OUI_WPA = b"\x00\x50\xf2\x01"
+    OUI_WPS = b"\x00\x50\xf2\x04"
+    OUI_MICROSOFT = b"\x00\x50\xf2"
 
     FRAME_TYPE_MAP = {
         (0, 0): "assoc_req",
@@ -119,7 +120,7 @@ class FrameParser:
         (0, 13): "action",
     }
 
-    def __init__(self, oui_db: Optional[dict[str, str]] = None):
+    def __init__(self, oui_db: dict[str, str] | None = None):
         """
         Initialize parser.
 
@@ -130,10 +131,7 @@ class FrameParser:
         self._dedup_cache: dict[str, float] = {}
         self._dedup_window = 5.0  # seconds
 
-    def parse(
-            self,
-            raw_frame: bytes,
-            timestamp: float = 0.0) -> Optional[ParsedFrame]:
+    def parse(self, raw_frame: bytes, timestamp: float = 0.0) -> ParsedFrame | None:
         """
         Parse raw radiotap + 802.11 frame.
 
@@ -167,9 +165,10 @@ class FrameParser:
                 return result
 
             frame_control = struct.unpack(
-                '<H', raw_frame[dot11_start:dot11_start + 2])[0]
+                "<H", raw_frame[dot11_start : dot11_start + 2]
+            )[0]
             frame_type = (frame_control >> 2) & 0x03
-            frame_subtype = (frame_control >> 4) & 0x0f
+            frame_subtype = (frame_control >> 4) & 0x0F
 
             result.frame_subtype = frame_subtype
             result.frame_type = self.FRAME_TYPE_MAP.get(
@@ -183,15 +182,19 @@ class FrameParser:
 
             # Extract addresses
             result.dst_addr = self._format_mac(
-                raw_frame[dot11_start + 4:dot11_start + 10])
+                raw_frame[dot11_start + 4 : dot11_start + 10]
+            )
             result.src_addr = self._format_mac(
-                raw_frame[dot11_start + 10:dot11_start + 16])
+                raw_frame[dot11_start + 10 : dot11_start + 16]
+            )
             result.bssid = self._format_mac(
-                raw_frame[dot11_start + 16:dot11_start + 22])
+                raw_frame[dot11_start + 16 : dot11_start + 22]
+            )
 
             # Sequence number
             seq_ctrl = struct.unpack(
-                '<H', raw_frame[dot11_start + 22:dot11_start + 24])[0]
+                "<H", raw_frame[dot11_start + 22 : dot11_start + 24]
+            )[0]
             result.seq_num = seq_ctrl >> 4
 
             # Parse management frame body based on subtype
@@ -219,7 +222,7 @@ class FrameParser:
             return -1
 
         # Radiotap header
-        version, pad, length = struct.unpack('<BBH', data[:4])
+        version, pad, length = struct.unpack("<BBH", data[:4])
         if version != 0:
             return -1
 
@@ -227,7 +230,7 @@ class FrameParser:
             return -1
 
         # Parse present flags and extract common fields
-        present = struct.unpack('<I', data[4:8])[0]
+        present = struct.unpack("<I", data[4:8])[0]
 
         # Simplified extraction - real implementation would
         # parse all present fields according to bitmap
@@ -241,25 +244,21 @@ class FrameParser:
                     # Common location for RSSI
                     rssi_byte = data[14] if data[14] < 128 else data[14] - 256
                     result.rssi_dbm = rssi_byte
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
         return length
 
     def _parse_beacon_probe_resp(
-            self,
-            data: bytes,
-            start: int,
-            result: ParsedFrame) -> None:
+        self, data: bytes, start: int, result: ParsedFrame
+    ) -> None:
         """Parse beacon or probe response fixed fields and IEs"""
         if len(data) < start + 12:
             return
 
         # Fixed fields: timestamp (8) + beacon interval (2) + capabilities (2)
-        result.beacon_interval = struct.unpack(
-            '<H', data[start + 8:start + 10])[0]
-        result.capability_flags = struct.unpack(
-            '<H', data[start + 10:start + 12])[0]
+        result.beacon_interval = struct.unpack("<H", data[start + 8 : start + 10])[0]
+        result.capability_flags = struct.unpack("<H", data[start + 10 : start + 12])[0]
 
         # Parse capability flags
         result.ess = bool(result.capability_flags & 0x0001)
@@ -269,37 +268,27 @@ class FrameParser:
         # Parse IEs
         self._parse_ies(data, start + 12, result)
 
-    def _parse_probe_req(
-            self,
-            data: bytes,
-            start: int,
-            result: ParsedFrame) -> None:
+    def _parse_probe_req(self, data: bytes, start: int, result: ParsedFrame) -> None:
         """Parse probe request IEs"""
         self._parse_ies(data, start, result)
 
     def _parse_deauth_disassoc(
-            self,
-            data: bytes,
-            start: int,
-            result: ParsedFrame) -> None:
+        self, data: bytes, start: int, result: ParsedFrame
+    ) -> None:
         """Parse deauth/disassoc reason code"""
         if len(data) >= start + 2:
-            reason = struct.unpack('<H', data[start:start + 2])[0]
-            result.ies['reason_code'] = reason
+            reason = struct.unpack("<H", data[start : start + 2])[0]
+            result.ies["reason_code"] = reason
 
-    def _parse_auth(
-            self,
-            data: bytes,
-            start: int,
-            result: ParsedFrame) -> None:
+    def _parse_auth(self, data: bytes, start: int, result: ParsedFrame) -> None:
         """Parse authentication frame"""
         if len(data) >= start + 6:
-            algo = struct.unpack('<H', data[start:start + 2])[0]
-            seq = struct.unpack('<H', data[start + 2:start + 4])[0]
-            status = struct.unpack('<H', data[start + 4:start + 6])[0]
-            result.ies['auth_algo'] = algo
-            result.ies['auth_seq'] = seq
-            result.ies['auth_status'] = status
+            algo = struct.unpack("<H", data[start : start + 2])[0]
+            seq = struct.unpack("<H", data[start + 2 : start + 4])[0]
+            status = struct.unpack("<H", data[start + 4 : start + 6])[0]
+            result.ies["auth_algo"] = algo
+            result.ies["auth_seq"] = seq
+            result.ies["auth_status"] = status
 
     def _parse_ies(self, data: bytes, start: int, result: ParsedFrame) -> None:
         """Parse Information Elements"""
@@ -312,15 +301,15 @@ class FrameParser:
             if offset + 2 + ie_len > len(data):
                 break
 
-            ie_data = data[offset + 2:offset + 2 + ie_len]
+            ie_data = data[offset + 2 : offset + 2 + ie_len]
 
             if ie_id == self.IE_SSID:
                 result.ies_present.append("SSID")
                 try:
-                    result.ssid = ie_data.decode('utf-8')
+                    result.ssid = ie_data.decode("utf-8")
                     result.ssid_raw = ie_data
                 except UnicodeDecodeError:
-                    result.ssid = ie_data.decode('latin-1', errors='replace')
+                    result.ssid = ie_data.decode("latin-1", errors="replace")
                     result.ssid_decoding_error = True
                     result.ssid_raw = ie_data
 
@@ -352,40 +341,40 @@ class FrameParser:
             return
 
         try:
-            version = struct.unpack('<H', data[0:2])[0]
+            version = struct.unpack("<H", data[0:2])[0]
             group_cipher = data[2:6]
 
             # Parse pairwise ciphers
-            pairwise_count = struct.unpack('<H', data[6:8])[0]
+            pairwise_count = struct.unpack("<H", data[6:8])[0]
             offset = 8
             pairwise_ciphers = []
             for _ in range(pairwise_count):
                 if offset + 4 <= len(data):
-                    pairwise_ciphers.append(data[offset:offset + 4].hex())
+                    pairwise_ciphers.append(data[offset : offset + 4].hex())
                     offset += 4
 
             # Parse AKM suites
             if offset + 2 <= len(data):
-                akm_count = struct.unpack('<H', data[offset:offset + 2])[0]
+                akm_count = struct.unpack("<H", data[offset : offset + 2])[0]
                 offset += 2
                 akm_suites = []
                 for _ in range(akm_count):
                     if offset + 4 <= len(data):
-                        akm_suites.append(data[offset:offset + 4].hex())
+                        akm_suites.append(data[offset : offset + 4].hex())
                         offset += 4
 
             # RSN capabilities
             if offset + 2 <= len(data):
-                rsn_caps = struct.unpack('<H', data[offset:offset + 2])[0]
+                rsn_caps = struct.unpack("<H", data[offset : offset + 2])[0]
                 result.pmf_capable = bool(rsn_caps & 0x80)
                 result.pmf_required = bool(rsn_caps & 0x40)
 
             result.rsn_info = {
-                'version': version,
-                'group_cipher': group_cipher.hex(),
-                'pairwise_ciphers': pairwise_ciphers
+                "version": version,
+                "group_cipher": group_cipher.hex(),
+                "pairwise_ciphers": pairwise_ciphers,
             }
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     def _parse_vendor_ie(self, data: bytes, result: ParsedFrame) -> None:
@@ -399,7 +388,7 @@ class FrameParser:
         # WPA IE (Microsoft OUI + type 1)
         if data[:4] == self.OUI_WPA:
             result.ies_present.append("WPA")
-            result.wpa_info['present'] = True
+            result.wpa_info["present"] = True
 
         # WPS IE (Microsoft OUI + type 4)
         elif data[:4] == self.OUI_WPS:
@@ -408,12 +397,9 @@ class FrameParser:
 
     def _format_mac(self, mac_bytes: bytes) -> str:
         """Format MAC address as string"""
-        return ':'.join(f'{b:02X}' for b in mac_bytes)
+        return ":".join(f"{b:02X}" for b in mac_bytes)
 
-    def is_duplicate(
-            self,
-            frame: ParsedFrame,
-            window_sec: float = 5.0) -> bool:
+    def is_duplicate(self, frame: ParsedFrame, window_sec: float = 5.0) -> bool:
         """Check if frame is duplicate within time window"""
         key = f"{frame.bssid}_{frame.seq_num}_{frame.frame_type}_{frame.ssid}"
         now = frame.timestamp
@@ -424,8 +410,7 @@ class FrameParser:
 
         # Clean old entries
         self._dedup_cache = {
-            k: v for k, v in self._dedup_cache.items()
-            if now - v < window_sec
+            k: v for k, v in self._dedup_cache.items() if now - v < window_sec
         }
 
         self._dedup_cache[key] = now

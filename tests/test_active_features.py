@@ -8,17 +8,17 @@ import sys
 import unittest
 
 # Add sensor to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'sensor'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "sensor"))
 
 from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap
 
 
 class TestActiveFeatures(unittest.TestCase):
-
     def setUp(self):
         from parser import WiFiParser
 
         from risk import RiskScorer
+
         self.parser = WiFiParser()
         self.scorer = RiskScorer()
 
@@ -26,8 +26,18 @@ class TestActiveFeatures(unittest.TestCase):
         """Test if parser detects WPS IE (221)"""
         # Create a mock Beacon with WPS IE
         # IE 221, Len, OUI (Microsoft: 00 50 f2 04)
-        wps_ie = Dot11Elt(ID=221, info=b'\x00\x50\xf2\x04\x00\x01\x00')
-        packet = RadioTap() / Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2="AA:BB:CC:11:22:33", addr3="AA:BB:CC:11:22:33") / Dot11Beacon() / Dot11Elt(ID=0, info="WPS_Net") / wps_ie
+        wps_ie = Dot11Elt(ID=221, info=b"\x00\x50\xf2\x04\x00\x01\x00")
+        packet = (
+            RadioTap()
+            / Dot11(
+                addr1="ff:ff:ff:ff:ff:ff",
+                addr2="AA:BB:CC:11:22:33",
+                addr3="AA:BB:CC:11:22:33",
+            )
+            / Dot11Beacon()
+            / Dot11Elt(ID=0, info="WPS_Net")
+            / wps_ie
+        )
 
         net = self.parser.process_packet(packet)
         self.assertTrue(net.get("wps"), "WPS detection failed")
@@ -41,7 +51,7 @@ class TestActiveFeatures(unittest.TestCase):
             "encryption": "WPA2-PSK",
             "wps": True,
             "rssi": -50,
-            "vendor": "Test"
+            "vendor": "Test",
         }
 
         result = self.scorer.calculate_risk(net)
@@ -64,7 +74,7 @@ class TestActiveFeatures(unittest.TestCase):
             "ssid": "Target_Net",
             "bssid": "11:22:33:44:55:66",
             "encryption": "WPA2-PSK",
-            "handshake_captured": True
+            "handshake_captured": True,
         }
 
         result = self.scorer.calculate_risk(net)
@@ -83,7 +93,10 @@ class TestActiveFeatures(unittest.TestCase):
         # TKIP factor score 40 * 0.40 = 16
         # AES/CCMP factor score 20 * 0.40 = 8
         # Plus other base scores (Signal -100 -> 10 * 0.1 = 1, etc.)
-        self.assertGreater(score_tkip, score_aes, "TKIP should have higher risk score than CCMP")
+        self.assertGreater(
+            score_tkip, score_aes, "TKIP should have higher risk score than CCMP"
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

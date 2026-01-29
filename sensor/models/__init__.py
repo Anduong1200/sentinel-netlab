@@ -3,4 +3,4 @@
 
 from .ml_classifier import RiskClassifier, predict_risk, train_model
 
-__all__ = ['predict_risk', 'train_model', 'RiskClassifier']
+__all__ = ["predict_risk", "train_model", "RiskClassifier"]

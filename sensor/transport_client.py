@@ -22,8 +22,8 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,12 @@ logger = logging.getLogger(__name__)
 def load_config_from_env() -> dict[str, Any]:
     """Load transport configuration from environment variables."""
     return {
-        'upload_url': os.environ.get('CONTROLLER_URL', 'https://localhost:5000/api/v1/telemetry'),
-        'auth_token': os.environ.get('SENSOR_AUTH_TOKEN'),
-        'hmac_secret': os.environ.get('SENSOR_HMAC_SECRET'),
-        'verify_ssl': os.environ.get('SENSOR_VERIFY_SSL', 'true').lower() == 'true',
+        "upload_url": os.environ.get(
+            "CONTROLLER_URL", "https://localhost:5000/api/v1/telemetry"
+        ),
+        "auth_token": os.environ.get("SENSOR_AUTH_TOKEN"),
+        "hmac_secret": os.environ.get("SENSOR_HMAC_SECRET"),
+        "verify_ssl": os.environ.get("SENSOR_VERIFY_SSL", "true").lower() == "true",
     }
 
 
@@ -58,7 +60,7 @@ class TransportClient:
         backoff_factor: float = 2.0,
         max_delay: float = 60.0,
         verify_ssl: bool = True,
-        hmac_secret: Optional[str] = None
+        hmac_secret: str | None = None,
     ):
         """
         Initialize transport client.
@@ -88,23 +90,61 @@ class TransportClient:
         self._uploads_total = 0
         self._uploads_success = 0
         self._uploads_failed = 0
-        self._last_upload_time: Optional[datetime] = None
-        self._last_error: Optional[str] = None
+        self._last_upload_time: datetime | None = None
+        self._last_error: str | None = None
 
         # Circuit breaker
         self._circuit_open = False
         self._circuit_failures = 0
         self._circuit_threshold = 5
-        self._circuit_reset_time: Optional[float] = None
+        self._circuit_reset_time: float | None = None
         self._circuit_reset_delay = 60.0  # seconds
 
         self._lock = threading.Lock()
 
-    def upload(
-        self,
-        batch: dict[str, Any],
-        compress: bool = True
-    ) -> dict[str, Any]:
+        # Time sync state
+        self._time_offset = 0.0
+        self._last_sync = 0.0
+        self._sync_interval = 300  # 5 minutes
+
+    def sync_time(self) -> bool:
+        """Sync time with controller"""
+        try:
+            # Use a lightweight endpoint for sync
+            sync_url = self.upload_url.replace("/telemetry", "/time").replace(
+                "/api/v1/time", "/api/v1/time"
+            )
+            # If replacement didn't work (url structure diff), try explicit base
+            if "/time" not in sync_url:
+                base = self.upload_url.rsplit("/", 3)[0]  # remove /api/v1/telemetry
+                sync_url = f"{base}/api/v1/time"
+
+            import requests
+
+            response = requests.get(sync_url, timeout=10, verify=self.verify_ssl)
+
+            if response.status_code == 200:
+                data = response.json()
+                server_time = data.get("unix_timestamp", time.time())
+                local_time = time.time()
+                self._time_offset = server_time - local_time
+                self._last_sync = local_time
+                logger.info(f"Time sync: offset={self._time_offset:.3f}s")
+                return True
+        except Exception as e:
+            logger.debug(f"Time sync failed: {e}")
+        return False
+
+    def get_server_time(self) -> datetime:
+        """Get estimated server time"""
+        # Sync if needed
+        if time.time() - self._last_sync > self._sync_interval:
+            self.sync_time()
+
+        adjusted = time.time() + self._time_offset
+        return datetime.fromtimestamp(adjusted, tz=UTC)
+
+    def upload(self, batch: dict[str, Any], compress: bool = True) -> dict[str, Any]:
         """
         Upload batch to controller.
 
@@ -121,9 +161,9 @@ class TransportClient:
         if self._circuit_open:
             if time.time() < self._circuit_reset_time:
                 return {
-                    'success': False,
-                    'error': 'Circuit breaker open',
-                    'retry_after': self._circuit_reset_time - time.time()
+                    "success": False,
+                    "error": "Circuit breaker open",
+                    "retry_after": self._circuit_reset_time - time.time(),
                 }
             else:
                 # Try to reset circuit
@@ -136,21 +176,25 @@ class TransportClient:
         payload = json.dumps(batch)
 
         # Sign if HMAC configured
+        # Headers
+        timestamp = self.get_server_time().isoformat()
         headers = {
-            'Authorization': f'Bearer {self.auth_token}',
-            'Content-Type': 'application/json',
-            'User-Agent': 'Sentinel-Sensor/1.0',
-            'X-Idempotency-Key': batch.get('batch_id') or str(time.time())
+            "Authorization": f"Bearer {self.auth_token}",
+            "Content-Type": "application/json",
+            "User-Agent": "Sentinel-Sensor/1.0",
+            "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
+            "X-Timestamp": timestamp,
         }
 
         if self.hmac_secret:
+            # Sign payload using server time to prevent replay
             signature = self._sign_payload(payload)
-            headers['X-Signature'] = signature
+            headers["X-Signature"] = signature
 
         # Compress
         if compress:
             payload_bytes = gzip.compress(payload.encode())
-            headers['Content-Encoding'] = 'gzip'
+            headers["Content-Encoding"] = "gzip"
         else:
             payload_bytes = payload.encode()
 
@@ -165,32 +209,31 @@ class TransportClient:
                     data=payload_bytes,
                     headers=headers,
                     timeout=self.timeout,
-                    verify=self.verify_ssl
+                    verify=self.verify_ssl,
                 )
 
                 if response.status_code == 200:
                     self._on_success()
                     result = response.json()
                     return {
-                        'success': True, 'ack_id': result.get('ack_id'), 'accepted': result.get(
-                            'accepted', len(
-                                batch.get(
-                                    'items', [])))}
+                        "success": True,
+                        "ack_id": result.get("ack_id"),
+                        "accepted": result.get("accepted", len(batch.get("items", []))),
+                    }
 
                 elif response.status_code >= 400 and response.status_code < 500:
                     # Client error - don't retry
                     self._on_failure(f"HTTP {response.status_code}")
                     return {
-                        'success': False,
-                        'error': f"Client error: {response.status_code}",
-                        'response': response.text[:500]
+                        "success": False,
+                        "error": f"Client error: {response.status_code}",
+                        "response": response.text[:500],
                     }
 
                 else:
                     # Server error - retry
                     last_error = f"HTTP {response.status_code}"
-                    logger.warning(
-                        f"Upload attempt {attempt + 1} failed: {last_error}")
+                    logger.warning(f"Upload attempt {attempt + 1} failed: {last_error}")
 
             except requests.exceptions.Timeout:
                 last_error = "Request timeout"
@@ -206,26 +249,19 @@ class TransportClient:
 
             # Wait before retry
             if attempt < self.max_retries:
-                jitter = delay * 0.1 * \
-                    (2 * (0.5 - time.time() % 1))  # Simple jitter
+                jitter = delay * 0.1 * (2 * (0.5 - time.time() % 1))  # Simple jitter
                 sleep_time = min(delay + jitter, self.max_delay)
                 time.sleep(sleep_time)
                 delay *= self.backoff_factor
 
         # All retries failed
         self._on_failure(last_error)
-        return {
-            'success': False,
-            'error': last_error,
-            'retries_exhausted': True
-        }
+        return {"success": False, "error": last_error, "retries_exhausted": True}
 
     def _sign_payload(self, payload: str) -> str:
         """Sign payload with HMAC-SHA256"""
         signature = hmac.new(
-            self.hmac_secret.encode(),
-            payload.encode(),
-            hashlib.sha256
+            self.hmac_secret.encode(), payload.encode(), hashlib.sha256
         )
         return signature.hexdigest()
 
@@ -233,7 +269,7 @@ class TransportClient:
         """Called on successful upload"""
         with self._lock:
             self._uploads_success += 1
-            self._last_upload_time = datetime.now(timezone.utc)
+            self._last_upload_time = datetime.now(UTC)
             self._circuit_failures = 0
 
     def _on_failure(self, error: str) -> None:
@@ -247,8 +283,7 @@ class TransportClient:
             if self._circuit_failures >= self._circuit_threshold:
                 self._circuit_open = True
                 self._circuit_reset_time = time.time() + self._circuit_reset_delay
-                logger.warning(
-                    "Circuit breaker opened due to repeated failures")
+                logger.warning("Circuit breaker opened due to repeated failures")
 
     def heartbeat(self, status: dict[str, Any]) -> dict[str, Any]:
         """
@@ -262,44 +297,46 @@ class TransportClient:
         """
         import requests
 
-        heartbeat_url = self.upload_url.replace('/telemetry', '/heartbeat')
+        heartbeat_url = self.upload_url.replace("/telemetry", "/heartbeat")
 
         try:
             response = requests.post(
                 heartbeat_url,
                 json=status,
-                headers={'Authorization': f'Bearer {self.auth_token}'},
+                headers={"Authorization": f"Bearer {self.auth_token}"},
                 timeout=10,
-                verify=self.verify_ssl
+                verify=self.verify_ssl,
             )
 
             if response.status_code == 200:
                 return {
-                    'success': True,
-                    'commands': response.json().get('commands', [])
+                    "success": True,
+                    "commands": response.json().get("commands", []),
                 }
 
         except Exception as e:
             logger.debug(f"Heartbeat failed: {e}")
 
-        return {'success': False, 'commands': []}
+        return {"success": False, "commands": []}
 
     def get_stats(self) -> dict[str, Any]:
         """Get transport statistics"""
         with self._lock:
             return {
-                'uploads_total': self._uploads_total,
-                'uploads_success': self._uploads_success,
-                'uploads_failed': self._uploads_failed,
-                'success_rate': (
+                "uploads_total": self._uploads_total,
+                "uploads_success": self._uploads_success,
+                "uploads_failed": self._uploads_failed,
+                "success_rate": (
                     self._uploads_success / self._uploads_total * 100
-                    if self._uploads_total > 0 else 0
+                    if self._uploads_total > 0
+                    else 0
                 ),
-                'last_upload': (
+                "last_upload": (
                     self._last_upload_time.isoformat()
-                    if self._last_upload_time else None
+                    if self._last_upload_time
+                    else None
                 ),
-                'last_error': self._last_error,
-                'circuit_open': self._circuit_open,
-                'circuit_failures': self._circuit_failures
+                "last_error": self._last_error,
+                "circuit_open": self._circuit_open,
+                "circuit_failures": self._circuit_failures,
             }

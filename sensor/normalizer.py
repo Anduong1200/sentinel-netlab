@@ -3,14 +3,14 @@ Sentinel NetLab - Telemetry Normalizer
 Converts parsed frames to canonical telemetry format.
 """
 
-import hashlib
 import logging
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from schema import Capabilities, TelemetryItem
 
-from common.privacy import anonymize_mac_oui, hash_mac
+from common.oui import OUI_DATABASE
+from common.privacy import anonymize_mac_oui, get_oui, hash_mac
 from common.privacy import anonymize_ssid as priv_anonymize_ssid
 
 logger = logging.getLogger(__name__)
@@ -23,47 +23,36 @@ class TelemetryNormalizer:
     """
 
     # Common OUI database (subset)
-    DEFAULT_OUI_DB = {
-        "00:1A:2B": "Cisco",
-        "00:0C:29": "VMware",
-        "00:50:F2": "Microsoft",
-        "00:1E:58": "D-Link",
-        "00:14:BF": "Linksys",
-        "00:1B:63": "Apple",
-        "00:17:C4": "Netgear",
-        "00:22:6B": "Cisco-Linksys",
-        "00:25:9C": "Cisco-Linksys",
-        "00:03:7F": "Atheros",
-        "00:0F:B5": "Netgear",
-        "14:91:82": "TP-Link",
-        "18:D6:C7": "TP-Link",
-        "50:C7:BF": "TP-Link",
-        "AC:84:C6": "TP-Link",
-        "00:26:5A": "D-Link",
-        "1C:7E:E5": "D-Link",
-        "C8:D7:19": "Cisco-Linksys",
-        "E4:F4:C6": "Netgear",
-        "00:24:B2": "Netgear",
-        "20:AA:4B": "Cisco-Linksys",
-        "58:6D:8F": "Cisco-Linksys",
-        "C0:C1:C0": "Cisco-Linksys",
-    }
+    # Common OUI database (subset)
+    # DEPRECATED: Use common.oui.OUI_DATABASE
+    # Removed local duplicate to prevent inconsistency
 
     # Channel to frequency mapping
     CHANNEL_FREQ_2G = {
-        1: 2412, 2: 2417, 3: 2422, 4: 2427, 5: 2432,
-        6: 2437, 7: 2442, 8: 2447, 9: 2452, 10: 2457,
-        11: 2462, 12: 2467, 13: 2472, 14: 2484
+        1: 2412,
+        2: 2417,
+        3: 2422,
+        4: 2427,
+        5: 2432,
+        6: 2437,
+        7: 2442,
+        8: 2447,
+        9: 2452,
+        10: 2457,
+        11: 2462,
+        12: 2467,
+        13: 2472,
+        14: 2484,
     }
 
     def __init__(
         self,
         sensor_id: str,
         capture_method: str = "scapy",
-        oui_db: Optional[dict[str, str]] = None,
+        oui_db: dict[str, str] | None = None,
         anonymize_ssid: bool = False,
         store_raw_mac: bool = False,
-        privacy_mode: str = "anonymized"
+        privacy_mode: str = "anonymized",
     ):
         """
         Initialize normalizer.
@@ -78,13 +67,13 @@ class TelemetryNormalizer:
         """
         self.sensor_id = sensor_id
         self.capture_method = capture_method
-        self.oui_db = oui_db or self.DEFAULT_OUI_DB
+        self.oui_db = oui_db or OUI_DATABASE
         self.anonymize_ssid = anonymize_ssid
         self.store_raw_mac = store_raw_mac
         self.privacy_mode = privacy_mode
 
         self._sequence_id = 0
-        self._start_time = datetime.now(timezone.utc)
+        self._start_time = datetime.now(UTC)
 
     def normalize(self, parsed_frame: Any) -> TelemetryItem:
         """
@@ -110,8 +99,10 @@ class TelemetryNormalizer:
         # Get vendor info (use original BSSID for lookup if possible, or extract from anonymized if OUI preserved)
         # Note: If we anonymized getting OUI might still work if we kept it.
         # But if we fully hashed, we can't get OUI.
-        vendor_oui = self._extract_oui(parsed_frame.bssid) # Use raw for lookup BEFORE anonymization if permissible?
-        # Ideally we only use what we store, but for lookup lookup it's transient.
+        # Get vendor info
+        # Note: If we anonymized getting OUI might still work if we kept it.
+        # But if we fully hashed, we can't get OUI.
+        vendor_oui = get_oui(parsed_frame.bssid)  # Use original BSSID for lookup
         self._lookup_vendor(vendor_oui)
 
         # Calculate frequency
@@ -121,7 +112,6 @@ class TelemetryNormalizer:
         ssid = parsed_frame.ssid
         if self.anonymize_ssid:
             ssid = priv_anonymize_ssid(ssid)
-
 
         # Build capabilities
         caps = Capabilities(
@@ -133,25 +123,22 @@ class TelemetryNormalizer:
             wps=parsed_frame.wps_enabled,
             ess=parsed_frame.ess,
             ibss=parsed_frame.ibss,
-            ies_present=parsed_frame.ies_present
+            ies_present=parsed_frame.ies_present,
         )
 
         # Build IE dictionary
         ie = {}
         if parsed_frame.rsn_info:
-            ie['rsn'] = parsed_frame.rsn_info
+            ie["rsn"] = parsed_frame.rsn_info
         if parsed_frame.wpa_info:
-            ie['wpa'] = parsed_frame.wpa_info
+            ie["wpa"] = parsed_frame.wpa_info
         if parsed_frame.beacon_interval:
-            ie['beacon_interval'] = parsed_frame.beacon_interval
+            ie["beacon_interval"] = parsed_frame.beacon_interval
         if parsed_frame.ies:
             ie.update(parsed_frame.ies)
 
         # Calculate uptime
-        (
-            datetime.now(
-                timezone.utc)
-            - self._start_time).total_seconds()
+        (datetime.now(UTC) - self._start_time).total_seconds()
 
         return TelemetryItem(
             bssid=bssid,
@@ -159,28 +146,16 @@ class TelemetryNormalizer:
             channel=parsed_frame.channel,
             rssi_dbm=parsed_frame.rssi_dbm,
             frequency_mhz=frequency,
-
             capabilities=caps,
             vendor_oui=vendor_oui,
-
             # Map IE dict to count
             ie_count=len(ie) if ie else 0,
             beacon_interval=parsed_frame.beacon_interval,
-
             # Use current timestamp
-            timestamp=datetime.now(timezone.utc).isoformat()
+            timestamp=datetime.now(UTC).isoformat(),
         )
 
-    def _extract_oui(self, mac: str) -> Optional[str]:
-        """Extract OUI from MAC address"""
-        if not mac:
-            return None
-        parts = mac.split(':')
-        if len(parts) >= 3:
-            return ':'.join(parts[:3]).upper()
-        return None
-
-    def _lookup_vendor(self, oui: Optional[str]) -> Optional[str]:
+    def _lookup_vendor(self, oui: str | None) -> str | None:
         """Lookup vendor name from OUI"""
         if not oui:
             return None
@@ -195,19 +170,14 @@ class TelemetryNormalizer:
             return 5000 + (channel * 5)
         return 0
 
-    def _anonymize(self, ssid: str) -> str:
-        """Hash SSID for privacy"""
-        hash_val = hashlib.sha256(ssid.encode()).hexdigest()[:8]
-        return f"ANON_{len(ssid)}_{hash_val}"
-
     def get_stats(self) -> dict[str, Any]:
         """Get normalizer statistics"""
         return {
-            'sensor_id': self.sensor_id,
-            'sequence_id': self._sequence_id,
-            'uptime_seconds': (
-                datetime.now(
-                    timezone.utc)
-                - self._start_time).total_seconds(),
-            'capture_method': self.capture_method,
-            'anonymize_ssid': self.anonymize_ssid}
+            "sensor_id": self.sensor_id,
+            "sequence_id": self._sequence_id,
+            "uptime_seconds": (
+                datetime.now(UTC) - self._start_time
+            ).total_seconds(),
+            "capture_method": self.capture_method,
+            "anonymize_ssid": self.anonymize_ssid,
+        }

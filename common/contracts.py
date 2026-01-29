@@ -21,8 +21,10 @@ from pydantic import BaseModel, Field
 # ENUMS
 # =============================================================================
 
+
 class FrameType(str, Enum):
     """802.11 frame types"""
+
     MANAGEMENT = "management"
     CONTROL = "control"
     DATA = "data"
@@ -32,6 +34,7 @@ class FrameType(str, Enum):
 
 class FrameSubtype(str, Enum):
     """802.11 management frame subtypes"""
+
     # Management frames (type 0)
     ASSOCIATION_REQUEST = "assoc_req"
     ASSOCIATION_RESPONSE = "assoc_resp"
@@ -63,6 +66,7 @@ class FrameSubtype(str, Enum):
 
 class SecurityType(str, Enum):
     """WiFi security types"""
+
     OPEN = "open"
     WEP = "wep"
     WPA = "wpa"
@@ -74,6 +78,7 @@ class SecurityType(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels"""
+
     CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
@@ -83,6 +88,7 @@ class AlertSeverity(str, Enum):
 
 class AlertType(str, Enum):
     """Detection alert types"""
+
     EVIL_TWIN = "evil_twin"
     DEAUTH_FLOOD = "deauth_flood"
     ROGUE_AP = "rogue_ap"
@@ -98,6 +104,7 @@ class AlertType(str, Enum):
 
 class RiskLevel(str, Enum):
     """Risk assessment levels"""
+
     CLEAN = "clean"
     LOW = "low"
     SUSPICIOUS = "suspicious"
@@ -109,11 +116,13 @@ class RiskLevel(str, Enum):
 # RAW FRAME (Parser output)
 # =============================================================================
 
+
 class RawFrame(BaseModel):
     """
     Raw 802.11 frame as output by the parser.
     Minimal processing, close to wire format.
     """
+
     # Timing
     timestamp: float = Field(description="Capture timestamp (epoch)")
 
@@ -157,11 +166,13 @@ class RawFrame(BaseModel):
 # NORMALIZED FRAME (Normalizer output)
 # =============================================================================
 
+
 class NormalizedFrame(BaseModel):
     """
     Normalized frame ready for analysis.
     All fields validated, enriched with OUI info, privacy-safe.
     """
+
     # Identifiers
     frame_id: str = Field(description="Unique frame identifier")
     sensor_id: str = Field(description="Source sensor ID")
@@ -204,11 +215,7 @@ class NormalizedFrame(BaseModel):
 
     @classmethod
     def from_raw(
-        cls,
-        raw: RawFrame,
-        sensor_id: str,
-        hash_macs: bool = False,
-        salt: str = ""
+        cls, raw: RawFrame, sensor_id: str, hash_macs: bool = False, salt: str = ""
     ) -> NormalizedFrame:
         """Create normalized frame from raw frame"""
         import uuid
@@ -225,9 +232,9 @@ class NormalizedFrame(BaseModel):
                     (salt + raw.mac_src).encode()
                 ).hexdigest()[:16]
             if raw.bssid:
-                bssid_hash = hashlib.sha256(
-                    (salt + raw.bssid).encode()
-                ).hexdigest()[:16]
+                bssid_hash = hashlib.sha256((salt + raw.bssid).encode()).hexdigest()[
+                    :16
+                ]
 
         return cls(
             frame_id=frame_id,
@@ -257,8 +264,10 @@ class NormalizedFrame(BaseModel):
 # NETWORK STATE (Controller aggregation)
 # =============================================================================
 
+
 class NetworkInfo(BaseModel):
     """Aggregated network information"""
+
     bssid: str
     ssid: str | None = None
     channel: int | None = None
@@ -292,8 +301,10 @@ class NetworkInfo(BaseModel):
 # ALERT (Detection output)
 # =============================================================================
 
+
 class Alert(BaseModel):
     """Security alert from detection engine"""
+
     # Identifiers
     alert_id: str
     sensor_id: str
@@ -337,8 +348,10 @@ class Alert(BaseModel):
 # TELEMETRY BATCH (Sensor → Controller)
 # =============================================================================
 
+
 class TelemetryBatch(BaseModel):
     """Batch of telemetry data sent from sensor to controller"""
+
     # Metadata
     sensor_id: str
     batch_id: str
@@ -363,8 +376,10 @@ class TelemetryBatch(BaseModel):
 # SENSOR STATUS (Heartbeat)
 # =============================================================================
 
+
 class SensorStatus(BaseModel):
     """Sensor status for heartbeat"""
+
     sensor_id: str
     status: str = "online"  # online, degraded, offline
     timestamp: float = Field(default_factory=time.time)
@@ -391,6 +406,7 @@ class SensorStatus(BaseModel):
 # =============================================================================
 # UTILITIES
 # =============================================================================
+
 
 def hash_mac(mac: str, salt: str = "") -> str:
     """Hash MAC address for privacy (one-way, salted)"""

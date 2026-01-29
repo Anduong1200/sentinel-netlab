@@ -12,6 +12,7 @@ try:
     from capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
 except ImportError:
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
 
@@ -116,12 +117,12 @@ class TestCaptureDriverInterface:
     def test_abstract_methods_defined(self):
         """CaptureDriver has required abstract methods"""
         required_methods = [
-            'enable_monitor_mode',
-            'disable_monitor_mode',
-            'set_channel',
-            'read_frame',
-            'start_capture',
-            'stop_capture'
+            "enable_monitor_mode",
+            "disable_monitor_mode",
+            "set_channel",
+            "read_frame",
+            "start_capture",
+            "stop_capture",
         ]
 
         for method in required_methods:

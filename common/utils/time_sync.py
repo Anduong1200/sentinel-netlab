@@ -4,10 +4,9 @@ NTP and GPS time synchronization helpers.
 """
 
 import logging
-import subprocess
+import subprocess  # nosec B404
 import time
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +25,9 @@ class TimeSync:
             max_drift_ms: Maximum acceptable drift in milliseconds
         """
         self.max_drift_ms = max_drift_ms
-        self._last_check: Optional[datetime] = None
+        self._last_check: datetime | None = None
         self._is_synced = False
-        self._sync_source: Optional[str] = None
+        self._sync_source: str | None = None
 
     def check_ntp_sync(self) -> tuple[bool, str]:
         """
@@ -41,7 +40,9 @@ class TimeSync:
             # Try timedatectl (systemd)
             result = subprocess.run(
                 ["timedatectl", "show", "--property=NTPSynchronized"],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 if "yes" in result.stdout.lower():
@@ -58,8 +59,7 @@ class TimeSync:
         # Try ntpq
         try:
             result = subprocess.run(
-                ["ntpq", "-c", "rv"],
-                capture_output=True, text=True, timeout=5
+                ["ntpq", "-c", "rv"], capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
                 if "leap=00" in result.stdout or "sync" in result.stdout:
@@ -74,8 +74,7 @@ class TimeSync:
         # Try chronyc
         try:
             result = subprocess.run(
-                ["chronyc", "tracking"],
-                capture_output=True, text=True, timeout=5
+                ["chronyc", "tracking"], capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0 and "synchronized" in result.stdout.lower():
                 self._is_synced = True
@@ -99,7 +98,9 @@ class TimeSync:
             # Try ntpdate
             result = subprocess.run(
                 ["ntpdate", "-u", "pool.ntp.org"],
-                capture_output=True, text=True, timeout=30
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
             if result.returncode == 0:
                 self._is_synced = True
@@ -114,8 +115,7 @@ class TimeSync:
         # Try systemd
         try:
             subprocess.run(
-                ["timedatectl", "set-ntp", "true"],
-                capture_output=True, timeout=5
+                ["timedatectl", "set-ntp", "true"], capture_output=True, timeout=5
             )
             time.sleep(5)  # Wait for sync
             return self.check_ntp_sync()[0]
@@ -126,7 +126,7 @@ class TimeSync:
 
     def get_timestamp(self) -> str:
         """Get current UTC timestamp in ISO8601 format"""
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     def get_monotonic(self) -> float:
         """Get monotonic time for sequence ordering"""
@@ -136,17 +136,17 @@ class TimeSync:
         """Check if time is synchronized"""
         return self._is_synced
 
-    def get_sync_source(self) -> Optional[str]:
+    def get_sync_source(self) -> str | None:
         """Get synchronization source"""
         return self._sync_source
 
     def get_status(self) -> dict:
         """Get time sync status"""
         return {
-            'is_synced': self._is_synced,
-            'sync_source': self._sync_source,
-            'timestamp_utc': self.get_timestamp(),
-            'monotonic': self.get_monotonic()
+            "is_synced": self._is_synced,
+            "sync_source": self._sync_source,
+            "timestamp_utc": self.get_timestamp(),
+            "monotonic": self.get_monotonic(),
         }
 
 
@@ -167,18 +167,15 @@ class GPSTime:
         self.device = device
         self.baudrate = baudrate
         self._serial = None
-        self._last_gps_time: Optional[datetime] = None
-        self._last_position: Optional[dict] = None
+        self._last_gps_time: datetime | None = None
+        self._last_position: dict | None = None
 
     def connect(self) -> bool:
         """Connect to GPS device"""
         try:
             import serial
-            self._serial = serial.Serial(
-                self.device,
-                self.baudrate,
-                timeout=1
-            )
+
+            self._serial = serial.Serial(self.device, self.baudrate, timeout=1)
             logger.info(f"Connected to GPS: {self.device}")
             return True
         except ImportError:
@@ -188,7 +185,7 @@ class GPSTime:
             logger.error(f"GPS connection failed: {e}")
             return False
 
-    def read_position(self) -> Optional[dict]:
+    def read_position(self) -> dict | None:
         """
         Read current GPS position.
 
@@ -199,33 +196,32 @@ class GPSTime:
             return None
 
         try:
-            line = self._serial.readline().decode('ascii', errors='ignore').strip()
+            line = self._serial.readline().decode("ascii", errors="ignore").strip()
 
             # Parse GPRMC or GPGGA
-            if line.startswith('$GPRMC') or line.startswith('$GPGGA'):
-                parts = line.split(',')
+            if line.startswith("$GPRMC") or line.startswith("$GPGGA"):
+                parts = line.split(",")
                 if len(parts) >= 6:
                     # Parse latitude
-                    lat_raw = parts[3] if line.startswith(
-                        '$GPGGA') else parts[3]
-                    lat_dir = parts[4] if line.startswith(
-                        '$GPGGA') else parts[4]
+                    lat_raw = parts[3] if line.startswith("$GPGGA") else parts[3]
+                    lat_dir = parts[4] if line.startswith("$GPGGA") else parts[4]
 
                     if lat_raw and lat_dir:
                         lat = self._parse_coord(lat_raw, lat_dir)
 
                         # Parse longitude
-                        lon_raw = parts[5] if line.startswith(
-                            '$GPGGA') else parts[5]
-                        lon_dir = parts[6] if line.startswith(
-                            '$GPGGA') else parts[6]
+                        lon_raw = parts[5] if line.startswith("$GPGGA") else parts[5]
+                        lon_dir = parts[6] if line.startswith("$GPGGA") else parts[6]
 
                         if lon_raw and lon_dir:
                             lon = self._parse_coord(lon_raw, lon_dir)
 
                             self._last_position = {
-                                'lat': lat, 'lon': lon, 'alt': None, 'timestamp': datetime.now(
-                                    timezone.utc).isoformat()}
+                                "lat": lat,
+                                "lon": lon,
+                                "alt": None,
+                                "timestamp": datetime.now(UTC).isoformat(),
+                            }
                             return self._last_position
         except Exception as e:
             logger.debug(f"GPS read error: {e}")
@@ -236,15 +232,15 @@ class GPSTime:
         """Parse NMEA coordinate format"""
         try:
             if len(value) >= 4:
-                if '.' in value:
-                    dot_pos = value.index('.')
-                    degrees = float(value[:dot_pos - 2])
-                    minutes = float(value[dot_pos - 2:])
+                if "." in value:
+                    dot_pos = value.index(".")
+                    degrees = float(value[: dot_pos - 2])
+                    minutes = float(value[dot_pos - 2 :])
                     result = degrees + minutes / 60.0
-                    if direction in ['S', 'W']:
+                    if direction in ["S", "W"]:
                         result = -result
                     return result
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return 0.0
 

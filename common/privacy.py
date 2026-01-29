@@ -9,10 +9,9 @@ import hashlib
 import hmac
 import re
 import secrets
-from typing import Optional
 
 # Global salt (regenerate per deployment)
-_PRIVACY_SALT: Optional[str] = None
+_PRIVACY_SALT: str | None = None
 
 
 def get_privacy_salt() -> str:
@@ -21,6 +20,7 @@ def get_privacy_salt() -> str:
     if _PRIVACY_SALT is None:
         # In production, load from environment or secrets manager
         import os
+
         _PRIVACY_SALT = os.environ.get("PRIVACY_SALT", secrets.token_hex(16))
     return _PRIVACY_SALT
 
@@ -48,11 +48,11 @@ def normalize_mac(mac: str) -> str:
     mac = mac.upper().replace("-", ":").replace(".", ":")
     # Handle Cisco format (1234.5678.9abc)
     if ":" not in mac and len(mac) == 12:
-        mac = ":".join(mac[i:i+2] for i in range(0, 12, 2))
+        mac = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
     return mac
 
 
-def hash_mac(mac: str, salt: Optional[str] = None) -> str:
+def hash_mac(mac: str, salt: str | None = None) -> str:
     """
     One-way hash MAC address for privacy.
     Uses SHA-256 with salt, returns 16-char hex string.
@@ -103,7 +103,7 @@ def anonymize_mac_full(mac: str) -> str:
     """
     hashed = hash_mac(mac)
     # Convert to MAC-like format
-    return ":".join(hashed[i:i+2].upper() for i in range(0, 12, 2))
+    return ":".join(hashed[i : i + 2].upper() for i in range(0, 12, 2))
 
 
 def is_broadcast_mac(mac: str) -> bool:
@@ -135,6 +135,7 @@ def get_oui(mac: str) -> str:
 # SSID HANDLING
 # =============================================================================
 
+
 def anonymize_ssid(ssid: str, keep_length: bool = True) -> str:
     """
     Anonymize SSID while optionally preserving length info.
@@ -155,7 +156,7 @@ def anonymize_ssid(ssid: str, keep_length: bool = True) -> str:
         return hash_mac(ssid)[:8] + "..."
 
 
-def is_hidden_ssid(ssid: Optional[str]) -> bool:
+def is_hidden_ssid(ssid: str | None) -> bool:
     """Check if SSID is hidden (null or empty)"""
     return ssid is None or ssid == "" or ssid == "\x00" * len(ssid)
 
@@ -163,6 +164,7 @@ def is_hidden_ssid(ssid: Optional[str]) -> bool:
 # =============================================================================
 # DATA RETENTION
 # =============================================================================
+
 
 class RetentionPolicy:
     """Data retention configuration"""
@@ -204,13 +206,14 @@ class RetentionPolicy:
 # PRIVACY MODES
 # =============================================================================
 
+
 class PrivacyMode:
     """Privacy mode configuration for data handling"""
 
-    NORMAL = "normal"           # Full data, for authorized testing
-    ANONYMIZED = "anonymized"   # OUI preserved, rest hashed
-    PRIVATE = "private"         # Fully hashed, no raw data
-    FORENSIC = "forensic"       # Full data with extended retention
+    NORMAL = "normal"  # Full data, for authorized testing
+    ANONYMIZED = "anonymized"  # OUI preserved, rest hashed
+    PRIVATE = "private"  # Fully hashed, no raw data
+    FORENSIC = "forensic"  # Full data with extended retention
 
     @staticmethod
     def get_transformer(mode: str):

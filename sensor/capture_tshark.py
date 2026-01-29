@@ -7,11 +7,12 @@ Uses tshark (C/C++) subprocess for packet capture, Python for parsing.
 import json
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404
+import tempfile
 import threading
 import time
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,17 +24,22 @@ class TsharkCaptureEngine:
     Handles 500-2000+ packets/second without dropping.
     """
 
-    def __init__(self, interface: str = "wlan0",
-                 output_dir: str = "/tmp/captures"):
+    def __init__(
+        self,
+        interface: str = "wlan0",
+        output_dir: str | None = None,
+    ):
         self.interface = interface
-        self.output_dir = output_dir
-        self.process: Optional[subprocess.Popen] = None
+        self.output_dir = output_dir or os.path.join(
+            tempfile.gettempdir(), "sentinel_captures"
+        )
+        self.process: subprocess.Popen | None = None
         self.is_capturing = False
         self.current_channel = 1
-        self.capture_file: Optional[str] = None
-        self.channel_hopper_thread: Optional[threading.Thread] = None
-        self.parser_thread: Optional[threading.Thread] = None
-        self.packet_callback: Optional[Callable] = None
+        self.capture_file: str | None = None
+        self.channel_hopper_thread: threading.Thread | None = None
+        self.parser_thread: threading.Thread | None = None
+        self.packet_callback: Callable | None = None
         self.dwell_time = 0.5
         self.channels = [1, 6, 11]
 
@@ -43,12 +49,17 @@ class TsharkCaptureEngine:
     def enable_monitor_mode(self) -> bool:
         """Enable monitor mode on interface."""
         try:
-            subprocess.run(["ip", "link", "set", self.interface,
-                           "down"], check=True, timeout=5)
-            subprocess.run(["iw", "dev", self.interface, "set",
-                           "type", "monitor"], check=True, timeout=5)
-            subprocess.run(["ip", "link", "set", self.interface,
-                           "up"], check=True, timeout=5)
+            subprocess.run(
+                ["ip", "link", "set", self.interface, "down"], check=True, timeout=5
+            )
+            subprocess.run(
+                ["iw", "dev", self.interface, "set", "type", "monitor"],
+                check=True,
+                timeout=5,
+            )
+            subprocess.run(
+                ["ip", "link", "set", self.interface, "up"], check=True, timeout=5
+            )
             logger.info(f"Monitor mode enabled on {self.interface}")
             return True
         except Exception as e:
@@ -60,7 +71,8 @@ class TsharkCaptureEngine:
         try:
             subprocess.run(
                 ["iw", "dev", self.interface, "set", "channel", str(channel)],
-                check=True, timeout=5
+                check=True,
+                timeout=5,
             )
             self.current_channel = channel
             return True
@@ -79,11 +91,11 @@ class TsharkCaptureEngine:
 
     def start_capture(
         self,
-        packet_callback: Optional[Callable] = None,
-        channels: Optional[list[int]] = None,
+        packet_callback: Callable | None = None,
+        channels: list[int] | None = None,
         enable_channel_hop: bool = True,
         ring_buffer_files: int = 5,
-        ring_buffer_size_mb: int = 10
+        ring_buffer_size_mb: int = 10,
     ) -> bool:
         """
         Start tshark capture with ring buffer for continuous operation.
@@ -104,8 +116,7 @@ class TsharkCaptureEngine:
 
         # Generate capture filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.capture_file = os.path.join(
-            self.output_dir, f"capture_{timestamp}.pcap")
+        self.capture_file = os.path.join(self.output_dir, f"capture_{timestamp}.pcap")
 
         # Build tshark command
         # -i: interface
@@ -115,19 +126,22 @@ class TsharkCaptureEngine:
         # -f: BPF filter for 802.11 management + EAPOL
         cmd = [
             "tshark",
-            "-i", self.interface,
-            "-w", self.capture_file,
-            "-b", f"files:{ring_buffer_files}",
-            "-b", f"filesize:{ring_buffer_size_mb * 1024}",
-            "-f", "type mgt or ether proto 0x888e",
-            "-q"  # Quiet mode
+            "-i",
+            self.interface,
+            "-w",
+            self.capture_file,
+            "-b",
+            f"files:{ring_buffer_files}",
+            "-b",
+            f"filesize:{ring_buffer_size_mb * 1024}",
+            "-f",
+            "type mgt or ether proto 0x888e",
+            "-q",  # Quiet mode
         ]
 
         try:
             self.process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             self.is_capturing = True
             logger.info(f"Tshark capture started: {self.capture_file}")
@@ -135,16 +149,14 @@ class TsharkCaptureEngine:
             # Start channel hopper
             if enable_channel_hop:
                 self.channel_hopper_thread = threading.Thread(
-                    target=self._channel_hopper,
-                    daemon=True
+                    target=self._channel_hopper, daemon=True
                 )
                 self.channel_hopper_thread.start()
 
             # Start parser thread (reads PCAP periodically)
             if packet_callback:
                 self.parser_thread = threading.Thread(
-                    target=self._parse_pcap_loop,
-                    daemon=True
+                    target=self._parse_pcap_loop, daemon=True
                 )
                 self.parser_thread.start()
 
@@ -171,22 +183,35 @@ class TsharkCaptureEngine:
                 # Use tshark to read PCAP and output JSON
                 result = subprocess.run(
                     [
-                        "tshark", "-r", self.capture_file,
-                        "-T", "json",
-                        "-e", "wlan.fc.type",
-                        "-e", "wlan.fc.subtype",
-                        "-e", "wlan.bssid",
-                        "-e", "wlan.ssid",
-                        "-e", "wlan.da",
-                        "-e", "wlan.sa",
-                        "-e", "radiotap.dbm_antsignal",
-                        "-e", "wlan.ds.current_channel",
-                        "-e", "wlan.rsn.version",
-                        "-e", "eapol.keydes.type"
+                        "tshark",
+                        "-r",
+                        self.capture_file,
+                        "-T",
+                        "json",
+                        "-e",
+                        "wlan.fc.type",
+                        "-e",
+                        "wlan.fc.subtype",
+                        "-e",
+                        "wlan.bssid",
+                        "-e",
+                        "wlan.ssid",
+                        "-e",
+                        "wlan.da",
+                        "-e",
+                        "wlan.sa",
+                        "-e",
+                        "radiotap.dbm_antsignal",
+                        "-e",
+                        "wlan.ds.current_channel",
+                        "-e",
+                        "wlan.rsn.version",
+                        "-e",
+                        "eapol.keydes.type",
                     ],
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
 
                 if result.returncode == 0 and result.stdout:
@@ -225,11 +250,11 @@ class TsharkCaptureEngine:
             "is_capturing": self.is_capturing,
             "current_channel": self.current_channel,
             "capture_file": self.capture_file,
-            "channels": self.channels
+            "channels": self.channels,
         }
 
 
-def parse_tshark_packet(tshark_json: dict) -> Optional[dict[str, Any]]:
+def parse_tshark_packet(tshark_json: dict) -> dict[str, Any] | None:
     """
     Convert tshark JSON output to our network dictionary format.
     """
@@ -261,7 +286,7 @@ def parse_tshark_packet(tshark_json: dict) -> Optional[dict[str, Any]]:
             "rssi": rssi,
             "channel": channel,
             "handshake_captured": handshake,
-            "last_seen": datetime.now().isoformat()
+            "last_seen": datetime.now().isoformat(),
         }
 
     except Exception as e:
@@ -273,27 +298,19 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Tshark Capture Engine CLI")
+    parser.add_argument("-i", "--interface", default="wlan0", help="Wireless interface")
     parser.add_argument(
-        "-i",
-        "--interface",
-        default="wlan0",
-        help="Wireless interface")
+        "-c", "--channels", default="1,6,11", help="Channels to scan (comma-separated)"
+    )
     parser.add_argument(
-        "-c",
-        "--channels",
-        default="1,6,11",
-        help="Channels to scan (comma-separated)")
-    parser.add_argument(
-        "-t",
-        "--duration",
-        type=int,
-        default=30,
-        help="Capture duration in seconds")
+        "-t", "--duration", type=int, default=30, help="Capture duration in seconds"
+    )
     parser.add_argument(
         "-o",
         "--output",
-        default="/tmp/captures",
-        help="Output directory")
+        default=os.path.join(tempfile.gettempdir(), "sentinel_captures"),
+        help="Output directory",
+    )
 
     args = parser.parse_args()
 
@@ -302,9 +319,7 @@ if __name__ == "__main__":
     print("=" * 50)
 
     channels = [int(c) for c in args.channels.split(",")]
-    engine = TsharkCaptureEngine(
-        interface=args.interface,
-        output_dir=args.output)
+    engine = TsharkCaptureEngine(interface=args.interface, output_dir=args.output)
 
     networks = {}
 
@@ -313,7 +328,8 @@ if __name__ == "__main__":
         if net:
             networks[net["bssid"]] = net
             print(
-                f"[{len(networks)}] {net['ssid'][:20]:20} | {net['bssid']} | Ch:{net['channel']:2} | {net['rssi']}dBm")
+                f"[{len(networks)}] {net['ssid'][:20]:20} | {net['bssid']} | Ch:{net['channel']:2} | {net['rssi']}dBm"
+            )
 
     print(f"Interface: {args.interface}")
     print(f"Channels: {channels}")

@@ -8,6 +8,7 @@ def run(cmd):
     p = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return p.stdout + p.stderr
 
+
 print("=== LSUSB ===")
 print(run("lsusb"))
 
@@ -31,6 +32,8 @@ print("\n=== DMESG last 60 lines (filter wifi) ===")
 print(run("dmesg | tail -n 60 | egrep -i 'ath|firmware|wlan|usb' || true"))
 
 print("\n=== SUGGESTED ACTIONS ===")
-print("1) If module missing try: sudo modprobe ath9k_htc (may fail if kernel lack support).")
+print(
+    "1) If module missing try: sudo modprobe ath9k_htc (may fail if kernel lack support)."
+)
 print("2) If firmware missing: sudo apt install firmware-atheros (on Debian/Kali).")
 print("3) If not fixable: use physical Linux sensor (Raspberry Pi) or mock mode.")

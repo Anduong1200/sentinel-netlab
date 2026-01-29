@@ -6,7 +6,6 @@ Lookup vendor names from MAC address OUI prefixes.
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -72,22 +71,36 @@ class OUIDatabase:
         "E4:F4:C6": "Netgear",
         "E8:DE:27": "TP-Link",
         "F0:9F:C2": "Ubiquiti",
-        "F4:F2:6D": "TP-Link"
+        "F4:F2:6D": "TP-Link",
     }
 
     # Trusted enterprise vendors (lower risk)
     TRUSTED_VENDORS = [
-        "cisco", "aruba", "juniper", "fortinet", "meraki",
-        "ruckus", "ubiquiti", "hp", "arista"
+        "cisco",
+        "aruba",
+        "juniper",
+        "fortinet",
+        "meraki",
+        "ruckus",
+        "ubiquiti",
+        "hp",
+        "arista",
     ]
 
     # Consumer vendors (moderate risk)
     CONSUMER_VENDORS = [
-        "tp-link", "netgear", "linksys", "d-link", "asus", "belkin",
-        "edimax", "tenda", "zyxel"
+        "tp-link",
+        "netgear",
+        "linksys",
+        "d-link",
+        "asus",
+        "belkin",
+        "edimax",
+        "tenda",
+        "zyxel",
     ]
 
-    def __init__(self, oui_file: Optional[str] = None):
+    def __init__(self, oui_file: str | None = None):
         """
         Initialize OUI database.
 
@@ -109,7 +122,7 @@ class OUIDatabase:
         except Exception as e:
             logger.warning(f"Failed to load OUI file: {e}")
 
-    def lookup(self, mac: str) -> Optional[str]:
+    def lookup(self, mac: str) -> str | None:
         """
         Lookup vendor name from MAC address.
 
@@ -123,39 +136,39 @@ class OUIDatabase:
             return None
 
         # Normalize: extract first 3 octets
-        mac = mac.upper().replace('-', ':')
-        parts = mac.split(':')
+        mac = mac.upper().replace("-", ":")
+        parts = mac.split(":")
         if len(parts) >= 3:
-            oui = ':'.join(parts[:3])
+            oui = ":".join(parts[:3])
             return self._db.get(oui)
 
         return None
 
-    def get_oui(self, mac: str) -> Optional[str]:
+    def get_oui(self, mac: str) -> str | None:
         """Extract OUI prefix from MAC address"""
         if not mac:
             return None
-        mac = mac.upper().replace('-', ':')
-        parts = mac.split(':')
+        mac = mac.upper().replace("-", ":")
+        parts = mac.split(":")
         if len(parts) >= 3:
-            return ':'.join(parts[:3])
+            return ":".join(parts[:3])
         return None
 
-    def is_trusted_vendor(self, vendor: Optional[str]) -> bool:
+    def is_trusted_vendor(self, vendor: str | None) -> bool:
         """Check if vendor is enterprise/trusted"""
         if not vendor:
             return False
         vendor_lower = vendor.lower()
         return any(t in vendor_lower for t in self.TRUSTED_VENDORS)
 
-    def is_consumer_vendor(self, vendor: Optional[str]) -> bool:
+    def is_consumer_vendor(self, vendor: str | None) -> bool:
         """Check if vendor is consumer-grade"""
         if not vendor:
             return False
         vendor_lower = vendor.lower()
         return any(c in vendor_lower for c in self.CONSUMER_VENDORS)
 
-    def get_vendor_risk(self, vendor: Optional[str]) -> float:
+    def get_vendor_risk(self, vendor: str | None) -> float:
         """
         Get vendor risk score (0.0 = trusted, 1.0 = unknown).
 
@@ -184,6 +197,7 @@ class OUIDatabase:
         """
         try:
             import requests
+
             response = requests.get(url, timeout=30)
             response.raise_for_status()
             data = response.json()
@@ -197,7 +211,7 @@ class OUIDatabase:
     def save(self, path: str) -> bool:
         """Save current database to file"""
         try:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 json.dump(self._db, f, indent=2)
             return True
         except Exception as e:

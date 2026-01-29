@@ -26,7 +26,7 @@ def parse_airodump_csv(filepath: str) -> set[str]:
     """
     bssids = set()
 
-    with open(filepath, encoding='utf-8', errors='ignore') as f:
+    with open(filepath, encoding="utf-8", errors="ignore") as f:
         reader = csv.reader(f)
         in_ap_section = False
 
@@ -35,19 +35,19 @@ def parse_airodump_csv(filepath: str) -> set[str]:
                 continue
 
             # airodump-ng CSV has "BSSID" header for AP section
-            if len(row) > 0 and 'BSSID' in row[0]:
+            if len(row) > 0 and "BSSID" in row[0]:
                 in_ap_section = True
                 continue
 
             # Station section starts here
-            if len(row) > 0 and 'Station MAC' in row[0]:
+            if len(row) > 0 and "Station MAC" in row[0]:
                 in_ap_section = False
                 continue
 
             if in_ap_section and len(row) >= 1:
                 bssid = row[0].strip().upper()
                 # Validate MAC format
-                if len(bssid) == 17 and bssid.count(':') == 5:
+                if len(bssid) == 17 and bssid.count(":") == 5:
                     bssids.add(bssid)
 
     return bssids
@@ -65,7 +65,7 @@ def parse_poc_json(filepath: str) -> set[str]:
     """
     bssids = set()
 
-    with open(filepath, encoding='utf-8') as f:
+    with open(filepath, encoding="utf-8") as f:
         data = json.load(f)
 
     # Handle different JSON structures
@@ -73,11 +73,11 @@ def parse_poc_json(filepath: str) -> set[str]:
     if isinstance(data, list):
         networks = data
     elif isinstance(data, dict):
-        networks = data.get('networks', data.get('results', data.get('data', [])))
+        networks = data.get("networks", data.get("results", data.get("data", [])))
 
     for net in networks:
         if isinstance(net, dict):
-            bssid = net.get('bssid', net.get('BSSID', '')).strip().upper()
+            bssid = net.get("bssid", net.get("BSSID", "")).strip().upper()
             if bssid and len(bssid) == 17:
                 bssids.add(bssid)
 
@@ -108,7 +108,9 @@ def calculate_metrics(ground_truth: set[str], detected: set[str]) -> dict[str, f
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    f1 = (
+        2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    )
 
     return {
         "ground_truth_count": len(ground_truth),
@@ -120,7 +122,7 @@ def calculate_metrics(ground_truth: set[str], detected: set[str]) -> dict[str, f
         "recall": round(recall, 4),
         "f1_score": round(f1, 4),
         "missed_bssids": list(false_negatives)[:10],  # First 10 for debugging
-        "extra_bssids": list(false_positives)[:10]
+        "extra_bssids": list(false_positives)[:10],
     }
 
 
@@ -154,27 +156,27 @@ Files Compared:
                          SUMMARY
 --------------------------------------------------------------------------------
 
-  Ground Truth Networks:  {metrics['ground_truth_count']}
-  Detected Networks:      {metrics['detected_count']}
+  Ground Truth Networks:  {metrics["ground_truth_count"]}
+  Detected Networks:      {metrics["detected_count"]}
 
-  True Positives:         {metrics['true_positives']}
-  False Positives:        {metrics['false_positives']}
-  False Negatives:        {metrics['false_negatives']}
+  True Positives:         {metrics["true_positives"]}
+  False Positives:        {metrics["false_positives"]}
+  False Negatives:        {metrics["false_negatives"]}
 
 --------------------------------------------------------------------------------
                          METRICS
 --------------------------------------------------------------------------------
 
-  PRECISION:  {metrics['precision']:.2%}  (of detected, how many were correct)
-  RECALL:     {metrics['recall']:.2%}  (of actual, how many were detected)
-  F1 SCORE:   {metrics['f1_score']:.2%}  (harmonic mean)
+  PRECISION:  {metrics["precision"]:.2%}  (of detected, how many were correct)
+  RECALL:     {metrics["recall"]:.2%}  (of actual, how many were detected)
+  F1 SCORE:   {metrics["f1_score"]:.2%}  (harmonic mean)
 
 --------------------------------------------------------------------------------
                          EVALUATION
 --------------------------------------------------------------------------------
 
   Recall Threshold:  >= 80% for full points
-  Current Recall:    {metrics['recall']:.2%}
+  Current Recall:    {metrics["recall"]:.2%}
 
   GRADE: {grade}
   SCORE: {score}
@@ -186,20 +188,20 @@ Files Compared:
   Missed Networks (False Negatives - sample):
 """
 
-    for bssid in metrics.get('missed_bssids', []):
+    for bssid in metrics.get("missed_bssids", []):
         report += f"    - {bssid}\n"
 
-    if not metrics.get('missed_bssids'):
+    if not metrics.get("missed_bssids"):
         report += "    (none)\n"
 
     report += """
   Extra Networks (False Positives - sample):
 """
 
-    for bssid in metrics.get('extra_bssids', []):
+    for bssid in metrics.get("extra_bssids", []):
         report += f"    - {bssid}\n"
 
-    if not metrics.get('extra_bssids'):
+    if not metrics.get("extra_bssids"):
         report += "    (none)\n"
 
     report += """
@@ -217,7 +219,9 @@ def main():
     )
     parser.add_argument("gt_file", help="Ground truth CSV (airodump-ng output)")
     parser.add_argument("poc_file", help="PoC JSON output")
-    parser.add_argument("-o", "--output", help="Output report file", default="recall_report.txt")
+    parser.add_argument(
+        "-o", "--output", help="Output report file", default="recall_report.txt"
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
@@ -249,21 +253,21 @@ def main():
         output = generate_report(metrics, args.gt_file, args.poc_file)
 
     # Save report
-    with open(args.output, 'w') as f:
+    with open(args.output, "w") as f:
         f.write(output)
 
     print(f"\nReport saved to: {args.output}")
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  RECALL: {metrics['recall']:.2%}")
     print(f"  PRECISION: {metrics['precision']:.2%}")
     print(f"  F1 SCORE: {metrics['f1_score']:.2%}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Exit code based on recall threshold
-    if metrics['recall'] >= 0.80:
+    if metrics["recall"] >= 0.80:
         print("\n✅ PASS: Recall meets threshold (>= 80%)")
         sys.exit(0)
-    elif metrics['recall'] >= 0.60:
+    elif metrics["recall"] >= 0.60:
         print("\n⚠️  PARTIAL: Recall below optimal but acceptable (60-80%)")
         sys.exit(0)
     else:

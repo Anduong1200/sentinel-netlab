@@ -4,15 +4,31 @@ Forensics Module - Offline PCAP Analysis for Attack Detection
 Analyzes captured PCAP files to detect Deauth floods, Evil Twins, etc.
 """
 
-import logging
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from scapy.all import Dot11, Dot11Beacon, Dot11Deauth, Dot11Elt, Dot11ProbeResp, rdpcap
+# Lazy-load scapy to prevent crashes in CI/Docker
+try:
+    from scapy.all import (
+        Dot11,
+        Dot11Beacon,
+        Dot11Deauth,
+        Dot11Elt,
+        Dot11ProbeResp,
+        PcapReader,
+    )
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+    SCAPY_AVAILABLE = True
+except (ImportError, OSError):
+    SCAPY_AVAILABLE = False
+    # Define dummy (so type hints don't break immediately, though runtime will fail if used)
+    Dot11 = Any
+    Dot11Beacon = Any
+    Dot11Deauth = Any
+    Dot11Elt = Any
+    Dot11ProbeResp = Any
+    PcapReader = Any
 
 
 class ForensicAnalyzer:
@@ -27,24 +43,33 @@ class ForensicAnalyzer:
         Args:
             pcap_path: Path to PCAP file
         """
+
+    def __init__(self, pcap_path: str):
+        """
+        Initialize analyzer with a PCAP file path.
+
+        Args:
+            pcap_path: Path to PCAP file
+        """
         self.pcap_path = pcap_path
-        self.packets = []
-        self.loaded = False
 
-    def load_pcap(self) -> bool:
-        """Load PCAP file into memory."""
+    def _get_packet_stream(self):
+        """Yield packets from PCAP file via streaming."""
+        if not SCAPY_AVAILABLE:
+            logger.error("Scapy not available. Cannot analyze PCAP.")
+            return
+
         try:
-            self.packets = rdpcap(self.pcap_path)
-            self.loaded = True
-            logger.info(
-                f"Loaded {len(self.packets)} packets from {self.pcap_path}")
-            return True
+            with PcapReader(self.pcap_path) as pcap_reader:
+                for pkt in pcap_reader:
+                    yield pkt
         except Exception as e:
-            logger.error(f"Failed to load PCAP: {e}")
-            return False
+            logger.error(f"Failed to read PCAP stream: {e}")
+            yield from []
 
-    def detect_deauth_flood(self, threshold: int = 10,
-                            window_seconds: float = 1.0) -> list[dict[str, Any]]:
+    def detect_deauth_flood(
+        self, threshold: int = 10, window_seconds: float = 1.0
+    ) -> list[dict[str, Any]]:
         """
         Detect Deauthentication flood attacks.
 
@@ -55,22 +80,22 @@ class ForensicAnalyzer:
         Returns:
             List of alert dictionaries
         """
-        if not self.loaded:
-            self.load_pcap()
-
         alerts = []
         deauth_times = []
 
-        for pkt in self.packets:
+        # STREAMING: Iterate once to finding timestamps
+        for pkt in self._get_packet_stream():
             if pkt.haslayer(Dot11Deauth):
                 try:
                     timestamp = float(pkt.time)
-                    deauth_times.append({
-                        "time": timestamp,
-                        "sender": pkt.addr2,
-                        "target": pkt.addr1,
-                        "reason": pkt[Dot11Deauth].reason
-                    })
+                    deauth_times.append(
+                        {
+                            "time": timestamp,
+                            "sender": pkt.addr2,
+                            "target": pkt.addr1,
+                            "reason": pkt[Dot11Deauth].reason,
+                        }
+                    )
                 except (AttributeError, TypeError, ValueError):
                     pass
 
@@ -91,16 +116,18 @@ class ForensicAnalyzer:
                     break
 
             if window_count >= threshold:
-                alerts.append({
-                    "type": "deauth_flood",
-                    "severity": "CRITICAL",
-                    "timestamp": datetime.fromtimestamp(d["time"]).isoformat(),
-                    "count_in_window": window_count,
-                    "threshold": threshold,
-                    "sample_sender": d["sender"],
-                    "sample_target": d["target"],
-                    "message": f"Deauth flood detected: {window_count} frames in {window_seconds}s"
-                })
+                alerts.append(
+                    {
+                        "type": "deauth_flood",
+                        "severity": "CRITICAL",
+                        "timestamp": datetime.fromtimestamp(d["time"]).isoformat(),
+                        "count_in_window": window_count,
+                        "threshold": threshold,
+                        "sample_sender": d["sender"],
+                        "sample_target": d["target"],
+                        "message": f"Deauth flood detected: {window_count} frames in {window_seconds}s",
+                    }
+                )
                 # Skip ahead to avoid duplicate alerts
                 window_start = i + threshold
                 if window_start >= len(deauth_times):
@@ -109,7 +136,8 @@ class ForensicAnalyzer:
         return alerts
 
     def detect_evil_twin(
-            self, known_networks: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+        self, known_networks: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Detect Evil Twin / Rogue AP attacks.
         An Evil Twin has same SSID but different BSSID/Encryption.
@@ -120,13 +148,10 @@ class ForensicAnalyzer:
         Returns:
             List of alert dictionaries
         """
-        if not self.loaded:
-            self.load_pcap()
-
         alerts = []
         seen_ssids = defaultdict(list)  # SSID -> list of (BSSID, Encryption)
 
-        for pkt in self.packets:
+        for pkt in self._get_packet_stream():
             if pkt.haslayer(Dot11Beacon) or pkt.haslayer(Dot11ProbeResp):
                 try:
                     bssid = pkt[Dot11].addr3
@@ -138,8 +163,9 @@ class ForensicAnalyzer:
                     elt = pkt.getlayer(Dot11Elt)
                     while elt:
                         if elt.ID == 0:
-                            ssid = elt.info.decode(
-                                'utf-8', errors='ignore').strip('\x00')
+                            ssid = elt.info.decode("utf-8", errors="ignore").strip(
+                                "\x00"
+                            )
                             break
                         elt = elt.payload.getlayer(Dot11Elt)
 
@@ -155,14 +181,16 @@ class ForensicAnalyzer:
 
             for found_bssid in found_bssids:
                 if found_bssid != known_bssid:
-                    alerts.append({
-                        "type": "evil_twin",
-                        "severity": "HIGH",
-                        "ssid": ssid,
-                        "expected_bssid": known_bssid,
-                        "detected_bssid": found_bssid,
-                        "message": f"Potential Evil Twin: SSID '{ssid}' seen with unexpected BSSID {found_bssid}"
-                    })
+                    alerts.append(
+                        {
+                            "type": "evil_twin",
+                            "severity": "HIGH",
+                            "ssid": ssid,
+                            "expected_bssid": known_bssid,
+                            "detected_bssid": found_bssid,
+                            "message": f"Potential Evil Twin: SSID '{ssid}' seen with unexpected BSSID {found_bssid}",
+                        }
+                    )
 
         return alerts
 
@@ -173,12 +201,9 @@ class ForensicAnalyzer:
         Returns:
             List of client info dictionaries
         """
-        if not self.loaded:
-            self.load_pcap()
-
         clients = {}
 
-        for pkt in self.packets:
+        for pkt in self._get_packet_stream():
             if pkt.haslayer(Dot11):
                 # Probe Request (type 0, subtype 4)
                 if pkt.type == 0 and pkt.subtype == 4:
@@ -188,19 +213,23 @@ class ForensicAnalyzer:
                             clients[client_mac] = {
                                 "mac": client_mac.upper(),
                                 "first_seen": datetime.fromtimestamp(
-                                    float(
-                                        pkt.time)).isoformat(),
-                                "probed_ssids": []}
+                                    float(pkt.time)
+                                ).isoformat(),
+                                "probed_ssids": [],
+                            }
 
                         # Get probed SSID
                         elt = pkt.getlayer(Dot11Elt)
                         while elt:
                             if elt.ID == 0 and elt.info:
-                                ssid = elt.info.decode(
-                                    'utf-8', errors='ignore').strip('\x00')
-                                if ssid and ssid not in clients[client_mac]["probed_ssids"]:
-                                    clients[client_mac]["probed_ssids"].append(
-                                        ssid)
+                                ssid = elt.info.decode("utf-8", errors="ignore").strip(
+                                    "\x00"
+                                )
+                                if (
+                                    ssid
+                                    and ssid not in clients[client_mac]["probed_ssids"]
+                                ):
+                                    clients[client_mac]["probed_ssids"].append(ssid)
                                 break
                             elt = elt.payload.getlayer(Dot11Elt)
                     except (AttributeError, UnicodeDecodeError):
@@ -208,8 +237,7 @@ class ForensicAnalyzer:
 
         return list(clients.values())
 
-    def generate_report(
-            self, known_networks: Optional[dict] = None) -> dict[str, Any]:
+    def generate_report(self, known_networks: dict | None = None) -> dict[str, Any]:
         """
         Generate comprehensive forensic report.
 
@@ -219,16 +247,12 @@ class ForensicAnalyzer:
         Returns:
             Full report dictionary
         """
-        if not self.loaded:
-            self.load_pcap()
-
         report = {
             "pcap_file": self.pcap_path,
-            "total_packets": len(self.packets),
             "analysis_time": datetime.now().isoformat(),
             "alerts": [],
             "clients": [],
-            "summary": {}
+            "summary": {},
         }
 
         # Run detections
@@ -244,19 +268,20 @@ class ForensicAnalyzer:
 
         # Summary
         report["summary"] = {
-            "total_alerts": len(
-                report["alerts"]),
+            "total_alerts": len(report["alerts"]),
             "deauth_flood_detected": len(deauth_alerts) > 0,
             "evil_twin_detected": any(
-                a["type"] == "evil_twin" for a in report["alerts"]),
-            "unique_clients": len(
-                report["clients"])}
+                a["type"] == "evil_twin" for a in report["alerts"]
+            ),
+            "unique_clients": len(report["clients"]),
+        }
 
         return report
 
 
 def analyze_pcap(
-        file_path: str, known_networks: Optional[dict] = None) -> dict[str, Any]:
+    file_path: str, known_networks: dict | None = None
+) -> dict[str, Any]:
     """
     Convenience function for quick PCAP analysis.
 

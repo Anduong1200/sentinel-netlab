@@ -14,14 +14,13 @@ import logging
 import re
 import sys
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s'
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # ENUMS & DATA CLASSES
 # =============================================================================
+
 
 class Severity(str, Enum):
     CRITICAL = "Critical"
@@ -39,25 +39,20 @@ class Severity(str, Enum):
 
 
 class CheckStatus(str, Enum):
-    PASS = "Pass"
+    PASS = "Pass"  # nosec B105
     FAIL = "Fail"
     WARN = "Warn"
     SKIP = "Skip"
     OPEN = "Open"
 
 
-SEVERITY_SCORES = {
-    "Critical": 90,
-    "High": 70,
-    "Medium": 40,
-    "Low": 10,
-    "Info": 0
-}
+SEVERITY_SCORES = {"Critical": 90, "High": 70, "Medium": 40, "Low": 10, "Info": 0}
 
 
 @dataclass
 class Finding:
     """Security finding from audit"""
+
     id: str
     title: str
     severity: str
@@ -66,7 +61,7 @@ class Finding:
     description: str
     evidence_summary: str = ""
     evidence: list[str] = field(default_factory=list)
-    evidence_raw: Optional[str] = None
+    evidence_raw: str | None = None
     remediation: str = ""
     remediation_summary: str = ""
     remediation_commands: list[str] = field(default_factory=list)
@@ -77,15 +72,16 @@ class Finding:
 @dataclass
 class NetworkInfo:
     """Network information for audit"""
+
     bssid: str
-    ssid: Optional[str]
+    ssid: str | None
     channel: int
     rssi_dbm: int
     security: str
     wps_enabled: bool = False
     pmf_enabled: bool = False
     hidden: bool = False
-    vendor_oui: Optional[str] = None
+    vendor_oui: str | None = None
     rsn_info: dict = field(default_factory=dict)
     capabilities: dict = field(default_factory=dict)
 
@@ -93,6 +89,7 @@ class NetworkInfo:
 # =============================================================================
 # CHECKLIST LOADER
 # =============================================================================
+
 
 class ChecklistLoader:
     """Load and manage audit checklists"""
@@ -111,7 +108,7 @@ class ChecklistLoader:
             logger.warning(f"Checklist not found: {filepath}")
             return []
 
-        with open(filepath, encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             return json.load(f)
 
     def get_profiles(self) -> list[str]:
@@ -127,6 +124,7 @@ class ChecklistLoader:
 # =============================================================================
 # SECURITY AUDITOR
 # =============================================================================
+
 
 class SecurityAuditor:
     """Perform security checks on discovered networks"""
@@ -154,40 +152,40 @@ class SecurityAuditor:
 
         return findings
 
-    def _evaluate_rule(self, rule: dict, network: NetworkInfo) -> Optional[Finding]:
+    def _evaluate_rule(self, rule: dict, network: NetworkInfo) -> Finding | None:
         """Evaluate single rule against network"""
-        rule_id = rule.get('id', 'UNKNOWN')
-        detection = rule.get('detection_rule', '')
+        rule_id = rule.get("id", "UNKNOWN")
+        detection = rule.get("detection_rule", "")
 
         # Skip manual rules
-        if detection == 'manual':
+        if detection == "manual":
             return None
 
         triggered = False
         evidence_items = []
 
         # Encryption check
-        if 'privacy' in detection:
-            is_open = not network.capabilities.get('privacy', True)
-            if is_open and 'false' in detection:
+        if "privacy" in detection:
+            is_open = not network.capabilities.get("privacy", True)
+            if is_open and "false" in detection:
                 triggered = True
                 evidence_items.append(f"Open network: {network.ssid}")
 
         # WPS check
-        if 'wps' in detection.lower() and network.wps_enabled:
+        if "wps" in detection.lower() and network.wps_enabled:
             triggered = True
             evidence_items.append("WPS enabled in beacon")
 
         # TKIP check
-        if 'TKIP' in detection:
-            pairwise = network.rsn_info.get('pairwise', [])
-            if 'TKIP' in str(pairwise):
+        if "TKIP" in detection:
+            pairwise = network.rsn_info.get("pairwise", [])
+            if "TKIP" in str(pairwise):
                 triggered = True
                 evidence_items.append(f"TKIP cipher: {pairwise}")
 
         # Hidden SSID
-        if 'ssid ==' in detection and (not network.ssid or network.ssid == ''):
-            if 'null' in detection or "''" in detection:
+        if "ssid ==" in detection and (not network.ssid or network.ssid == ""):
+            if "null" in detection or "''" in detection:
                 triggered = True
                 evidence_items.append("Hidden SSID broadcast")
 
@@ -195,33 +193,33 @@ class SecurityAuditor:
         # This would be handled at a higher level
 
         if triggered:
-            severity = rule.get('severity', 'Medium')
-            if isinstance(rule.get('severity_map'), dict):
+            severity = rule.get("severity", "Medium")
+            if isinstance(rule.get("severity_map"), dict):
                 # Dynamic severity based on encryption type
                 sec_lower = network.security.lower()
-                severity = rule['severity_map'].get(sec_lower, 'Medium')
+                severity = rule["severity_map"].get(sec_lower, "Medium")
 
-            score = rule.get('score', SEVERITY_SCORES.get(severity, 40))
-            if isinstance(rule.get('score_map'), dict):
-                score = rule['score_map'].get(severity, 40)
+            score = rule.get("score", SEVERITY_SCORES.get(severity, 40))
+            if isinstance(rule.get("score_map"), dict):
+                score = rule["score_map"].get(severity, 40)
 
             return Finding(
                 id=rule_id,
-                title=rule.get('title', rule_id),
+                title=rule.get("title", rule_id),
                 severity=severity,
                 score=score,
                 status="Open",
-                description=rule.get('description', ''),
-                evidence_summary='; '.join(evidence_items),
+                description=rule.get("description", ""),
+                evidence_summary="; ".join(evidence_items),
                 evidence=evidence_items,
-                remediation=rule.get('remediation_text', ''),
-                remediation_summary=rule.get('remediation_text', '')[:80],
-                remediation_commands=rule.get('remediation_commands', []),
-                timeline=rule.get('recommended_timeline', ''),
+                remediation=rule.get("remediation_text", ""),
+                remediation_summary=rule.get("remediation_text", "")[:80],
+                remediation_commands=rule.get("remediation_commands", []),
+                timeline=rule.get("recommended_timeline", ""),
                 references=[
-                    {'title': ref, 'url': ref if ref.startswith('http') else '#'}
-                    for ref in rule.get('references', [])
-                ]
+                    {"title": ref, "url": ref if ref.startswith("http") else "#"}
+                    for ref in rule.get("references", [])
+                ],
             )
 
         return None
@@ -234,7 +232,9 @@ class SecurityAuditor:
         network_findings = self.evaluate_network(network)
         for finding in network_findings:
             self.findings.append(finding)
-            logger.warning(f"[{finding.severity}] {finding.title}: {finding.evidence_summary}")
+            logger.warning(
+                f"[{finding.severity}] {finding.title}: {finding.evidence_summary}"
+            )
 
         # Legacy built-in checks
         legacy_findings = self._run_legacy_checks(network)
@@ -248,36 +248,43 @@ class SecurityAuditor:
         findings = []
 
         # Open network
-        if network.security.upper() == 'OPEN':
-            findings.append(Finding(
-                id="WIFI-001",
-                title="Open Network Detected",
-                severity="High",
-                score=70,
-                status="Open",
-                description=f"Network '{network.ssid}' has no encryption.",
-                evidence=[f"BSSID: {network.bssid}", f"Security: {network.security}"],
-                evidence_summary=f"Security: {network.security}",
-                remediation="Enable WPA2 or WPA3 encryption.",
-                remediation_summary="Enable WPA2/WPA3",
-                timeline="Immediate"
-            ))
+        if network.security.upper() == "OPEN":
+            findings.append(
+                Finding(
+                    id="WIFI-001",
+                    title="Open Network Detected",
+                    severity="High",
+                    score=70,
+                    status="Open",
+                    description=f"Network '{network.ssid}' has no encryption.",
+                    evidence=[
+                        f"BSSID: {network.bssid}",
+                        f"Security: {network.security}",
+                    ],
+                    evidence_summary=f"Security: {network.security}",
+                    remediation="Enable WPA2 or WPA3 encryption.",
+                    remediation_summary="Enable WPA2/WPA3",
+                    timeline="Immediate",
+                )
+            )
 
         # WEP network
-        if 'WEP' in network.security.upper():
-            findings.append(Finding(
-                id="WIFI-002",
-                title="WEP Encryption Detected",
-                severity="Critical",
-                score=90,
-                status="Open",
-                description=f"Network '{network.ssid}' uses WEP, cryptographically broken.",
-                evidence=[f"BSSID: {network.bssid}"],
-                evidence_summary=f"Security: {network.security}",
-                remediation="Upgrade to WPA2 or WPA3 immediately.",
-                remediation_summary="Replace WEP with WPA2/WPA3",
-                timeline="Immediate"
-            ))
+        if "WEP" in network.security.upper():
+            findings.append(
+                Finding(
+                    id="WIFI-002",
+                    title="WEP Encryption Detected",
+                    severity="Critical",
+                    score=90,
+                    status="Open",
+                    description=f"Network '{network.ssid}' uses WEP, cryptographically broken.",
+                    evidence=[f"BSSID: {network.bssid}"],
+                    evidence_summary=f"Security: {network.security}",
+                    remediation="Upgrade to WPA2 or WPA3 immediately.",
+                    remediation_summary="Replace WEP with WPA2/WPA3",
+                    timeline="Immediate",
+                )
+            )
 
         return findings
 
@@ -289,10 +296,12 @@ class SecurityAuditor:
     def generate_report_data(self, duration_sec: float) -> dict[str, Any]:
         """Generate report data structure for template rendering"""
         # Sort findings by severity
-        severity_order = ['Critical', 'High', 'Medium', 'Low', 'Info']
+        severity_order = ["Critical", "High", "Medium", "Low", "Info"]
         sorted_findings = sorted(
             self.findings,
-            key=lambda f: severity_order.index(f.severity) if f.severity in severity_order else 99
+            key=lambda f: severity_order.index(f.severity)
+            if f.severity in severity_order
+            else 99,
         )
 
         # Count by severity
@@ -306,23 +315,19 @@ class SecurityAuditor:
             "report": {
                 "title": f"Sentinel NetLab Wi-Fi Audit: {self.profile.upper()} — {datetime.now().strftime('%Y-%m-%d')}",
                 "id": f"SN-{datetime.now().strftime('%Y%m%d')}-{len(self.findings):03d}",
-                "date": datetime.now().strftime('%Y-%m-%d'),
+                "date": datetime.now().strftime("%Y-%m-%d"),
                 "sensor_id": self.sensor_id,
                 "author": "Sentinel NetLab",
-                "exec_summary": self._generate_exec_summary(counts)
+                "exec_summary": self._generate_exec_summary(counts),
             },
             "summary": {
                 "counts": counts,
                 "networks_scanned": len(self.networks),
-                "duration_sec": duration_sec
+                "duration_sec": duration_sec,
             },
             "findings": [asdict(f) for f in sorted_findings],
             "actions": self._generate_action_plan(sorted_findings),
-            "appendix": {
-                "telemetry_file": None,
-                "pcap_files": [],
-                "screenshots": []
-            }
+            "appendix": {"telemetry_file": None, "pcap_files": [], "screenshots": []},
         }
 
     def _generate_exec_summary(self, counts: dict[str, int]) -> str:
@@ -332,13 +337,13 @@ class SecurityAuditor:
             return "No security issues detected. Network configuration appears secure."
 
         parts = []
-        if counts.get('critical', 0) > 0:
+        if counts.get("critical", 0) > 0:
             parts.append(f"{counts['critical']} critical")
-        if counts.get('high', 0) > 0:
+        if counts.get("high", 0) > 0:
             parts.append(f"{counts['high']} high")
-        if counts.get('medium', 0) > 0:
+        if counts.get("medium", 0) > 0:
             parts.append(f"{counts['medium']} medium")
-        if counts.get('low', 0) > 0:
+        if counts.get("low", 0) > 0:
             parts.append(f"{counts['low']} low")
 
         return f"Phát hiện {total} vấn đề bảo mật: {', '.join(parts)}. Xem chi tiết bên dưới."
@@ -355,18 +360,20 @@ class SecurityAuditor:
 
             due = "TBD"
             if f.timeline == "Immediate":
-                due = datetime.now().strftime('%Y-%m-%d')
+                due = datetime.now().strftime("%Y-%m-%d")
             elif f.timeline == "24-72h":
                 due = "Within 3 days"
             elif f.timeline == "1-4 weeks":
                 due = "Within 4 weeks"
 
-            actions.append({
-                "task": f.remediation_summary or f.title,
-                "owner": "IT Team",
-                "due": due,
-                "priority": f.severity
-            })
+            actions.append(
+                {
+                    "task": f.remediation_summary or f.title,
+                    "owner": "IT Team",
+                    "due": due,
+                    "priority": f.severity,
+                }
+            )
 
         return actions[:10]  # Top 10 actions
 
@@ -374,6 +381,7 @@ class SecurityAuditor:
 # =============================================================================
 # REPORT GENERATOR
 # =============================================================================
+
 
 class ReportGenerator:
     """Generate reports in various formats"""
@@ -392,8 +400,7 @@ class ReportGenerator:
             return "<html><body><h1>Error: Jinja2 not installed</h1></body></html>"
 
         env = Environment(
-            loader=FileSystemLoader(str(self.templates_dir)),
-            autoescape=True
+            loader=FileSystemLoader(str(self.templates_dir)), autoescape=True
         )
         template = env.get_template("report_template.html")
         return template.render(**data)
@@ -402,14 +409,16 @@ class ReportGenerator:
         """Render JSON report"""
         return json.dumps(data, indent=2, ensure_ascii=False)
 
-    def save_report(self, data: dict[str, Any], output_path: Path, format: str = "json"):
+    def save_report(
+        self, data: dict[str, Any], output_path: Path, format: str = "json"
+    ):
         """Save report to file"""
         if format == "html":
             content = self.render_html(data)
         else:
             content = self.render_json(data)
 
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
 
         logger.info(f"Report saved to {output_path}")
@@ -419,38 +428,66 @@ class ReportGenerator:
 # MOCK DATA
 # =============================================================================
 
+
 def scan_mock_networks() -> list[NetworkInfo]:
     """Generate mock networks for testing"""
     return [
         NetworkInfo(
-            bssid="AA:BB:CC:11:22:33", ssid="SecureNet", channel=6,
-            rssi_dbm=-45, security="WPA2", pmf_enabled=True,
-            vendor_oui="AA:BB:CC", capabilities={'privacy': True, 'pmf': True}
+            bssid="AA:BB:CC:11:22:33",
+            ssid="SecureNet",
+            channel=6,
+            rssi_dbm=-45,
+            security="WPA2",
+            pmf_enabled=True,
+            vendor_oui="AA:BB:CC",
+            capabilities={"privacy": True, "pmf": True},
         ),
         NetworkInfo(
-            bssid="AA:BB:CC:44:55:66", ssid="OpenCafe", channel=1,
-            rssi_dbm=-65, security="Open",
-            vendor_oui="AA:BB:CC", capabilities={'privacy': False}
+            bssid="AA:BB:CC:44:55:66",
+            ssid="OpenCafe",
+            channel=1,
+            rssi_dbm=-65,
+            security="Open",
+            vendor_oui="AA:BB:CC",
+            capabilities={"privacy": False},
         ),
         NetworkInfo(
-            bssid="AA:BB:CC:77:88:99", ssid="OldRouter", channel=11,
-            rssi_dbm=-70, security="WEP",
-            vendor_oui="AA:BB:CC", capabilities={'privacy': True}
+            bssid="AA:BB:CC:77:88:99",
+            ssid="OldRouter",
+            channel=11,
+            rssi_dbm=-70,
+            security="WEP",
+            vendor_oui="AA:BB:CC",
+            capabilities={"privacy": True},
         ),
         NetworkInfo(
-            bssid="AA:BB:CC:AA:BB:CC", ssid="HomeWiFi", channel=6,
-            rssi_dbm=-50, security="WPA2", wps_enabled=True,
-            vendor_oui="AA:BB:CC", capabilities={'privacy': True, 'wps': True}
+            bssid="AA:BB:CC:AA:BB:CC",
+            ssid="HomeWiFi",
+            channel=6,
+            rssi_dbm=-50,
+            security="WPA2",
+            wps_enabled=True,
+            vendor_oui="AA:BB:CC",
+            capabilities={"privacy": True, "wps": True},
         ),
         NetworkInfo(
-            bssid="AA:BB:CC:DD:EE:FF", ssid=None, channel=44,
-            rssi_dbm=-60, security="WPA2", hidden=True,
-            vendor_oui="AA:BB:CC", capabilities={'privacy': True, 'hidden_ssid': True}
+            bssid="AA:BB:CC:DD:EE:FF",
+            ssid=None,
+            channel=44,
+            rssi_dbm=-60,
+            security="WPA2",
+            hidden=True,
+            vendor_oui="AA:BB:CC",
+            capabilities={"privacy": True, "hidden_ssid": True},
         ),
         NetworkInfo(
-            bssid="11:22:33:44:55:66", ssid="FREE_WIFI", channel=1,
-            rssi_dbm=-40, security="Open",
-            vendor_oui="11:22:33", capabilities={'privacy': False}
+            bssid="11:22:33:44:55:66",
+            ssid="FREE_WIFI",
+            channel=1,
+            rssi_dbm=-40,
+            security="Open",
+            vendor_oui="11:22:33",
+            capabilities={"privacy": False},
         ),
     ]
 
@@ -459,9 +496,16 @@ def scan_mock_networks() -> list[NetworkInfo]:
 # MAIN
 # =============================================================================
 
-def run_audit(args) -> int:
-    """Main audit function"""
-    start_time = datetime.now(timezone.utc)
+
+def run_audit(args, return_data: bool = False) -> Any:
+    """
+    Main audit function.
+
+    Args:
+        args: Parsed arguments
+        return_data: If True, returns the report dict instead of exit code
+    """
+    start_time = datetime.now(UTC)
 
     print("\n" + "=" * 60)
     print("🔍 SENTINEL NETLAB SECURITY AUDIT")
@@ -493,17 +537,44 @@ def run_audit(args) -> int:
         auditor.audit_network(network)
 
     # Generate report
-    end_time = datetime.now(timezone.utc)
+    end_time = datetime.now(UTC)
     duration = (end_time - start_time).total_seconds()
     report_data = auditor.generate_report_data(duration)
 
     # Save report
+    # Save report locally
     output_path = Path(args.output)
     generator = ReportGenerator()
     generator.save_report(report_data, output_path, format=args.format)
 
+    # Offload to API if requested
+    if args.api_url and args.api_token:
+        try:
+            import requests
+
+            print(f"Uploading report data to {args.api_url}...")
+            # Note: This endpoint must be added to controller
+            resp = requests.post(
+                f"{args.api_url}/api/v1/reports/generate",
+                json=report_data,
+                headers={"Authorization": f"Bearer {args.api_token}"},
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                print("Remote report generation successful.")
+                # If PDF returned, save it
+                if resp.headers.get("Content-Type") == "application/pdf":
+                    pdf_path = output_path.with_suffix(".pdf")
+                    with open(pdf_path, "wb") as f:
+                        f.write(resp.content)
+                    print(f"Saved remote PDF to {pdf_path}")
+            else:
+                print(f"Remote generation failed: {resp.text}")
+        except Exception as e:
+            print(f"Failed to call API: {e}")
+
     # Print summary
-    counts = report_data['summary']['counts']
+    counts = report_data["summary"]["counts"]
     print("\n" + "=" * 60)
     print("AUDIT SUMMARY")
     print("=" * 60)
@@ -516,17 +587,21 @@ def run_audit(args) -> int:
     print(f"  LOW:      {counts.get('low', 0)}")
     print("=" * 60 + "\n")
 
+    # Return result
+    if return_data:
+        return report_data
+
     # Return exit code
-    if counts.get('critical', 0) > 0:
+    if counts.get("critical", 0) > 0:
         return 2
-    elif counts.get('high', 0) > 0:
+    elif counts.get("high", 0) > 0:
         return 1
     return 0
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Sentinel NetLab Security Audit Tool',
+        description="Sentinel NetLab Security Audit Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -545,20 +620,26 @@ Profiles:
 
 IMPORTANT: Use only on networks you own or have authorization to assess.
 See ETHICS.md for legal guidelines.
-        """
+        """,
     )
 
-    parser.add_argument('--sensor-id', default='audit-cli', help='Sensor identifier')
-    parser.add_argument('--iface', default='wlan0', help='WiFi interface')
-    parser.add_argument('--output', default='audit_report.json', help='Output file')
-    parser.add_argument('--format', choices=['json', 'html'], default='json', help='Output format')
-    parser.add_argument('--profile', choices=['home', 'sme'], default='home', help='Audit profile')
-    parser.add_argument('--mock', action='store_true', help='Use mock data')
+    parser.add_argument("--sensor-id", default="audit-cli", help="Sensor identifier")
+    parser.add_argument("--iface", default="wlan0", help="WiFi interface")
+    parser.add_argument("--output", default="audit_report.json", help="Output file")
+    parser.add_argument(
+        "--format", choices=["json", "html"], default="json", help="Output format"
+    )
+    parser.add_argument(
+        "--profile", choices=["home", "sme"], default="home", help="Audit profile"
+    )
+    parser.add_argument("--mock", action="store_true", help="Use mock data")
+    parser.add_argument("--api-url", help="Controller API URL for report generation")
+    parser.add_argument("--api-token", help="Controller API Token")
 
     args = parser.parse_args()
 
     sys.exit(run_audit(args))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

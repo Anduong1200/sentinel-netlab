@@ -60,16 +60,18 @@ requirements-dev.txt:
 # TESTING
 # =============================================================================
 
-test: test-unit test-int
+test:
+	cd ops && docker-compose run --rm sensor pytest tests/ -v
 
 test-unit:
-	cd sensor && PYTHONPATH=. $(PYTEST) ../tests/unit/ -v --tb=short
+	cd ops && docker-compose run --rm sensor pytest tests/unit -v
 
 test-int:
-	cd sensor && PYTHONPATH=. $(PYTEST) ../tests/integration/ -v --tb=short
+	cd ops && docker-compose run --rm sensor pytest tests/integration -v
 
 test-cov:
-	cd sensor && PYTHONPATH=. $(PYTEST) ../tests/ -v --cov=. --cov-report=html --cov-report=xml
+	cd ops && docker-compose run --rm sensor pytest tests/ --cov=. --cov-report=html
+
 
 # =============================================================================
 # LINTING

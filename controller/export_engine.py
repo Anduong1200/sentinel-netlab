@@ -13,11 +13,10 @@ Supports:
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from string import Template
-from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,20 +38,22 @@ class ReportType(str, Enum):
 @dataclass
 class ReportSection:
     """A section within a report"""
+
     title: str
     content: str
     order: int = 0
-    subsections: list['ReportSection'] = field(default_factory=list)
+    subsections: list["ReportSection"] = field(default_factory=list)
 
 
 @dataclass
 class ReportData:
     """Data container for report generation"""
+
     report_type: ReportType
     title: str
     generated_at: str
-    date_range_start: Optional[str] = None
-    date_range_end: Optional[str] = None
+    date_range_start: str | None = None
+    date_range_end: str | None = None
 
     # Summary statistics
     total_networks: int = 0
@@ -368,13 +369,13 @@ class ReportEngine:
         # Build networks table
         networks_rows = []
         for net in data.networks[:50]:  # Limit to 50 for readability
-            risk_class = net.get('risk_level', 'low').lower()
+            risk_class = net.get("risk_level", "low").lower()
             networks_rows.append(f"""
                 <tr>
-                    <td><code>{net.get('bssid', 'N/A')}</code></td>
-                    <td>{net.get('ssid', '[Hidden]') or '[Hidden]'}</td>
-                    <td>{net.get('channel', 'N/A')}</td>
-                    <td>{net.get('security', 'Unknown')}</td>
+                    <td><code>{net.get("bssid", "N/A")}</code></td>
+                    <td>{net.get("ssid", "[Hidden]") or "[Hidden]"}</td>
+                    <td>{net.get("channel", "N/A")}</td>
+                    <td>{net.get("security", "Unknown")}</td>
                     <td><span class="badge badge-{risk_class}">{risk_class.upper()}</span></td>
                 </tr>
             """)
@@ -382,11 +383,11 @@ class ReportEngine:
         # Build findings HTML
         findings_html = []
         for finding in data.findings[:10]:
-            severity = finding.get('severity', 'medium').lower()
+            severity = finding.get("severity", "medium").lower()
             findings_html.append(f"""
                 <div class="finding {severity}">
-                    <h4>{finding.get('title', 'Finding')}</h4>
-                    <p>{finding.get('description', '')}</p>
+                    <h4>{finding.get("title", "Finding")}</h4>
+                    <p>{finding.get("description", "")}</p>
                 </div>
             """)
 
@@ -409,20 +410,19 @@ class ReportEngine:
             sensors_active=data.sensors_active,
             networks_table="\n".join(networks_rows),
             findings_html="\n".join(findings_html) or "<p>No critical findings.</p>",
-            recommendations_html=recommendations_html or "<li>No recommendations at this time.</li>"
+            recommendations_html=recommendations_html
+            or "<li>No recommendations at this time.</li>",
         )
 
         # Fill base template
         html = Template(HTML_BASE_TEMPLATE).safe_substitute(
-            title=data.title,
-            generated_at=data.generated_at,
-            content=content
+            title=data.title, generated_at=data.generated_at, content=content
         )
 
         # Write file
         filename = f"report_{data.report_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         output_path = self.output_dir / filename
-        output_path.write_text(html, encoding='utf-8')
+        output_path.write_text(html, encoding="utf-8")
 
         logger.info(f"Generated HTML report: {output_path}")
         return output_path
@@ -431,15 +431,18 @@ class ReportEngine:
         """Generate PDF report using weasyprint"""
         # First generate HTML
         html_path = self._generate_html(data)
-        pdf_path = html_path.with_suffix('.pdf')
+        pdf_path = html_path.with_suffix(".pdf")
 
         try:
             from weasyprint import HTML
+
             HTML(filename=str(html_path)).write_pdf(str(pdf_path))
             logger.info(f"Generated PDF report: {pdf_path}")
             return pdf_path
         except ImportError:
-            logger.warning("weasyprint not installed. Install with: pip install weasyprint")
+            logger.warning(
+                "weasyprint not installed. Install with: pip install weasyprint"
+            )
             logger.info("Returning HTML report instead")
             return html_path
         except Exception as e:
@@ -449,36 +452,33 @@ class ReportEngine:
     def _generate_json(self, data: ReportData) -> Path:
         """Generate JSON report"""
         output = {
-            'report_type': data.report_type.value,
-            'title': data.title,
-            'generated_at': data.generated_at,
-            'date_range': {
-                'start': data.date_range_start,
-                'end': data.date_range_end
+            "report_type": data.report_type.value,
+            "title": data.title,
+            "generated_at": data.generated_at,
+            "date_range": {"start": data.date_range_start, "end": data.date_range_end},
+            "summary": {
+                "total_networks": data.total_networks,
+                "critical_risks": data.critical_risks,
+                "high_risks": data.high_risks,
+                "medium_risks": data.medium_risks,
+                "low_risks": data.low_risks,
+                "total_alerts": data.total_alerts,
+                "sensors_active": data.sensors_active,
             },
-            'summary': {
-                'total_networks': data.total_networks,
-                'critical_risks': data.critical_risks,
-                'high_risks': data.high_risks,
-                'medium_risks': data.medium_risks,
-                'low_risks': data.low_risks,
-                'total_alerts': data.total_alerts,
-                'sensors_active': data.sensors_active
+            "networks": data.networks,
+            "alerts": data.alerts,
+            "findings": data.findings,
+            "recommendations": data.recommendations,
+            "metadata": {
+                "author": data.author,
+                "organization": data.organization,
+                "confidentiality": data.confidentiality,
             },
-            'networks': data.networks,
-            'alerts': data.alerts,
-            'findings': data.findings,
-            'recommendations': data.recommendations,
-            'metadata': {
-                'author': data.author,
-                'organization': data.organization,
-                'confidentiality': data.confidentiality
-            }
         }
 
         filename = f"report_{data.report_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         output_path = self.output_dir / filename
-        output_path.write_text(json.dumps(output, indent=2), encoding='utf-8')
+        output_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
 
         logger.info(f"Generated JSON report: {output_path}")
         return output_path
@@ -488,12 +488,23 @@ def main():
     """CLI for report generation"""
     import argparse
 
-    parser = argparse.ArgumentParser(description='Generate security reports')
-    parser.add_argument('--type', choices=['security_assessment', 'incident', 'audit', 'executive'],
-                       default='security_assessment', help='Report type')
-    parser.add_argument('--format', choices=['html', 'pdf', 'json'], default='html', help='Output format')
-    parser.add_argument('--output-dir', default='./reports', help='Output directory')
-    parser.add_argument('--demo', action='store_true', help='Generate demo report with sample data')
+    parser = argparse.ArgumentParser(description="Generate security reports")
+    parser.add_argument(
+        "--type",
+        choices=["security_assessment", "incident", "audit", "executive"],
+        default="security_assessment",
+        help="Report type",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["html", "pdf", "json"],
+        default="html",
+        help="Output format",
+    )
+    parser.add_argument("--output-dir", default="./reports", help="Output directory")
+    parser.add_argument(
+        "--demo", action="store_true", help="Generate demo report with sample data"
+    )
 
     args = parser.parse_args()
 
@@ -502,7 +513,7 @@ def main():
         data = ReportData(
             report_type=ReportType(args.type),
             title="Wireless Security Assessment Report",
-            generated_at=datetime.now(timezone.utc).isoformat(),
+            generated_at=datetime.now(UTC).isoformat(),
             date_range_start="2026-01-01",
             date_range_end="2026-01-28",
             total_networks=47,
@@ -513,21 +524,47 @@ def main():
             total_alerts=23,
             sensors_active=3,
             networks=[
-                {'bssid': 'AA:BB:CC:11:22:33', 'ssid': 'OpenCafe', 'channel': 6, 'security': 'Open', 'risk_level': 'critical'},
-                {'bssid': 'AA:BB:CC:44:55:66', 'ssid': 'OldRouter', 'channel': 1, 'security': 'WEP', 'risk_level': 'critical'},
-                {'bssid': 'AA:BB:CC:77:88:99', 'ssid': 'GuestWiFi', 'channel': 11, 'security': 'WPA2', 'risk_level': 'high'},
+                {
+                    "bssid": "AA:BB:CC:11:22:33",
+                    "ssid": "OpenCafe",
+                    "channel": 6,
+                    "security": "Open",
+                    "risk_level": "critical",
+                },
+                {
+                    "bssid": "AA:BB:CC:44:55:66",
+                    "ssid": "OldRouter",
+                    "channel": 1,
+                    "security": "WEP",
+                    "risk_level": "critical",
+                },
+                {
+                    "bssid": "AA:BB:CC:77:88:99",
+                    "ssid": "GuestWiFi",
+                    "channel": 11,
+                    "security": "WPA2",
+                    "risk_level": "high",
+                },
             ],
             findings=[
-                {'title': 'Open Network Detected', 'description': 'Network "OpenCafe" has no encryption enabled.', 'severity': 'critical'},
-                {'title': 'WEP Encryption', 'description': 'Network "OldRouter" uses deprecated WEP encryption.', 'severity': 'critical'},
+                {
+                    "title": "Open Network Detected",
+                    "description": 'Network "OpenCafe" has no encryption enabled.',
+                    "severity": "critical",
+                },
+                {
+                    "title": "WEP Encryption",
+                    "description": 'Network "OldRouter" uses deprecated WEP encryption.',
+                    "severity": "critical",
+                },
             ],
             recommendations=[
-                'Disable or encrypt open guest networks',
-                'Upgrade WEP networks to WPA2 or WPA3',
-                'Enable 802.11w (PMF) where supported',
-                'Implement network segmentation for IoT devices',
-                'Review and update access point firmware'
-            ]
+                "Disable or encrypt open guest networks",
+                "Upgrade WEP networks to WPA2 or WPA3",
+                "Enable 802.11w (PMF) where supported",
+                "Implement network segmentation for IoT devices",
+                "Review and update access point firmware",
+            ],
         )
 
         engine = ReportEngine(Path(args.output_dir))
@@ -535,5 +572,5 @@ def main():
         print(f"Demo report generated: {output}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -8,7 +8,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -19,7 +19,7 @@ sys.path.insert(0, str(SENSOR_DIR))
 sys.path.insert(0, str(SENSOR_DIR.parent))
 
 
-def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
+def load_config(config_file: str | None = None) -> dict[str, Any]:
     """Load configuration from YAML file"""
     if config_file and Path(config_file).exists():
         with open(config_file) as f:
@@ -29,7 +29,7 @@ def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
     default_paths = [
         SENSOR_DIR / "config.yaml",
         Path("/etc/sentinel/config.yaml"),
-        Path.home() / ".sentinel/config.yaml"
+        Path.home() / ".sentinel/config.yaml",
     ]
 
     for path in default_paths:
@@ -54,19 +54,19 @@ def validate_preconditions(args: argparse.Namespace) -> bool:
             errors.append("--iface is required (or use --mock-mode)")
         elif not args.mock_mode:
             # Check if interface exists (Linux only)
-            if sys.platform.startswith('linux'):
+            if sys.platform.startswith("linux"):
                 if not Path(f"/sys/class/net/{args.iface}").exists():
                     errors.append(f"Interface {args.iface} not found")
 
     # Check upload URL format
     if args.upload_url:
-        if not args.upload_url.startswith(('http://', 'https://')):
+        if not args.upload_url.startswith(("http://", "https://")):
             errors.append("--upload-url must start with http:// or https://")
 
     # Check channels format
     if args.channels:
         try:
-            channels = [int(c.strip()) for c in args.channels.split(',')]
+            channels = [int(c.strip()) for c in args.channels.split(",")]
             for ch in channels:
                 if not (1 <= ch <= 165):
                     errors.append(f"Invalid channel: {ch}")
@@ -82,43 +82,61 @@ def validate_preconditions(args: argparse.Namespace) -> bool:
     return True
 
 
-def merge_config(args: argparse.Namespace,
-                 file_config: dict) -> dict[str, Any]:
+def merge_config(args: argparse.Namespace, file_config: dict) -> dict[str, Any]:
     """Merge CLI args with file config (CLI takes precedence)"""
     config = {
-        'sensor': {
-            'id': args.sensor_id or file_config.get('sensor', {}).get('id', 'sensor-01'),
-            'interface': args.iface or file_config.get('sensor', {}).get('interface', 'wlan0'),
+        "sensor": {
+            "id": args.sensor_id
+            or file_config.get("sensor", {}).get("id", "sensor-01"),
+            "interface": args.iface
+            or file_config.get("sensor", {}).get("interface", "wlan0"),
         },
-        'capture': {
-            'method': 'mock' if args.mock_mode else file_config.get('capture', {}).get('method', 'scapy'),
-            'channels': (
-                [int(c) for c in args.channels.split(',')] if args.channels
-                else file_config.get('capture', {}).get('channels', [1, 6, 11])
+        "capture": {
+            "method": "mock"
+            if args.mock_mode
+            else file_config.get("capture", {}).get("method", "scapy"),
+            "channels": (
+                [int(c) for c in args.channels.split(",")]
+                if args.channels
+                else file_config.get("capture", {}).get("channels", [1, 6, 11])
             ),
-            'dwell_ms': args.dwell_ms or file_config.get('capture', {}).get('dwell_ms', 200),
+            "dwell_ms": args.dwell_ms
+            or file_config.get("capture", {}).get("dwell_ms", 200),
         },
-        'buffer': {
-            'max_items': file_config.get('buffer', {}).get('max_items', 10000),
-            'storage_path': args.storage_path or file_config.get('buffer', {}).get('storage_path', '/var/lib/sentinel/journal'),
+        "buffer": {
+            "max_items": file_config.get("buffer", {}).get("max_items", 10000),
+            "storage_path": args.storage_path
+            or file_config.get("buffer", {}).get(
+                "storage_path", "/var/lib/sentinel/journal"
+            ),
         },
-        'transport': {
-            'upload_url': args.upload_url or file_config.get('transport', {}).get('upload_url', 'http://localhost:5000/api/v1/telemetry'),
-            'auth_token': args.auth_token or file_config.get('transport', {}).get('auth_token', 'sentinel-dev-2024'),
+        "transport": {
+            "upload_url": args.upload_url
+            or file_config.get("transport", {}).get(
+                "upload_url", "http://localhost:5000/api/v1/telemetry"
+            ),
+            "auth_token": args.auth_token
+            or file_config.get("transport", {}).get("auth_token", "sentinel-dev-2024"),
         },
-        'upload': {
-            'batch_size': args.batch_size or file_config.get('upload', {}).get('batch_size', 200),
-            'interval_sec': args.upload_interval or file_config.get('upload', {}).get('interval_sec', 5.0),
+        "upload": {
+            "batch_size": args.batch_size
+            or file_config.get("upload", {}).get("batch_size", 200),
+            "interval_sec": args.upload_interval
+            or file_config.get("upload", {}).get("interval_sec", 5.0),
         },
-        'privacy': {
-            'anonymize_ssid': args.anonymize_ssid or file_config.get('privacy', {}).get('anonymize_ssid', False),
-            'store_raw_mac': args.store_raw_mac or file_config.get('privacy', {}).get('store_raw_mac', False),
-            'mode': args.privacy_mode or file_config.get('privacy', {}).get('mode', 'anonymized'),
+        "privacy": {
+            "anonymize_ssid": args.anonymize_ssid
+            or file_config.get("privacy", {}).get("anonymize_ssid", False),
+            "store_raw_mac": args.store_raw_mac
+            or file_config.get("privacy", {}).get("store_raw_mac", False),
+            "mode": args.privacy_mode
+            or file_config.get("privacy", {}).get("mode", "anonymized"),
         },
-        'logging': {
-            'level': args.log_level or file_config.get('logging', {}).get('level', 'INFO'),
+        "logging": {
+            "level": args.log_level
+            or file_config.get("logging", {}).get("level", "INFO"),
         },
-        'mock_mode': args.mock_mode,
+        "mock_mode": args.mock_mode,
     }
     return config
 
@@ -127,8 +145,8 @@ def setup_logging(level: str) -> None:
     """Configure logging"""
     logging.basicConfig(
         level=getattr(logging, level.upper()),
-        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 
@@ -146,144 +164,26 @@ def print_banner(config: dict) -> None:
     print("=" * 60)
 
 
-def main() -> int:
-    """CLI main entry point"""
-    parser = argparse.ArgumentParser(
-        prog='sentinel-sensor',
-        description='Sentinel NetLab Sensor - Wireless IDS Capture Agent',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Start with real interface
-  %(prog)s --sensor-id rpi-01 --iface wlan0mon
-
-  # Mock mode for testing
-  %(prog)s --sensor-id test-01 --iface mock0 --mock-mode
-
-  # Custom channels and dwell time
-  %(prog)s --sensor-id lab-01 --iface wlan0mon --channels 1,6,11 --dwell-ms 300
-
-  # Use config file
-  %(prog)s --config-file /etc/sentinel/config.yaml
-        """
-    )
-
-    # Required
-    parser.add_argument('--sensor-id', help='Unique sensor identifier')
-    parser.add_argument('--iface', help='Network interface')
-
-    # Capture
-    parser.add_argument('--channels', help='Comma-separated channel list')
-    parser.add_argument('--dwell-ms', type=int, help='Channel dwell time (ms)')
-
-    # Batching
-    parser.add_argument('--batch-size', type=int, help='Max items per batch')
-    parser.add_argument(
-        '--upload-interval',
-        type=float,
-        help='Upload interval (sec)')
-
-    # Transport
-    parser.add_argument('--upload-url', help='Controller telemetry endpoint')
-    parser.add_argument('--auth-token', help='Authentication token')
-
-    # Storage
-    parser.add_argument('--storage-path', help='Journal storage path')
-    parser.add_argument(
-        '--max-disk-usage',
-        type=int,
-        help='Max disk MB for journals')
-
-    # Mode
-    parser.add_argument(
-        '--mock-mode',
-        action='store_true',
-        help='Use mock capture driver')
-    parser.add_argument(
-        '--mode',
-        choices=[
-            'capture',
-            'test'],
-        default='capture',
-        help='Operation mode')
-
-    # Privacy
-    parser.add_argument(
-        '--anonymize-ssid',
-        action='store_true',
-        help='Hash SSIDs')
-    parser.add_argument(
-        '--store-raw-mac',
-        action='store_true',
-        help='Store raw MAC addresses (warning: privacy risk)')
-    parser.add_argument(
-        '--privacy-mode',
-        choices=['normal', 'anonymized', 'private'],
-        default='anonymized',
-        help='Privacy mode for data retention')
-
-    # GPS
-    parser.add_argument('--gps-device', help='GPS NMEA device path')
-
-    # Sync
-    parser.add_argument(
-        '--ntp-sync',
-        action='store_true',
-        help='Ensure NTP sync on start')
-
-    # Logging
-    parser.add_argument(
-        '--log-level',
-        choices=[
-            'DEBUG',
-            'INFO',
-            'WARNING',
-            'ERROR'],
-        help='Log level')
-
-    # Config
-    parser.add_argument('--config-file', help='YAML config file path')
-
-    # Lab safety
-    parser.add_argument('--confirm-lab-actions', action='store_true',
-                        help='Confirm lab/attack actions')
-
-    args = parser.parse_args()
-
-    # Load config file
-    file_config = load_config(args.config_file)
-
-    # Validate
-    if not validate_preconditions(args):
-        return 1
-
-    # Merge config
-    config = merge_config(args, file_config)
-
-    # Setup logging
-    setup_logging(config['logging']['level'])
-
-    # Print banner
-    print_banner(config)
-
+def run_sensor_logic(config: dict) -> int:
+    """Run the sensor logic with the given config"""
     # Import and start controller
     try:
         from sensor_controller import SensorController
 
         controller = SensorController(
-            sensor_id=config['sensor']['id'],
-            iface=config['sensor']['interface'],
-            channels=config['capture']['channels'],
-            dwell_ms=config['capture']['dwell_ms'],
-            upload_url=config['transport']['upload_url'],
-            auth_token=config['transport']['auth_token'],
-            storage_path=config['buffer']['storage_path'],
-            batch_size=config['upload']['batch_size'],
-            upload_interval=config['upload']['interval_sec'],
-            mock_mode=config['mock_mode'],
-            anonymize_ssid=config['privacy']['anonymize_ssid'],
-            store_raw_mac=config['privacy']['store_raw_mac'],
-            privacy_mode=config['privacy']['mode']
+            sensor_id=config["sensor"]["id"],
+            iface=config["sensor"]["interface"],
+            channels=config["capture"]["channels"],
+            dwell_ms=config["capture"]["dwell_ms"],
+            upload_url=config["transport"]["upload_url"],
+            auth_token=config["transport"]["auth_token"],
+            storage_path=config["buffer"]["storage_path"],
+            batch_size=config["upload"]["batch_size"],
+            upload_interval=config["upload"]["interval_sec"],
+            mock_mode=config["mock_mode"],
+            anonymize_ssid=config["privacy"]["anonymize_ssid"],
+            store_raw_mac=config["privacy"]["store_raw_mac"],
+            privacy_mode=config["privacy"]["mode"],
         )
 
         if controller.start():
@@ -316,5 +216,111 @@ Examples:
     return 0
 
 
-if __name__ == '__main__':
+def main() -> int:
+    """CLI main entry point"""
+    parser = argparse.ArgumentParser(
+        prog="sentinel-sensor",
+        description="Sentinel NetLab Sensor - Wireless IDS Capture Agent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Start with real interface
+  %(prog)s --sensor-id rpi-01 --iface wlan0mon
+
+  # Mock mode for testing
+  %(prog)s --sensor-id test-01 --iface mock0 --mock-mode
+
+  # Custom channels and dwell time
+  %(prog)s --sensor-id lab-01 --iface wlan0mon --channels 1,6,11 --dwell-ms 300
+
+  # Use config file
+  %(prog)s --config-file /etc/sentinel/config.yaml
+        """,
+    )
+
+    # Required
+    parser.add_argument("--sensor-id", help="Unique sensor identifier")
+    parser.add_argument("--iface", help="Network interface")
+
+    # Capture
+    parser.add_argument("--channels", help="Comma-separated channel list")
+    parser.add_argument("--dwell-ms", type=int, help="Channel dwell time (ms)")
+
+    # Batching
+    parser.add_argument("--batch-size", type=int, help="Max items per batch")
+    parser.add_argument("--upload-interval", type=float, help="Upload interval (sec)")
+
+    # Transport
+    parser.add_argument("--upload-url", help="Controller telemetry endpoint")
+    parser.add_argument("--auth-token", help="Authentication token")
+
+    # Storage
+    parser.add_argument("--storage-path", help="Journal storage path")
+    parser.add_argument("--max-disk-usage", type=int, help="Max disk MB for journals")
+
+    # Mode
+    parser.add_argument(
+        "--mock-mode", action="store_true", help="Use mock capture driver"
+    )
+    parser.add_argument(
+        "--mode", choices=["capture", "test"], default="capture", help="Operation mode"
+    )
+
+    # Privacy
+    parser.add_argument("--anonymize-ssid", action="store_true", help="Hash SSIDs")
+    parser.add_argument(
+        "--store-raw-mac",
+        action="store_true",
+        help="Store raw MAC addresses (warning: privacy risk)",
+    )
+    parser.add_argument(
+        "--privacy-mode",
+        choices=["normal", "anonymized", "private"],
+        default="anonymized",
+        help="Privacy mode for data retention",
+    )
+
+    # GPS
+    parser.add_argument("--gps-device", help="GPS NMEA device path")
+
+    # Sync
+    parser.add_argument(
+        "--ntp-sync", action="store_true", help="Ensure NTP sync on start"
+    )
+
+    # Logging
+    parser.add_argument(
+        "--log-level", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Log level"
+    )
+
+    # Config
+    parser.add_argument("--config-file", help="YAML config file path")
+
+    # Lab safety
+    parser.add_argument(
+        "--confirm-lab-actions", action="store_true", help="Confirm lab/attack actions"
+    )
+
+    args = parser.parse_args()
+
+    # Load config file
+    file_config = load_config(args.config_file)
+
+    # Validate
+    if not validate_preconditions(args):
+        return 1
+
+    # Merge config
+    config = merge_config(args, file_config)
+
+    # Setup logging
+    setup_logging(config["logging"]["level"])
+
+    # Print banner
+    print_banner(config)
+
+    return run_sensor_logic(config)
+
+
+if __name__ == "__main__":
     sys.exit(main())

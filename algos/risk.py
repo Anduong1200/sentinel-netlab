@@ -12,7 +12,6 @@ Changes from v1:
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +19,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScoringWeights:
     """Configurable weights for risk factors"""
-    encryption: float = 0.50      # Increased from 0.35
+
+    encryption: float = 0.50  # Increased from 0.35
     signal_strength: float = 0.10
-    ssid_pattern: float = 0.20    # Increased from 0.15
-    vendor: float = 0.05          # Reduced
+    ssid_pattern: float = 0.20  # Increased from 0.15
+    vendor: float = 0.05  # Reduced
     channel: float = 0.05
     beacon_interval: float = 0.05
     privacy_flags: float = 0.05
@@ -38,11 +38,14 @@ class EnhancedRiskScorer:
     - ML-ready interface
     """
 
-    def __init__(self, config_path: str = "sensor/risk_weights.yaml",
-                 whitelist: Optional[list[str]] = None,
-                 ml_model_path: Optional[str] = None):
+    def __init__(
+        self,
+        config_path: str = "sensor/risk_weights.yaml",
+        whitelist: list[str] | None = None,
+        ml_model_path: str | None = None,
+    ):
         self.config = self._load_config(config_path)
-        self.weights = self.config.get('weights', {})
+        self.weights = self.config.get("weights", {})
         self.whitelist = set(whitelist or [])
 
         # Load ML Model if available
@@ -52,8 +55,12 @@ class EnhancedRiskScorer:
                 # Add project root to path to find ml module
                 import os
                 import sys
-                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+                sys.path.append(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
                 from ml.anomaly_model import detect_anomaly, load_model
+
                 # 10 features assumed from FeatureExtractor
                 self.ml_model = load_model(ml_model_path, input_dim=10)
                 self.detect_anomaly_fn = detect_anomaly
@@ -62,6 +69,7 @@ class EnhancedRiskScorer:
 
         # Initialize modular Feature Extractor
         from .features import FeatureExtractor
+
         self.feature_extractor = FeatureExtractor(config=self.config)
 
         # Metrics for validation
@@ -71,10 +79,12 @@ class EnhancedRiskScorer:
         try:
             with open(path) as f:
                 import yaml
+
                 return yaml.safe_load(f)
         except Exception as e:
             logger.warning(
-                f"Failed to load risk config from {path}: {e}. Using defaults.")
+                f"Failed to load risk config from {path}: {e}. Using defaults."
+            )
             return {
                 "weights": {
                     "encryption": 0.40,
@@ -85,12 +95,18 @@ class EnhancedRiskScorer:
                     "wps_flag": 0.06,
                     "channel_crowd": 0.04,
                     "hidden_ssid": 0.05,
-                    "temporal": 0.05
+                    "temporal": 0.05,
                 }
             }
 
-    def calculate_risk(self, network: dict,
-                       ground_truth_label: Optional[str] = None) -> dict:
+    def score(self, network: dict) -> int:
+        """Legacy compatibility method returning integer score."""
+        result = self.calculate_risk(network)
+        return int(result.get("risk_score", 0))
+
+    def calculate_risk(
+        self, network: dict, ground_truth_label: str | None = None
+    ) -> dict:
         """
         Calculate risk score using modular features and configurable weights.
         """
@@ -104,7 +120,7 @@ class EnhancedRiskScorer:
                 "confidence": 1.0,
                 "features": {},
                 "explain": {},
-                "contributing_factors": []
+                "contributing_factors": [],
             }
 
         # 1. Extract Features via separate module
@@ -132,16 +148,21 @@ class EnhancedRiskScorer:
             try:
                 # Construct vector matching input_dim=10
                 vec = [
-                    features.get("enc_score", 0), features.get("rssi_norm", 0),
-                    features.get("ssid_suspicious", 0), features.get("ssid_hidden", 0),
-                    features.get("vendor_trust", 0), features.get("channel_unusual", 0),
-                    features.get("beacon_anomaly", 0), features.get("wps_flag", 0),
-                    features.get("temporal_new", 0), features.get("privacy_concern", 0)
+                    features.get("enc_score", 0),
+                    features.get("rssi_norm", 0),
+                    features.get("ssid_suspicious", 0),
+                    features.get("ssid_hidden", 0),
+                    features.get("vendor_trust", 0),
+                    features.get("channel_unusual", 0),
+                    features.get("beacon_anomaly", 0),
+                    features.get("wps_flag", 0),
+                    features.get("temporal_new", 0),
+                    features.get("privacy_concern", 0),
                 ]
                 is_anomaly, loss = self.detect_anomaly_fn(self.ml_model, [vec])
                 if is_anomaly:
-                     raw_score += 0.2  # 20% boost for anomalies
-                     features['ml_anomaly'] = 1.0
+                    raw_score += 0.2  # 20% boost for anomalies
+                    features["ml_anomaly"] = 1.0
             except Exception as e:
                 logger.debug(f"ML Scoring failed: {e}")
 
@@ -149,10 +170,10 @@ class EnhancedRiskScorer:
         risk_score = min(100, int(raw_score * 100))
 
         # 3. Determine Risk Level
-        thresholds = self.config.get('thresholds', {'low': 40, 'medium': 70})
-        if risk_score >= thresholds['medium']:
+        thresholds = self.config.get("thresholds", {"low": 40, "medium": 70})
+        if risk_score >= thresholds["medium"]:
             risk_level = "High"
-        elif risk_score >= thresholds['low']:
+        elif risk_score >= thresholds["low"]:
             risk_level = "Medium"
         else:
             risk_level = "Low"
@@ -160,8 +181,9 @@ class EnhancedRiskScorer:
         # 4. Calculate Confidence (Availability of data)
         # Simplified: Check distinct non-default keys in features or raw network
         # (Assuming the extractor provides 10 features, we assume High confidence if basic fields present)
-        av_fields = sum(1 for k, v in features.items()
-                        if v != 0.5)  # 0.5 is often default
+        av_fields = sum(
+            1 for k, v in features.items() if v != 0.5
+        )  # 0.5 is often default
         # Heuristic: 5 indicators = 100% conf
         confidence = min(1.0, round(av_fields / 5.0, 2))
 
@@ -188,7 +210,7 @@ class EnhancedRiskScorer:
             "confidence": confidence,
             "features": features,
             "explain": explain,
-            "contributing_factors": factors
+            "contributing_factors": factors,
         }
 
         return result
@@ -205,7 +227,7 @@ class EnhancedRiskScorer:
             "beacon_anomaly": "beacon_anomaly",
             "wps_flag": "wps_flag",
             "temporal": "temporal_new",
-            "privacy_flags": "privacy_concern"
+            "privacy_flags": "privacy_concern",
         }
         return mapping.get(weight_key)
 
@@ -236,8 +258,11 @@ class EnhancedRiskScorer:
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision
-                                         + recall) if (precision + recall) > 0 else 0
+        f1 = (
+            2 * (precision * recall) / (precision + recall)
+            if (precision + recall) > 0
+            else 0
+        )
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         accuracy = (tp + tn) / total if total > 0 else 0
 
@@ -251,11 +276,10 @@ class EnhancedRiskScorer:
             "recall": round(recall, 4),
             "f1_score": round(f1, 4),
             "false_positive_rate": round(fpr, 4),
-            "accuracy": round(accuracy, 4)
+            "accuracy": round(accuracy, 4),
         }
 
-    def calibrate_weights_from_data(
-            self, labeled_data: list[dict]) -> ScoringWeights:
+    def calibrate_weights_from_data(self, labeled_data: list[dict]) -> ScoringWeights:
         """
         Simple weight calibration using labeled data.
         """
@@ -271,7 +295,7 @@ class EnhancedRiskScorer:
             {
                 "features": pred["features"],
                 "score": pred["score"],
-                "label": pred["actual"]
+                "label": pred["actual"],
             }
             for pred in self.predictions
         ]
@@ -280,6 +304,7 @@ class EnhancedRiskScorer:
 # Backward compatibility with original RiskScorer
 class RiskScorerV2(EnhancedRiskScorer):
     """Alias for enhanced scorer"""
+
     pass
 
 
@@ -296,7 +321,7 @@ if __name__ == "__main__":
         "encryption": "Open",
         "signal": -45,
         "channel": 6,
-        "vendor": "Unknown"
+        "vendor": "Unknown",
     }
 
     result = scorer.calculate_risk(test_net, ground_truth_label="malicious")

@@ -19,17 +19,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
+# Copy project definition
+COPY pyproject.toml .
 
 # Create venv and install
 RUN python -m venv /opt/venv && \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir .
 
-# Copy sensor code
+# Copy application code
 COPY sensor/ ./sensor/
 COPY algos/ ./algos/
+COPY common/ ./common/
+COPY sentinel.py .
 COPY config.example.yaml ./config.yaml
 
 # Create non-root user
@@ -39,9 +41,8 @@ RUN groupadd --gid 1000 sensor && \
 
 USER sensor
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -sf http://localhost:9090/health || exit 1
+# Health check (requires sensor/monitoring to be active or removed check if deprecated)
+# Keeping for now but strictly speaking CLI might not expose HTTP unless configured.
 
-# Default: run in mock mode
-CMD ["python", "-m", "sensor.main", "--mock", "--controller-url", "${CONTROLLER_URL:-http://controller:5000}"]
+# Default: run in monitor mode via sentinel.py
+CMD ["/bin/bash", "-c", "python sentinel.py monitor --sensor-id ${SENSOR_ID:-docker-sensor} --iface ${SENSOR_IFACE:-wlan0} ${SENSOR_MOCK_MODE:+--mock-mode} --upload-url ${CONTROLLER_URL:-http://controller:5000/api/v1/telemetry} --auth-token ${SENSOR_AUTH_TOKEN:-sentinel-dev-2024}"]

@@ -19,6 +19,7 @@ from typing import Any
 
 try:
     from pydantic import BaseModel, Field, validator
+
     PYDANTIC_AVAILABLE = True
 except ImportError:
     PYDANTIC_AVAILABLE = False
@@ -31,11 +32,16 @@ except ImportError:
         def dict(self, **kwargs):
             d = {}
             for k, v in self.__dict__.items():
-                if hasattr(v, 'dict'):
+                if hasattr(v, "dict"):
                     d[k] = v.dict()
                 elif isinstance(v, list):
-                    d[k] = [x.dict() if hasattr(x, 'dict') else (x.value if hasattr(x, 'value') else x) for x in v]
-                elif hasattr(v, 'value'):
+                    d[k] = [
+                        x.dict()
+                        if hasattr(x, "dict")
+                        else (x.value if hasattr(x, "value") else x)
+                        for x in v
+                    ]
+                elif hasattr(v, "value"):
                     d[k] = v.value
                 else:
                     d[k] = v
@@ -51,6 +57,7 @@ except ImportError:
 # =============================================================================
 # ENUMS
 # =============================================================================
+
 
 class SecurityType(str, Enum):
     OPEN = "open"
@@ -95,8 +102,10 @@ class LabelSource(str, Enum):
 # TELEMETRY SCHEMAS
 # =============================================================================
 
+
 class Capabilities(BaseModel):
     """WiFi AP capabilities"""
+
     privacy: bool = False
     pmf: bool = False
     wps: bool = False
@@ -105,18 +114,23 @@ class Capabilities(BaseModel):
     he: bool = False
 
     class Config:
-        extra = 'allow'
+        extra = "allow"
+
 
 class RSNInfo(BaseModel):
     """RSN/WPA2 information"""
+
     akm: list[str] = Field(default_factory=list)
     pairwise: list[str] = Field(default_factory=list)
     group: str | None = None
 
+
 class TelemetryItem(BaseModel):
     """Single telemetry data point from sensor"""
-    bssid: str = Field(..., regex=r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$',
-                       description="AP MAC address")
+
+    bssid: str = Field(
+        ..., regex=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$", description="AP MAC address"
+    )
     ssid: str | None = Field(None, max_length=32, description="Network name")
     channel: int | None = Field(None, ge=1, le=200, description="WiFi channel")
     rssi_dbm: int | None = Field(None, ge=-120, le=0, description="Signal strength")
@@ -133,38 +147,47 @@ class TelemetryItem(BaseModel):
     timestamp: str | None = None
 
     class Config:
-        extra = 'allow'
+        extra = "allow"
         use_enum_values = True
+
 
 class TelemetryBatch(BaseModel):
     """Batch of telemetry from sensor"""
+
     sensor_id: str = Field(..., min_length=1, max_length=64)
     batch_id: str | None = Field(None, max_length=64)
     timestamp_utc: str = Field(..., description="ISO8601 timestamp")
-    sequence_number: int | None = Field(None, ge=0, description="Monotonic counter for replay protection")
+    sequence_number: int | None = Field(
+        None, ge=0, description="Monotonic counter for replay protection"
+    )
     items: list[TelemetryItem] = Field(..., max_items=1000)
 
-    @validator('timestamp_utc')
+    @validator("timestamp_utc")
     def validate_iso8601(cls, v):
         try:
-            datetime.fromisoformat(v.replace('Z', '+00:00'))
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
         except ValueError:
-            raise ValueError('Must be ISO8601 format')
+            raise ValueError("Must be ISO8601 format")
         return v
+
 
 # =========================================================================
 # ALERT SCHEMAS
 # =========================================================================
 
+
 class AlertEvidence(BaseModel):
     """Evidence attached to alert"""
+
     frame_count: int | None = None
     pcap_reference: str | None = None
     screenshot: str | None = None
     raw_data: dict[str, Any] | None = None
 
+
 class AlertCreate(BaseModel):
     """Request to create an alert"""
+
     alert_type: AlertType
     severity: AlertSeverity
     title: str = Field(..., max_length=200)
@@ -174,15 +197,17 @@ class AlertCreate(BaseModel):
     ssid: str | None = None
 
     evidence: AlertEvidence | None = None
-    mitre_attack: str | None = Field(None, regex=r'^T\d{4}(\.\d{3})?$')
+    mitre_attack: str | None = Field(None, regex=r"^T\d{4}(\.\d{3})?$")
 
     confidence: float | None = Field(None, ge=0, le=1)
 
     class Config:
         use_enum_values = True
 
+
 class Alert(AlertCreate):
     """Full alert object"""
+
     id: str
     sensor_id: str
     created_at: str
@@ -190,19 +215,24 @@ class Alert(AlertCreate):
     resolved_at: str | None = None
     resolved_by: str | None = None
 
+
 # =========================================================================
 # SENSOR SCHEMAS
 # =========================================================================
 
+
 class SensorMetrics(BaseModel):
     """Runtime metrics from sensor"""
+
     cpu_percent: float | None = Field(None, ge=0, le=100)
     memory_percent: float | None = Field(None, ge=0, le=100)
     frames_captured: int | None = Field(None, ge=0)
     uptime_seconds: int | None = Field(None, ge=0)
 
+
 class SensorHeartbeat(BaseModel):
     """Sensor heartbeat request"""
+
     sensor_id: str = Field(..., min_length=1, max_length=64)
     status: SensorStatus = SensorStatus.ONLINE
     metrics: SensorMetrics | None = None
@@ -211,19 +241,24 @@ class SensorHeartbeat(BaseModel):
     class Config:
         use_enum_values = True
 
+
 class SensorRegistration(BaseModel):
     """Sensor registration request"""
+
     sensor_id: str = Field(..., min_length=1, max_length=64)
     name: str | None = Field(None, max_length=128)
     location: str | None = None
     capabilities: dict[str, Any] | None = None
 
+
 # =========================================================================
 # ML DATASET SCHEMAS
 # =========================================================================
 
+
 class MLFeatures(BaseModel):
     """Computed features for ML"""
+
     rssi_zscore: float | None = None
     duplicate_ssid_count: int | None = None
     vendor_mismatch: bool | None = None
@@ -232,13 +267,15 @@ class MLFeatures(BaseModel):
     is_new_appearance: bool | None = None
     ie_anomaly_score: float | None = None
 
+
 class MLLabeledRecord(BaseModel):
     """Labeled record for ML training"""
+
     id: str
     timestamp_utc: str
     sensor_id: str | None = None
 
-    bssid: str = Field(..., regex=r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
+    bssid: str = Field(..., regex=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     ssid: str | None = None
     channel: int | None = None
     rssi_dbm: int | None = None
@@ -258,6 +295,7 @@ class MLLabeledRecord(BaseModel):
 # =============================================================================
 # JSON SCHEMA GENERATION
 # =============================================================================
+
 
 def generate_json_schemas(output_dir: str = "sensor/schema"):
     """Generate JSON Schema files from Pydantic models"""
@@ -281,10 +319,10 @@ def generate_json_schemas(output_dir: str = "sensor/schema"):
 
     for name, model in schemas.items():
         schema = model.schema()
-        schema['$schema'] = 'https://json-schema.org/draft/2020-12/schema'
+        schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
 
         filepath = output_path / f"{name}.schema.json"
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(schema, f, indent=2)
         print(f"Generated: {filepath}")
 
@@ -293,12 +331,14 @@ def generate_json_schemas(output_dir: str = "sensor/schema"):
 # CLI
 # =============================================================================
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--generate-json', action='store_true', help='Generate JSON schemas')
-    parser.add_argument('--output', default='sensor/schema', help='Output directory')
+    parser.add_argument(
+        "--generate-json", action="store_true", help="Generate JSON schemas"
+    )
+    parser.add_argument("--output", default="sensor/schema", help="Output directory")
 
     args = parser.parse_args()
 

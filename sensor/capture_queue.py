@@ -8,10 +8,10 @@ Separates capture (fast) from processing (slow) to prevent packet loss.
 import logging
 import multiprocessing as mp
 import queue
-import subprocess
+import subprocess  # nosec B404
 import threading
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class CaptureProducer(mp.Process):
         interface: str,
         channels: list[int],
         stop_event: mp.Event,
-        dwell_time: float = 0.5
+        dwell_time: float = 0.5,
     ):
         super().__init__(daemon=True)
         self.packet_queue = packet_queue
@@ -42,12 +42,17 @@ class CaptureProducer(mp.Process):
     def enable_monitor_mode(self):
         """Enable monitor mode."""
         try:
-            subprocess.run(["ip", "link", "set", self.interface,
-                           "down"], check=True, timeout=5)
-            subprocess.run(["iw", "dev", self.interface, "set",
-                           "type", "monitor"], check=True, timeout=5)
-            subprocess.run(["ip", "link", "set", self.interface,
-                           "up"], check=True, timeout=5)
+            subprocess.run(
+                ["ip", "link", "set", self.interface, "down"], check=True, timeout=5
+            )
+            subprocess.run(
+                ["iw", "dev", self.interface, "set", "type", "monitor"],
+                check=True,
+                timeout=5,
+            )
+            subprocess.run(
+                ["ip", "link", "set", self.interface, "up"], check=True, timeout=5
+            )
             return True
         except Exception as e:
             logger.error(f"Monitor mode failed: {e}")
@@ -58,7 +63,8 @@ class CaptureProducer(mp.Process):
         try:
             subprocess.run(
                 ["iw", "dev", self.interface, "set", "channel", str(channel)],
-                timeout=2, capture_output=True
+                timeout=2,
+                capture_output=True,
             )
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
             pass
@@ -73,33 +79,34 @@ class CaptureProducer(mp.Process):
         # -f: BPF filter
         cmd = [
             "dumpcap",
-            "-i", self.interface,
+            "-i",
+            self.interface,
             "-P",  # pcapng
-            "-w", "-",  # stdout
-            "-f", "type mgt or ether proto 0x888e",
-            "-q"
+            "-w",
+            "-",  # stdout
+            "-f",
+            "type mgt or ether proto 0x888e",
+            "-q",
         ]
 
         try:
             self.capture_process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
             )
         except FileNotFoundError:
             # Fallback to tshark
             cmd = [
                 "tshark",
-                "-i", self.interface,
-                "-T", "ek",  # Elastic/JSON format for streaming
+                "-i",
+                self.interface,
+                "-T",
+                "ek",  # Elastic/JSON format for streaming
                 "-l",  # Line buffered
-                "-f", "type mgt or ether proto 0x888e"
+                "-f",
+                "type mgt or ether proto 0x888e",
             ]
             self.capture_process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True
             )
 
         # Channel hopper thread
@@ -120,20 +127,30 @@ class CaptureProducer(mp.Process):
                 if line:
                     try:
                         # Push to queue (non-blocking)
-                        self.packet_queue.put_nowait({
-                            "timestamp": time.time(),
-                            "data": line.strip() if isinstance(line, str) else line,
-                            "channel": self.channels[(channel_idx - 1) % len(self.channels)]
-                        })
+                        self.packet_queue.put_nowait(
+                            {
+                                "timestamp": time.time(),
+                                "data": line.strip() if isinstance(line, str) else line,
+                                "channel": self.channels[
+                                    (channel_idx - 1) % len(self.channels)
+                                ],
+                            }
+                        )
                     except queue.Full:
                         # Queue full, drop oldest
                         try:
                             self.packet_queue.get_nowait()
-                            self.packet_queue.put_nowait({
-                                "timestamp": time.time(),
-                                "data": line.strip() if isinstance(line, str) else line,
-                                "channel": self.channels[(channel_idx - 1) % len(self.channels)]
-                            })
+                            self.packet_queue.put_nowait(
+                                {
+                                    "timestamp": time.time(),
+                                    "data": line.strip()
+                                    if isinstance(line, str)
+                                    else line,
+                                    "channel": self.channels[
+                                        (channel_idx - 1) % len(self.channels)
+                                    ],
+                                }
+                            )
                         except (queue.Full, queue.Empty):
                             pass
             except OSError:
@@ -156,9 +173,9 @@ class CaptureConsumer(threading.Thread):
         self,
         packet_queue: mp.Queue,
         stop_event: mp.Event,
-        packet_callback: Optional[Callable] = None,
+        packet_callback: Callable | None = None,
         batch_size: int = 50,
-        batch_timeout: float = 1.0
+        batch_timeout: float = 1.0,
     ):
         super().__init__(daemon=True)
         self.packet_queue = packet_queue
@@ -170,7 +187,7 @@ class CaptureConsumer(threading.Thread):
         self.stats = {
             "packets_processed": 0,
             "batches_processed": 0,
-            "queue_max_size": 0
+            "queue_max_size": 0,
         }
 
     def run(self):
@@ -191,8 +208,10 @@ class CaptureConsumer(threading.Thread):
                     self.stats["queue_max_size"] = qsize
 
                 # Process batch when full or timeout
-                if len(batch) >= self.batch_size or (
-                        time.time() - last_flush) >= self.batch_timeout:
+                if (
+                    len(batch) >= self.batch_size
+                    or (time.time() - last_flush) >= self.batch_timeout
+                ):
                     self._process_batch(batch)
                     batch = []
                     last_flush = time.time()
@@ -232,20 +251,20 @@ class ProducerConsumerEngine:
         self,
         interface: str = "wlan0",
         queue_size: int = 10000,
-        channels: Optional[list[int]] = None
+        channels: list[int] | None = None,
     ):
         self.interface = interface
         self.queue_size = queue_size
         self.channels = channels or [1, 6, 11]
 
-        self.packet_queue: Optional[mp.Queue] = None
-        self.stop_event: Optional[mp.Event] = None
-        self.producer: Optional[CaptureProducer] = None
-        self.consumer: Optional[CaptureConsumer] = None
+        self.packet_queue: mp.Queue | None = None
+        self.stop_event: mp.Event | None = None
+        self.producer: CaptureProducer | None = None
+        self.consumer: CaptureConsumer | None = None
 
         self.is_capturing = False
 
-    def start(self, packet_callback: Optional[Callable] = None) -> bool:
+    def start(self, packet_callback: Callable | None = None) -> bool:
         """Start capture engine."""
         if self.is_capturing:
             return False
@@ -259,7 +278,7 @@ class ProducerConsumerEngine:
             packet_queue=self.packet_queue,
             interface=self.interface,
             channels=self.channels,
-            stop_event=self.stop_event
+            stop_event=self.stop_event,
         )
         self.producer.start()
 
@@ -267,7 +286,7 @@ class ProducerConsumerEngine:
         self.consumer = CaptureConsumer(
             packet_queue=self.packet_queue,
             stop_event=self.stop_event,
-            packet_callback=packet_callback
+            packet_callback=packet_callback,
         )
         self.consumer.start()
 
@@ -302,14 +321,14 @@ class ProducerConsumerEngine:
             "channels": self.channels,
             "queue_size": self.packet_queue.qsize() if self.packet_queue else 0,
             "queue_capacity": self.queue_size,
-            "consumer_stats": self.consumer.stats if self.consumer else {}}
+            "consumer_stats": self.consumer.stats if self.consumer else {},
+        }
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Producer-Consumer Capture Engine")
+    parser = argparse.ArgumentParser(description="Producer-Consumer Capture Engine")
     parser.add_argument("-i", "--interface", default="wlan0")
     parser.add_argument("-c", "--channels", default="1,6,11")
     parser.add_argument("-t", "--duration", type=int, default=30)
@@ -330,9 +349,7 @@ if __name__ == "__main__":
             print(f"Processed {packet_count['value']} packets")
 
     engine = ProducerConsumerEngine(
-        interface=args.interface,
-        queue_size=args.queue_size,
-        channels=channels
+        interface=args.interface, queue_size=args.queue_size, channels=channels
     )
 
     print(f"Interface: {args.interface}")
@@ -347,7 +364,8 @@ if __name__ == "__main__":
             time.sleep(1)
             status = engine.get_status()
             print(
-                f"[{i+1}s] Queue: {status['queue_size']}/{status['queue_capacity']}")
+                f"[{i + 1}s] Queue: {status['queue_size']}/{status['queue_capacity']}"
+            )
     except KeyboardInterrupt:
         pass
 

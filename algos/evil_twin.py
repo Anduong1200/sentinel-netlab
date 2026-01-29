@@ -15,8 +15,8 @@ import statistics
 import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,11 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION (Tunable Parameters)
 # =============================================================================
 
+
 @dataclass
 class EvilTwinConfig:
     """Configuration for Evil Twin detection"""
+
     # Thresholds
     rssi_delta_threshold: int = 15  # dB difference to flag
     jitter_threshold_ms: float = 10.0  # Beacon interval jitter
@@ -59,11 +61,13 @@ class EvilTwinConfig:
 # DATA STRUCTURES
 # =============================================================================
 
+
 @dataclass
 class APProfile:
     """Profile for a tracked Access Point"""
+
     bssid: str
-    ssid: Optional[str]
+    ssid: str | None
     channel: int
     vendor_oui: str
     security_type: str  # OPEN, WEP, WPA2, WPA3
@@ -93,15 +97,23 @@ class APProfile:
 
     @property
     def rssi_std(self) -> float:
-        return statistics.stdev(self.rssi_samples) if len(self.rssi_samples) > 1 else 0.0
+        return (
+            statistics.stdev(self.rssi_samples) if len(self.rssi_samples) > 1 else 0.0
+        )
 
     @property
     def avg_beacon_interval(self) -> float:
-        return statistics.mean(self.beacon_intervals) if self.beacon_intervals else 100.0
+        return (
+            statistics.mean(self.beacon_intervals) if self.beacon_intervals else 100.0
+        )
 
     @property
     def beacon_jitter(self) -> float:
-        return statistics.stdev(self.beacon_intervals) if len(self.beacon_intervals) > 1 else 0.0
+        return (
+            statistics.stdev(self.beacon_intervals)
+            if len(self.beacon_intervals) > 1
+            else 0.0
+        )
 
     def is_new_appearance(self, window_minutes: int) -> bool:
         return (time.time() - self.first_seen) < (window_minutes * 60)
@@ -110,6 +122,7 @@ class APProfile:
 @dataclass
 class EvilTwinEvidence:
     """Evidence structure for an Evil Twin alert"""
+
     original_bssid: str
     suspect_bssid: str
     ssid: str
@@ -132,12 +145,13 @@ class EvilTwinEvidence:
 
     # Sensor info
     sensor_ids: list[str] = field(default_factory=list)
-    gps_coords: Optional[tuple[float, float]] = None
+    gps_coords: tuple[float, float] | None = None
 
 
 @dataclass
 class EvilTwinAlert:
     """Alert output for Evil Twin detection"""
+
     alert_id: str
     timestamp: str
     severity: str  # CRITICAL, HIGH, MEDIUM, LOW
@@ -159,6 +173,7 @@ class EvilTwinAlert:
 # ADVANCED EVIL TWIN DETECTOR
 # =============================================================================
 
+
 class AdvancedEvilTwinDetector:
     """
     Advanced Evil Twin detector with weighted scoring model.
@@ -172,7 +187,7 @@ class AdvancedEvilTwinDetector:
     6. Emit alert with evidence
     """
 
-    def __init__(self, config: Optional[EvilTwinConfig] = None):
+    def __init__(self, config: EvilTwinConfig | None = None):
         self.config = config or EvilTwinConfig()
 
         # State
@@ -202,8 +217,8 @@ class AdvancedEvilTwinDetector:
         alerts = []
 
         # Extract fields
-        bssid = telemetry.get('bssid', '').upper()
-        ssid = telemetry.get('ssid')
+        bssid = telemetry.get("bssid", "").upper()
+        ssid = telemetry.get("ssid")
         if not bssid or not ssid:
             return alerts
 
@@ -254,40 +269,40 @@ class AdvancedEvilTwinDetector:
         else:
             profile = APProfile(
                 bssid=bssid,
-                ssid=telemetry.get('ssid'),
-                channel=telemetry.get('channel', 0),
-                vendor_oui=telemetry.get('vendor_oui', bssid[:8]),
+                ssid=telemetry.get("ssid"),
+                channel=telemetry.get("channel", 0),
+                vendor_oui=telemetry.get("vendor_oui", bssid[:8]),
                 security_type=self._parse_security(telemetry),
-                rsn_capabilities=telemetry.get('rsn_info', {}),
-                wpa_info=telemetry.get('wpa_info', {}),
-                pmf_required=telemetry.get('capabilities', {}).get('pmf', False),
-                wps_enabled=telemetry.get('capabilities', {}).get('wps', False),
+                rsn_capabilities=telemetry.get("rsn_info", {}),
+                wpa_info=telemetry.get("wpa_info", {}),
+                pmf_required=telemetry.get("capabilities", {}).get("pmf", False),
+                wps_enabled=telemetry.get("capabilities", {}).get("wps", False),
                 first_seen=now,
                 last_seen=now,
                 observation_count=1,
-                ies_present=telemetry.get('ies_present', []),
-                vendor_ies=telemetry.get('vendor_specific', [])
+                ies_present=telemetry.get("ies_present", []),
+                vendor_ies=telemetry.get("vendor_specific", []),
             )
             self.ap_profiles[bssid] = profile
 
         # Update metrics
-        rssi = telemetry.get('rssi_dbm')
+        rssi = telemetry.get("rssi_dbm")
         if rssi is not None:
             profile.rssi_samples.append(rssi)
             if len(profile.rssi_samples) > 100:
                 profile.rssi_samples = profile.rssi_samples[-100:]
 
-        beacon = telemetry.get('beacon_interval')
+        beacon = telemetry.get("beacon_interval")
         if beacon:
             profile.beacon_intervals.append(beacon)
             if len(profile.beacon_intervals) > 50:
                 profile.beacon_intervals = profile.beacon_intervals[-50:]
 
-        channel = telemetry.get('channel')
+        channel = telemetry.get("channel")
         if channel:
             profile.channels_seen.add(channel)
 
-        sensor_id = telemetry.get('sensor_id')
+        sensor_id = telemetry.get("sensor_id")
         if sensor_id:
             profile.sensor_ids.add(sensor_id)
 
@@ -295,23 +310,21 @@ class AdvancedEvilTwinDetector:
 
     def _parse_security(self, telemetry: dict) -> str:
         """Parse security type from telemetry"""
-        caps = telemetry.get('capabilities', {})
-        rsn = telemetry.get('rsn_info', {})
+        caps = telemetry.get("capabilities", {})
+        rsn = telemetry.get("rsn_info", {})
 
-        if not caps.get('privacy', False):
-            return 'OPEN'
-        if rsn.get('akm') and 'SAE' in str(rsn.get('akm', [])):
-            return 'WPA3'
+        if not caps.get("privacy", False):
+            return "OPEN"
+        if rsn.get("akm") and "SAE" in str(rsn.get("akm", [])):
+            return "WPA3"
         if rsn:
-            return 'WPA2'
-        if telemetry.get('wpa_info'):
-            return 'WPA'
-        return 'WEP'
+            return "WPA2"
+        if telemetry.get("wpa_info"):
+            return "WPA"
+        return "WEP"
 
     def _calculate_score(
-        self,
-        original: APProfile,
-        suspect: APProfile
+        self, original: APProfile, suspect: APProfile
     ) -> tuple[int, EvilTwinEvidence]:
         """
         Calculate Evil Twin score using weighted features.
@@ -368,25 +381,25 @@ class AdvancedEvilTwinDetector:
             is_new_appearance=is_new,
             duplicate_count=len(self.ssid_to_bssids.get(original.ssid, set())),
             original_profile={
-                'bssid': original.bssid,
-                'avg_rssi': original.avg_rssi,
-                'security': original.security_type,
-                'vendor': original.vendor_oui,
-                'observations': original.observation_count,
-                'channels': list(original.channels_seen)
+                "bssid": original.bssid,
+                "avg_rssi": original.avg_rssi,
+                "security": original.security_type,
+                "vendor": original.vendor_oui,
+                "observations": original.observation_count,
+                "channels": list(original.channels_seen),
             },
             suspect_profile={
-                'bssid': suspect.bssid,
-                'avg_rssi': suspect.avg_rssi,
-                'security': suspect.security_type,
-                'vendor': suspect.vendor_oui,
-                'observations': suspect.observation_count,
-                'first_seen': datetime.fromtimestamp(
-                    suspect.first_seen, tz=timezone.utc
-                ).isoformat()
+                "bssid": suspect.bssid,
+                "avg_rssi": suspect.avg_rssi,
+                "security": suspect.security_type,
+                "vendor": suspect.vendor_oui,
+                "observations": suspect.observation_count,
+                "first_seen": datetime.fromtimestamp(
+                    suspect.first_seen, tz=UTC
+                ).isoformat(),
             },
             sensor_ids=list(suspect.sensor_ids | original.sensor_ids),
-            ie_differences=self._diff_ies(original, suspect)
+            ie_differences=self._diff_ies(original, suspect),
         )
 
         return min(100, score), evidence
@@ -407,10 +420,14 @@ class AdvancedEvilTwinDetector:
             diffs.append(f"Extra IEs: {list(extra)}")
 
         if original.wps_enabled != suspect.wps_enabled:
-            diffs.append(f"WPS mismatch: orig={original.wps_enabled}, suspect={suspect.wps_enabled}")
+            diffs.append(
+                f"WPS mismatch: orig={original.wps_enabled}, suspect={suspect.wps_enabled}"
+            )
 
         if original.pmf_required != suspect.pmf_required:
-            diffs.append(f"PMF mismatch: orig={original.pmf_required}, suspect={suspect.pmf_required}")
+            diffs.append(
+                f"PMF mismatch: orig={original.pmf_required}, suspect={suspect.pmf_required}"
+            )
 
         return diffs
 
@@ -419,8 +436,8 @@ class AdvancedEvilTwinDetector:
         original: APProfile,
         suspect: APProfile,
         score: int,
-        evidence: EvilTwinEvidence
-    ) -> Optional[EvilTwinAlert]:
+        evidence: EvilTwinEvidence,
+    ) -> EvilTwinAlert | None:
         """
         Handle detection with temporal confirmation.
         Require persistence to reduce transient FPs.
@@ -431,12 +448,12 @@ class AdvancedEvilTwinDetector:
         if key not in self.pending_alerts:
             # First detection - start confirmation window
             self.pending_alerts[key] = {
-                'score': score,
-                'evidence': evidence,
-                'first_seen': now,
-                'count': 1,
-                'original': original.bssid,
-                'suspect': suspect.bssid
+                "score": score,
+                "evidence": evidence,
+                "first_seen": now,
+                "count": 1,
+                "original": original.bssid,
+                "suspect": suspect.bssid,
             }
 
             # Immediate alert for critical score
@@ -448,15 +465,15 @@ class AdvancedEvilTwinDetector:
         else:
             # Update existing
             pending = self.pending_alerts[key]
-            pending['count'] += 1
-            pending['score'] = max(pending['score'], score)
+            pending["count"] += 1
+            pending["score"] = max(pending["score"], score)
 
             # Check confirmation window
-            elapsed = now - pending['first_seen']
+            elapsed = now - pending["first_seen"]
             if elapsed >= self.config.confirmation_window_seconds:
                 # Confirmed - emit alert
                 del self.pending_alerts[key]
-                return self._create_alert(pending['score'], evidence)
+                return self._create_alert(pending["score"], evidence)
 
             return None
 
@@ -480,13 +497,13 @@ class AdvancedEvilTwinDetector:
             not evidence.vendor_match,
             not evidence.security_match,
             evidence.is_new_appearance,
-            len(evidence.ie_differences) > 0
+            len(evidence.ie_differences) > 0,
         ]
         confidence = sum(confidence_factors) / len(confidence_factors)
 
         return EvilTwinAlert(
             alert_id=f"ET-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alerts_generated:04d}",
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             severity=severity,
             score=score,
             confidence=round(confidence, 2),
@@ -496,7 +513,7 @@ class AdvancedEvilTwinDetector:
             mitre_technique=self.config.mitre_technique,
             mitre_tactic=self.config.mitre_tactic,
             evidence=asdict(evidence),
-            recommendation=self._get_recommendation(severity, evidence)
+            recommendation=self._get_recommendation(severity, evidence),
         )
 
     def _get_recommendation(self, severity: str, evidence: EvilTwinEvidence) -> str:
@@ -513,9 +530,7 @@ class AdvancedEvilTwinDetector:
                 "Cross-check with physical AP inventory. Monitor for client associations."
             )
         else:
-            return (
-                "Monitor: Unusual duplicate SSID detected. Review if legitimate roaming or guest AP."
-            )
+            return "Monitor: Unusual duplicate SSID detected. Review if legitimate roaming or guest AP."
 
     def _cleanup(self):
         """Periodic cleanup of old data"""
@@ -528,7 +543,8 @@ class AdvancedEvilTwinDetector:
 
         # Remove old profiles
         stale = [
-            bssid for bssid, profile in self.ap_profiles.items()
+            bssid
+            for bssid, profile in self.ap_profiles.items()
             if profile.last_seen < cutoff
         ]
         for bssid in stale:
@@ -538,14 +554,17 @@ class AdvancedEvilTwinDetector:
                 bssids.discard(bssid)
 
         # Remove empty SSID entries
-        empty_ssids = [ssid for ssid, bssids in self.ssid_to_bssids.items() if not bssids]
+        empty_ssids = [
+            ssid for ssid, bssids in self.ssid_to_bssids.items() if not bssids
+        ]
         for ssid in empty_ssids:
             del self.ssid_to_bssids[ssid]
 
         # Expire pending alerts
         expired = [
-            key for key, data in self.pending_alerts.items()
-            if now - data['first_seen'] > self.config.sliding_window_seconds
+            key
+            for key, data in self.pending_alerts.items()
+            if now - data["first_seen"] > self.config.sliding_window_seconds
         ]
         for key in expired:
             del self.pending_alerts[key]
@@ -557,17 +576,18 @@ class AdvancedEvilTwinDetector:
     def get_stats(self) -> dict:
         """Get detector statistics"""
         return {
-            'tracked_aps': len(self.ap_profiles),
-            'tracked_ssids': len(self.ssid_to_bssids),
-            'pending_alerts': len(self.pending_alerts),
-            'alerts_generated': self.alerts_generated,
-            'baseline_aps': len(self.baseline_profiles)
+            "tracked_aps": len(self.ap_profiles),
+            "tracked_ssids": len(self.ssid_to_bssids),
+            "pending_alerts": len(self.pending_alerts),
+            "alerts_generated": self.alerts_generated,
+            "baseline_aps": len(self.baseline_profiles),
         }
 
 
 # =============================================================================
 # CLI / DEMO
 # =============================================================================
+
 
 def main():
     """Demo the advanced detector"""
@@ -582,62 +602,70 @@ def main():
     # Simulate legitimate AP (build history)
     print("\n[+] Building baseline for 'CorporateWiFi'...")
     for i in range(50):
-        detector.ingest({
-            'bssid': 'AA:BB:CC:11:22:33',
-            'ssid': 'CorporateWiFi',
-            'channel': 6,
-            'rssi_dbm': -65 + (i % 5 - 2),  # Normal variation
-            'vendor_oui': 'AA:BB:CC',
-            'capabilities': {'privacy': True, 'pmf': True},
-            'rsn_info': {'akm': ['PSK']},
-            'beacon_interval': 100,
-            'sensor_id': 'sensor-01'
-        })
+        detector.ingest(
+            {
+                "bssid": "AA:BB:CC:11:22:33",
+                "ssid": "CorporateWiFi",
+                "channel": 6,
+                "rssi_dbm": -65 + (i % 5 - 2),  # Normal variation
+                "vendor_oui": "AA:BB:CC",
+                "capabilities": {"privacy": True, "pmf": True},
+                "rsn_info": {"akm": ["PSK"]},
+                "beacon_interval": 100,
+                "sensor_id": "sensor-01",
+            }
+        )
 
     print(f"    Tracked APs: {detector.get_stats()['tracked_aps']}")
 
     # Inject evil twin
     print("\n[!] Injecting Evil Twin AP...")
-    alerts = detector.ingest({
-        'bssid': 'DE:AD:BE:EF:00:01',
-        'ssid': 'CorporateWiFi',  # Same SSID
-        'channel': 6,
-        'rssi_dbm': -35,  # Much stronger (attacker closer)
-        'vendor_oui': 'DE:AD:BE',  # Different vendor!
-        'capabilities': {'privacy': True, 'pmf': False},  # Different PMF
-        'rsn_info': {'akm': ['PSK']},
-        'beacon_interval': 102,
-        'sensor_id': 'sensor-02',
-        'ies_present': ['SSID', 'RSN']  # Missing some IEs
-    })
+    alerts = detector.ingest(
+        {
+            "bssid": "DE:AD:BE:EF:00:01",
+            "ssid": "CorporateWiFi",  # Same SSID
+            "channel": 6,
+            "rssi_dbm": -35,  # Much stronger (attacker closer)
+            "vendor_oui": "DE:AD:BE",  # Different vendor!
+            "capabilities": {"privacy": True, "pmf": False},  # Different PMF
+            "rsn_info": {"akm": ["PSK"]},
+            "beacon_interval": 102,
+            "sensor_id": "sensor-02",
+            "ies_present": ["SSID", "RSN"],  # Missing some IEs
+        }
+    )
 
     # Since confirmation window, simulate second observation
     time.sleep(0.1)
     for _ in range(3):
-        alerts = detector.ingest({
-            'bssid': 'DE:AD:BE:EF:00:01',
-            'ssid': 'CorporateWiFi',
-            'channel': 6,
-            'rssi_dbm': -33,
-            'vendor_oui': 'DE:AD:BE',
-            'capabilities': {'privacy': True, 'pmf': False},
-            'rsn_info': {'akm': ['PSK']},
-            'beacon_interval': 105,
-            'sensor_id': 'sensor-02'
-        })
+        alerts = detector.ingest(
+            {
+                "bssid": "DE:AD:BE:EF:00:01",
+                "ssid": "CorporateWiFi",
+                "channel": 6,
+                "rssi_dbm": -33,
+                "vendor_oui": "DE:AD:BE",
+                "capabilities": {"privacy": True, "pmf": False},
+                "rsn_info": {"akm": ["PSK"]},
+                "beacon_interval": 105,
+                "sensor_id": "sensor-02",
+            }
+        )
 
     # Force confirmation with high score
     # In real scenario, this happens after confirmation_window_seconds
     detector.config.confirmation_window_seconds = 0  # Bypass for demo
-    alerts = detector.ingest({
-        'bssid': 'DE:AD:BE:EF:00:01',
-        'ssid': 'CorporateWiFi',
-        'channel': 6,
-        'rssi_dbm': -30,
-        'vendor_oui': 'DE:AD:BE',
-        'capabilities': {'privacy': True, 'pmf': False},
-        'sensor_id': 'sensor-02'
-    })
+    alerts = detector.ingest(
+        {
+            "bssid": "DE:AD:BE:EF:00:01",
+            "ssid": "CorporateWiFi",
+            "channel": 6,
+            "rssi_dbm": -30,
+            "vendor_oui": "DE:AD:BE",
+            "capabilities": {"privacy": True, "pmf": False},
+            "sensor_id": "sensor-02",
+        }
+    )
 
     if alerts:
         for alert in alerts:
@@ -655,5 +683,5 @@ def main():
     print(f"\n[+] Stats: {json.dumps(detector.get_stats(), indent=2)}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

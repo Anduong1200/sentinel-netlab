@@ -1,4 +1,3 @@
-
 import os
 import shutil
 import sys
@@ -8,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock
 
 # Add path to import modules
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sensor.capture_driver import MockCaptureDriver, RawFrame
 from sensor.sensor_controller import SensorController
@@ -16,6 +15,7 @@ from sensor.sensor_controller import SensorController
 
 class TestCaptureDriver(MockCaptureDriver):
     """Custom driver that yields a fixed sequence of frames"""
+
     def __init__(self, iface="test0", frames=None):
         super().__init__(iface)
         self.frames_to_send = frames or []
@@ -32,6 +32,7 @@ class TestCaptureDriver(MockCaptureDriver):
             self.sent_count += 1
             return frame
         return None
+
 
 class TestIntegrationFlow(unittest.TestCase):
     def setUp(self):
@@ -50,28 +51,26 @@ class TestIntegrationFlow(unittest.TestCase):
         # simple beacon: FC, Duration, Addrs, Seq, Timestamp, Interval, Caps, SSIDs
         # minimal valid frame for parser
         # Radiotap Header (8 bytes): Ver(1), Pad(1), Len(2), Present(4)
-        radiotap_header = b'\x00\x00\x08\x00\x00\x00\x00\x00'
+        radiotap_header = b"\x00\x00\x08\x00\x00\x00\x00\x00"
 
         dot11_header = (
-            b'\x80\x00' +                 # Frame Control (Beacon)
-            b'\x00\x00' +                 # Duration
-            b'\xff\xff\xff\xff\xff\xff' + # DA (Broadcast)
-            b'\xaa\xbb\xcc\xdd\xee\xff' + # SA (BSSID)
-            b'\xaa\xbb\xcc\xdd\xee\xff' + # BSSID
-            b'\x00\x00' +                 # Sequence
-            b'\x00' * 8 +                 # Timestamp
-            b'\x64\x00' +                 # Interval
-            b'\x11\x04' +                 # Capabilities
-            b'\x00\x07' + b'TestNet'      # SSID IE (Tag 0, Len 7, "TestNet")
+            b"\x80\x00"  # Frame Control (Beacon)
+            + b"\x00\x00"  # Duration
+            + b"\xff\xff\xff\xff\xff\xff"  # DA (Broadcast)
+            + b"\xaa\xbb\xcc\xdd\xee\xff"  # SA (BSSID)
+            + b"\xaa\xbb\xcc\xdd\xee\xff"  # BSSID
+            + b"\x00\x00"  # Sequence
+            + b"\x00" * 8  # Timestamp
+            + b"\x64\x00"  # Interval
+            + b"\x11\x04"  # Capabilities
+            + b"\x00\x07"
+            + b"TestNet"  # SSID IE (Tag 0, Len 7, "TestNet")
         )
 
         frame_data = radiotap_header + dot11_header
 
         test_frame = RawFrame(
-            data=frame_data,
-            timestamp=time.monotonic(),
-            channel=6,
-            iface="test0"
+            data=frame_data, timestamp=time.monotonic(), channel=6, iface="test0"
         )
 
         # Initialize controller in mock mode
@@ -80,9 +79,9 @@ class TestIntegrationFlow(unittest.TestCase):
             iface="test0",
             upload_url="http://mock-controller/api",
             storage_path=self.storage_path,
-            batch_size=1, # Upload/flush aggressively
-            upload_interval=1.0, # Fast upload
-            mock_mode=True
+            batch_size=1,  # Upload/flush aggressively
+            upload_interval=1.0,  # Fast upload
+            mock_mode=True,
         )
 
         # Override driver with our test driver
@@ -110,8 +109,12 @@ class TestIntegrationFlow(unittest.TestCase):
         stats = controller.status()
         print("Controller Status:", stats)
 
-        self.assertGreater(stats['frames_captured'], 0, "Should have captured at least 1 frame")
-        self.assertGreater(stats['frames_parsed'], 0, "Should have parsed at least 1 frame")
+        self.assertGreater(
+            stats["frames_captured"], 0, "Should have captured at least 1 frame"
+        )
+        self.assertGreater(
+            stats["frames_parsed"], 0, "Should have parsed at least 1 frame"
+        )
 
         # Verify Buffer
         # The buffer might have been flushed to 'disk' (journal file) or uploaded
@@ -122,13 +125,16 @@ class TestIntegrationFlow(unittest.TestCase):
 
         # Check if we can see what was uploaded
         uploaded_batch = controller.transport.upload.call_args[0][0]
-        self.assertEqual(uploaded_batch['sensor_id'], "test-sensor-integration")
-        self.assertTrue(len(uploaded_batch['items']) > 0)
+        self.assertEqual(uploaded_batch["sensor_id"], "test-sensor-integration")
+        self.assertTrue(len(uploaded_batch["items"]) > 0)
 
-        item = uploaded_batch['items'][0]
+        item = uploaded_batch["items"][0]
         print("Uploaded Item:", item)
-        self.assertEqual(item['ssid'], "TestNet")
-        self.assertEqual(item['bssid'], "AA:BB:CC:XX:XX:XX") # Privacy enabled by default
+        self.assertEqual(item["ssid"], "TestNet")
+        self.assertEqual(
+            item["bssid"], "AA:BB:CC:XX:XX:XX"
+        )  # Privacy enabled by default
+
 
 if __name__ == "__main__":
     unittest.main()

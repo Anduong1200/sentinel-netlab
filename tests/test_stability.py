@@ -17,7 +17,9 @@ from typing import Any
 import requests
 
 
-def run_scan(base_url: str, api_key: str = None, timeout: float = 30.0) -> dict[str, Any]:
+def run_scan(
+    base_url: str, api_key: str = None, timeout: float = 30.0
+) -> dict[str, Any]:
     """
     Run a single scan operation.
 
@@ -33,7 +35,7 @@ def run_scan(base_url: str, api_key: str = None, timeout: float = 30.0) -> dict[
         "success": False,
         "response_time_ms": 0,
         "network_count": 0,
-        "error": None
+        "error": None,
     }
 
     try:
@@ -75,7 +77,7 @@ def run_stability_test(
     base_url: str,
     duration_minutes: int = 30,
     interval_minutes: int = 2,
-    api_key: str = None
+    api_key: str = None,
 ) -> dict[str, Any]:
     """
     Run stability test for specified duration.
@@ -90,7 +92,7 @@ def run_stability_test(
         "interval_minutes": interval_minutes,
         "base_url": base_url,
         "scans": [],
-        "summary": {}
+        "summary": {},
     }
 
     total_scans = duration_minutes // interval_minutes
@@ -120,7 +122,9 @@ def run_stability_test(
         if result["success"]:
             success_count += 1
             response_times.append(result["response_time_ms"])
-            print(f"✅ {result['network_count']} networks, {result['response_time_ms']:.0f}ms")
+            print(
+                f"✅ {result['network_count']} networks, {result['response_time_ms']:.0f}ms"
+            )
         else:
             crash_count += 1
             print(f"❌ {result['error']}")
@@ -138,10 +142,14 @@ def run_stability_test(
         "total_scans": scan_count,
         "successful_scans": success_count,
         "failed_scans": crash_count,
-        "success_rate": round(success_count / scan_count * 100, 2) if scan_count > 0 else 0,
-        "avg_response_time_ms": round(sum(response_times) / len(response_times), 2) if response_times else 0,
+        "success_rate": round(success_count / scan_count * 100, 2)
+        if scan_count > 0
+        else 0,
+        "avg_response_time_ms": round(sum(response_times) / len(response_times), 2)
+        if response_times
+        else 0,
         "max_response_time_ms": round(max(response_times), 2) if response_times else 0,
-        "crash_count": crash_count
+        "crash_count": crash_count,
     }
 
     return results
@@ -169,24 +177,24 @@ def generate_report(results: dict[str, Any]) -> str:
                     STABILITY TEST REPORT
 ================================================================================
 
-Generated:  {results['end_time']}
-Target:     {results['base_url']}
-Duration:   {results['duration_minutes']} minutes
-Interval:   {results['interval_minutes']} minutes
+Generated:  {results["end_time"]}
+Target:     {results["base_url"]}
+Duration:   {results["duration_minutes"]} minutes
+Interval:   {results["interval_minutes"]} minutes
 
 --------------------------------------------------------------------------------
                          SUMMARY
 --------------------------------------------------------------------------------
 
-    Total Scans:       {summary['total_scans']}
-    Successful:        {summary['successful_scans']}
-    Failed:            {summary['failed_scans']}
-    Success Rate:      {summary['success_rate']:.1f}%
+    Total Scans:       {summary["total_scans"]}
+    Successful:        {summary["successful_scans"]}
+    Failed:            {summary["failed_scans"]}
+    Success Rate:      {summary["success_rate"]:.1f}%
 
-    Crash Count:       {summary['crash_count']}
+    Crash Count:       {summary["crash_count"]}
 
-    Avg Response:      {summary['avg_response_time_ms']:.0f} ms
-    Max Response:      {summary['max_response_time_ms']:.0f} ms
+    Avg Response:      {summary["avg_response_time_ms"]:.0f} ms
+    Max Response:      {summary["max_response_time_ms"]:.0f} ms
 
 --------------------------------------------------------------------------------
                          EVALUATION
@@ -208,9 +216,11 @@ Interval:   {results['interval_minutes']} minutes
     for i, scan in enumerate(results["scans"]):
         status = "✅" if scan["success"] else "❌"
         if scan["success"]:
-            report += f"    [{i+1}] {status} {scan['timestamp']} - {scan['network_count']} networks, {scan['response_time_ms']:.0f}ms\n"
+            report += f"    [{i + 1}] {status} {scan['timestamp']} - {scan['network_count']} networks, {scan['response_time_ms']:.0f}ms\n"
         else:
-            report += f"    [{i+1}] {status} {scan['timestamp']} - ERROR: {scan['error']}\n"
+            report += (
+                f"    [{i + 1}] {status} {scan['timestamp']} - ERROR: {scan['error']}\n"
+            )
 
     report += """
 ================================================================================
@@ -224,10 +234,20 @@ Interval:   {results['interval_minutes']} minutes
 def main():
     parser = argparse.ArgumentParser(description="Stability Test")
     parser.add_argument("--url", default="http://localhost:5000", help="Base URL")
-    parser.add_argument("-d", "--duration", type=int, default=30, help="Duration in minutes")
-    parser.add_argument("-i", "--interval", type=int, default=2, help="Interval between scans in minutes")
+    parser.add_argument(
+        "-d", "--duration", type=int, default=30, help="Duration in minutes"
+    )
+    parser.add_argument(
+        "-i",
+        "--interval",
+        type=int,
+        default=2,
+        help="Interval between scans in minutes",
+    )
     parser.add_argument("--api-key", help="API key for authentication")
-    parser.add_argument("-o", "--output", default="stability_report.txt", help="Output file")
+    parser.add_argument(
+        "-o", "--output", default="stability_report.txt", help="Output file"
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()
@@ -244,7 +264,7 @@ def main():
         base_url=args.url,
         duration_minutes=args.duration,
         interval_minutes=args.interval,
-        api_key=args.api_key
+        api_key=args.api_key,
     )
 
     if args.json:
@@ -253,7 +273,7 @@ def main():
         output = generate_report(results)
 
     # Save report
-    with open(args.output, 'w') as f:
+    with open(args.output, "w") as f:
         f.write(output)
 
     print(f"\nReport saved to: {args.output}")
@@ -267,10 +287,10 @@ def main():
     print(f"  Crashes: {summary['crash_count']}")
     print(f"  Success Rate: {summary['success_rate']:.1f}%")
 
-    if summary['crash_count'] == 0:
+    if summary["crash_count"] == 0:
         print("\n✅ PASS: No crashes detected")
         sys.exit(0)
-    elif summary['crash_count'] == 1:
+    elif summary["crash_count"] == 1:
         print("\n⚠️  PARTIAL: 1 crash detected")
         sys.exit(0)
     else:

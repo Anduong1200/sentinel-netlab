@@ -1,4 +1,3 @@
-
 # Add path to import modules
 import os
 import sys
@@ -7,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from flask import Flask
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sensor.sensor_cli import SensorCLI
 
@@ -40,26 +39,27 @@ class TestMetricsEndpoint(unittest.TestCase):
         # Alternatively, we can refactor start_api to return the app, but let's try patching first
         # to avoid changing production code structure if not needed.
 
-        with patch('flask.Flask') as mock_flask:
-             # create a real Flask app for testing routes
+        with patch("flask.Flask") as mock_flask:
+            # create a real Flask app for testing routes
             real_app = Flask(__name__)
             mock_flask.return_value = real_app
 
             # Prevent app.run from blocking
-            with patch.object(real_app, 'run', return_value=None):
+            with patch.object(real_app, "run", return_value=None):
                 self.cli.start_api()
 
             # Now we can test the client
             client = real_app.test_client()
-            response = client.get('/metrics')
+            response = client.get("/metrics")
 
             self.assertEqual(response.status_code, 200)
             # ContentType might vary based on prometheus client version but should be text/plain
-            self.assertIn('text/plain', response.content_type)
+            self.assertIn("text/plain", response.content_type)
 
             # Check for content (even if empty, it should be bytes)
             self.assertIsInstance(response.data, bytes)
             print("Successfully hit /metrics endpoint")
+
 
 if __name__ == "__main__":
     unittest.main()

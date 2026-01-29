@@ -6,11 +6,12 @@ Auto-detects disconnection and attempts recovery.
 
 import logging
 import os
-import subprocess
+import shutil
+import subprocess  # nosec B404
 import sys
 import threading
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,9 +27,9 @@ class USBWatchdog:
         self,
         interface: str = "wlan0",
         check_interval: float = 2.0,
-        on_disconnect: Optional[Callable] = None,
-        on_reconnect: Optional[Callable] = None,
-        auto_recover: bool = True
+        on_disconnect: Callable | None = None,
+        on_reconnect: Callable | None = None,
+        auto_recover: bool = True,
     ):
         """
         Initialize USB Watchdog.
@@ -48,7 +49,7 @@ class USBWatchdog:
 
         self.running = False
         self.connected = False
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
 
         self.stats = {
             "disconnect_count": 0,
@@ -56,7 +57,7 @@ class USBWatchdog:
             "recovery_attempts": 0,
             "last_disconnect": None,
             "last_reconnect": None,
-            "uptime_seconds": 0
+            "uptime_seconds": 0,
         }
         self._start_time = None
 
@@ -65,7 +66,9 @@ class USBWatchdog:
         try:
             result = subprocess.run(
                 ["ip", "link", "show", self.interface],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             return result.returncode == 0
         except Exception:
@@ -76,20 +79,22 @@ class USBWatchdog:
         try:
             result = subprocess.run(
                 ["iw", "dev", self.interface, "info"],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             return "monitor" in result.stdout.lower()
         except Exception:
             return False
 
-    def get_driver_info(self) -> Optional[str]:
+    def get_driver_info(self) -> str | None:
         """Get driver name for the interface."""
         try:
             # Read from sysfs
             driver_path = f"/sys/class/net/{self.interface}/device/driver"
             if os.path.exists(driver_path):
                 return os.path.basename(os.readlink(driver_path))
-        except Exception:
+        except Exception:  # nosec B110
             pass
         return None
 
@@ -128,8 +133,7 @@ class USBWatchdog:
             if was_connected and not is_connected:
                 self.connected = False
                 self.stats["disconnect_count"] += 1
-                self.stats["last_disconnect"] = time.strftime(
-                    "%Y-%m-%d %H:%M:%S")
+                self.stats["last_disconnect"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
                 logger.warning(f"🔴 USB adapter disconnected: {self.interface}")
 
@@ -152,8 +156,7 @@ class USBWatchdog:
             elif not was_connected and is_connected:
                 self.connected = True
                 self.stats["reconnect_count"] += 1
-                self.stats["last_reconnect"] = time.strftime(
-                    "%Y-%m-%d %H:%M:%S")
+                self.stats["last_reconnect"] = time.strftime("%Y-%m-%d %H:%M:%S")
 
                 logger.info(f"🟢 USB adapter reconnected: {self.interface}")
 
@@ -164,8 +167,7 @@ class USBWatchdog:
 
             # Update uptime
             if self._start_time and self.connected:
-                self.stats["uptime_seconds"] = int(
-                    time.time() - self._start_time)
+                self.stats["uptime_seconds"] = int(time.time() - self._start_time)
 
     def start(self):
         """Start watchdog monitoring."""
@@ -174,8 +176,7 @@ class USBWatchdog:
 
         self.running = True
         self._start_time = time.time()
-        self.monitor_thread = threading.Thread(
-            target=self._monitor_loop, daemon=True)
+        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.monitor_thread.start()
 
         logger.info(f"USB Watchdog started for {self.interface}")
@@ -193,24 +194,36 @@ class USBWatchdog:
             "in_monitor_mode": self.check_monitor_mode() if self.connected else False,
             "driver": self.get_driver_info() if self.connected else None,
             "auto_recover": self.auto_recover,
-            "stats": self.stats}
+            "stats": self.stats,
+        }
 
 
 def play_alert_sound():
-    """Play alert sound (requires paplay or aplay)."""
-    try:
-        # Try to play a beep
-        subprocess.run(["paplay",
-                        "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"],
-                       timeout=2,
-                       capture_output=True)
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+    """Play alert sound (safe for headless/docker)."""
+    # Check for paplay
+    if shutil.which("paplay"):
         try:
-            # Fallback to beep
-            subprocess.run(["beep", "-f", "1000", "-l", "500"],
-                           timeout=2, capture_output=True)
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            subprocess.run(
+                ["paplay", "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"],
+                timeout=2,
+                capture_output=True,
+            )
+            return
+        except Exception:
             pass
+
+    # Fallback to beep
+    if shutil.which("beep"):
+        try:
+            subprocess.run(
+                ["beep", "-f", "1000", "-l", "500"], timeout=2, capture_output=True
+            )
+            return
+        except Exception:
+            pass
+
+    # If no audio, just log (headless mode)
+    logger.debug("Audio alert skipped (no audio device/tool found)")
 
 
 if __name__ == "__main__":
@@ -218,29 +231,19 @@ if __name__ == "__main__":
     import json
 
     parser = argparse.ArgumentParser(description="USB WiFi Watchdog CLI")
+    parser.add_argument("-i", "--interface", default="wlan0", help="Wireless interface")
     parser.add_argument(
-        "-i",
-        "--interface",
-        default="wlan0",
-        help="Wireless interface")
+        "-t", "--interval", type=float, default=2.0, help="Check interval (seconds)"
+    )
     parser.add_argument(
-        "-t",
-        "--interval",
-        type=float,
-        default=2.0,
-        help="Check interval (seconds)")
+        "--no-auto-recover", action="store_true", help="Disable auto recovery"
+    )
     parser.add_argument(
-        "--no-auto-recover",
-        action="store_true",
-        help="Disable auto recovery")
+        "--alert-sound", action="store_true", help="Play sound on disconnect"
+    )
     parser.add_argument(
-        "--alert-sound",
-        action="store_true",
-        help="Play sound on disconnect")
-    parser.add_argument(
-        "--status",
-        action="store_true",
-        help="Show current status and exit")
+        "--status", action="store_true", help="Show current status and exit"
+    )
 
     args = parser.parse_args()
 
@@ -261,7 +264,7 @@ if __name__ == "__main__":
         check_interval=args.interval,
         on_disconnect=on_disconnect,
         on_reconnect=on_reconnect,
-        auto_recover=not args.no_auto_recover
+        auto_recover=not args.no_auto_recover,
     )
 
     if args.status:
@@ -283,13 +286,11 @@ if __name__ == "__main__":
             time.sleep(10)
             status = watchdog.get_status()
             state = "🟢 Connected" if status["connected"] else "🔴 Disconnected"
-            print(f"[{time.strftime('%H:%M:%S')}] {state} | Uptime: {status['stats']['uptime_seconds']}s | Disconnects: {status['stats']['disconnect_count']}")
+            print(
+                f"[{time.strftime('%H:%M:%S')}] {state} | Uptime: {status['stats']['uptime_seconds']}s | Disconnects: {status['stats']['disconnect_count']}"
+            )
     except KeyboardInterrupt:
         pass
 
     watchdog.stop()
-    print(
-        "\nFinal stats:",
-        json.dumps(
-            watchdog.get_status()["stats"],
-            indent=2))
+    print("\nFinal stats:", json.dumps(watchdog.get_status()["stats"], indent=2))

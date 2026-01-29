@@ -22,6 +22,7 @@ try:
         Info,
         generate_latest,
     )
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -132,6 +133,7 @@ if PROMETHEUS_AVAILABLE:
 # LOCAL METRICS (fallback when Prometheus not available)
 # =============================================================================
 
+
 @dataclass
 class LocalMetrics:
     """In-memory metrics when Prometheus not available"""
@@ -211,6 +213,7 @@ class LocalMetrics:
 # METRICS COLLECTOR
 # =============================================================================
 
+
 class MetricsCollector:
     """
     Unified metrics collector.
@@ -232,10 +235,12 @@ class MetricsCollector:
 
         # Initialize sensor info if Prometheus available
         if self.use_prometheus:
-            SENSOR_INFO.info({
-                "sensor_id": sensor_id,
-                "version": "1.0.0",
-            })
+            SENSOR_INFO.info(
+                {
+                    "sensor_id": sensor_id,
+                    "version": "1.0.0",
+                }
+            )
 
     def record_frame(self, frame_type: str = "unknown") -> None:
         """Record a captured frame"""
@@ -258,9 +263,7 @@ class MetricsCollector:
         """Record a parse error"""
         self.local.record_parse_error()
         if self.use_prometheus:
-            PARSE_ERRORS.labels(
-                sensor_id=self.sensor_id, error_type=error_type
-            ).inc()
+            PARSE_ERRORS.labels(sensor_id=self.sensor_id, error_type=error_type).inc()
 
     def record_alert(self, alert_type: str, severity: str) -> None:
         """Record a generated alert"""
@@ -281,9 +284,7 @@ class MetricsCollector:
         else:
             self.local.upload_failure += 1
             if self.use_prometheus:
-                UPLOAD_FAILURE.labels(
-                    sensor_id=self.sensor_id, reason=reason
-                ).inc()
+                UPLOAD_FAILURE.labels(sensor_id=self.sensor_id, reason=reason).inc()
 
     def set_risk_score(self, bssid: str, score: float) -> None:
         """Set risk score for a network"""
@@ -327,8 +328,10 @@ class MetricsCollector:
 
 class _DummyTimer:
     """Dummy context manager when Prometheus not available"""
+
     def __enter__(self):
         return self
+
     def __exit__(self, *args):
         pass
 

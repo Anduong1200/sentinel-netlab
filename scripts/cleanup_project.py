@@ -11,19 +11,19 @@ def cleanup_project():
 
     # 1. Define Operational Directories
     op_dirs = [
-        "data",          # For SQLite database (wifi_scanner.db)
-        "logs",          # For application logs
-        "captures",      # For PCAP files
-        "config",        # For configuration files
-        "artifacts",     # For defense artifacts
-        "docs",          # Documentation
-        "tests",         # Test scripts
-        "scripts",       # Helper scripts
-        "scripts",       # Helper scripts
-        "ops",           # Operations/Docker files
-        "algos",         # Algorithms
-        "sensor",        # Sensor source code
-        "controller"     # Controller source code
+        "data",  # For SQLite database (wifi_scanner.db)
+        "logs",  # For application logs
+        "captures",  # For PCAP files
+        "config",  # For configuration files
+        "artifacts",  # For defense artifacts
+        "docs",  # Documentation
+        "tests",  # Test scripts
+        "scripts",  # Helper scripts
+        "scripts",  # Helper scripts
+        "ops",  # Operations/Docker files
+        "algos",  # Algorithms
+        "sensor",  # Sensor source code
+        "controller",  # Controller source code
     ]
 
     # 2. Create Directories
@@ -47,7 +47,7 @@ def cleanup_project():
         ".pytest_cache",
         ".coverage",
         "*.log",  # Maybe keep logs? User said cleanup. Let's keep logs in logs/ but del elsewhere.
-        "*.tmp"
+        "*.tmp",
     ]
 
     print("\n🗑️ Removing temporary files...")
@@ -91,12 +91,13 @@ def cleanup_project():
     run_controller_bat = root / "run_controller.bat"
     if not run_controller_bat.exists():
         with open(run_controller_bat, "w") as f:
-            f.write('@echo off\ncd controller\npython scanner_gui.py\npause')
+            f.write("@echo off\ncd controller\npython scanner_gui.py\npause")
         print("✅ Created run_controller.bat")
 
     print("\n✨ Project is ready for operation!")
     print("   - Run 'run_controller.bat' to start the GUI (Windows)")
     print("   - On Linux sensor: 'python sensor/sensor_cli.py --api'")
+
 
 if __name__ == "__main__":
     cleanup_project()

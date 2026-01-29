@@ -4,7 +4,7 @@ SQLAlchemy models for PostgreSQL/SQLite.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     JSON,
@@ -25,28 +25,34 @@ Base = declarative_base()
 
 class Sensor(Base):
     """Registered sensor"""
-    __tablename__ = 'sensors'
+
+    __tablename__ = "sensors"
 
     id = Column(String(64), primary_key=True)
     name = Column(String(128))
-    status = Column(String(20), default='offline')
+    status = Column(String(20), default="offline")
     last_heartbeat = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
     config = Column(JSON, default={})
 
-    telemetry = relationship('Telemetry', back_populates='sensor')
-    alerts = relationship('Alert', back_populates='sensor')
+    telemetry = relationship("Telemetry", back_populates="sensor")
+    alerts = relationship("Alert", back_populates="sensor")
 
 
 class Telemetry(Base):
     """Telemetry data from sensors"""
-    __tablename__ = 'telemetry'
+
+    __tablename__ = "telemetry"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    sensor_id = Column(String(64), ForeignKey('sensors.id'), index=True)
+    sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
     batch_id = Column(String(64), index=True)
     timestamp = Column(DateTime(timezone=True), index=True)
-    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    ingested_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     bssid = Column(String(17), index=True)
     ssid = Column(String(32))
@@ -60,20 +66,21 @@ class Telemetry(Base):
 
     raw_data = Column(JSON, default={})
 
-    sensor = relationship('Sensor', back_populates='telemetry')
+    sensor = relationship("Sensor", back_populates="telemetry")
 
-    __table_args__ = (
-        Index('ix_telemetry_bssid_timestamp', 'bssid', 'timestamp'),
-    )
+    __table_args__ = (Index("ix_telemetry_bssid_timestamp", "bssid", "timestamp"),)
 
 
 class Alert(Base):
     """Security alerts"""
-    __tablename__ = 'alerts'
+
+    __tablename__ = "alerts"
 
     id = Column(String(32), primary_key=True)
-    sensor_id = Column(String(64), ForeignKey('sensors.id'), index=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
 
     alert_type = Column(String(50), index=True)
     severity = Column(String(20), index=True)
@@ -86,16 +93,17 @@ class Alert(Base):
     evidence = Column(JSON, default={})
     mitre_attack = Column(String(20))
 
-    status = Column(String(20), default='open', index=True)
+    status = Column(String(20), default="open", index=True)
     resolved_at = Column(DateTime(timezone=True))
     resolved_by = Column(String(64))
 
-    sensor = relationship('Sensor', back_populates='alerts')
+    sensor = relationship("Sensor", back_populates="alerts")
 
 
 class APIToken(Base):
     """API tokens for authentication"""
-    __tablename__ = 'api_tokens'
+
+    __tablename__ = "api_tokens"
 
     id = Column(String(32), primary_key=True)
     token_hash = Column(String(64), unique=True, index=True)
@@ -103,7 +111,9 @@ class APIToken(Base):
     role = Column(String(20))
     sensor_id = Column(String(64), nullable=True)
 
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
     expires_at = Column(DateTime(timezone=True))
     last_used = Column(DateTime(timezone=True))
     last_sequence = Column(Integer, default=0)
@@ -113,10 +123,13 @@ class APIToken(Base):
 
 class AuditLog(Base):
     """Audit trail for security events"""
-    __tablename__ = 'audit_log'
+
+    __tablename__ = "audit_log"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    timestamp = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
 
     event_type = Column(String(50), index=True)
     actor = Column(String(64))
@@ -131,9 +144,10 @@ class AuditLog(Base):
 # DATABASE HELPERS
 # =============================================================================
 
+
 def get_engine(database_url: str = None):
     """Create database engine"""
-    url = database_url or os.environ.get('DATABASE_URL', 'sqlite:///data/sentinel.db')
+    url = database_url or os.environ.get("DATABASE_URL", "sqlite:///data/sentinel.db")
     return create_engine(url)
 
 

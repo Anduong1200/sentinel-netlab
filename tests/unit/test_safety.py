@@ -6,13 +6,12 @@ from sensor.attacks import LabSafetyChecker, LabSafetyConfig, LabSafetyError
 
 
 class TestLabSafety(unittest.TestCase):
-
     def setUp(self):
         self.config = LabSafetyConfig(
             enabled=True,
             require_confirmation=False,  # Disable interactive confirm for tests
-            allowed_bssid_prefixes=['00:11:22'],
-            forbidden_bssid_prefixes=['AA:BB:CC']
+            allowed_bssid_prefixes=["00:11:22"],
+            forbidden_bssid_prefixes=["AA:BB:CC"],
         )
         self.checker = LabSafetyChecker(self.config)
 
@@ -24,7 +23,7 @@ class TestLabSafety(unittest.TestCase):
 
     def test_environment_check_pass(self):
         """Test that correct env var passes check"""
-        with patch.dict(os.environ, {'SENTINEL_LAB_MODE': 'true'}):
+        with patch.dict(os.environ, {"SENTINEL_LAB_MODE": "true"}):
             self.assertTrue(self.checker.check_environment())
 
     def test_forbidden_prefix(self):
@@ -46,5 +45,6 @@ class TestLabSafety(unittest.TestCase):
         with self.assertRaises(LabSafetyError):
             self.checker.check_count(1000, 100, "Deauth")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

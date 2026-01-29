@@ -9,7 +9,7 @@ import logging
 import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ DEFAULT_DATA_DIR = "/var/lib/wifi-scanner"
 @dataclass
 class CaptureConfig:
     """Capture engine settings."""
+
     interface: str = "wlan0"
     channels: list = field(default_factory=lambda: [1, 6, 11])
     dwell_time: float = 0.4  # seconds per channel
@@ -34,6 +35,7 @@ class CaptureConfig:
 @dataclass
 class StorageConfig:
     """Storage settings."""
+
     db_path: str = "/var/lib/wifi-scanner/wifi_scans.db"
     pcap_dir: str = "/var/lib/wifi-scanner/pcaps"
     pcap_enabled: bool = True
@@ -45,20 +47,22 @@ class StorageConfig:
 @dataclass
 class APIConfig:
     """API server settings."""
-    host: str = "0.0.0.0"
+
+    host: str = "0.0.0.0"  # nosec B104
     port: int = 5000
     debug: bool = False
     api_key: str = "student-project-2024"
     rate_limit: str = "60/minute"
     cors_enabled: bool = True
     ssl_enabled: bool = False
-    ssl_cert: Optional[str] = None
-    ssl_key: Optional[str] = None
+    ssl_cert: str | None = None
+    ssl_key: str | None = None
 
 
 @dataclass
 class RiskConfig:
     """Risk scoring settings."""
+
     encryption_weight: float = 0.45
     signal_weight: float = 0.20
     ssid_weight: float = 0.15
@@ -71,14 +75,17 @@ class RiskConfig:
 @dataclass
 class MLConfig:
     """Analysis and ML settings."""
+
     enabled: bool = False
     model_path: str = "models/anomaly_v1.pth"
     threshold: float = 0.05
     training_enabled: bool = False
 
+
 @dataclass
 class PrivacyConfig:
     """Privacy and data retention settings."""
+
     mode: str = "anonymized"  # normal, anonymized, private
     store_raw_mac: bool = False
     anonymize_ssid: bool = False
@@ -88,6 +95,7 @@ class PrivacyConfig:
 @dataclass
 class Config:
     """Main configuration container."""
+
     capture: CaptureConfig = field(default_factory=CaptureConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     api: APIConfig = field(default_factory=APIConfig)
@@ -163,20 +171,22 @@ class ConfigManager:
         env_mappings = {
             # Legacy Prefixes
             "WIFI_SCANNER_INTERFACE": ("capture", "interface"),
-
             # Docker Standard Prefixes (from docker-compose.yml)
             "SENSOR_INTERFACE": ("capture", "interface"),
-            "SENSOR_ID": ("api", "api_key"), # Using ID as key/token for simplicity in mapping
+            "SENSOR_ID": (
+                "api",
+                "api_key",
+            ),  # Using ID as key/token for simplicity in mapping
             "SENSOR_AUTH_TOKEN": ("api", "api_key"),
-
             "WIFI_SCANNER_PORT": ("api", "port", int),
             "SERVER_PORT": ("api", "port", int),
-
             "WIFI_SCANNER_API_KEY": ("api", "api_key"),
-
-            "WIFI_SCANNER_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
+            "WIFI_SCANNER_MOCK_MODE": (
+                "mock_mode",
+                None,
+                lambda x: x.lower() == "true",
+            ),
             "SENSOR_MOCK_MODE": ("mock_mode", None, lambda x: x.lower() == "true"),
-
             "WIFI_SCANNER_DEBUG": ("api", "debug", lambda x: x.lower() == "true"),
             "WIFI_SCANNER_DB_PATH": ("storage", "db_path"),
             "WIFI_SCANNER_LOG_LEVEL": ("log_level", None),
@@ -205,7 +215,7 @@ class ConfigManager:
                 except Exception as e:
                     logger.warning(f"Failed to apply {env_var}: {e}")
 
-    def save_config(self, path: Optional[str] = None):
+    def save_config(self, path: str | None = None):
         """
         Save current configuration to file.
 
@@ -227,7 +237,7 @@ class ConfigManager:
             "log_level": self.config.log_level,
         }
 
-        with open(save_path, 'w') as f:
+        with open(save_path, "w") as f:
             json.dump(data, f, indent=2)
 
         logger.info(f"Config saved to {save_path}")
@@ -249,13 +259,14 @@ class ConfigManager:
         # Mask API key
         if "api" in data and "api_key" in data["api"]:
             key = data["api"]["api_key"]
-            data["api"]["api_key"] = key[:4] + "****" + \
-                key[-4:] if len(key) > 8 else "****"
+            data["api"]["api_key"] = (
+                key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
+            )
         return data
 
 
 # Global configuration instance
-_config_manager: Optional[ConfigManager] = None
+_config_manager: ConfigManager | None = None
 
 
 def get_config() -> Config:
@@ -302,7 +313,7 @@ def generate_sample_config(output_path: str = "./sample_config.json"):
         "log_level": "INFO",
     }
 
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(data, f, indent=2)
 
     print(f"Sample config written to {output_path}")

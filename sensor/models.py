@@ -1,19 +1,19 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
 class NetworkRecord:
     """Standardized network data structure"""
+
     ssid: str
     bssid: str
-    signal: Optional[int]
-    channel: Optional[int]
+    signal: int | None
+    channel: int | None
     encryption: str
-    vendor: Optional[str] = None
-    first_seen: Optional[str] = None
-    last_seen: Optional[str] = None
+    vendor: str | None = None
+    first_seen: str | None = None
+    last_seen: str | None = None
 
     def __post_init__(self):
         if not self.first_seen:
