@@ -180,14 +180,7 @@ class SensorController:
             config = get_config()
 
         self.config = config
-        self.sensor_id = (
-            config.api.api_key
-        )  # Use API Key as ID for simplicity or separate
-        # But wait, config has keys but sensor_id was separate. Let's fix that.
-        # Actually user passed ID. Let's stick to config structure.
-        # config.api.api_key is Token. Config doesn't have explicit SensorID field in strict sense except maybe api_key or hostname.
-        # We will use what's passed or ENV.
-        self.sensor_id = os.environ.get("SENSOR_ID", "sensor-01")
+        self.sensor_id = config.sensor.id
 
         self.iface = config.capture.interface
         self.upload_interval = 5.0
@@ -381,7 +374,7 @@ class SensorController:
                 telemetry = self.normalizer.normalize(parsed)
 
                 # Add to buffer
-                self.buffer.append(telemetry.dict())
+                self.buffer.append(telemetry.model_dump(mode="json", exclude_none=True))
 
                 # Feed Aggregator
                 self.aggregator.record_frame(
@@ -415,7 +408,7 @@ class SensorController:
                 # Real-time Risk Assessment
                 if self._frames_captured % 10 == 0:
                     # Convert telemetry to dict for risk scoring
-                    net_dict = telemetry.dict()
+                    net_dict = telemetry.model_dump(mode="json", exclude_none=True)
                     risk_result = self.risk_engine.calculate_risk(net_dict)
 
                     if risk_result.get("risk_score", 0) > 70:
@@ -455,7 +448,7 @@ class SensorController:
 
                 if result.get("success"):
                     logger.debug(
-                        f"Uploaded batch {batch['batch_id']}: {batch['item_count']} items"
+                        f"Uploaded batch {batch['batch_id']}: {len(batch['records'])} items"
                     )
                     self.metrics.record_upload(True)
                 else:
@@ -523,6 +516,14 @@ Examples:
   %(prog)s --sensor-id test-01 --iface mock0 --mock-mode
         """,
     )
+
+    parser.add_argument("--config-file", help="Path to config file")
+    parser.add_argument("--sensor-id", help="Sensor ID override")
+    parser.add_argument("--iface", help="Capture interface")
+    parser.add_argument("--channels", help="Comma-separated channels")
+    parser.add_argument("--mock-mode", action="store_true", help="Enable mock mode")
+
+    args = parser.parse_args()
 
     # Init Config
     if args.config_file:

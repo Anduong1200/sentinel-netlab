@@ -2,10 +2,10 @@
 
 ---
 
-**An Duong**  
-Computer Science Department  
-[University Name]  
-[Email]
+**[Author Name Redacted for Blind Review]**  
+[Department Redacted]  
+[University Redacted]  
+[Email Redacted]
 
 ---
 

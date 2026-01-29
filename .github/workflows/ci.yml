@@ -20,19 +20,19 @@ permissions:
 env:
   PYTHON_VERSIONS: "3.10,3.11"
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: anduong1200/sentinel-netlab
 
 jobs:
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f4633668828d0b6406086d2f293f2832 # v4.1.1
         with:
           fetch-depth: 0
 
       - name: Set up Python (quality)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
         with:
           python-version: 3.11
           cache: "pip"
@@ -41,23 +41,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ruff mypy bandit pre-commit pip-audit
-          python -m pip install --upgrade pip
-          pip install ruff mypy bandit pre-commit pip-audit
-          pip install .[dev]
+          # Install in editable mode to expose package
+          pip install -e .[dev]
 
       - name: Lint (Ruff)
         run: |
-          ruff format --check . || true
+          ruff format --check .
           ruff check . --output-format=github
 
       - name: Type Check (Mypy)
-        run: mypy sensor controller common algos || true
+        # Scan everything including the new schemas
+        continue-on-error: true
+        run: mypy sensor controller common algos scripts
 
       - name: Security Scan - Bandit
         run: bandit -r sensor controller common algos -c pyproject.toml
 
       - name: Vulnerability scan (pip-audit)
-        run: pip-audit --progress spinner || true
+        run: pip-audit --progress spinner
 
   test:
     name: Test & Coverage
@@ -67,12 +68,12 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f4633668828d0b6406086d2f293f2832 # v4.1.1
         with:
           fetch-depth: 0
 
       - name: Set up Python (test)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -80,28 +81,29 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --upgrade pip
           pip install .[dev,ml]
 
       - name: Run Tests (pytest)
         run: |
           mkdir -p test-reports
+          # Updated to include common
           pytest --junitxml=test-reports/junit-${{ matrix.python-version }}.xml --cov=sensor --cov=controller --cov=common --cov=algos --cov-report=xml --cov-report=term
 
       - name: Upload test reports (jUnit)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: junit-${{ matrix.python-version }}
           path: test-reports/junit-${{ matrix.python-version }}.xml
 
       - name: Upload Coverage XML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f496bf2075 # v4.1.0
+        continue-on-error: true
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
@@ -111,7 +113,7 @@ jobs:
     name: Build & Push Docker
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: read
       packages: write
@@ -129,10 +131,10 @@ jobs:
             image_suffix: dashboard
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f4633668828d0b6406086d2f293f2832 # v4.1.1
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -140,7 +142,7 @@ jobs:
 
       - name: Extract metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@31ceb90363d9b79fc915381cd4e1b369c92f4c9b # v5.5.1
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.image_suffix }}
           tags: |
@@ -149,12 +151,11 @@ jobs:
             type=sha
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.1.0
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           push: ${{ github.event_name != 'pull_request' }}
-
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -164,12 +165,12 @@ jobs:
     needs: test
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f4633668828d0b6406086d2f293f2832 # v4.1.1
         with:
           fetch-depth: 0
 
       - name: Set up Python (build)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0a5c615913736f35055ccd82240309990e666a # v5.0.0
         with:
           python-version: 3.11
 
@@ -181,26 +182,27 @@ jobs:
         run: python -m build
 
       - name: Upload built distributions (artifact)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: dist
           path: dist/*
 
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
         with:
           tag_name: "${{ github.ref_name }}"
           name: "Release ${{ github.ref_name }}"
           body: "Automated release from CI"
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
         with:
           files: dist/*
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829ccd5cf38b9899f83f234 # v1.8.11
+        continue-on-error: true
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           skip_existing: true

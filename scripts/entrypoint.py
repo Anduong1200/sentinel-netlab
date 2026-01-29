@@ -8,8 +8,15 @@ import argparse
 import os
 import sys
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Load .env explicitly for CLI usage
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Add project root to path (Two levels up from scripts/entrypoint.py)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def setup_wardrive_parser(subparsers):

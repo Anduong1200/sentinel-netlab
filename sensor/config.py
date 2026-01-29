@@ -33,6 +33,15 @@ class CaptureConfig:
 
 
 @dataclass
+class SensorConfig:
+    """Sensor identity settings."""
+    id: str = "sensor-01"
+    hostname: str = "localhost"
+    group: str = "default"
+
+
+
+@dataclass
 class StorageConfig:
     """Storage settings."""
 
@@ -96,6 +105,7 @@ class PrivacyConfig:
 class Config:
     """Main configuration container."""
 
+    sensor: SensorConfig = field(default_factory=SensorConfig)
     capture: CaptureConfig = field(default_factory=CaptureConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     api: APIConfig = field(default_factory=APIConfig)
@@ -140,6 +150,11 @@ class ConfigManager:
 
     def _apply_dict(self, data: dict[str, Any]):
         """Apply dictionary values to config."""
+        if "sensor" in data:
+            for key, value in data["sensor"].items():
+                if hasattr(self.config.sensor, key):
+                    setattr(self.config.sensor, key, value)
+
         if "capture" in data:
             for key, value in data["capture"].items():
                 if hasattr(self.config.capture, key):
@@ -173,10 +188,7 @@ class ConfigManager:
             "WIFI_SCANNER_INTERFACE": ("capture", "interface"),
             # Docker Standard Prefixes (from docker-compose.yml)
             "SENSOR_INTERFACE": ("capture", "interface"),
-            "SENSOR_ID": (
-                "api",
-                "api_key",
-            ),  # Using ID as key/token for simplicity in mapping
+            "SENSOR_ID": ("sensor", "id"),
             "SENSOR_AUTH_TOKEN": ("api", "api_key"),
             "WIFI_SCANNER_PORT": ("api", "port", int),
             "SERVER_PORT": ("api", "port", int),

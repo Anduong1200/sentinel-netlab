@@ -156,6 +156,22 @@ class TransportClient:
             Response dict with success status and ack_id
         """
         import requests
+        
+        # Validation
+        try:
+            # We import here to avoid circular or early import issues if sys.path isn't ready at module level
+            from common.schemas.telemetry import TelemetryBatch
+            from pydantic import ValidationError
+            
+            # Validate
+            # Note: batch dict might need adjustment if schema expects strict types
+            TelemetryBatch(**batch) 
+        except ImportError:
+            pass # Pydantic/Schemas not available (e.g. running outside prod env), skip validation
+        except ValidationError as e:
+            logger.error(f"Schema Validation Failed: {e}")
+            return {"success": False, "error": f"Schema Validation Failed: {str(e)}"}
+
 
         # Check circuit breaker
         if self._circuit_open:
@@ -218,7 +234,7 @@ class TransportClient:
                     return {
                         "success": True,
                         "ack_id": result.get("ack_id"),
-                        "accepted": result.get("accepted", len(batch.get("items", []))),
+                        "accepted": result.get("accepted", len(batch.get("records", []))),
                     }
 
                 elif response.status_code >= 400 and response.status_code < 500:

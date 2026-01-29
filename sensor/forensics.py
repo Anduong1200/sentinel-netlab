@@ -4,9 +4,14 @@ Forensics Module - Offline PCAP Analysis for Attack Detection
 Analyzes captured PCAP files to detect Deauth floods, Evil Twins, etc.
 """
 
+import logging
 from collections import defaultdict
 from datetime import datetime
 from typing import Any
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Lazy-load scapy to prevent crashes in CI/Docker
 try:
@@ -35,14 +40,6 @@ class ForensicAnalyzer:
     """
     Analyzes PCAP files for attack signatures and anomalies.
     """
-
-    def __init__(self, pcap_path: str):
-        """
-        Initialize analyzer with a PCAP file path.
-
-        Args:
-            pcap_path: Path to PCAP file
-        """
 
     def __init__(self, pcap_path: str):
         """

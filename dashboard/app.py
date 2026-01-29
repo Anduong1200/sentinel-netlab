@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import dash
 import dash_auth
@@ -10,301 +11,363 @@ import requests
 from dash import Input, Output, dcc, html
 from flask import Flask
 
-# Initialize Flask (wrapped by controller or standalone)
+# Initialize Flask
 server = Flask(__name__)
 
-# Initialize Dash with custom theme
+# Initialize Dash with custom assets folder for fonts if needed,
+# but we will use CDN for fonts in the layout.
 app = dash.Dash(
     __name__,
     server=server,
     url_base_pathname="/dashboard/",
-    external_stylesheets=[dbc.themes.CYBORG],  # Modern dark theme
+    external_stylesheets=[
+        dbc.themes.DARKLY,  # Base dark theme
+        "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap",
+        "https://use.fontawesome.com/releases/v6.0.0/css/all.css",
+    ],
     suppress_callback_exceptions=True,
+    title="Sentinel NetLab",
 )
 
-# Configuration from env or defaults
+# Configuration
 CONTROLLER_API = os.environ.get("CONTROLLER_URL", "http://localhost:5000")
 API_TOKEN = os.environ.get("DASHBOARD_API_TOKEN", "")
 HEADERS = {"Authorization": f"Bearer {API_TOKEN}"} if API_TOKEN else {}
 
 # Security
 VALID_USERNAME_PASSWORD_PAIRS = {
-    os.environ.get("DASH_USERNAME", "admin"): os.environ.get(
-        "DASH_PASSWORD", "sentinel"
-    )
+    os.environ.get("DASH_USERNAME", "admin"): os.environ.get("DASH_PASSWORD", "sentinel")
 }
 auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 
-# Custom CSS
+# --- Styling Constants ---
+COLOR_PRIMARY = "#00f2fe"
+COLOR_SECONDARY = "#4facfe"
+COLOR_DANGER = "#ff0844"
+COLOR_WARNING = "#f7b733"
+COLOR_SUCCESS = "#00dbde"
+COLOR_BG = "#050510"
+GLASS_STYLE = {
+    "background": "rgba(20, 20, 35, 0.4)",
+    "backdropFilter": "blur(12px)",
+    "WebkitBackdropFilter": "blur(12px)",
+    "border": "1px solid rgba(255, 255, 255, 0.08)",
+    "borderRadius": "16px",
+    "boxShadow": "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
+}
+
 CUSTOM_CSS = """
-.gradient-card {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 1px solid #0f3460;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+body {
+    background-color: #050510;
+    font-family: 'Outfit', sans-serif;
+    color: #e0e0e0;
+    overflow-x: hidden;
 }
-.gradient-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    padding: 2rem 1rem;
+    background: rgba(10, 10, 20, 0.95);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 1000;
 }
-.stat-number {
-    font-size: 3rem;
+.content {
+    margin-left: 260px;
+    padding: 2rem;
+    transition: margin-left 0.3s;
+}
+.nav-link {
+    color: #8898aa;
+    font-weight: 500;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+.nav-link:hover, .nav-link.active {
+    color: #fff;
+    background: linear-gradient(90deg, rgba(0, 242, 254, 0.1), rgba(79, 172, 254, 0.05));
+    border-left: 3px solid #00f2fe;
+}
+.nav-icon {
+    width: 24px;
+    margin-right: 12px;
+    text-align: center;
+}
+.stat-card {
+    transition: transform 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.stat-value {
+    font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(90deg, #00d9ff, #00ff88);
+    background: linear-gradient(90deg, #fff, #b2ebf2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
-.stat-number-danger {
-    background: linear-gradient(90deg, #ff4757, #ff6b81);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.stat-number-warning {
-    background: linear-gradient(90deg, #ffa502, #ffcd38);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.section-header {
-    font-weight: 600;
-    color: #a0a0a0;
+.stat-label {
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 0.85rem;
+    letter-spacing: 1.5px;
+    font-size: 0.75rem;
+    color: #8898aa;
     margin-bottom: 0.5rem;
 }
-.main-title {
-    background: linear-gradient(90deg, #00d9ff, #00ff88);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 700;
+.glow-text-primary {
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
 }
-.footer {
-    text-align: center;
-    color: #666;
-    padding: 2rem 0;
-    font-size: 0.85rem;
+.table-custom th {
+    border-top: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: #8898aa;
+    font-weight: 600;
+}
+.table-custom td {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+    color: #d1d5db;
+}
+.modebar-container {
+    display: none !important;
+}
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #050510;
+}
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 """
 
-# Layout
-app.layout = html.Div(
+# --- Layout Components ---
+
+sidebar = html.Div(
     [
-        # Inject custom CSS
-        html.Style(CUSTOM_CSS),
-        
-        # Navbar
-        dbc.Navbar(
-            dbc.Container(
-                [
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Img(src="/assets/logo.png", height="40px"),
-                                width="auto",
-                                className="d-none d-md-block",
-                            ),
-                            dbc.Col(
-                                dbc.NavbarBrand(
-                                    "Sentinel NetLab",
-                                    className="ms-2 main-title",
-                                    style={"fontSize": "1.5rem"},
-                                ),
-                            ),
-                        ],
-                        align="center",
-                        className="g-0",
-                    ),
-                    dbc.NavbarToggler(id="navbar-toggler"),
-                    dbc.Collapse(
-                        dbc.Nav(
+        html.Div(
+            [
+                html.Img(src="/assets/logo.png", style={"height": "40px", "marginTop": "-5px"}),
+                html.Span(
+                    "SENTINEL NET",
+                    className="ms-3",
+                    style={"fontSize": "1.2rem", "fontWeight": "700", "color": "#fff", "letterSpacing": "1px"},
+                ),
+            ],
+            className="d-flex align-items-center mb-5 px-2",
+        ),
+        dbc.Nav(
+            [
+                dbc.NavLink(
+                    [html.I(className="fas fa-chart-pie nav-icon"), "Dashboard"],
+                    href="/dashboard/",
+                    active="exact",
+                ),
+                dbc.NavLink(
+                    [html.I(className="fas fa-wifi nav-icon"), "Networks"],
+                    href="/dashboard/networks",
+                    active="exact",
+                ),
+                dbc.NavLink(
+                    [html.I(className="fas fa-shield-alt nav-icon"), "Security Alerts"],
+                    href="/dashboard/alerts",
+                    active="exact",
+                ),
+                dbc.NavLink(
+                    [html.I(className="fas fa-cogs nav-icon"), "Audit Remediation"],
+                    href="/dashboard/audit",
+                    active="exact",
+                    disabled=True,
+                ),
+            ],
+            vertical=True,
+            pills=True,
+        ),
+        html.Div(
+            [
+                html.Hr(style={"borderColor": "rgba(255,255,255,0.1)"}),
+                html.Div(
+                    [
+                        html.Small("SYSTEM STATUS", className="text-muted", style={"fontSize": "0.7rem", "letterSpacing": "1px"}),
+                        html.Div(
                             [
-                                dbc.NavItem(
-                                    dbc.NavLink("Dashboard", href="#", active=True)
-                                ),
-                                dbc.NavItem(dbc.NavLink("Networks", href="#networks")),
-                                dbc.NavItem(dbc.NavLink("Alerts", href="#alerts")),
+                                html.Div(className="rounded-circle bg-success", style={"width": "8px", "height": "8px", "marginRight": "8px"}),
+                                html.Span("Controller Online", style={"color": "#4caf50", "fontSize": "0.85rem"}),
                             ],
-                            className="ms-auto",
-                            navbar=True,
+                            className="d-flex align-items-center mt-2"
                         ),
-                        id="navbar-collapse",
-                        navbar=True,
-                    ),
+                        html.Div(id="last-update", style={"color": "#666", "fontSize": "0.75rem", "marginTop": "5px"}),
+                    ],
+                    className="px-2"
+                )
+            ],
+            style={"marginTop": "auto"}
+        )
+    ],
+    className="sidebar d-flex flex-column",
+)
+
+def build_stat_card(title, id_name, icon_class, color_class="text-white"):
+    return html.Div(
+        [
+            html.Div(title, className="stat-label"),
+            html.Div(
+                [
+                    html.H2("0", id=id_name, className=f"stat-value {color_class} mb-0"),
+                    html.I(className=f"{icon_class} fa-lg opacity-50", style={"marginLeft": "auto", "color": "rgba(255,255,255,0.2)"}),
                 ],
-                fluid=True,
+                className="d-flex align-items-end",
             ),
-            color="dark",
-            dark=True,
-            sticky="top",
+            # Animated graphical element (placeholder for sparkline)
+            html.Div(
+                style={
+                    "height": "4px",
+                    "width": "100%",
+                    "background": f"linear-gradient(90deg, {COLOR_PRIMARY}, transparent)",
+                    "borderRadius": "2px",
+                    "marginTop": "15px",
+                    "opacity": "0.6"
+                }
+            )
+        ],
+        style=GLASS_STYLE,
+        className="p-4 h-100 stat-card",
+    )
+
+content = html.Div(
+    [
+        # Header
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    [
+                        html.H4("Overview", className="fw-bold text-white mb-0"),
+                        html.Span("Real-time network surveillance", className="text-muted small"),
+                    ]
+                )
+            ),
             className="mb-4",
-            style={"borderBottom": "1px solid #0f3460"},
         ),
         
-        # Main Content
-        dbc.Container(
+        # Stats Row
+        dbc.Row(
             [
-                # Stats Row
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.P("ACTIVE SENSORS", className="section-header"),
-                                        html.H1(
-                                            "0",
-                                            id="sensor-count",
-                                            className="stat-number",
-                                        ),
-                                        html.P(
-                                            "Monitoring WiFi Networks",
-                                            className="text-muted small",
-                                        ),
-                                    ]
-                                ),
-                                className="gradient-card h-100",
+                dbc.Col(build_stat_card("Active Sensors", "sensor-count", "fas fa-satellite-dish"), md=4, className="mb-4"),
+                dbc.Col(build_stat_card("Threats Detected", "alert-count", "fas fa-biohazard", "text-danger"), md=4, className="mb-4"),
+                dbc.Col(build_stat_card("Networks Scanned", "network-count", "fas fa-network-wired", "text-warning"), md=4, className="mb-4"),
+            ],
+            className="mb-2",
+        ),
+        
+        # Main Dashboard Grid
+        dbc.Row(
+            [
+                # Map Section (Left, Larger)
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.H5("Wardriving Heatmap", className="fw-bold text-white mb-0"),
+                                    dbc.Button(html.I(className="fas fa-expand"), color="link", size="sm", className="text-muted")
+                                ],
+                                className="d-flex justify-content-between align-items-center mb-3",
                             ),
-                            md=4,
-                            className="mb-4",
-                        ),
-                        dbc.Col(
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.P("SECURITY ALERTS", className="section-header"),
-                                        html.H1(
-                                            "0",
-                                            id="alert-count",
-                                            className="stat-number stat-number-danger",
-                                        ),
-                                        html.P(
-                                            "Threats Detected",
-                                            className="text-muted small",
-                                        ),
-                                    ]
-                                ),
-                                className="gradient-card h-100",
+                            dcc.Graph(
+                                id="heatmap-graph",
+                                style={"height": "500px", "borderRadius": "12px", "overflow": "hidden"},
+                                config={"displayModeBar": False, "scrollZoom": True},
                             ),
-                            md=4,
-                            className="mb-4",
-                        ),
-                        dbc.Col(
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.P("NETWORKS SCANNED", className="section-header"),
-                                        html.H1(
-                                            "0",
-                                            id="network-count",
-                                            className="stat-number stat-number-warning",
-                                        ),
-                                        html.P(
-                                            "Unique BSSIDs",
-                                            className="text-muted small",
-                                        ),
-                                    ]
-                                ),
-                                className="gradient-card h-100",
-                            ),
-                            md=4,
-                            className="mb-4",
-                        ),
-                    ],
+                        ],
+                        style=GLASS_STYLE,
+                        className="p-3",
+                    ),
+                    lg=8,
                     className="mb-4",
                 ),
                 
-                # Map Section
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.I(className="fas fa-map-marked-alt me-2"),
-                                            "Wardriving Heatmap",
-                                        ],
-                                        style={"background": "#1a1a2e", "border": "none"},
-                                    ),
-                                    dbc.CardBody(
-                                        dcc.Loading(
-                                            dcc.Graph(
-                                                id="heatmap-graph",
-                                                style={"height": "500px"},
-                                                config={"displayModeBar": False},
-                                            ),
-                                            type="circle",
-                                            color="#00d9ff",
-                                        ),
-                                        style={"padding": "0"},
-                                    ),
-                                ],
-                                className="gradient-card",
+                # Alerts Feed (Right, Smaller)
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.H5("Recent Alerts", className="fw-bold text-white mb-3"),
+                            html.Div(id="alerts-table", style={"maxHeight": "500px", "overflowY": "auto"}),
+                        ],
+                        style=GLASS_STYLE,
+                        className="p-3 h-100",
+                    ),
+                    lg=4,
+                    className="mb-4",
+                ),
+            ]
+        ),
+        
+        # Operational Analytics Row
+        dbc.Row(
+            [
+                # Sensor Health Table
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.H5("Sensor Fleet Status", className="fw-bold text-white mb-3"),
+                            html.Div(id="sensor-table", style={"maxHeight": "300px", "overflowY": "auto"}),
+                        ],
+                        style=GLASS_STYLE,
+                        className="p-3 h-100",
+                    ),
+                    lg=6,
+                    className="mb-4",
+                ),
+
+                # Security Distribution Chart
+                dbc.Col(
+                    html.Div(
+                        [
+                            html.H5("Security Posture", className="fw-bold text-white mb-3"),
+                            dcc.Graph(
+                                id="security-pie-chart",
+                                style={"height": "300px"},
+                                config={"displayModeBar": False},
                             ),
-                            width=12,
-                            className="mb-4",
-                        )
-                    ]
+                        ],
+                        style=GLASS_STYLE,
+                        className="p-3 h-100",
+                    ),
+                    lg=6,
+                    className="mb-4",
                 ),
-                
-                # Alerts Section
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Card(
-                                [
-                                    dbc.CardHeader(
-                                        [
-                                            html.I(className="fas fa-exclamation-triangle me-2"),
-                                            "Recent Security Alerts",
-                                        ],
-                                        style={"background": "#1a1a2e", "border": "none"},
-                                    ),
-                                    dbc.CardBody(
-                                        html.Div(id="alerts-table"),
-                                    ),
-                                ],
-                                className="gradient-card",
-                            ),
-                            width=12,
-                        )
-                    ]
-                ),
-                
-                # Footer
-                html.Div(
-                    [
-                        html.Hr(style={"borderColor": "#333"}),
-                        html.P(
-                            [
-                                "Sentinel NetLab v1.0.0 • ",
-                                html.A(
-                                    "Documentation",
-                                    href="https://github.com/Anduong1200/sentinel-netlab",
-                                    target="_blank",
-                                    style={"color": "#00d9ff"},
-                                ),
-                                " • Last Update: ",
-                                html.Span(id="last-update", children="--"),
-                            ],
-                            className="footer",
-                        ),
-                    ],
-                    className="mt-5",
-                ),
-                
-                dcc.Interval(
-                    id="interval-component",
-                    interval=10 * 1000,  # 10 seconds
-                    n_intervals=0,
-                ),
-            ],
-            fluid=True,
-            style={"maxWidth": "1600px"},
+            ]
         ),
     ],
-    style={"backgroundColor": "#0d1117", "minHeight": "100vh"},
+    className="content",
+)
+
+app.layout = html.Div(
+    [
+        html.Style(CUSTOM_CSS),
+        dcc.Location(id="url"),
+        sidebar,
+        content,
+        dcc.Interval(
+            id="interval-component",
+            interval=5000,  # Update every 5 seconds for a more "live" feel
+            n_intervals=0,
+        ),
+    ]
 )
 
 
@@ -316,180 +379,159 @@ app.layout = html.Div(
         Output("network-count", "children"),
         Output("alerts-table", "children"),
         Output("last-update", "children"),
+        Output("sensor-table", "children"),
+        Output("security-pie-chart", "figure"),
     ],
     [Input("interval-component", "n_intervals")],
 )
 def update_metrics(n):
-    from datetime import datetime
-    
-    # Default empty map with dark styling
-    empty_map = go.Figure(
-        go.Scattermapbox()
-    )
-    empty_map.update_layout(
-        mapbox=dict(
-            style="carto-darkmatter",
-            center={"lat": 0, "lon": 0},
-            zoom=1,
-        ),
-        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    current_time = datetime.now().strftime("Last updated: %H:%M:%S")
+
+    # Dark Map Style
+    layout_override = dict(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=0, r=0, t=0, b=0),
+        font=dict(color="#fff"),
+        mapbox=dict(
+            style="carto-darkmatter",
+            center=dict(lat=40.7128, lon=-74.0060), # Default center
+            zoom=2
+        )
     )
-    
-    current_time = datetime.now().strftime("%H:%M:%S")
+
+    empty_figure = go.Figure()
+    empty_figure.update_layout(**layout_override)
 
     try:
-        # 1. Get Wardriving/Network Data
-        resp_net = requests.get(
-            f"{CONTROLLER_API}/api/v1/networks", headers=HEADERS, timeout=5
-        )
-        networks = (
-            resp_net.json().get("networks", []) if resp_net.status_code == 200 else []
-        )
+        # 1. Fetch Data
+        networks = []
+        alerts = []
+        sensors = {}
+        
+        try:
+            # Networks
+            resp_net = requests.get(f"{CONTROLLER_API}/api/v1/networks", headers=HEADERS, timeout=2)
+            if resp_net.status_code == 200:
+                networks = resp_net.json().get("networks", [])
+            
+            # Alerts
+            resp_alerts = requests.get(f"{CONTROLLER_API}/api/v1/alerts", headers=HEADERS, timeout=2)
+            if resp_alerts.status_code == 200:
+                alerts = resp_alerts.json().get("alerts", [])
+                
+            # Sensors
+            resp_sensors = requests.get(f"{CONTROLLER_API}/api/v1/sensors", headers=HEADERS, timeout=2)
+            if resp_sensors.status_code == 200:
+                sensors = resp_sensors.json().get("sensors", {})
+                
+        except Exception:
+            pass # Graceful degrade
 
-        # 2. Get Alerts
-        resp_alerts = requests.get(
-            f"{CONTROLLER_API}/api/v1/alerts", headers=HEADERS, timeout=5
-        )
-        alerts = (
-            resp_alerts.json().get("alerts", [])
-            if resp_alerts.status_code == 200
-            else []
-        )
-
-        # Process Map
+        # --- PROCESS NETWORKS & MAP ---
+        map_fig = go.Figure(go.Scattermapbox())
+        map_fig.update_layout(**layout_override)
+        
+        security_counts = {"OPEN": 0, "WEP": 0, "WPA2": 0, "WPA3": 0}
+        
         if networks:
-            data = [
-                {
-                    "lat": n.get("lat", 0),
-                    "lon": n.get("lon", 0),
-                    "ssid": n.get("ssid", "Unknown"),
-                    "risk": n.get("risk_score", 0),
-                    "bssid": n.get("bssid", ""),
-                }
-                for n in networks
-                if n.get("lat")
-            ]
+            data = []
+            for n in networks:
+                # Map Data
+                if n.get("lat") and n.get("lon"):
+                    data.append({
+                        "lat": n.get("lat"),
+                        "lon": n.get("lon"),
+                        "ssid": n.get("ssid", "Unknown"),
+                        "risk": n.get("risk_score", 0),
+                        "bssid": n.get("bssid", "")
+                    })
+                
+                # Security Stats
+                sec = n.get("security", "OPEN").upper()
+                # Simple normalization
+                if "WPA3" in sec: security_counts["WPA3"] += 1
+                elif "WPA2" in sec: security_counts["WPA2"] += 1
+                elif "WEP" in sec: security_counts["WEP"] += 1
+                else: security_counts["OPEN"] += 1
 
             if data:
                 df = pd.DataFrame(data)
-                fig = px.density_mapbox(
+                map_fig = px.density_mapbox(
                     df,
                     lat="lat",
                     lon="lon",
                     z="risk",
-                    radius=25,
-                    center={"lat": df.lat.mean(), "lon": df.lon.mean()},
-                    zoom=13,
+                    radius=20,
+                    center=dict(lat=df.lat.mean(), lon=df.lon.mean()),
+                    zoom=12,
                     mapbox_style="carto-darkmatter",
-                    color_continuous_scale="Turbo",
+                    color_continuous_scale=["#00f2fe", "#4facfe", "#ffea00", "#ff0844"],
                     hover_data=["ssid", "bssid", "risk"],
                 )
-                fig.update_layout(
-                    margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    coloraxis_colorbar=dict(
-                        title="Risk",
-                        tickfont=dict(color="#888"),
-                        titlefont=dict(color="#888"),
-                    ),
-                )
-            else:
-                fig = empty_map
-        else:
-            fig = empty_map
+                map_fig.update_layout(**layout_override)
+                map_fig.update_coloraxes(showscale=False)
 
-        # Process Alerts Table
+        # --- PROCESS ALERTS TABLE ---
+        alert_rows = []
         if alerts:
-            table_header = [
-                html.Thead(
-                    html.Tr(
-                        [
-                            html.Th("Time", style={"width": "15%"}),
-                            html.Th("Severity", style={"width": "10%"}),
-                            html.Th("Type", style={"width": "15%"}),
-                            html.Th("Message", style={"width": "40%"}),
-                            html.Th("Action", style={"width": "20%"}),
-                        ]
-                    ),
-                    style={"background": "#1a1a2e"},
-                )
-            ]
-            rows = []
-            for a in alerts[:10]:
+            for a in alerts[:8]:
                 severity = a.get("severity", "Info")
-                badge_color = {
-                    "Critical": "danger",
-                    "High": "warning", 
-                    "Medium": "info",
-                    "Low": "secondary",
-                }.get(severity, "light")
-                
-                rows.append(
-                    html.Tr(
-                        [
-                            html.Td(a.get("timestamp", "")[:19]),
-                            html.Td(dbc.Badge(severity, color=badge_color)),
-                            html.Td(a.get("alert_type", "")),
-                            html.Td(a.get("title", a.get("message", ""))),
-                            html.Td(
-                                dbc.Button(
-                                    "Investigate",
-                                    color="outline-info",
-                                    size="sm",
-                                )
-                            ),
-                        ],
-                    )
-                )
-
-            table_body = [html.Tbody(rows)]
-            table = dbc.Table(
-                table_header + table_body,
-                bordered=False,
-                dark=True,
-                hover=True,
-                responsive=True,
-                striped=True,
-                style={"marginBottom": 0},
-            )
+                color = {"Critical": "#ff0844", "High": "#ffb199", "Medium": "#f7b733", "Low": "#00dbde"}.get(severity, "#8898aa")
+                alert_rows.append(html.Tr([
+                    html.Td(html.Div(style={"width": "6px", "height": "6px", "borderRadius": "50%", "background": color}), style={"width": "20px"}),
+                    html.Td([
+                        html.Div(a.get("title", "Alert"), className="fw-bold text-white", style={"fontSize": "0.9rem"}),
+                        html.Div(a.get("message", "")[:40] + "...", className="text-muted small"),
+                    ]),
+                    html.Td(html.Small(a.get("timestamp", "")[11:16], className="text-muted"), className="text-end")
+                ]))
+            alerts_component = dbc.Table(html.Tbody(alert_rows), borderless=True, className="table-custom mb-0", hover=True)
         else:
-            table = dbc.Alert(
-                [
-                    html.I(className="fas fa-check-circle me-2"),
-                    "All clear! No security alerts detected.",
-                ],
-                color="success",
-                className="mb-0",
-            )
+            alerts_component = html.Div([html.I(className="fas fa-check-circle fa-2x mb-3 text-success", style={"opacity": "0.5"}), html.H6("All Systems Normal", className="text-white")], className="text-center p-5")
 
-        return (
-            fig,
-            str(len({n.get("sensor_id") for n in networks})),
-            str(len(alerts)),
-            str(len(networks)),
-            table,
-            current_time,
+        # --- PROCESS SENSOR TABLE ---
+        sensor_rows = []
+        if sensors:
+            for sid, sdata in sensors.items():
+                status = sdata.get("status", "offline")
+                status_color = "#00dbde" if status == "online" else "#8898aa"
+                sensor_rows.append(html.Tr([
+                    html.Td(html.I(className="fas fa-microchip text-muted")),
+                    html.Td(sid, className="fw-bold text-white"),
+                    html.Td(html.Span(status.upper(), style={"color": status_color, "fontSize": "0.8rem", "fontWeight": "bold"})),
+                    html.Td(sdata.get("last_seen", "")[11:19], className="text-muted small text-end")
+                ]))
+            sensor_table = dbc.Table(html.Tbody(sensor_rows), borderless=True, className="table-custom mb-0", hover=True)
+        else:
+            sensor_table = html.Div("No active sensors", className="text-center text-muted p-3")
+
+        # --- PROCESS SECURITY PIE CHART ---
+        pie_fig = px.pie(
+            names=list(security_counts.keys()),
+            values=list(security_counts.values()),
+            hole=0.6,
+            color_discrete_sequence=["#ff0844", "#f7b733", "#00dbde", "#00f2fe"] # WPA3/2/WEP/Openish colors
         )
+        pie_fig.update_layout(
+            **layout_override,
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        # Update text info
+        pie_fig.update_traces(textinfo='percent+label', textposition='inside')
+
+
+        # Counters
+        s_count = str(len(sensors))
+        a_count = str(len(alerts))
+        n_count = str(len(networks))
+
+        return map_fig, s_count, a_count, n_count, alerts_component, current_time, sensor_table, pie_fig
 
     except Exception as e:
-        print(f"Dashboard Update Error: {e}")
-        return (
-            empty_map,
-            "–",
-            "–",
-            "–",
-            dbc.Alert(
-                [
-                    html.I(className="fas fa-exclamation-circle me-2"),
-                    f"Connection Error: {e}",
-                ],
-                color="danger",
-            ),
-            current_time,
-        )
-
+        print(f"Error update: {e}")
+        return empty_figure, "-", "-", "-", html.Div("Error"), current_time, html.Div("Error"), empty_figure
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0", port=8050)

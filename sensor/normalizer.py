@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from schema import Capabilities, TelemetryItem
+from common.schemas import TelemetryRecord
 
 from common.oui import OUI_DATABASE
 from common.privacy import anonymize_mac_oui, get_oui, hash_mac
@@ -75,7 +75,7 @@ class TelemetryNormalizer:
         self._sequence_id = 0
         self._start_time = datetime.now(UTC)
 
-    def normalize(self, parsed_frame: Any) -> TelemetryItem:
+    def normalize(self, parsed_frame: Any) -> TelemetryRecord:
         """
         Convert parsed frame to TelemetryItem.
 
@@ -113,18 +113,8 @@ class TelemetryNormalizer:
         if self.anonymize_ssid:
             ssid = priv_anonymize_ssid(ssid)
 
-        # Build capabilities
-        caps = Capabilities(
-            privacy=parsed_frame.privacy,
-            ht=parsed_frame.ht_capable,
-            vht=parsed_frame.vht_capable,
-            he=parsed_frame.he_capable,
-            pmf=parsed_frame.pmf_capable or parsed_frame.pmf_required,
-            wps=parsed_frame.wps_enabled,
-            ess=parsed_frame.ess,
-            ibss=parsed_frame.ibss,
-            ies_present=parsed_frame.ies_present,
-        )
+        # Build capabilities - SKIPPED (Not in Schema, Unused)
+        # caps = ...
 
         # Build IE dictionary
         ie = {}
@@ -140,19 +130,15 @@ class TelemetryNormalizer:
         # Calculate uptime
         (datetime.now(UTC) - self._start_time).total_seconds()
 
-        return TelemetryItem(
+        return TelemetryRecord(
+            sensor_id=self.sensor_id,
+            timestamp_utc=datetime.now(UTC),
+            sequence_id=self._sequence_id,
+            frame_type=parsed_frame.frame_type if parsed_frame.frame_type in ["beacon", "probe_req", "probe_resp", "auth", "assoc_req", "deauth"] else "beacon", # Fallback or need strict mapping
             bssid=bssid,
             ssid=ssid,
-            channel=parsed_frame.channel,
             rssi_dbm=parsed_frame.rssi_dbm,
-            frequency_mhz=frequency,
-            capabilities=caps,
-            vendor_oui=vendor_oui,
-            # Map IE dict to count
-            ie_count=len(ie) if ie else 0,
-            beacon_interval=parsed_frame.beacon_interval,
-            # Use current timestamp
-            timestamp=datetime.now(UTC).isoformat(),
+            channel=parsed_frame.channel,
         )
 
     def _lookup_vendor(self, oui: str | None) -> str | None:

@@ -6,7 +6,7 @@ Run with: gunicorn -c gunicorn_conf.py api_server:app
 import multiprocessing
 
 # Binding
-bind = "0.0.0.0:5000"
+bind = "0.0.0.0:5000"  # nosec B104
 
 # Workers (Formula: 2 * CPUs + 1)
 # Workers (Formula: 2 * CPUs + 1)

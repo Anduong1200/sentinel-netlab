@@ -1,0 +1,6 @@
+# Mock PCAP file for validation
+This file should normally be a binary .pcap files containing:
+- Beacon frames (SSID: "OpenWiFi", "SecureCorp")
+- Probe Requests
+- Deauth frames (Reason 7)
+- EAPOL 4-way handshake

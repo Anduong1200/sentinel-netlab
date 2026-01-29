@@ -12,6 +12,8 @@ import logging
 import signal
 import sys
 import time
+from dataclasses import asdict, dataclass
+from typing import Any
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -142,6 +144,69 @@ class WardriveCapture:
                 }
             )
         return networks
+
+
+@dataclass
+class WardriveSighting:
+    """Single network sighting"""
+    timestamp: str
+    bssid: str
+    ssid: str | None
+    rssi_dbm: int
+    channel: int
+    security: str
+    gps: Any | None
+    sensor_id: str
+
+
+class WardriveSession:
+    """Manages wardriving session data"""
+
+    def __init__(self, sensor_id: str, output_path: Path):
+        self.sensor_id = sensor_id
+        self.output_path = output_path
+        self.start_time = datetime.now(UTC)
+        self.sightings: list[WardriveSighting] = []
+        self.unique_bssids: set[str] = set()
+
+    def add_sighting(self, sighting: WardriveSighting) -> bool:
+        """Add sighting, return True if new BSSID"""
+        self.sightings.append(sighting)
+        if sighting.bssid not in self.unique_bssids:
+            self.unique_bssids.add(sighting.bssid)
+            return True
+        return False
+
+    def save(self):
+        """Save session to disk"""
+        import json
+        data = {
+            "sensor_id": self.sensor_id,
+            "start_time": self.start_time.isoformat(),
+            "end_time": datetime.now(UTC).isoformat(),
+            "total_sightings": len(self.sightings),
+            "unique_networks": len(self.unique_bssids),
+            "sightings": [asdict(s) for s in self.sightings]
+        }
+        
+        try:
+            with open(self.output_path, "w") as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Session saved to {self.output_path}")
+        except Exception as e:
+            logger.error(f"Failed to save session: {e}")
+
+    def print_stats(self):
+        """Print session statistics"""
+        duration = datetime.now(UTC) - self.start_time
+        print(f"\nSession Duration: {duration}")
+        print(f"Total Sightings: {len(self.sightings)}")
+        print(f"Unique Networks: {len(self.unique_bssids)}")
+
+    def upload_to_controller(self, api_url: str, api_key: str):
+        """Upload session to controller"""
+        # Placeholder for upload logic
+        logger.warning("Session upload not yet implemented")
 
 
 def run_wardrive(args):
