@@ -64,6 +64,8 @@ WORKDIR ${APP_HOME}
 # Copy application code
 COPY --chown=sentinel:sentinel controller/ ./controller/
 COPY --chown=sentinel:sentinel algos/ ./algos/
+COPY --chown=sentinel:sentinel common/ ./common/
+COPY --chown=sentinel:sentinel ml/ ./ml/
 COPY --chown=sentinel:sentinel sensor/schema.py ./sensor/schema.py
 COPY --chown=sentinel:sentinel sensor/errors.py ./sensor/errors.py
 

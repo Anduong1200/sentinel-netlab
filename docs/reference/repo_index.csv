@@ -1,0 +1,14 @@
+Module,File,Description
+Sensor,sensor/sensor_controller.py,Main orchestration loop
+Sensor,sensor/capture_driver.py,Scapy-based WiFi capture
+Sensor,sensor/transport.py,HTTP client for controller upload
+Controller,controller/api_server.py,Flask API entrypoint
+Controller,controller/api/auth.py,Authentication & Token management
+Algos,algos/risk.py,Risk scoring logic (Rule-based + ML)
+Algos,algos/evil_twin.py,Evil Twin detection logic
+ML,ml/anomaly_model.py,PyTorch Autoencoder
+Common,common/schemas/,Shared Pydantic models
+Common,common/metrics.py,Prometheus metrics Definitions
+Docs,docs/architecture/,System design docs
+Docs,docs/research/,Research papers and notes
+Ops,ops/docker-compose.yml,Main deployment manifest

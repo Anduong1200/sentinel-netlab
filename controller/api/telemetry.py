@@ -12,7 +12,7 @@ bp = Blueprint("telemetry", __name__)
 @bp.route("/telemetry", methods=["POST"])
 @require_auth(Permission.WRITE_TELEMETRY)
 @require_signed()
-@limiter.limit(config.security.token_expiry_hours) # Dynamic limit based on config? Kept from original
+@limiter.limit(config.security.rate_limit_telemetry)
 @validate_json(TelemetryBatch) if PYDANTIC_AVAILABLE else lambda f: f
 def ingest_telemetry():
     """Batch telemetry ingestion with full validation"""

@@ -22,6 +22,9 @@ class SecurityConfig:
     time_drift_max: int = 300
     token_expiry_hours: int = 720
     mtls_enabled: bool = False
+    cors_origins: str | list[str] = "*"
+    rate_limit_telemetry: str = "200 per minute"
+    rate_limit_alerts: str = "50 per minute"
     
     # Redacted representation for logging
     def safe_dict(self) -> Dict[str, Any]:
@@ -118,6 +121,9 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         time_drift_max=int(os.getenv("MAX_TIME_DRIFT", "300")),
         token_expiry_hours=int(os.getenv("TOKEN_EXPIRY_HOURS", "720")),
         mtls_enabled=os.getenv("MTLS_ENABLED", "false").lower() == "true",
+        cors_origins=os.getenv("CORS_ORIGINS", "*").split(",") if "," in os.getenv("CORS_ORIGINS", "*") else os.getenv("CORS_ORIGINS", "*"),
+        rate_limit_telemetry=os.getenv("RATE_LIMIT_TELEMETRY", "200 per minute"),
+        rate_limit_alerts=os.getenv("RATE_LIMIT_ALERTS", "50 per minute"),
     )
 
     # Database Config

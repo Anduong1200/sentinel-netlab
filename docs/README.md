@@ -13,7 +13,7 @@ Welcome to the Sentinel NetLab documentation.
 | Understand the architecture | [System Design](architecture/system-design.md) |
 | Deploy to production | [Deployment Guide](operations/deployment.md) |
 | Check hardware compatibility | [Hardware Guide](operations/hardware.md) |
-| Use the API | [API Reference](api-reference.md) |
+| Use the API | [API Reference](reference/api_overview.md) |
 
 ---
 
@@ -30,7 +30,7 @@ Step-by-step guides for new users.
 Technical design and internals.
 
 - [System Design](architecture/system-design.md) — Components and data flow
-- [Risk Scoring Model](architecture/risk-scoring.md) — Threat scoring algorithm
+- [Risk Scoring Model](architecture/risk_scoring.md) — Threat scoring algorithm
 - Detection Algorithms — Evil twin, deauth detection
 
 ### Operations
@@ -51,7 +51,7 @@ Academic and testing materials.
 ### Reference
 API and CLI documentation.
 
-- [API Reference](api-reference.md) — REST endpoints
+- [API Reference](reference/api_overview.md) — REST endpoints
 - CLI Reference — Command-line options
 - JSON Schemas — Telemetry formats
 

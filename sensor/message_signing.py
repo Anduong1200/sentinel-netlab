@@ -17,6 +17,8 @@ class MessageSigner:
 
     def sign_request(
         self,
+        method: str,
+        path: str,
         payload: bytes,
         timestamp: str | None = None,
         sequence: int | None = None,
@@ -25,6 +27,8 @@ class MessageSigner:
         Generate headers for signed request.
 
         Args:
+            method: HTTP method (e.g. POST)
+            path: request path (e.g. /api/v1/telemetry)
             payload: Request body bytes (JSON)
             timestamp: ISO timestamp (optional, defaults to now)
             sequence: Sequence number (optional)
@@ -37,20 +41,15 @@ class MessageSigner:
 
             timestamp = datetime.now(UTC).isoformat()
 
-        # Sign only the payload for now, or payload + metadata?
-        # The controller verifies `verify_hmac(request.get_data(), signature)` which implies
-        # signature = HMAC(secret, payload).
-        # Wait, usually you include timestamp in the signature to prevent replay with modified timestamp.
-        # But looking at controller `verify_hmac`:
-        # expected = hmac.new(Config.HMAC_SECRET.encode(), payload, hashlib.sha256).hexdigest()
-        # It ONLY signs the payload. This is a weakness (replay attack possible if payload identical).
-        # But I must match the controller logic.
-
-        # Controller logic:
-        # verify_hmac(request.get_data(), signature)
+        # Canonical string: method + path + timestamp + sequence + payload
+        data_to_sign = method.encode() + path.encode() + timestamp.encode()
+        if sequence is not None:
+             data_to_sign += str(sequence).encode()
+        
+        data_to_sign += payload
 
         signature = hmac.new(
-            self.secret.encode("utf-8"), payload, hashlib.sha256
+            self.secret.encode("utf-8"), data_to_sign, hashlib.sha256
         ).hexdigest()
 
         headers = {

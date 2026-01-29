@@ -57,7 +57,7 @@ class TelemetryRecord(BaseModel):
 class TelemetryBatch(BaseModel):
     batch_id: str
     sensor_id: str
-    records: List[TelemetryRecord]
+    items: List[TelemetryRecord] = Field(default=[])
 
     model_config = {
         "extra": "forbid",

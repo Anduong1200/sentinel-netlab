@@ -7,15 +7,15 @@ import os
 import sys
 import unittest
 
-# Add sensor to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "sensor"))
+# Add root to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 class TestRiskScoring(unittest.TestCase):
     """Test risk scoring module"""
 
     def setUp(self):
-        from risk import RiskScorer
+        from algos.risk import RiskScorer
 
         self.scorer = RiskScorer()
 
@@ -61,7 +61,7 @@ class TestParser(unittest.TestCase):
     """Test parser module"""
 
     def setUp(self):
-        from parser import WiFiParser
+        from sensor.parser import WiFiParser
 
         self.parser = WiFiParser()
 
@@ -82,7 +82,7 @@ class TestStorage(unittest.TestCase):
     """Test storage module (in-memory only)"""
 
     def setUp(self):
-        from storage import MemoryStorage
+        from sensor.storage import MemoryStorage
 
         self.storage = MemoryStorage()
 

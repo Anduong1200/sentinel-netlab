@@ -1,9 +1,12 @@
 import os
+import sys
 import unittest
 from unittest.mock import patch
 
-from sensor.attacks import LabSafetyChecker, LabSafetyConfig, LabSafetyError
+# Add root path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
+from lab_attack_service.attacks import LabSafetyChecker, LabSafetyConfig, LabSafetyError
 
 class TestLabSafety(unittest.TestCase):
     def setUp(self):
@@ -23,7 +26,11 @@ class TestLabSafety(unittest.TestCase):
 
     def test_environment_check_pass(self):
         """Test that correct env var passes check"""
-        with patch.dict(os.environ, {"SENTINEL_LAB_MODE": "true"}):
+        # Must include AUTH_KEY now
+        with patch.dict(os.environ, {
+            "SENTINEL_LAB_MODE": "true",
+            "SENTINEL_AUTH_KEY": "valid_test_key"
+        }):
             self.assertTrue(self.checker.check_environment())
 
     def test_forbidden_prefix(self):
@@ -44,7 +51,6 @@ class TestLabSafety(unittest.TestCase):
         """Test rate/count limiting"""
         with self.assertRaises(LabSafetyError):
             self.checker.check_count(1000, 100, "Deauth")
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,7 @@ bp = Blueprint("alerts", __name__)
 @bp.route("/alerts", methods=["POST"])
 @require_auth(Permission.WRITE_ALERTS)
 @require_signed()
-@limiter.limit("50 per minute")
+@limiter.limit(config.security.rate_limit_alerts)
 @validate_json(AlertCreate) if PYDANTIC_AVAILABLE else lambda f: f
 def create_alert():
     if PYDANTIC_AVAILABLE and hasattr(g, "validated_data"):

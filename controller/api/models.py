@@ -21,3 +21,17 @@ class DBAlert(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     evidence = db.Column(JSONB if "postgresql" in config.database.url else db.JSON)
+
+
+class Token(db.Model):
+    __tablename__ = "tokens"
+    token_id = db.Column(db.String(32), primary_key=True)
+    token_hash = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    name = db.Column(db.String(100))
+    role = db.Column(db.String(20), nullable=False)
+    sensor_id = db.Column(db.String(64), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    last_used = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    last_sequence = db.Column(db.BigInteger, default=0)

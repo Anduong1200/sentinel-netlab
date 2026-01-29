@@ -9,12 +9,13 @@ import pytest
 
 # Import will work when tests run from sensor directory
 try:
-    from frame_parser import FrameParser, ParsedFrame
+    from sensor.frame_parser import FrameParser, ParsedFrame
 except ImportError:
     import sys
-
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from frame_parser import FrameParser, ParsedFrame
+    import os
+    # Add root to path
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    from sensor.frame_parser import FrameParser, ParsedFrame
 
 
 class TestFrameParser:

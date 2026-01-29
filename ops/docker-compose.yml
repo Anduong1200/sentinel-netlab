@@ -280,6 +280,24 @@ services:
         condition: service_healthy
     networks:
       - sentinel-net
+  
+  # ===========================================================================
+  # LAB: Attack Service (Isolated)
+  # ===========================================================================
+  lab-service:
+    build:
+      context: ..
+      dockerfile: lab_attack_service/Dockerfile
+    image: sentinel-lab-service:latest
+    container_name: sentinel-lab-service
+    profiles: ["lab"]
+    restart: "no"
+    privileged: true # Required for interface access
+    network_mode: "host" # Often required for WiFi injection
+    environment:
+      SENTINEL_LAB_MODE: "true"
+      WIFI_INTERFACE: ${WIFI_INTERFACE:-wlan0}
+      LAB_API_KEY: ${LAB_API_KEY:-sentinel-lab-default}
 
 # =============================================================================
 # VOLUMES

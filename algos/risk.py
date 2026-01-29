@@ -52,13 +52,6 @@ class EnhancedRiskScorer:
         self.ml_model = None
         if ml_model_path:
             try:
-                # Add project root to path to find ml module
-                import os
-                import sys
-
-                sys.path.append(
-                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                )
                 from ml.anomaly_model import detect_anomaly, load_model
 
                 # 10 features assumed from FeatureExtractor

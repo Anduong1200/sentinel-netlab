@@ -9,12 +9,13 @@ from pathlib import Path
 import pytest
 
 try:
-    from capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
+    from sensor.capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
 except ImportError:
     import sys
-
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
+    import os
+    # Add root to path
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    from sensor.capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
 
 
 class TestMockCaptureDriver:

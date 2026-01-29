@@ -6,7 +6,10 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from functools import wraps
 from flask import jsonify, request, g
-from .deps import config, logger
+import os
+from .deps import config, logger, db
+from .models import Token
+from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
 
 # =============================================================================
 # RBAC & AUTHENTICATION
@@ -40,25 +43,12 @@ ROLE_PERMISSIONS = {
 }
 
 
-@dataclass
-class APIToken:
-    token_id: str
-    token_hash: str
-    name: str
-    role: Role
-    sensor_id: str | None = None
-    created_at: str = ""
-    expires_at: str = ""
-    last_used: str | None = None
-    is_active: bool = True
-    last_sequence: int = 0  # For replay protection
-
-
-TOKEN_STORE: dict[str, APIToken] = {}
+# TOKEN_STORE removed - using DB
+SENSOR_REGISTRY: dict[str, dict] = {} # In-memory registry
 
 def init_default_tokens():
     """Initialize default tokens (dev only)"""
-    if config.environment == "production":
+    if config.environment == "production" or os.environ.get("ALLOW_DEV_TOKENS", "false").lower() != "true":
         return
 
     tokens = [
@@ -66,37 +56,64 @@ def init_default_tokens():
         ("sensor-01-token", "Sensor 01", Role.SENSOR, "sensor-01"),  # noqa: S105
         ("analyst-token", "Analyst Token", Role.ANALYST, None),  # noqa: S105
     ]
-
-    for token, name, role, sensor_id in tokens:
-        token_hash = hashlib.sha256(token.encode()).hexdigest()
-        TOKEN_STORE[token_hash] = APIToken(
-            token_id=secrets.token_hex(8),
-            token_hash=token_hash,
-            name=name,
-            role=role,
-            sensor_id=sensor_id,
-            created_at=datetime.now(UTC).isoformat(),
-            expires_at=(
-                datetime.now(UTC) + timedelta(hours=config.security.token_expiry_hours)
-            ).isoformat(),
-        )
+    
+    # Check if we can connect to DB (might be during build/init)
+    try:
+        # Create tables if not exist (quick loose check)
+        # In prod, use migrations.
+        db.create_all()
+        
+        for token_plain, name, role, sensor_id in tokens:
+            token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
+            
+            # Check exist
+            if Token.query.filter_by(token_hash=token_hash).first():
+                continue
+                
+            new_token = Token(
+                token_id=secrets.token_hex(8),
+                token_hash=token_hash,
+                name=name,
+                role=role.value,
+                sensor_id=sensor_id,
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(hours=config.security.token_expiry_hours),
+                is_active=True
+            )
+            db.session.add(new_token)
+        
+        db.session.commit()
+    except Exception as e:
+        logger.warning(f"Failed to init default tokens: {e}")
 
 # Initialize defaults
-init_default_tokens()
+# Note: In a real app this should be a CLI command, not on import
+# But keeping semantics for now
+# init_default_tokens() # Moved to create_app or manual call? 
+# The original called it here. To avoid circular import/app context issues,
+# we should probably NOT call it at module level, but the original did.
+# However, db operations require app context. 
+# We'll rely on the app factory to call this or lazy load.
+# For now, let's remove the auto-call at module level to prevent "working outside of application context" errors.
 
 
-def verify_token(token: str) -> APIToken | None:
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
-    token_obj = TOKEN_STORE.get(token_hash)
+def verify_token(token_plain: str) -> Token | None:
+    token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
+    
+    token_obj = Token.query.filter_by(token_hash=token_hash).first()
 
     if not token_obj or not token_obj.is_active:
         return None
 
-    expires = datetime.fromisoformat(token_obj.expires_at.replace("Z", "+00:00"))
-    if datetime.now(UTC) > expires:
+    if datetime.now(UTC) > token_obj.expires_at.replace(tzinfo=UTC):
         return None
 
-    token_obj.last_used = datetime.now(UTC).isoformat()
+    token_obj.last_used = datetime.now(UTC)
+    try:
+        db.session.commit()
+    except:
+        db.session.rollback()
+        
     return token_obj
 
 
@@ -109,9 +126,16 @@ def verify_timestamp(timestamp_str: str) -> bool:
         return False
 
 
-def verify_hmac(payload: bytes, signature: str) -> bool:
+def verify_hmac(method: str, path: str, payload: bytes, signature: str, timestamp: str, sequence: str | None = None) -> bool:
+    """Verify HMAC signature of method + path + timestamp + sequence + payload"""
+    # Canonical string: method + path + timestamp + sequence + payload
+    data_to_sign = method.encode() + path.encode() + timestamp.encode()
+    if sequence:
+        data_to_sign += sequence.encode()
+    data_to_sign += payload
+
     expected = hmac.new(
-        config.security.hmac_secret.encode(), payload, hashlib.sha256
+        config.security.hmac_secret.encode(), data_to_sign, hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(expected, signature)
 
@@ -123,6 +147,10 @@ def verify_sequence(token: APIToken, sequence: int) -> bool:
     if sequence <= token.last_sequence:
         return False
     token.last_sequence = sequence
+    try:
+        db.session.commit()
+    except:
+        db.session.rollback()
     return True
 
 
@@ -148,14 +176,21 @@ def require_auth(permission: Permission = None):
 
             token_obj = verify_token(token)
             if not token_obj:
+                AUTH_FAILURES.labels(type="token_invalid").inc()
                 return jsonify({"error": "Invalid or expired token"}), 401
 
             g.token = token_obj
-            g.role = token_obj.role
+            # Role stored as string in DB, convert to Enum for logic comparison?
+            # Or just use string in logic. ROLE_PERMISSIONS keys are Enum.
+            try:
+                g.role = Role(token_obj.role)
+            except ValueError:
+                # Fallback or error if invalid role in DB
+                return jsonify({"error": "Invalid role configuration"}), 403
 
             # Permission check
             if permission:
-                perms = ROLE_PERMISSIONS.get(token_obj.role, [])
+                perms = ROLE_PERMISSIONS.get(g.role, [])
                 if permission not in perms and Permission.ADMIN not in perms:
                     return jsonify({"error": "Insufficient permissions"}), 403
 
@@ -185,7 +220,8 @@ def require_signed():
             if not timestamp or not verify_timestamp(timestamp):
                 return jsonify({"error": "Invalid/expired timestamp"}), 400
 
-            if not verify_hmac(request.get_data(), signature):
+            if not verify_hmac(request.method, request.path, request.get_data(), signature, timestamp, sequence):
+                HMAC_FAILURES.inc()
                 return jsonify({"error": "Invalid signature"}), 401
 
             # Sequence check (replay protection)

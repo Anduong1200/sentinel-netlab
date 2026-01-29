@@ -91,6 +91,34 @@ curl http://<controller-ip>:5000/health
 **Update Images**:
 Our CI/CD pipeline publishes images to GitHub Container Registry (GHCR). To pull the latest stable release:
 ```bash
-docker-compose pull
 docker-compose up -d
+```
+
+## 5. Manual Installation (Development / Bare Metal)
+
+If you prefer running without Docker (e.g., for local development or custom hardware integration):
+
+```bash
+# 1. Install System Dependencies
+sudo apt-get install libpq-dev tcpdump wireless-tools
+
+# 2. Setup Python Environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3. Install Sentinel NetLab (Editable Mode)
+# This installs all packages (sensor, controller, algos, ml) and dependencies
+pip install -e .[dev,ml]
+
+# 4. Initialize Database (for Controller)
+export CONTROLLER_DATABASE_URL=sqlite:///sentinel.db
+export ENVIRONMENT=development
+python -c "from controller.api_server import app, db; app.app_context().push(); db.create_all(); from controller.api.auth import init_default_tokens; init_default_tokens()"
+
+# 5. Run Services
+# Controller
+python -m controller.api_server
+
+# Sensor (in another terminal)
+python -m sensor.sensor_cli --mock-mode
 ```

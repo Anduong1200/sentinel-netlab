@@ -18,7 +18,7 @@ permissions:
   issues: write
 
 env:
-  PYTHON_VERSIONS: "3.10,3.11"
+  PYTHON_VERSIONS: "3.11"
   REGISTRY: ghcr.io
   IMAGE_NAME: anduong1200/sentinel-netlab
 
@@ -101,7 +101,7 @@ jobs:
     needs: quality
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v4
         with:

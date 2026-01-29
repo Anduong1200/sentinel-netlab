@@ -20,7 +20,6 @@ from flask_limiter.util import get_remote_address
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import modular components
-from attacks import AttackEngine
 from capture import CaptureEngine, check_monitor_support
 from forensics import analyze_pcap
 
@@ -54,7 +53,6 @@ if not API_KEY:
     logger.warning("WIFI_SCANNER_API_KEY not set! Using default development key.")
     API_KEY = "sentinel-dev-2024"
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
-ALLOW_ACTIVE_ATTACKS = os.environ.get("ALLOW_ACTIVE_ATTACKS", "false").lower() == "true"
 
 # Initialize components
 capture_engine = CaptureEngine(interface=INTERFACE)
@@ -62,7 +60,6 @@ parser = WiFiParser()
 storage = WiFiStorage()  # Uses default paths
 memory_storage = MemoryStorage()
 risk_scorer = RiskScorer()
-attack_engine = AttackEngine(interface=INTERFACE)
 
 # Set static info metric
 SYSTEM_INFO.labels(version="1.0.0", interface=INTERFACE, engine="tshark").set(1)
@@ -314,71 +311,6 @@ def export_json():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/attack/deauth", methods=["POST"])
-def attack_deauth():
-    """
-    Perform Deauthentication Attack.
-    Requires ALLOW_ACTIVE_ATTACKS=true
-    """
-    if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify({"error": "Active attacks disabled by configuration"}), 403
-
-    try:
-        data = request.get_json()
-        target_bssid = data.get("bssid")
-        client_mac = data.get("client", "FF:FF:FF:FF:FF:FF")
-        count = int(data.get("count", 10))
-
-        if not target_bssid:
-            return jsonify({"error": "Missing target_bssid"}), 400
-
-        success = attack_engine.deauth(target_bssid, client_mac, count)
-        if success:
-            return jsonify(
-                {
-                    "status": "success",
-                    "message": f"Deauth sent to {target_bssid} ({count} frames)",
-                }
-            )
-        else:
-            return jsonify({"error": "Attack failed"}), 500
-
-    except Exception as e:
-        logger.error(f"Deauth error: {e}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/attack/fakeap", methods=["POST"])
-def attack_fakeap():
-    """
-    Perform Fake AP (Beacon Flood) Attack.
-    Requires ALLOW_ACTIVE_ATTACKS=true
-    """
-    if not ALLOW_ACTIVE_ATTACKS:
-        return jsonify({"error": "Active attacks disabled by configuration"}), 403
-
-    try:
-        data = request.get_json()
-        ssids = data.get("ssids", [])
-        count = int(data.get("count", 100))
-
-        if not ssids:
-            return jsonify({"error": "Missing ssids list"}), 400
-
-        success = attack_engine.beacon_flood(ssids, count)
-        if success:
-            return jsonify(
-                {
-                    "status": "success",
-                    "message": f"Beacon flood sent ({len(ssids)} SSIDs, {count} frames)",
-                }
-            )
-        else:
-            return jsonify({"error": "Attack failed"}), 500
-
-    except Exception as e:
-        logger.error(f"FakeAP error: {e}")
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/forensics/events")

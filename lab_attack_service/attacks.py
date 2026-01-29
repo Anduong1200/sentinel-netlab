@@ -73,11 +73,10 @@ class LabSafetyChecker:
         auth_key = os.environ.get("SENTINEL_AUTH_KEY", "")
         # In production this should be a strong secret, for lab defaults we check it's set
         if not auth_key or auth_key == "change_me":
-            # For unit tests and dev, we may proceed with a warning if explicitly in lab mode
-            logger.warning(
-                "No secure SENTINEL_AUTH_KEY set. Proceeding because SENTINEL_LAB_MODE=true."
+            # Strict enforcement for lab mode
+            raise LabSafetyError(
+                "No secure SENTINEL_AUTH_KEY set. Attacks blocked."
             )
-            # raise LabSafetyError(...) # Disabled for test compatibility
 
         return True
 

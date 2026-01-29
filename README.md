@@ -131,7 +131,7 @@ sentinel-netlab/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Linux (for Monitor Mode) or Windows (Development)
 - WiFi Adapter supporting Monitor Mode (e.g., Alfa AWUS036ACM)
 

@@ -204,7 +204,21 @@ class TransportClient:
 
         if self.hmac_secret:
             # Sign payload using server time to prevent replay
-            signature = self._sign_payload(payload)
+            # Canonical: timestamp + sequence + payload
+            # Note: We don't have a strict sequence counter per-request yet in this client logic except batch_id?
+            # Using 0 or batch_id might be risky for monotonic check but we must match server expectation.
+            # Controller verify_sequence checks against token.last_sequence.
+            # We need to persist a sequence counter.
+            
+            # Simple fix: Use time-based monotonic (not perfect) or 0 if not tracking
+            # But the signature MUST include what we send in headers.
+            # Only X-Sequence header is optional in verify_hmac IF NOT sent. 
+            # But we likely want to catch replay.
+            
+            # For now, let's sign timestamp + payload as sequence is optional in header construction below
+            from urllib.parse import urlparse
+            path = urlparse(self.upload_url).path
+            signature = self._sign_payload("POST", path, payload, timestamp)
             headers["X-Signature"] = signature
 
         # Compress
@@ -234,7 +248,7 @@ class TransportClient:
                     return {
                         "success": True,
                         "ack_id": result.get("ack_id"),
-                        "accepted": result.get("accepted", len(batch.get("records", []))),
+                        "accepted": result.get("accepted", len(batch.get("items", []))), # Use items
                     }
 
                 elif response.status_code >= 400 and response.status_code < 500:
@@ -274,10 +288,15 @@ class TransportClient:
         self._on_failure(last_error)
         return {"success": False, "error": last_error, "retries_exhausted": True}
 
-    def _sign_payload(self, payload: str) -> str:
-        """Sign payload with HMAC-SHA256"""
+    def _sign_payload(self, method: str, path: str, payload: str, timestamp: str, sequence: str | None = None) -> str:
+        """Sign payload with HMAC-SHA256 (Canonical: method + path + ts + seq + payload)"""
+        data = method.encode() + path.encode() + timestamp.encode()
+        if sequence:
+            data += sequence.encode()
+        data += payload.encode()
+        
         signature = hmac.new(
-            self.hmac_secret.encode(), payload.encode(), hashlib.sha256
+            self.hmac_secret.encode(), data, hashlib.sha256
         )
         return signature.hexdigest()
 
@@ -331,7 +350,9 @@ class TransportClient:
         payload = json.dumps(alert_data)
         
         if self.hmac_secret:
-            headers["X-Signature"] = self._sign_payload(payload)
+            from urllib.parse import urlparse
+            path = urlparse(alerts_url).path
+            headers["X-Signature"] = self._sign_payload("POST", path, payload, timestamp)
 
         try:
             response = requests.post(

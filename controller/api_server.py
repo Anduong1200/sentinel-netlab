@@ -9,6 +9,7 @@ from flask import jsonify
 
 # Import Core Dependencies (Config, DB, Limiter)
 from controller.api.deps import create_app, config, db
+from controller.api.auth import init_default_tokens
 
 # Import Blueprints
 from controller.api.telemetry import bp as telemetry_bp
@@ -28,6 +29,7 @@ app.register_blueprint(admin_bp, url_prefix="/api/v1")
 # Create tables
 with app.app_context():
     db.create_all()
+    init_default_tokens()
 
 # System Endpoints
 @app.route("/api/v1/health")
@@ -63,6 +65,11 @@ def openapi_spec():
         },
     }
     return jsonify(spec)
+
+@app.route("/metrics")
+def metrics():
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == "__main__":
     app.run(host=config.host, port=config.port, debug=config.debug)

@@ -15,18 +15,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent))  # noqa: E402
-
-from buffer_manager import BufferManager
-from capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
-from config import Config, get_config, init_config  # noqa: E402
-from frame_parser import FrameParser
-from normalizer import TelemetryNormalizer  # noqa: E402
-from transport import TransportClient
+from sensor.buffer_manager import BufferManager
+from sensor.capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
+from sensor.config import Config, get_config, init_config
+from sensor.frame_parser import FrameParser
+from sensor.normalizer import TelemetryNormalizer
+from sensor.transport import TransportClient
 
 # Import Advanced Logic
-sys.path.insert(0, str(Path(__file__).parent.parent))  # Add root to path
 from algos.evil_twin import AdvancedEvilTwinDetector
 from algos.jamming_detector import JammingDetector
 from algos.karma_detector import KarmaDetector
@@ -35,7 +31,7 @@ from algos.wardrive_detector import WardriveDetector
 from algos.wep_iv_detector import WEPIVDetector
 from algos.exploit_chain_analyzer import ExploitChainAnalyzer
 from common.metrics import MetricsCollector
-from rule_engine import RuleEngine
+from .rule_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
 
