@@ -180,7 +180,7 @@ class FrameParser:
                 result.frame_type = "other"
                 return result
 
-            # Extract addresses
+            # Addresses
             result.dst_addr = self._format_mac(
                 raw_frame[dot11_start + 4 : dot11_start + 10]
             )
@@ -191,23 +191,43 @@ class FrameParser:
                 raw_frame[dot11_start + 16 : dot11_start + 22]
             )
 
-            # Sequence number
+            # Sequence and Fragment control
             seq_ctrl = struct.unpack(
                 "<H", raw_frame[dot11_start + 22 : dot11_start + 24]
             )[0]
             result.seq_num = seq_ctrl >> 4
+            result.ies["fragment_num"] = seq_ctrl & 0x0F
+            
+            # Extract Retry bit
+            result.ies["retry"] = bool(frame_control & 0x0800)
 
-            # Parse management frame body based on subtype
+            # Parse management/data frame body
             body_start = dot11_start + 24
 
-            if frame_subtype in [self.SUBTYPE_BEACON, self.SUBTYPE_PROBE_RESP]:
-                self._parse_beacon_probe_resp(raw_frame, body_start, result)
-            elif frame_subtype == self.SUBTYPE_PROBE_REQ:
-                self._parse_probe_req(raw_frame, body_start, result)
-            elif frame_subtype in [self.SUBTYPE_DEAUTH, self.SUBTYPE_DISASSOC]:
-                self._parse_deauth_disassoc(raw_frame, body_start, result)
-            elif frame_subtype == self.SUBTYPE_AUTH:
-                self._parse_auth(raw_frame, body_start, result)
+            if frame_type == self.TYPE_MGMT:
+                if frame_subtype in [self.SUBTYPE_BEACON, self.SUBTYPE_PROBE_RESP]:
+                    self._parse_beacon_probe_resp(raw_frame, body_start, result)
+                elif frame_subtype == self.SUBTYPE_PROBE_REQ:
+                    self._parse_probe_req(raw_frame, body_start, result)
+                elif frame_subtype in [self.SUBTYPE_DEAUTH, self.SUBTYPE_DISASSOC]:
+                    self._parse_deauth_disassoc(raw_frame, body_start, result)
+                elif frame_subtype == self.SUBTYPE_AUTH:
+                    self._parse_auth(raw_frame, body_start, result)
+                elif frame_subtype == self.SUBTYPE_ASSOC_RESP:
+                    # Assoc Resp: Capabilities (2) + Status Code (2) + AID (2)
+                    if len(raw_frame) >= body_start + 4:
+                        status = struct.unpack("<H", raw_frame[body_start + 2 : body_start + 4])[0]
+                        result.ies["status_code"] = status
+            
+            elif frame_type == 2: # TYPE_DATA
+                result.frame_type = "data"
+                # Extract WEP IV if privacy bit is set
+                if bool(frame_control & 0x4000): # Protected bit
+                    result.privacy = True
+                    if len(raw_frame) >= body_start + 4:
+                        iv_data = raw_frame[body_start : body_start + 3]
+                        result.ies["wep_iv"] = iv_data.hex()
+                        result.ies["frame_len"] = len(raw_frame)
 
             return result
 

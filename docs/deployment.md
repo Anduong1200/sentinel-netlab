@@ -56,16 +56,24 @@ docker-compose -f ops/docker-compose.sensor.yml up -d
 
 ## 3. Configuration
 
-Configuration is managed via `config.yaml` mounted into the containers.
+We strictly enforce configuration via environment variables for secrets.
 
-```yaml
-# config.yaml snippet
-api:
-  host: "0.0.0.0"
-  port: 5000
-  # Security: Change this!
-  api_key: "${API_KEY_ENV_VAR}" 
+### Required Production Secrets
+You **MUST** set these in your orchestration system (Docker Secrets / K8s Secrets). **Do NOT commit them to git.**
+
+```bash
+ENVIRONMENT=production
+CONTROLLER_SECRET_KEY=<long-random-string>
+CONTROLLER_HMAC_SECRET=<long-random-string>
+CONTROLLER_DATABASE_URL=postgresql://user:pass@db:5432/sentinel
 ```
+
+If any of these are missing in `production` mode, the controller will **refuse to start**.
+
+### Optional Overrides
+- `CONTROLLER_PORT`: Default 5000
+- `REQUIRE_TLS`: Default true
+- `TOKEN_EXPIRY_HOURS`: Default 720 (30 days)
 
 ## 4. Troubleshooting
 

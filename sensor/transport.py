@@ -301,6 +301,58 @@ class TransportClient:
                 self._circuit_reset_time = time.time() + self._circuit_reset_delay
                 logger.warning("Circuit breaker opened due to repeated failures")
 
+    def upload_alert(self, alert_data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Upload alert to controller immediately.
+        
+        Args:
+            alert_data: Alert dict matching AlertCreate schema
+            
+        Returns:
+            Response dict with success status
+        """
+        import requests
+        
+        # Construct alerts URL (replace /telemetry with /alerts)
+        alerts_url = self.upload_url.replace("/telemetry", "/alerts")
+        if "/alerts" not in alerts_url: # fallback if url structure differs
+            base = self.upload_url.rsplit("/", 3)[0]
+            alerts_url = f"{base}/api/v1/alerts"
+
+        # Headers with Auth and Signing
+        timestamp = self.get_server_time().isoformat()
+        headers = {
+            "Authorization": f"Bearer {self.auth_token}",
+            "Content-Type": "application/json",
+            "User-Agent": "Sentinel-Sensor/1.0",
+            "X-Timestamp": timestamp,
+        }
+        
+        payload = json.dumps(alert_data)
+        
+        if self.hmac_secret:
+            headers["X-Signature"] = self._sign_payload(payload)
+
+        try:
+            response = requests.post(
+                alerts_url,
+                data=payload,
+                headers=headers,
+                timeout=10,
+                verify=self.verify_ssl,
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Alert uploaded successfully: {alert_data.get('title')}")
+                return {"success": True, "alert_id": response.json().get("alert_id")}
+            else:
+                logger.error(f"Alert upload failed: HTTP {response.status_code} {response.text}")
+                return {"success": False, "error": f"HTTP {response.status_code}"}
+                
+        except Exception as e:
+            logger.error(f"Alert upload error: {e}")
+            return {"success": False, "error": str(e)}
+
     def heartbeat(self, status: dict[str, Any]) -> dict[str, Any]:
         """
         Send heartbeat to controller.

@@ -23,13 +23,19 @@ from capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
 from config import Config, get_config, init_config  # noqa: E402
 from frame_parser import FrameParser
 from normalizer import TelemetryNormalizer  # noqa: E402
-from transport_client import TransportClient
+from transport import TransportClient
 
 # Import Advanced Logic
 sys.path.insert(0, str(Path(__file__).parent.parent))  # Add root to path
 from algos.evil_twin import AdvancedEvilTwinDetector
+from algos.jamming_detector import JammingDetector
+from algos.karma_detector import KarmaDetector
 from algos.risk import RiskScorer
+from algos.wardrive_detector import WardriveDetector
+from algos.wep_iv_detector import WEPIVDetector
+from algos.exploit_chain_analyzer import ExploitChainAnalyzer
 from common.metrics import MetricsCollector
+from rule_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
 
@@ -236,6 +242,12 @@ class SensorController:
 
         # Advanced Detection Engines
         self.et_detector = AdvancedEvilTwinDetector()
+        self.jamming_detector = JammingDetector()
+        self.wardrive_detector = WardriveDetector()
+        self.wep_detector = WEPIVDetector()
+        self.karma_detector = KarmaDetector()
+        self.chain_analyzer = ExploitChainAnalyzer()
+        self.rule_engine = RuleEngine()
 
         # Metrics
         self.metrics = MetricsCollector(self.sensor_id)
@@ -384,14 +396,34 @@ class SensorController:
                 # Record Metrics
                 self.metrics.record_frame(telemetry.frame_type)
 
-                # Feed Evil Twin Detector
-                et_alerts = self.et_detector.ingest(telemetry.dict())
+                # Advanced Detectors
+                net_dict = telemetry.model_dump(mode="json", exclude_none=True)
+                
+                # Jamming
+                jam_alert = self.jamming_detector.ingest(net_dict)
+                if jam_alert: self._handle_alert(jam_alert)
+                
+                # Wardrive
+                wd_alert = self.wardrive_detector.ingest(net_dict)
+                if wd_alert: self._handle_alert(wd_alert)
+                
+                # WEP IV
+                wep_alert = self.wep_detector.ingest(net_dict)
+                if wep_alert: self._handle_alert(wep_alert)
+                
+                # Karma
+                karma_alert = self.karma_detector.ingest(net_dict)
+                if karma_alert: self._handle_alert(karma_alert)
+                
+                # Rule Engine
+                re_alerts = self.rule_engine.evaluate(net_dict, sensor_id=self.sensor_id)
+                for alert in re_alerts:
+                    self._handle_alert(alert.to_dict())
+
+                # Evil Twin
+                et_alerts = self.et_detector.ingest(net_dict)
                 for alert in et_alerts:
-                    logger.warning(
-                        f"Evil Twin Detected: {alert.ssid} ({alert.score}/100)"
-                    )
-                    # Convert dataclass to dict for upload
-                    alert_dict = {
+                    self._handle_alert({
                         "alert_type": "evil_twin",
                         "severity": alert.severity,
                         "title": f"Evil Twin Detected: {alert.ssid}",
@@ -399,10 +431,7 @@ class SensorController:
                         "evidence": alert.evidence,
                         "sensor_id": self.sensor_id,
                         "risk_score": alert.score,
-                    }
-                    self.buffer.append_alert(
-                        alert_dict
-                    )  # Assuming buffer has this or we upload direct
+                    })
 
                 # Real-time Risk Assessment (Sampled)
                 # Real-time Risk Assessment
@@ -476,6 +505,23 @@ class SensorController:
 
             except Exception as e:
                 logger.debug(f"Heartbeat error: {e}")
+
+    def _handle_alert(self, alert_dict: dict[str, Any]) -> None:
+        """Process an alert, check for chains, and upload"""
+        logger.warning(f"Detection: [{alert_dict.get('severity')}] {alert_dict.get('title')}")
+        
+        # Add sensor info
+        alert_dict["sensor_id"] = self.sensor_id
+        
+        # Upload individual alert
+        self.transport.upload_alert(alert_dict)
+        
+        # Check for exploit chains
+        chain_alert = self.chain_analyzer.analyze(alert_dict)
+        if chain_alert:
+            logger.critical(f"CHAIN DETECTED: {chain_alert['title']}")
+            chain_alert["sensor_id"] = self.sensor_id
+            self.transport.upload_alert(chain_alert)
 
     def _handle_command(self, cmd: dict[str, Any]) -> None:
         """Handle command from controller"""

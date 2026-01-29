@@ -366,6 +366,45 @@ DEFAULT_RULES = {
             "mitre_tactic": "Initial Access",
             "cooldown_seconds": 900,
         },
+        {
+            "rule_id": "WIDS-006",
+            "name": "Fragmentation Attack Detected",
+            "description": "802.11 fragments detected. May be used to bypass IDS or for memory exhaustion attacks.",
+            "severity": "medium",
+            "conditions": [{"field": "fragment_num", "op": ">", "value": 0}],
+            "mitre_technique_id": "T1030",
+            "mitre_technique_name": "Data Transfer Size Limits",
+            "mitre_tactic": "Command and Control",
+            "cooldown_seconds": 600,
+        },
+        {
+            "rule_id": "WIDS-007",
+            "name": "Potential Password Spraying",
+            "description": "High frequency of authentication/association failures detected.",
+            "severity": "high",
+            "conditions": [
+                {"field": "frame_type", "op": "in", "value": ["auth", "assoc_resp"]},
+                {"field": "ies.status_code", "op": "ne", "value": 0}
+            ],
+            "mitre_technique_id": "T1110.003",
+            "mitre_technique_name": "Brute Force: Password Spraying",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 300,
+        },
+        {
+            "rule_id": "WIDS-008",
+            "name": "Unsecured Protocol in Use",
+            "description": "Cleartext protocol (Telnet/FTP/HTTP) detected over wireless.",
+            "severity": "medium",
+            "conditions": [
+                {"field": "frame_type", "op": "eq", "value": "data"},
+                {"field": "protocol", "op": "in", "value": ["TELNET", "FTP", "HTTP"]}
+            ],
+            "mitre_technique_id": "T1040",
+            "mitre_technique_name": "Network Sniffing",
+            "mitre_tactic": "Credential Access",
+            "cooldown_seconds": 1800,
+        },
     ]
 }
 

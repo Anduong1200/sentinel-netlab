@@ -364,3 +364,89 @@ class MockCaptureDriver(CaptureDriver):
         frame.extend(ssid)
 
         return bytes(frame)
+
+
+class PcapCaptureDriver(CaptureDriver):
+    """
+    Replay frames from a PCAP file.
+    Useful for testing and analysis of historical data.
+    """
+
+    def __init__(self, iface: str, pcap_path: str, loop: bool = False, realtime: bool = False):
+        super().__init__(iface)
+        self.pcap_path = pcap_path
+        self.loop = loop
+        self.realtime = realtime
+        self._packets = []
+        self._current_idx = 0
+        self._start_time = 0.0
+        self._first_pkt_time = 0.0
+        self._running = False
+
+    def enable_monitor_mode(self) -> tuple[bool, str]:
+        self.is_monitor_mode = True
+        return True, ""
+
+    def disable_monitor_mode(self) -> tuple[bool, str]:
+        self.is_monitor_mode = False
+        return True, ""
+
+    def set_channel(self, channel: int) -> bool:
+        return True
+
+    def start_capture(self) -> bool:
+        try:
+            from scapy.all import rdpcap
+            if not os.path.exists(self.pcap_path):
+                logger.error(f"PCAP file not found: {self.pcap_path}")
+                return False
+            
+            self._packets = rdpcap(self.pcap_path)
+            self._current_idx = 0
+            self._running = True
+            self._start_time = time.monotonic()
+            if self._packets:
+                self._first_pkt_time = float(self._packets[0].time)
+            
+            logger.info(f"Started PCAP replay: {self.pcap_path} ({len(self._packets)} frames)")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load PCAP: {e}")
+            return False
+
+    def stop_capture(self) -> None:
+        self._running = False
+
+    def read_frame(self, timeout_ms: int = 100) -> RawFrame | None:
+        if not self._running or not self._packets:
+            return None
+
+        if self._current_idx >= len(self._packets):
+            if self.loop:
+                self._current_idx = 0
+                self._start_time = time.monotonic()
+            else:
+                return None
+
+        pkt = self._packets[self._current_idx]
+        
+        # Realtime simulation
+        if self.realtime:
+            pkt_rel_time = float(pkt.time) - self._first_pkt_time
+            elapsed = time.monotonic() - self._start_time
+            
+            if pkt_rel_time > elapsed:
+                wait = pkt_rel_time - elapsed
+                if wait > timeout_ms / 1000.0:
+                    time.sleep(timeout_ms / 1000.0)
+                    return None
+                time.sleep(wait)
+
+        self._current_idx += 1
+        
+        return RawFrame(
+            data=bytes(pkt),
+            timestamp=time.monotonic(),
+            channel=6, # Default to valid channel to pass validation
+            iface=self.iface
+        )
