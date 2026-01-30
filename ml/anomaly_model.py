@@ -83,7 +83,7 @@ def load_model(path, input_dim):
     if not os.path.exists(path):
         return None
     model = SimpleAutoencoder(input_dim)
-    model.load_state_dict(torch.load(path))
+    model.load_state_dict(torch.load(path, weights_only=True))
     model.eval()
     return model
 

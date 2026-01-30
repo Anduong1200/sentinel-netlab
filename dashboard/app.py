@@ -627,4 +627,9 @@ def update_metrics(n):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, host="0.0.0.0", port=8050)
+    import os
+    host = os.getenv("DASHBOARD_HOST", "127.0.0.1")
+    port = int(os.getenv("DASHBOARD_PORT", "8050"))
+    # Bandit B104: Hardcoded bind all interfaces
+    # We allow 0.0.0.0 via env var for containerized deployments.
+    app.run_server(debug=True, host=host, port=port)
