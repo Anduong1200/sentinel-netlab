@@ -10,6 +10,7 @@ import os
 import sys
 import threading
 import time
+import tempfile
 
 # Add sensor to path
 # Add common to path
@@ -355,8 +356,8 @@ Examples:
     )
     parser.add_argument(
         "--pcap-dir",
-        default="/tmp/captures",
-        help="PCAP output directory",  # nosec B108
+        default=os.path.join(tempfile.gettempdir(), "sentinel_captures"),
+        help="PCAP output directory",
     )
 
     # Storage options

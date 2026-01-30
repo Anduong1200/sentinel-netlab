@@ -2,6 +2,11 @@
 
 Welcome to the official documentation for the **Sentinel NetLab** project. This documentation is structured to align with the IEEE System Paper framework.
 
+## 0. Getting Started
+- [Installation Guide](getting-started/installation.md)
+- [Quick Start Tutorial](getting-started/quickstart.md)
+- [Configuration Reference](getting-started/configuration.md)
+
 ## 1. Architecture
 - [System Overview](architecture/overview.md)
 - [Trust Model](architecture/trust_model.md)

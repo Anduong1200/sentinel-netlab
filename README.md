@@ -264,34 +264,31 @@ sequenceDiagram
 
 ## 📚 Documentation
 
-### Getting Started
-- [Installation Guide](docs/getting-started/installation.md)
-- [Quick Start Tutorial](docs/getting-started/quickstart.md)
-- [Configuration Reference](docs/getting-started/configuration.md)
+Detailed documentation is available in the [docs/](docs/README.md) directory.
 
-### Architecture
-- [System Design](docs/architecture/system-design.md)
-- [Risk Scoring Model](docs/architecture/risk_scoring.md)
-- [Detection Algorithms](docs/architecture/detection.md)
+### 1. Architecture
+- [System Overview](docs/architecture/overview.md)
+- [Trust Model](docs/architecture/trust_model.md)
 - [Threat Model](docs/architecture/threat_model.md)
-- [Data Schema](docs/architecture/data_schema.md)
 
-### Operations
-- [Deployment Guide](docs/operations/deployment.md)
-- [Hardware Compatibility](docs/operations/hardware.md)
-- [Monitoring & Metrics](docs/operations/monitoring.md)
-- [Operator Handbook](docs/operations/handbook.md)
+### 2. Detection Logic
+- [Hybrid Detection Overview](docs/detection/overview.md)
+- [Rule-Based Engines](docs/detection/rule_based.md)
+- [Risk Scoring Algorithm](docs/detection/risk_scoring.md)
 
-### Research
-- [WiFi Security Analysis](docs/research/wifi-security.md)
-- [IEEE Report Template](docs/research/IEEE_Sentinel_NetLab_Report.md)
-- [IEEE Addendum](docs/research/IEEE_addendum.md)
+### 3. Security
+- [Telemetry Integrity](docs/security/telemetry_integrity.md)
+- [Sensor Hardening](docs/security/sensor_hardening.md)
+- [Controller Security](docs/security/controller_security.md)
 
-### Reference
+### 4. Operations & Research
+- [Lab Mode Overview](docs/lab_mode/mode_b_overview.md) (Active Capabilities)
+- [Reproducibility Guide](docs/reproducibility/experiment_steps.md)
+- [Evaluation Metrics](docs/evaluation/metrics.md)
+
+### 5. Reference
 - [API Documentation](docs/reference/api_overview.md)
-- [API Ingest Contract](docs/reference/api_ingest.md)
-- [OpenAPI Spec](docs/reference/openapi.yaml)
-- [Repository Index](docs/reference/repo_index.csv)
+- [Configuration Reference](docs/appendix/config_reference.md)
 
 ---
 
