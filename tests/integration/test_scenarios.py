@@ -66,7 +66,7 @@ class TestScenarioReplay:
         # But SensorController loads config via get_config().
 
         from sensor.config import get_config
-        
+
         # Load config and override storage paths to avoid PermissionError
         config = get_config()
         config.storage.pcap_dir = str(test_env / "pcaps")
