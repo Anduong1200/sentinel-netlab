@@ -65,9 +65,15 @@ class TestScenarioReplay:
         # We rely on os.environ patch above for minimal config.
         # But SensorController loads config via get_config().
 
-        # Instantiate Controller
-        # We can pass a mock config or let it load from env
-        controller = SensorController()
+        from sensor.config import get_config
+        
+        # Load config and override storage paths to avoid PermissionError
+        config = get_config()
+        config.storage.pcap_dir = str(test_env / "pcaps")
+        config.storage.db_path = str(test_env / "test.db")
+
+        # Instantiate Controller with safe config
+        controller = SensorController(config=config)
 
         # Override Driver with PcapCaptureDriver
         controller.driver = PcapCaptureDriver(
