@@ -46,7 +46,7 @@ sudo -u sentinel git -C "$INSTALL_DIR" pull origin main
 # Update dependencies
 log_info "Updating Python dependencies..."
 sudo -u sentinel "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
-sudo -u sentinel "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/sensor/requirements.txt" --upgrade
+sudo -u sentinel "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt" --upgrade
 
 # Update helper script
 log_info "Updating helper scripts..."

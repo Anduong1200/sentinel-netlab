@@ -14,7 +14,7 @@ Supported OS: Ubuntu 22.04 LTS or Raspberry Pi OS (Bullseye).
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   pip install -r sensor/requirements.txt
+   pip install -r requirements.txt
    ```
 
 ## Step 2: Generate Test Data
