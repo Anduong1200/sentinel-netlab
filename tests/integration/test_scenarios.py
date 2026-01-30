@@ -85,10 +85,6 @@ class TestScenarioReplay:
         # the 'mock_transport' fixture which patches the CLASS needs to be active BEFORE init.
         # It is active because it's passed as arg (pytest executes fixture setup first).
 
-        # We also need to make sure buffer uses tmp_path to avoids polluting /var/lib
-        controller.buffer.storage_path = Path(test_env) / "journal"
-        controller.buffer.storage_path.mkdir(parents=True)
-
         print(f"Starting replay of {setup_pcap}...")
 
         # Run Capture Loop manually or verify thread?
