@@ -28,23 +28,29 @@ def test_dashboard_metrics_update():
     mock_resp_alerts = MagicMock()
     mock_resp_alerts.status_code = 200
     mock_resp_alerts.json.return_value = {"alerts": mock_alerts}
+
+    mock_resp_sensors = MagicMock()
+    mock_resp_sensors.status_code = 200
+    mock_resp_sensors.json.return_value = {"sensors": {"s1": {"status": "online"}, "s2": {"status": "online"}}}
     
     # Patch requests.get
     with patch("requests.get") as mock_get:
         # Side effect to return different responses based on URL (simple FIFO or match)
-        # We'll use side_effect with a list (Net, Alerts)
-        mock_get.side_effect = [mock_resp_net, mock_resp_alerts]
+        # We'll use side_effect with a list (Net, Alerts, Sensors)
+        mock_get.side_effect = [mock_resp_net, mock_resp_alerts, mock_resp_sensors]
         
         # Call the Dash callback logic directly
         # Inputs: n_intervals (int)
-        fig, sensor_count, alert_count, table = update_metrics(1)
+        # update_metrics returns 8 values now
+        fig, sensor_count, alert_count, network_count, alerts_comp, timestamp, sensor_tbl, pie_fig = update_metrics(1)
         
         # Verify Interactions
-        assert mock_get.call_count == 2
+        assert mock_get.call_count == 3
         
         # Verify Counts
         assert sensor_count == "2"  # s1, s2
         assert alert_count == "1"
+        assert network_count == "2"
         
         # Verify Figure Data (Plotly Express returns a Figure object)
         # Check if latitude data is present
@@ -53,16 +59,16 @@ def test_dashboard_metrics_update():
         
         # Verify Table Data
         # Dash Table is a complex component, verifying type or children presence
-        assert hasattr(table, "children")
+        assert hasattr(alerts_comp, "children")
 
 def test_dashboard_error_handling():
     """Verify graceful handling of API failures"""
     
     with patch("requests.get", side_effect=Exception("Connection Failed")):
-        fig, sensor_count, alert_count, table = update_metrics(1)
+        fig, sensor_count, alert_count, table, alerts_comp, timestamp, sensor_tbl, pie_fig = update_metrics(1)
         
-        # Should return error states
-        assert sensor_count == "ERR"
-        assert alert_count == "ERR"
+        # Should return error states (Graceful degradation -> 0)
+        assert sensor_count == "0"
+        assert alert_count == "0"
         # Table should be an Alert component (Danger)
-        assert hasattr(table, "color")
+        assert hasattr(alerts_comp, "children")

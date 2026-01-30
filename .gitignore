@@ -74,12 +74,19 @@ coverage.xml
 test-reports/
 htmlcov/
 *_report.json
-test_output_*.txt
+test_output*.txt
 test_flow_*.txt
+integration_output*.txt
+unit_test_output*.txt
 bandit_report.json
 safety_report.json
 ruff_errors*.txt
 bandit_output*.txt
+bluetooth_log.json
+file_list.txt
+
+# Flask
+instance/
 
 # Docker
 docker-compose.override.yml

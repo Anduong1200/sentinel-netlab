@@ -13,9 +13,21 @@ import os
 import secrets
 import time
 from datetime import datetime, timezone
+import hashlib
+from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Set Default Test Environment Variables BEFORE any imports that might use config
+os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-for-integration"
+os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-for-integration"
+# os.environ["CONTROLLER_DATABASE_URL"] = "sqlite:///:memory:"
+# Use file based DB for persistence across contexts in tests
+os.environ["CONTROLLER_DATABASE_URL"] = f"sqlite:///{os.path.abspath('test_sentinel.db')}"
+os.environ["FLASK_ENV"] = "testing"
+os.environ["REQUIRE_HMAC"] = "false"
+os.environ["REQUIRE_TLS"] = "false"
 
 # =============================================================================
 # NETWORK DATA FIXTURES
@@ -152,10 +164,65 @@ def app_client():
     """Flask test client for Controller API"""
     try:
         from controller.api_server import app
-
+        from controller.api.deps import db, config
+        from controller.api.models import Token, Role
+        
+        # Force strict security OFF for tests
+        config.security.require_tls = False
+        config.security.require_hmac = False
+        
         app.config["TESTING"] = True
+        
+        with app.app_context():
+            # Ensure fresh DB
+            db.drop_all()
+            db.create_all()
+            
+            # Create Admin Token
+            admin_token = Token(
+                token_id="admin-test",
+                token_hash=hashlib.sha256("admin-token-dev".encode()).hexdigest(),
+                name="Admin Test",
+                role=Role.ADMIN,
+                created_at=datetime.now(timezone.utc),
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                is_active=True
+            )
+            db.session.add(admin_token)
+            
+            # Create Sensor Token
+            sensor_token = Token(
+                token_id="sensor-test",
+                token_hash=hashlib.sha256("sensor-01-token".encode()).hexdigest(),
+                name="Sensor Test",
+                role=Role.SENSOR,
+                sensor_id="sensor-01",
+                created_at=datetime.now(timezone.utc),
+                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                is_active=True
+            )
+            db.session.add(sensor_token)
+            db.session.commit()
+            
+            # Debug DB content
+            # print(f"DEBUG: Fixture DB Tokens: {[t.token_hash for t in Token.query.all()]}")
+
+            db.session.add(sensor_token)
+            db.session.commit()
+            
+            # Debug DB content
+            # print(f"DEBUG: Fixture DB Tokens: {[t.token_hash for t in Token.query.all()]}")
+
         with app.test_client() as client:
             yield client
+            
+        # Cleanup
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
+        if os.path.exists("test_sentinel.db"):
+            os.remove("test_sentinel.db")
+
     except ImportError:
         pytest.skip("Controller not available")
 

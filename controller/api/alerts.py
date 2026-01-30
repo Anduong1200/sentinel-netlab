@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 from flask import Blueprint, jsonify, request, g, send_file
-from .deps import db, limiter, logger, validate_json, PYDANTIC_AVAILABLE
+from .deps import db, limiter, logger, validate_json, PYDANTIC_AVAILABLE, config
 from .auth import require_auth, require_signed, Permission
 from .models import DBAlert
 from controller.export_engine import ReportData, ReportEngine, ReportFormat, ReportType

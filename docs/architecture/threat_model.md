@@ -1,6 +1,21 @@
 # Threat Model
 
-> STRIDE analysis and Data Flow Diagram for Sentinel NetLab
+We consider the following attacker models:
+
+## Wireless Adversary
+- Can inject, replay, and spoof IEEE 802.11 frames
+- Can perform deauthentication, rogue AP, and flooding attacks
+
+## Network Adversary
+- Can replay or tamper with telemetry if not protected
+- Attempts poisoning or DoS of the controller
+
+## Insider / Misuse
+- Accidental or malicious misuse of lab attack capabilities
+
+## Out of Scope
+- Physical tampering of hardware
+- Attacks on proprietary firmware/ASIC logic
 
 ---
 

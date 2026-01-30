@@ -3,20 +3,22 @@ import hashlib
 from datetime import UTC, datetime, timedelta
 from dataclasses import asdict
 from flask import Blueprint, jsonify, request
-from .deps import config
-from .auth import require_auth, Permission, TOKEN_STORE, APIToken, Role
+from .deps import config, db
+from .auth import require_auth, Permission, Role
+from .models import Token as APIToken # Use DB model alias
 
 bp = Blueprint("admin", __name__)
 
 @bp.route("/tokens", methods=["GET"])
 @require_auth(Permission.ADMIN)
 def list_tokens():
-    tokens = []
-    for t in TOKEN_STORE.values():
+    tokens = APIToken.query.all()
+    results = []
+    for t in tokens:
         d = asdict(t)
-        d["token_hash"] = "***"  # nosec B105 # noqa: S105
-        tokens.append(d)
-    return jsonify({"tokens": tokens})
+        d["token_hash"] = "***"  # nosec B105
+        results.append(d)
+    return jsonify({"tokens": results})
 
 
 @bp.route("/tokens", methods=["POST"])
@@ -27,11 +29,11 @@ def create_token():
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
 
-    role = data.get("role", "sensor")
+    role_str = data.get("role", "sensor")
     try:
-        role_enum = Role(role)
+        role_enum = Role(role_str)
     except ValueError:
-        return jsonify({"error": f"Invalid role: {role}"}), 400
+        return jsonify({"error": f"Invalid role: {role_str}"}), 400
 
     token_obj = APIToken(
         token_id=secrets.token_hex(8),
@@ -39,18 +41,19 @@ def create_token():
         name=data.get("name", "Token"),
         role=role_enum,
         sensor_id=data.get("sensor_id"),
-        created_at=datetime.now(UTC).isoformat(),
-        expires_at=(
-            datetime.now(UTC) + timedelta(hours=config.security.token_expiry_hours)
-        ).isoformat(),
+        created_at=datetime.now(UTC),
+        expires_at=datetime.now(UTC) + timedelta(hours=config.security.token_expiry_hours),
+        is_active=True
     )
-    TOKEN_STORE[token_hash] = token_obj
+    
+    db.session.add(token_obj)
+    db.session.commit()
 
     return jsonify(
         {
             "success": True,
             "token": raw_token,
             "token_id": token_obj.token_id,
-            "expires_at": token_obj.expires_at,
+            "expires_at": token_obj.expires_at.isoformat(),
         }
     )

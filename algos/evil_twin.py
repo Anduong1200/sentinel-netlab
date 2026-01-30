@@ -207,12 +207,6 @@ class AdvancedEvilTwinDetector:
     def ingest(self, telemetry: dict[str, Any]) -> list[EvilTwinAlert]:
         """
         Process single telemetry record.
-
-        Args:
-            telemetry: Normalized telemetry record
-
-        Returns:
-            List of confirmed alerts
         """
         alerts = []
 
@@ -227,6 +221,8 @@ class AdvancedEvilTwinDetector:
 
         # Track SSID mapping
         self.ssid_to_bssids[ssid].add(bssid)
+        
+        # print(f"DEBUG: Ingest {bssid} / {ssid}. Count: {len(self.ssid_to_bssids[ssid])}")
 
         # Check for duplicates
         if len(self.ssid_to_bssids[ssid]) >= self.config.min_duplicate_count:
@@ -247,11 +243,14 @@ class AdvancedEvilTwinDetector:
 
                 # Calculate score
                 score, evidence = self._calculate_score(original, suspect)
-
+                
                 if score >= self.config.threshold_medium:
                     alert = self._handle_detection(original, suspect, score, evidence)
                     if alert:
+                        print(f"DEBUG: Alert Validated! {alert.alert_id}")
                         alerts.append(alert)
+                    else:
+                        print("DEBUG: Alert pending/confirmation...")
 
         # Periodic cleanup
         self._cleanup()
@@ -456,8 +455,9 @@ class AdvancedEvilTwinDetector:
                 "suspect": suspect.bssid,
             }
 
-            # Immediate alert for critical score
-            if score >= 90:
+            # Immediate alert for critical score or zero window
+            if score >= 90 or self.config.confirmation_window_seconds == 0:
+                del self.pending_alerts[key]
                 return self._create_alert(score, evidence)
 
             return None
@@ -469,13 +469,13 @@ class AdvancedEvilTwinDetector:
             pending["score"] = max(pending["score"], score)
 
             # Check confirmation window
-            elapsed = now - pending["first_seen"]
-            if elapsed >= self.config.confirmation_window_seconds:
-                # Confirmed - emit alert
-                del self.pending_alerts[key]
-                return self._create_alert(pending["score"], evidence)
-
-            return None
+            delta = now - pending["first_seen"]
+            
+            if delta < self.config.confirmation_window_seconds:
+                return None
+            # Confirmed - emit alert
+            del self.pending_alerts[key]
+            return self._create_alert(pending["score"], evidence)
 
     def _create_alert(self, score: int, evidence: EvilTwinEvidence) -> EvilTwinAlert:
         """Create final alert"""

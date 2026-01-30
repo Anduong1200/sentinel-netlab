@@ -336,7 +336,7 @@ python -m build
 > - Computer Misuse Act (UK)
 > - Similar legislation in other jurisdictions
 
-See [ETHICS.md](ETHICS.md) for detailed guidelines and authorization templates.
+See [Ethics Statement](docs/ethics_legal/ethics_statement.md) and [Legal Scope](docs/ethics_legal/legal_scope.md) for detailed guidelines.
 
 ---
 
@@ -348,7 +348,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -361,7 +361,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 ## 📬 Contact
 
 - **Issues**: [GitHub Issues](https://github.com/Anduong1200/sentinel-netlab/issues)
-- **Security**: See [SECURITY.md](SECURITY.md) for reporting vulnerabilities
+- **Security**: See [SECURITY.md](.github/SECURITY.md) for reporting vulnerabilities
 
 ---
 

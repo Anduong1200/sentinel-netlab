@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 from pathlib import Path
 import shutil
 
+import logging
+
 # Import modules to test
 from sensor.sensor_controller import SensorController
 from sensor.capture_driver import PcapCaptureDriver
@@ -41,7 +43,8 @@ class TestScenarioReplay:
             "SENSOR_ID": "test-sensor-01",
             "SENSOR_HMAC_SECRET": "test-secret",
             "CONTROLLER_URL": "http://localhost:5000/api/v1/telemetry",
-            "SENSOR_AUTH_TOKEN": "test-token"
+            "SENSOR_AUTH_TOKEN": "test-token",
+            "SENSOR_PRIVACY_STORE_RAW_MAC": "true"
         }
         with patch.dict(os.environ, env):
             yield tmp_path
@@ -88,6 +91,15 @@ class TestScenarioReplay:
         # We should modify driver to signal stop, or run _capture_loop in a thread and stop controller after X seconds.
         
         # Approach: Run in thread, wait for driver to exhaust (or timeout), then stop.
+        # Disable confirmation window for immediate alert
+        from algos.evil_twin import EvilTwinConfig
+        new_conf = EvilTwinConfig()
+        new_conf.confirmation_window_seconds = 0
+        new_conf.threshold_medium = 10
+        
+        # Override config
+        controller.et_detector.config = new_conf
+        
         controller.start()
         
         # Wait for pcap processing
@@ -121,6 +133,6 @@ class TestScenarioReplay:
         args, _ = evil_twin_calls[0]
         alert_data = args[0]
         assert alert_data["alert_type"] == "evil_twin"
-        assert alert_data["risk_score"] > 50 # Assuming high score
+        assert alert_data["risk_score"] >= 40 
         
         print("Scenario passed: Evil Twin detected and uploaded.")

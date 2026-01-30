@@ -32,10 +32,12 @@ class TelemetryRecord(BaseModel):
     timestamp_utc: datetime
     sequence_id: int
     frame_type: FrameType
+    frame_subtype: Optional[str] = None
+    mac_src: Optional[str] = Field(None, pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     bssid: str = Field(pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     ssid: Optional[str] = None
     rssi_dbm: int = Field(ge=-120, le=0)
-    channel: int = Field(ge=1, le=173)
+    channel: int = Field(ge=0, le=173)
 
     @field_validator("ssid")
     @classmethod
