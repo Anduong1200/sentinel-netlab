@@ -42,6 +42,7 @@ dependencies = [
     "psutil>=5.9.0",
     "pynmea2>=1.18.0",
     "pyserial>=3.5",
+    "pandas>=2.0.0",
 ]
 
 [tool.setuptools]
