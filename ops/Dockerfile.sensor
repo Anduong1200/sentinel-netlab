@@ -19,8 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project definition
+# Copy project definition and required modules
 COPY pyproject.toml .
+COPY sentinel.py .
 
 # Create venv and install
 RUN python -m venv /opt/venv && \
@@ -32,7 +33,6 @@ COPY sensor/ ./sensor/
 COPY algos/ ./algos/
 COPY common/ ./common/
 COPY ml/ ./ml/
-COPY sentinel.py .
 COPY config.example.yaml ./config.yaml
 
 # Create non-root user
