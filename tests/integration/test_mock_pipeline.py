@@ -223,11 +223,14 @@ class TestControllerAPIMock:
 class TestDeauthFloodIntegration:
     """Test deauth flood detection end-to-end"""
 
-    def test_deauth_flood_trigger(self):
+    def test_deauth_flood_trigger(self, tmp_path):
         """Simulate deauth flood and verify detection"""
         from algos.dos import DeauthFloodDetector
 
-        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
+        state_file = tmp_path / "dos_state.json"
+        detector = DeauthFloodDetector(
+            threshold_per_sec=10, window_seconds=5, state_file=str(state_file)
+        )
 
         target_bssid = "AA:BB:CC:11:22:33"
         alerts_triggered = []
@@ -254,11 +257,14 @@ class TestDeauthFloodIntegration:
         alert = alerts_triggered[0]
         assert target_bssid in str(alert)
 
-    def test_normal_traffic_no_alert(self):
+    def test_normal_traffic_no_alert(self, tmp_path):
         """Normal deauth traffic should not trigger alerts"""
         from algos.dos import DeauthFloodDetector
 
-        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
+        state_file = tmp_path / "dos_state_normal.json"
+        detector = DeauthFloodDetector(
+            threshold_per_sec=10, window_seconds=5, state_file=str(state_file)
+        )
 
         # Only 5 deauths (below threshold)
         time.time()

@@ -42,13 +42,13 @@ class DeauthFloodDetector:
         threshold_per_sec: float = 10.0,
         window_seconds: float = 2.0,
         cooldown_seconds: float = 60.0,
+        state_file: str = ".dos_state.json",
     ):
         self.threshold_per_sec = threshold_per_sec
         self.window_seconds = window_seconds
         self.cooldown_seconds = cooldown_seconds
 
-        self.cooldown_seconds = cooldown_seconds
-        self.state_file = ".dos_state.json"
+        self.state_file = state_file
 
         # Track deauth frames: (bssid, client) -> [timestamps]
         self.deauth_history: dict[tuple[str, str], list[float]] = defaultdict(list)

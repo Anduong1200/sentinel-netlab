@@ -143,11 +143,14 @@ class TestDetection:
 class TestWIDSDetectors:
     """Test WIDS detection engines"""
 
-    def test_deauth_flood_detection(self):
+    def test_deauth_flood_detection(self, tmp_path):
         """Test deauth flood detector"""
         from algos.dos import DeauthFloodDetector
 
-        detector = DeauthFloodDetector(threshold_per_sec=10, window_seconds=5)
+        state_file = tmp_path / "dos_state.json"
+        detector = DeauthFloodDetector(
+            threshold_per_sec=10, window_seconds=5, state_file=str(state_file)
+        )
 
         # Simulate deauth flood
         # Simulate deauth flood (needs > threshold/sec * window)

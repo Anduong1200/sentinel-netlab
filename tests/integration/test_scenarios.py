@@ -51,6 +51,7 @@ class TestScenarioReplay:
             "CONTROLLER_URL": "http://localhost:5000/api/v1/telemetry",
             "SENSOR_AUTH_TOKEN": "test-token",
             "SENSOR_PRIVACY_STORE_RAW_MAC": "true",
+            "STORAGE_PATH": str(tmp_path / "journal"),
         }
         with patch.dict(os.environ, env):
             yield tmp_path
