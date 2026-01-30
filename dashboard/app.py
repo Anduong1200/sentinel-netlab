@@ -373,17 +373,17 @@ def update_metrics(n):
     current_time = datetime.now().strftime("Last updated: %H:%M:%S")
 
     # Dark Map Style
-    layout_override = dict(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=0, r=0, t=0, b=0),
-        font=dict(color="#fff"),
-        mapbox=dict(
-            style="carto-darkmatter",
-            center=dict(lat=40.7128, lon=-74.0060),  # Default center
-            zoom=2,
-        ),
-    )
+    layout_override = {
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "plot_bgcolor": "rgba(0,0,0,0)",
+        "margin": {"l": 0, "r": 0, "t": 0, "b": 0},
+        "font": {"color": "#fff"},
+        "mapbox": {
+            "style": "carto-darkmatter",
+            "center": {"lat": 40.7128, "lon": -74.0060},  # Default center
+            "zoom": 2,
+        },
+    }
 
     empty_figure = go.Figure()
     empty_figure.update_layout(**layout_override)
@@ -416,7 +416,8 @@ def update_metrics(n):
             if resp_sensors.status_code == 200:
                 sensors = resp_sensors.json().get("sensors", {})
 
-        except Exception:
+        except Exception as e:
+            app.server.logger.debug(f"Dashboard data fetch failed (graceful): {e}")
             pass  # Graceful degrade
 
         # --- PROCESS NETWORKS & MAP ---
@@ -460,7 +461,7 @@ def update_metrics(n):
                     lon="lon",
                     z="risk",
                     radius=20,
-                    center=dict(lat=df.lat.mean(), lon=df.lon.mean()),
+                    center={"lat": df.lat.mean(), "lon": df.lon.mean()},
                     zoom=12,
                     mapbox_style="carto-darkmatter",
                     color_continuous_scale=["#00f2fe", "#4facfe", "#ffea00", "#ff0844"],
@@ -589,9 +590,9 @@ def update_metrics(n):
         pie_fig.update_layout(
             **layout_override,
             showlegend=True,
-            legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-            ),
+            legend={
+                "orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1
+            },
         )
         # Update text info
         pie_fig.update_traces(textinfo="percent+label", textposition="inside")

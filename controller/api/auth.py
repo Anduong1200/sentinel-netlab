@@ -1,16 +1,19 @@
 from __future__ import annotations
+
 import hashlib
 import hmac
+import os
 import secrets
-from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from functools import wraps
-from flask import jsonify, request, g
-import os
-from .deps import config, logger, db
-from .models import Token
+
+from flask import g, jsonify, request
+
 from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
+
+from .deps import config, db, logger
+from .models import Token
 
 # =============================================================================
 # RBAC & AUTHENTICATION
@@ -119,7 +122,8 @@ def verify_token(token_plain: str) -> Token | None:
     token_obj.last_used = datetime.now(UTC)
     try:
         db.session.commit()
-    except:
+    except Exception as e:
+        logger.error(f"Failed to update token last_used: {e}")
         db.session.rollback()
 
     return token_obj
@@ -164,8 +168,10 @@ def verify_sequence(token: Token, sequence: int) -> bool:
     token.last_sequence = sequence
     try:
         db.session.commit()
-    except:
+    except Exception as e:
+        logger.error(f"Failed to update sequence: {e}")
         db.session.rollback()
+        return False
     return True
 
 

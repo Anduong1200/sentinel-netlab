@@ -6,7 +6,7 @@ Centralized, type-safe configuration with strict secrets management.
 
 import logging
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ class SecurityConfig:
     # Redacted representation for logging
     def safe_dict(self) -> Dict[str, Any]:
         d = asdict(self)
-        d["secret_key"] = "***"
-        d["hmac_secret"] = "***"
+        d["secret_key"] = "***"  # noqa: S105
+        d["hmac_secret"] = "***"  # noqa: S105
         return d
 
 
@@ -52,7 +52,7 @@ class ControllerConfig:
     environment: str
     security: SecurityConfig
     database: DatabaseConfig
-    host: str = "0.0.0.0"  # nosec B104
+    host: str = "0.0.0.0"  # noqa: S104
     port: int = 5000
     debug: bool = False
 
@@ -89,14 +89,14 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         if is_prod and strict_production:
             missing.append("CONTROLLER_SECRET_KEY")
         elif not is_prod:
-            secret_key = "dev-secret-unsafe-do-not-use-in-prod"
+            secret_key = "dev-secret-unsafe-do-not-use-in-prod"  # noqa: S105
             logger.warning("Using default INSECURE secret key (Dev Mode)")
 
     if not hmac_secret:
         if is_prod and strict_production:
             missing.append("CONTROLLER_HMAC_SECRET")
         elif not is_prod:
-            hmac_secret = "dev-hmac-unsafe-do-not-use-in-prod"
+            hmac_secret = "dev-hmac-unsafe-do-not-use-in-prod"  # noqa: S105
             logger.warning("Using default INSECURE hmac secret (Dev Mode)")
 
     if not db_url:
@@ -140,7 +140,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         environment=env,
         security=security,
         database=database,
-        host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # nosec B104
+        host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # noqa: S104
         port=int(os.getenv("CONTROLLER_PORT", os.getenv("PORT", "5000"))),
         debug=os.getenv("CONTROLLER_DEBUG", os.getenv("FLASK_DEBUG", "false")).lower()
         == "true"

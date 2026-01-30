@@ -5,8 +5,8 @@ Run: pytest tests/integration/ -v --tb=short
 """
 
 import time
-from datetime import datetime, timezone
 import unittest.mock
+from datetime import UTC, datetime
 
 import pytest
 
@@ -52,7 +52,7 @@ def mock_telemetry_batch():
     return {
         "sensor_id": "test-sensor-01",
         "batch_id": "batch-001",
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "items": [
             {
                 "type": "beacon",
@@ -200,7 +200,7 @@ class TestControllerAPIMock:
             json=mock_telemetry_batch,
             headers={
                 "Authorization": "Bearer sensor-01-token",
-                "X-Timestamp": datetime.now(timezone.utc).isoformat(),
+                "X-Timestamp": datetime.now(UTC).isoformat(),
                 "X-Signature": "dummy",  # HMAC disabled for testing
             },
         )
@@ -289,6 +289,7 @@ class TestMessageSigningIntegration:
         """Test signing roundtrip"""
         import hashlib
         import hmac as hmac_lib
+
         from sensor.message_signing import MessageSigner
 
         secret = "test-shared-secret"

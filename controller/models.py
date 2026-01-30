@@ -3,7 +3,6 @@ Sentinel NetLab - Database Models
 SQLAlchemy models for PostgreSQL/SQLite.
 """
 
-import os
 from datetime import UTC, datetime
 
 from sqlalchemy import (

@@ -53,7 +53,7 @@ def setup_monitor_parser(subparsers):
     )
     parser.add_argument("--no-hop", action="store_true", help="Disable hopping")
     parser.add_argument("--api", action="store_true", help="Enable API")
-    parser.add_argument("--host", default="0.0.0.0", help="API Host")
+    parser.add_argument("--host", default="0.0.0.0", help="API Host")  # noqa: S104
     parser.add_argument("--port", type=int, default=5000, help="API Port")
     parser.add_argument(
         "--buffered-storage", action="store_true", help="Buffered Storage"

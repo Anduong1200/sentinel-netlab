@@ -266,9 +266,9 @@ class AttackEngine:
             rate_delay = 1.0 / self.safety.config.rate_limit_per_sec
 
             for _i in range(count):
-                ssid = random.choice(ssid_list)  # nosec B311
+                ssid = random.choice(ssid_list)  # noqa: S311
                 # Random BSSID with locally administered bit set
-                src_mac = f"02:00:00:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}"  # nosec B311
+                src_mac = f"02:00:00:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}"  # noqa: S311
 
                 # Create Beacon
                 dot11 = Dot11(

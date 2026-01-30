@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # Ensure cwd is in path (simulating running from root)
 sys.path.insert(0, os.getcwd())

@@ -8,9 +8,9 @@ import argparse
 import logging
 import os
 import sys
+import tempfile
 import threading
 import time
-import tempfile
 
 # Add sensor to path
 # Add common to path

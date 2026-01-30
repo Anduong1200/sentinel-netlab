@@ -1,11 +1,13 @@
 import secrets
 from datetime import UTC, datetime
-from flask import Blueprint, jsonify, request, g
-from .deps import db, config, logger, limiter, validate_json, PYDANTIC_AVAILABLE
-from .auth import require_auth, require_signed, Permission, SENSOR_REGISTRY
-from .models import Telemetry
+
+from flask import Blueprint, g, jsonify, request
 
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
+
+from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
+from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
+from .models import Telemetry
 
 bp = Blueprint("telemetry", __name__)
 

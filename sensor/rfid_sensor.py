@@ -6,8 +6,7 @@ Monitors RFID/NFC activity for unauthorized access or cloning.
 
 import logging
 import time
-import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
@@ -53,10 +52,10 @@ class RFIDSensor:
         """Simulate random RFID tag reads"""
         import random
 
-        if random.random() > 0.1:  # 10% chance to read a tag
+        if random.random() > 0.1:  # noqa: S311
             return None
 
-        tag_id = f"TAG-{random.randint(1000, 9999):04x}".upper()
+        tag_id = f"TAG-{random.randint(1000, 9999):04x}".upper()  # noqa: S311
         return RFIDTag(
             tag_id=tag_id,
             tag_type="MIFARE Classic",

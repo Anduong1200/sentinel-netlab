@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from dashboard.app import update_metrics, app
+
+from dashboard.app import update_metrics
 
 
 def test_dashboard_metrics_update():

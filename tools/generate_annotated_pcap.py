@@ -13,9 +13,8 @@ import random
 import struct
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -118,7 +117,7 @@ class AnnotatedFrame:
     timestamp: float
     frame_type: str
     bssid: str
-    ssid: Optional[str]
+    ssid: str | None
     label: str
     label_confidence: float
     notes: str
@@ -336,7 +335,7 @@ class AnnotatedPcapGenerator:
         """Save annotation manifest"""
         manifest = {
             "pcap_file": pcap_file,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "total_frames": len(annotations),
             "label_distribution": {},
             "annotations": [asdict(a) for a in annotations],

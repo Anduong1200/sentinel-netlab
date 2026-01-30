@@ -1,5 +1,6 @@
 from typing import List
-from pydantic import BaseModel, HttpUrl, Field
+
+from pydantic import BaseModel, Field
 
 
 class CaptureConfig(BaseModel):
@@ -10,7 +11,7 @@ class CaptureConfig(BaseModel):
 
 
 class ApiConfig(BaseModel):
-    host: str = "0.0.0.0"  # nosec B104
+    host: str = "0.0.0.0"  # noqa: S104
     port: int = 5000
     api_key: str = Field(min_length=8)
     ssl_enabled: bool = True

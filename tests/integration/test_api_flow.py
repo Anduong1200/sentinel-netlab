@@ -1,6 +1,3 @@
-import pytest
-from datetime import datetime, timezone
-import json
 
 
 def test_telemetry_ingestion_flow(

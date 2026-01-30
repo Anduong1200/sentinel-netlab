@@ -3,7 +3,6 @@ Sentinel NetLab - Unit Tests for Frame Parser
 Tests frame_parser.py with sample pcap data.
 """
 
-from pathlib import Path
 
 import pytest
 
@@ -11,8 +10,8 @@ import pytest
 try:
     from sensor.frame_parser import FrameParser, ParsedFrame
 except ImportError:
-    import sys
     import os
+    import sys
 
     # Add root to path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

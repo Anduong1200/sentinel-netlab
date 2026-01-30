@@ -29,8 +29,8 @@ class GPSFix:
         import random
 
         return cls(
-            lat=21.0285 + random.uniform(-0.01, 0.01),  # nosec B311
-            lon=105.8542 + random.uniform(-0.01, 0.01),  # nosec B311
+            lat=21.0285 + random.uniform(-0.01, 0.01),  # noqa: S311
+            lon=105.8542 + random.uniform(-0.01, 0.01),  # noqa: S311
             alt=10.0,
             speed=5.0,
             accuracy_m=3.0,
@@ -102,7 +102,8 @@ class GPSReader:
                                     ),
                                     timestamp=datetime.now(UTC).isoformat(),
                                 )
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"GPS parse error: {e}")
                         continue
         except Exception as e:
             logger.error(f"GPS Error: {e}")

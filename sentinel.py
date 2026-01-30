@@ -4,9 +4,8 @@ Sentinel NetLab - Unified CLI Entry Point
 Routes commands to appropriate sub-modules.
 """
 
-import sys
 import argparse
-import os
+import sys
 from pathlib import Path
 
 # Add project root to sys.path

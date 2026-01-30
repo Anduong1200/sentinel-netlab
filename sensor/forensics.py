@@ -58,8 +58,7 @@ class ForensicAnalyzer:
 
         try:
             with PcapReader(self.pcap_path) as pcap_reader:
-                for pkt in pcap_reader:
-                    yield pkt
+                yield from pcap_reader
         except Exception as e:
             logger.error(f"Failed to read PCAP stream: {e}")
             yield from []

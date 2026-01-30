@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+from typing import Dict
+
 from pydantic import BaseModel, Field
 
 
@@ -8,9 +9,9 @@ class AlertCreate(BaseModel):
     alert_type: str = Field(..., max_length=50)
     severity: str = Field(..., pattern=r"^(Critical|High|Medium|Low|Info)$")
     title: str = Field(..., max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
-    bssid: Optional[str] = None
-    evidence: Optional[Dict] = None
+    description: str | None = Field(None, max_length=2000)
+    bssid: str | None = None
+    evidence: Dict | None = None
 
     schema_version: str = "1.0"
 

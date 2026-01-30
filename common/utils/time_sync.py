@@ -240,7 +240,8 @@ class GPSTime:
                     if direction in ["S", "W"]:
                         result = -result
                     return result
-        except Exception:  # nosec B110
+        except Exception as e:
+            logger.debug(f"Coordinate parse error: {e}")
             pass
         return 0.0
 

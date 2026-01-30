@@ -1,7 +1,8 @@
 # tests/test_config.py
-import pytest
-import os
 import importlib
+
+import pytest
+
 from controller import config as config_mod
 
 

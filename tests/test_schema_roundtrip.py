@@ -1,11 +1,12 @@
-import json
+from datetime import UTC, datetime
+
 import pytest
-from datetime import datetime, timezone
+from pydantic import ValidationError
+
 from common.schemas import (
-    TelemetryRecord,
-    TelemetryBatch,
     AlertCreate,
-    HeartbeatRequest,
+    TelemetryBatch,
+    TelemetryRecord,
 )
 from common.schemas.telemetry import FrameType
 
@@ -14,7 +15,7 @@ def test_telemetry_roundtrip():
     """Verify TelemetryRecord -> JSON -> TelemetryRecord roundtrip"""
     original = TelemetryRecord(
         sensor_id="test-sensor-01",
-        timestamp_utc=datetime.now(timezone.utc),
+        timestamp_utc=datetime.now(UTC),
         sequence_id=1001,
         frame_type=FrameType.BEACON,
         bssid="00:11:22:33:44:55",
@@ -44,7 +45,7 @@ def test_telemetry_batch_structure():
     """Verify TelemetryBatch structure and strictness"""
     record = TelemetryRecord(
         sensor_id="test-sensor-01",
-        timestamp_utc=datetime.now(timezone.utc),
+        timestamp_utc=datetime.now(UTC),
         sequence_id=1,
         frame_type=FrameType.PROBE_REQ,
         bssid="AA:BB:CC:DD:EE:FF",
@@ -60,7 +61,7 @@ def test_telemetry_batch_structure():
     assert len(json_batch["records"]) == 1
 
     # Test 'extra=forbid' behavior
-    with pytest.raises(Exception):  # ValidationError
+    with pytest.raises(ValidationError):
         TelemetryBatch(**{**json_batch, "extra_field": "should_fail"})
 
 

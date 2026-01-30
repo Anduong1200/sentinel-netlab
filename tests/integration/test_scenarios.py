@@ -1,18 +1,18 @@
 import os
 import time
-import pytest
-from unittest.mock import MagicMock, patch
-from pathlib import Path
-import shutil
+from unittest.mock import patch
 
-import logging
+import pytest
+
+from sensor.capture_driver import PcapCaptureDriver
 
 # Import modules to test
 from sensor.sensor_controller import SensorController
-from sensor.capture_driver import PcapCaptureDriver
+from tests.data.generate_pcap import (
+    OUTPUT_FILE as PCAP_FILE,
+)
 from tests.data.generate_pcap import (
     main as generate_pcap_main,
-    OUTPUT_FILE as PCAP_FILE,
 )
 
 

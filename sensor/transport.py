@@ -160,8 +160,9 @@ class TransportClient:
         # Validation
         try:
             # We import here to avoid circular or early import issues if sys.path isn't ready at module level
-            from common.schemas.telemetry import TelemetryBatch
             from pydantic import ValidationError
+
+            from common.schemas.telemetry import TelemetryBatch
 
             # Validate
             # Note: batch dict might need adjustment if schema expects strict types

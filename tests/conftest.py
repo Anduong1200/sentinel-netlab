@@ -9,12 +9,11 @@ Usage:
         ...
 """
 
+import hashlib
 import os
 import secrets
 import time
-from datetime import datetime, timezone
-import hashlib
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -104,7 +103,7 @@ def mock_telemetry_batch():
     return {
         "sensor_id": "test-sensor-01",
         "batch_id": f"batch-{secrets.token_hex(4)}",
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "sequence_number": 1,
         "items": [
             {
@@ -165,9 +164,9 @@ def mock_alert():
 def app_client():
     """Flask test client for Controller API"""
     try:
+        from controller.api.deps import config, db
+        from controller.api.models import Role, Token
         from controller.api_server import app
-        from controller.api.deps import db, config
-        from controller.api.models import Token, Role
 
         # Force strict security OFF for tests
         config.security.require_tls = False
@@ -183,11 +182,11 @@ def app_client():
             # Create Admin Token
             admin_token = Token(
                 token_id="admin-test",
-                token_hash=hashlib.sha256("admin-token-dev".encode()).hexdigest(),
+                token_hash=hashlib.sha256(b"admin-token-dev").hexdigest(),
                 name="Admin Test",
                 role=Role.ADMIN,
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=365),
                 is_active=True,
             )
             db.session.add(admin_token)
@@ -195,12 +194,12 @@ def app_client():
             # Create Sensor Token
             sensor_token = Token(
                 token_id="sensor-test",
-                token_hash=hashlib.sha256("sensor-01-token".encode()).hexdigest(),
+                token_hash=hashlib.sha256(b"sensor-01-token").hexdigest(),
                 name="Sensor Test",
                 role=Role.SENSOR,
                 sensor_id="sensor-01",
-                created_at=datetime.now(timezone.utc),
-                expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+                created_at=datetime.now(UTC),
+                expires_at=datetime.now(UTC) + timedelta(days=365),
                 is_active=True,
             )
             db.session.add(sensor_token)
@@ -234,7 +233,7 @@ def auth_headers():
     """Authorization headers for API tests"""
     return {
         "Authorization": "Bearer admin-token-dev",
-        "X-Timestamp": datetime.now(timezone.utc).isoformat(),
+        "X-Timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -243,7 +242,7 @@ def sensor_auth_headers():
     """Sensor authorization headers"""
     return {
         "Authorization": "Bearer sensor-01-token",
-        "X-Timestamp": datetime.now(timezone.utc).isoformat(),
+        "X-Timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -338,7 +337,7 @@ def temp_data_dir(tmp_path):
 @pytest.fixture
 def freeze_time():
     """Fixture to freeze time for deterministic tests"""
-    fixed_time = datetime(2026, 1, 28, 12, 0, 0, tzinfo=timezone.utc)
+    fixed_time = datetime(2026, 1, 28, 12, 0, 0, tzinfo=UTC)
 
     with patch("datetime.datetime") as mock_dt:
         mock_dt.now.return_value = fixed_time

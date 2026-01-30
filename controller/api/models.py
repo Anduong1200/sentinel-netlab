@@ -1,6 +1,8 @@
 from datetime import datetime
+
 from sqlalchemy.dialects.postgresql import JSONB
-from .deps import db, config
+
+from .deps import config, db
 
 
 class Telemetry(db.Model):

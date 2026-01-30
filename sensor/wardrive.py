@@ -13,9 +13,9 @@ import signal
 import sys
 import time
 from dataclasses import asdict, dataclass
-from typing import Any
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from common.gps.gps_reader import GPSReader
+from common.gps.gps_reader import GPSReader  # noqa: E402
 
 # GPSReader and GPSFix imported from common.gps.gps_reader
 
@@ -131,18 +131,18 @@ class WardriveCapture:
         import random
 
         networks = []
-        for _i in range(random.randint(1, 5)):  # nosec B311
+        for _i in range(random.randint(1, 5)):  # noqa: S311
             networks.append(
                 {
-                    "bssid": f"AA:BB:CC:{random.randint(0, 255):02X}:{random.randint(0, 255):02X}:{random.randint(0, 255):02X}",  # nosec B311
-                    "ssid": random.choice(  # nosec B311
+                    "bssid": f"AA:BB:CC:{random.randint(0, 255):02X}:{random.randint(0, 255):02X}:{random.randint(0, 255):02X}",  # noqa: S311
+                    "ssid": random.choice(  # noqa: S311
                         ["CafeWiFi", "HomeNet", "Office_5G", None, "FreeWiFi"]
                     ),
-                    "rssi_dbm": random.randint(-90, -30),  # nosec B311
-                    "channel": random.choice([1, 6, 11, 36, 44]),  # nosec B311
+                    "rssi_dbm": random.randint(-90, -30),  # noqa: S311
+                    "channel": random.choice([1, 6, 11, 36, 44]),  # noqa: S311
                     "security": random.choice(
                         ["WPA2", "WPA3", "WEP", "Open"]
-                    ),  # nosec B311
+                    ),  # noqa: S311
                 }
             )
         return networks

@@ -4,10 +4,9 @@ Sentinel NetLab - Bluetooth Sensor
 Discovers nearby Bluetooth and BLE devices.
 """
 
-import logging
-import time
 import json
-from dataclasses import dataclass, asdict
+import logging
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
@@ -81,7 +80,7 @@ class BluetoothSensor:
                 address=addr,
                 name=name,
                 class_of_device=dev_class,
-                rssi=random.randint(-90, -30),
+                rssi=random.randint(-90, -30),  # noqa: S311
                 last_seen=datetime.now(UTC).isoformat(),
                 is_ble=(dev_class is None),
             )

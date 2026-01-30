@@ -4,15 +4,14 @@ Tests capture_driver.py with MockCaptureDriver.
 """
 
 import time
-from pathlib import Path
 
 import pytest
 
 try:
     from sensor.capture_driver import CaptureDriver, MockCaptureDriver, RawFrame
 except ImportError:
-    import sys
     import os
+    import sys
 
     # Add root to path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

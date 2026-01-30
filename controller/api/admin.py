@@ -1,10 +1,12 @@
-import secrets
 import hashlib
-from datetime import UTC, datetime, timedelta
+import secrets
 from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
+
 from flask import Blueprint, jsonify, request
+
+from .auth import Permission, Role, require_auth
 from .deps import config, db
-from .auth import require_auth, Permission, Role
 from .models import Token as APIToken  # Use DB model alias
 
 bp = Blueprint("admin", __name__)
@@ -17,7 +19,7 @@ def list_tokens():
     results = []
     for t in tokens:
         d = asdict(t)
-        d["token_hash"] = "***"  # nosec B105
+        d["token_hash"] = "***"  # noqa: S105
         results.append(d)
     return jsonify({"tokens": results})
 

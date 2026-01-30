@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: F403, F405
 """
 Generate Golden PCAP Dataset for Sentinel NetLab
 Creates a synthetic 802.11 pcap with:
@@ -8,7 +9,7 @@ Creates a synthetic 802.11 pcap with:
 """
 
 import os
-import sys
+
 from scapy.all import *
 
 # Ensure output directory exists
@@ -51,7 +52,7 @@ def main():
 
     print("[-] Generating Normal Traffic...")
     # 10 Beacons over 1 sec
-    for i in range(10):
+    for _i in range(10):
         packets.append(
             create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60)
         )
@@ -77,7 +78,7 @@ def main():
     evil_bssid = "de:ad:be:ef:00:00"
 
     print("[-] Generating Evil Twin Attack...")
-    for i in range(20):
+    for _i in range(20):
         # RSSI -30 (Much stronger than legit -60, anomaly)
         packets.append(create_beacon("Corporate_WiFi", evil_bssid, channel=6, rssi=-30))
 
@@ -86,7 +87,7 @@ def main():
     # -------------------------------------------------------------------------
     print("[-] Generating Deauth Flood...")
     # 100 Frames in quick succession
-    for i in range(100):
+    for _i in range(100):
         packets.append(create_deauth(client_mac, legit_bssid))
 
     # Save

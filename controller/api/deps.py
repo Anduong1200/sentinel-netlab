@@ -1,15 +1,16 @@
-from flask import Flask
+import logging
+import os
+from functools import wraps
+
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+
 from controller.config import init_config
-import os
-import logging
-from functools import wraps
-from flask import request, g, jsonify
 
 # Validation
 try:
-    from pydantic import BaseModel, ValidationError
+    from pydantic import ValidationError
 
     PYDANTIC_AVAILABLE = True
 except ImportError:
@@ -41,8 +42,8 @@ db = SQLAlchemy()
 
 # Limiter
 # Limiter
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask_limiter import Limiter  # noqa: E402
+from flask_limiter.util import get_remote_address  # noqa: E402
 
 # Create global limiter instance
 # key_func is required.

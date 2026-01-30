@@ -1,7 +1,9 @@
 import os
-import pytest
 from unittest.mock import patch
-from controller.config import init_config, ControllerConfig
+
+import pytest
+
+from controller.config import init_config
 
 
 class TestConfigSecurity:

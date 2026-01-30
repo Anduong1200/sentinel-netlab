@@ -6,15 +6,12 @@ Isolated service for performing active wireless attacks in a controlled lab envi
 
 import logging
 import os
-import time
-from datetime import datetime
 
+from attacks import AttackEngine, LabSafetyError
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
-from attacks import AttackEngine, LabSafetyError
 
 # Setup logging
 logging.basicConfig(

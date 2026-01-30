@@ -7,11 +7,10 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from common.schemas import TelemetryRecord
-
 from common.oui import OUI_DATABASE
 from common.privacy import anonymize_mac_oui, get_oui, hash_mac
 from common.privacy import anonymize_ssid as priv_anonymize_ssid
+from common.schemas import TelemetryRecord
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +105,7 @@ class TelemetryNormalizer:
         self._lookup_vendor(vendor_oui)
 
         # Calculate frequency
-        frequency = self._channel_to_freq(parsed_frame.channel)
+        self._channel_to_freq(parsed_frame.channel)
 
         # Handle SSID
         ssid = parsed_frame.ssid
