@@ -19,9 +19,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project definition and required modules
+# Copy project definition and required files for build
 COPY pyproject.toml .
+COPY README.md .
 COPY sentinel.py .
+COPY sensor/ ./sensor/
+COPY controller/ ./controller/
+COPY common/ ./common/
+COPY algos/ ./algos/
+COPY ml/ ./ml/
+# The packages are already copied above for the build
 
 # Create venv and install
 RUN python -m venv /opt/venv && \
