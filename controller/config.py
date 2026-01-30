@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SecurityConfig:
     """Security-sensitive configuration."""
+
     secret_key: str
     hmac_secret: str
     require_hmac: bool = True
@@ -25,7 +26,7 @@ class SecurityConfig:
     cors_origins: str | list[str] = "*"
     rate_limit_telemetry: str = "200 per minute"
     rate_limit_alerts: str = "50 per minute"
-    
+
     # Redacted representation for logging
     def safe_dict(self) -> Dict[str, Any]:
         d = asdict(self)
@@ -37,8 +38,9 @@ class SecurityConfig:
 @dataclass
 class DatabaseConfig:
     """Database configuration."""
+
     url: str
-    
+
     def safe_dict(self) -> Dict[str, Any]:
         return {"url": self.url.split("@")[-1] if "@" in self.url else "sqlite://..."}
 
@@ -46,13 +48,14 @@ class DatabaseConfig:
 @dataclass
 class ControllerConfig:
     """Main controller configuration."""
+
     environment: str
     security: SecurityConfig
     database: DatabaseConfig
     host: str = "0.0.0.0"  # nosec B104
     port: int = 5000
     debug: bool = False
-    
+
     def safe_dict(self) -> Dict[str, Any]:
         return {
             "environment": self.environment,
@@ -67,7 +70,7 @@ class ControllerConfig:
 def init_config(strict_production: bool = True) -> ControllerConfig:
     """
     Initialize configuration from environment variables.
-    
+
     Args:
         strict_production: If True, raises RuntimeError if secrets are missing in production.
     """
@@ -81,7 +84,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
 
     # Strict Validation for Production
     missing = []
-    
+
     if not secret_key:
         if is_prod and strict_production:
             missing.append("CONTROLLER_SECRET_KEY")
@@ -95,7 +98,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         elif not is_prod:
             hmac_secret = "dev-hmac-unsafe-do-not-use-in-prod"
             logger.warning("Using default INSECURE hmac secret (Dev Mode)")
-    
+
     if not db_url:
         if is_prod and strict_production:
             missing.append("CONTROLLER_DATABASE_URL")
@@ -121,7 +124,11 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         time_drift_max=int(os.getenv("MAX_TIME_DRIFT", "300")),
         token_expiry_hours=int(os.getenv("TOKEN_EXPIRY_HOURS", "720")),
         mtls_enabled=os.getenv("MTLS_ENABLED", "false").lower() == "true",
-        cors_origins=os.getenv("CORS_ORIGINS", "*").split(",") if "," in os.getenv("CORS_ORIGINS", "*") else os.getenv("CORS_ORIGINS", "*"),
+        cors_origins=(
+            os.getenv("CORS_ORIGINS", "*").split(",")
+            if "," in os.getenv("CORS_ORIGINS", "*")
+            else os.getenv("CORS_ORIGINS", "*")
+        ),
         rate_limit_telemetry=os.getenv("RATE_LIMIT_TELEMETRY", "200 per minute"),
         rate_limit_alerts=os.getenv("RATE_LIMIT_ALERTS", "50 per minute"),
     )
@@ -135,7 +142,9 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         database=database,
         host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # nosec B104
         port=int(os.getenv("CONTROLLER_PORT", os.getenv("PORT", "5000"))),
-        debug=os.getenv("CONTROLLER_DEBUG", os.getenv("FLASK_DEBUG", "false")).lower() == "true" or not is_prod,
+        debug=os.getenv("CONTROLLER_DEBUG", os.getenv("FLASK_DEBUG", "false")).lower()
+        == "true"
+        or not is_prod,
     )
 
     return cfg

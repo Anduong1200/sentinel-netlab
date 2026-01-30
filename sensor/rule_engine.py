@@ -252,9 +252,7 @@ class RuleEngine:
         if rule_id not in self.last_fired:
             return False
 
-        elapsed = (
-            datetime.now(UTC) - self.last_fired[rule_id]
-        ).total_seconds()
+        elapsed = (datetime.now(UTC) - self.last_fired[rule_id]).total_seconds()
         return elapsed < cooldown_seconds
 
     def _create_alert(self, rule: DetectionRule, data: dict, sensor_id: str) -> Alert:
@@ -384,7 +382,7 @@ DEFAULT_RULES = {
             "severity": "high",
             "conditions": [
                 {"field": "frame_type", "op": "in", "value": ["auth", "assoc_resp"]},
-                {"field": "ies.status_code", "op": "ne", "value": 0}
+                {"field": "ies.status_code", "op": "ne", "value": 0},
             ],
             "mitre_technique_id": "T1110.003",
             "mitre_technique_name": "Brute Force: Password Spraying",
@@ -398,7 +396,7 @@ DEFAULT_RULES = {
             "severity": "medium",
             "conditions": [
                 {"field": "frame_type", "op": "eq", "value": "data"},
-                {"field": "protocol", "op": "in", "value": ["TELNET", "FTP", "HTTP"]}
+                {"field": "protocol", "op": "in", "value": ["TELNET", "FTP", "HTTP"]},
             ],
             "mitre_technique_id": "T1040",
             "mitre_technique_name": "Network Sniffing",

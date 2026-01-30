@@ -2,9 +2,10 @@ from datetime import UTC, datetime
 from flask import Blueprint, jsonify, request, g
 from .deps import validate_json, PYDANTIC_AVAILABLE
 from .auth import require_auth, require_signed, Permission, SENSOR_REGISTRY
-from common.schemas.sensor import HeartbeatRequest # noqa: E402
+from common.schemas.sensor import HeartbeatRequest  # noqa: E402
 
 bp = Blueprint("sensors", __name__)
+
 
 @bp.route("/sensors", methods=["GET"])
 @require_auth(Permission.MANAGE_SENSORS)
@@ -33,6 +34,4 @@ def sensor_heartbeat():
         "metrics": data.get("metrics", {}),
     }
 
-    return jsonify(
-        {"success": True, "server_time": datetime.now(UTC).isoformat()}
-    )
+    return jsonify({"success": True, "server_time": datetime.now(UTC).isoformat()})

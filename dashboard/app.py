@@ -36,7 +36,9 @@ HEADERS = {"Authorization": f"Bearer {API_TOKEN}"} if API_TOKEN else {}
 
 # Security
 VALID_USERNAME_PASSWORD_PAIRS = {
-    os.environ.get("DASH_USERNAME", "admin"): os.environ.get("DASH_PASSWORD", "sentinel")
+    os.environ.get("DASH_USERNAME", "admin"): os.environ.get(
+        "DASH_PASSWORD", "sentinel"
+    )
 }
 auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 
@@ -62,11 +64,19 @@ sidebar = html.Div(
     [
         html.Div(
             [
-                html.Img(src="/assets/logo.png", style={"height": "40px", "marginTop": "-5px"}),
+                html.Img(
+                    src="/assets/logo.png",
+                    style={"height": "40px", "marginTop": "-5px"},
+                ),
                 html.Span(
                     "SENTINEL NET",
                     className="ms-3",
-                    style={"fontSize": "1.2rem", "fontWeight": "700", "color": "#fff", "letterSpacing": "1px"},
+                    style={
+                        "fontSize": "1.2rem",
+                        "fontWeight": "700",
+                        "color": "#fff",
+                        "letterSpacing": "1px",
+                    },
                 ),
             ],
             className="d-flex align-items-center mb-5 px-2",
@@ -103,24 +113,46 @@ sidebar = html.Div(
                 html.Hr(style={"borderColor": "rgba(255,255,255,0.1)"}),
                 html.Div(
                     [
-                        html.Small("SYSTEM STATUS", className="text-muted", style={"fontSize": "0.7rem", "letterSpacing": "1px"}),
+                        html.Small(
+                            "SYSTEM STATUS",
+                            className="text-muted",
+                            style={"fontSize": "0.7rem", "letterSpacing": "1px"},
+                        ),
                         html.Div(
                             [
-                                html.Div(className="rounded-circle bg-success", style={"width": "8px", "height": "8px", "marginRight": "8px"}),
-                                html.Span("Controller Online", style={"color": "#4caf50", "fontSize": "0.85rem"}),
+                                html.Div(
+                                    className="rounded-circle bg-success",
+                                    style={
+                                        "width": "8px",
+                                        "height": "8px",
+                                        "marginRight": "8px",
+                                    },
+                                ),
+                                html.Span(
+                                    "Controller Online",
+                                    style={"color": "#4caf50", "fontSize": "0.85rem"},
+                                ),
                             ],
-                            className="d-flex align-items-center mt-2"
+                            className="d-flex align-items-center mt-2",
                         ),
-                        html.Div(id="last-update", style={"color": "#666", "fontSize": "0.75rem", "marginTop": "5px"}),
+                        html.Div(
+                            id="last-update",
+                            style={
+                                "color": "#666",
+                                "fontSize": "0.75rem",
+                                "marginTop": "5px",
+                            },
+                        ),
                     ],
-                    className="px-2"
-                )
+                    className="px-2",
+                ),
             ],
-            style={"marginTop": "auto"}
-        )
+            style={"marginTop": "auto"},
+        ),
     ],
     className="sidebar d-flex flex-column",
 )
+
 
 def build_stat_card(title, id_name, icon_class, color_class="text-white"):
     return html.Div(
@@ -128,8 +160,13 @@ def build_stat_card(title, id_name, icon_class, color_class="text-white"):
             html.Div(title, className="stat-label"),
             html.Div(
                 [
-                    html.H2("0", id=id_name, className=f"stat-value {color_class} mb-0"),
-                    html.I(className=f"{icon_class} fa-lg opacity-50", style={"marginLeft": "auto", "color": "rgba(255,255,255,0.2)"}),
+                    html.H2(
+                        "0", id=id_name, className=f"stat-value {color_class} mb-0"
+                    ),
+                    html.I(
+                        className=f"{icon_class} fa-lg opacity-50",
+                        style={"marginLeft": "auto", "color": "rgba(255,255,255,0.2)"},
+                    ),
                 ],
                 className="d-flex align-items-end",
             ),
@@ -141,13 +178,14 @@ def build_stat_card(title, id_name, icon_class, color_class="text-white"):
                     "background": f"linear-gradient(90deg, {COLOR_PRIMARY}, transparent)",
                     "borderRadius": "2px",
                     "marginTop": "15px",
-                    "opacity": "0.6"
+                    "opacity": "0.6",
                 }
-            )
+            ),
         ],
         style=GLASS_STYLE,
         className="p-4 h-100 stat-card",
     )
+
 
 content = html.Div(
     [
@@ -157,23 +195,48 @@ content = html.Div(
                 html.Div(
                     [
                         html.H4("Overview", className="fw-bold text-white mb-0"),
-                        html.Span("Real-time network surveillance", className="text-muted small"),
+                        html.Span(
+                            "Real-time network surveillance",
+                            className="text-muted small",
+                        ),
                     ]
                 )
             ),
             className="mb-4",
         ),
-        
         # Stats Row
         dbc.Row(
             [
-                dbc.Col(build_stat_card("Active Sensors", "sensor-count", "fas fa-satellite-dish"), md=4, className="mb-4"),
-                dbc.Col(build_stat_card("Threats Detected", "alert-count", "fas fa-biohazard", "text-danger"), md=4, className="mb-4"),
-                dbc.Col(build_stat_card("Networks Scanned", "network-count", "fas fa-network-wired", "text-warning"), md=4, className="mb-4"),
+                dbc.Col(
+                    build_stat_card(
+                        "Active Sensors", "sensor-count", "fas fa-satellite-dish"
+                    ),
+                    md=4,
+                    className="mb-4",
+                ),
+                dbc.Col(
+                    build_stat_card(
+                        "Threats Detected",
+                        "alert-count",
+                        "fas fa-biohazard",
+                        "text-danger",
+                    ),
+                    md=4,
+                    className="mb-4",
+                ),
+                dbc.Col(
+                    build_stat_card(
+                        "Networks Scanned",
+                        "network-count",
+                        "fas fa-network-wired",
+                        "text-warning",
+                    ),
+                    md=4,
+                    className="mb-4",
+                ),
             ],
             className="mb-2",
         ),
-        
         # Main Dashboard Grid
         dbc.Row(
             [
@@ -183,14 +246,26 @@ content = html.Div(
                         [
                             html.Div(
                                 [
-                                    html.H5("Wardriving Heatmap", className="fw-bold text-white mb-0"),
-                                    dbc.Button(html.I(className="fas fa-expand"), color="link", size="sm", className="text-muted")
+                                    html.H5(
+                                        "Wardriving Heatmap",
+                                        className="fw-bold text-white mb-0",
+                                    ),
+                                    dbc.Button(
+                                        html.I(className="fas fa-expand"),
+                                        color="link",
+                                        size="sm",
+                                        className="text-muted",
+                                    ),
                                 ],
                                 className="d-flex justify-content-between align-items-center mb-3",
                             ),
                             dcc.Graph(
                                 id="heatmap-graph",
-                                style={"height": "500px", "borderRadius": "12px", "overflow": "hidden"},
+                                style={
+                                    "height": "500px",
+                                    "borderRadius": "12px",
+                                    "overflow": "hidden",
+                                },
                                 config={"displayModeBar": False, "scrollZoom": True},
                             ),
                         ],
@@ -200,13 +275,17 @@ content = html.Div(
                     lg=8,
                     className="mb-4",
                 ),
-                
                 # Alerts Feed (Right, Smaller)
                 dbc.Col(
                     html.Div(
                         [
-                            html.H5("Recent Alerts", className="fw-bold text-white mb-3"),
-                            html.Div(id="alerts-table", style={"maxHeight": "500px", "overflowY": "auto"}),
+                            html.H5(
+                                "Recent Alerts", className="fw-bold text-white mb-3"
+                            ),
+                            html.Div(
+                                id="alerts-table",
+                                style={"maxHeight": "500px", "overflowY": "auto"},
+                            ),
                         ],
                         style=GLASS_STYLE,
                         className="p-3 h-100",
@@ -216,7 +295,6 @@ content = html.Div(
                 ),
             ]
         ),
-        
         # Operational Analytics Row
         dbc.Row(
             [
@@ -224,8 +302,14 @@ content = html.Div(
                 dbc.Col(
                     html.Div(
                         [
-                            html.H5("Sensor Fleet Status", className="fw-bold text-white mb-3"),
-                            html.Div(id="sensor-table", style={"maxHeight": "300px", "overflowY": "auto"}),
+                            html.H5(
+                                "Sensor Fleet Status",
+                                className="fw-bold text-white mb-3",
+                            ),
+                            html.Div(
+                                id="sensor-table",
+                                style={"maxHeight": "300px", "overflowY": "auto"},
+                            ),
                         ],
                         style=GLASS_STYLE,
                         className="p-3 h-100",
@@ -233,12 +317,13 @@ content = html.Div(
                     lg=6,
                     className="mb-4",
                 ),
-
                 # Security Distribution Chart
                 dbc.Col(
                     html.Div(
                         [
-                            html.H5("Security Posture", className="fw-bold text-white mb-3"),
+                            html.H5(
+                                "Security Posture", className="fw-bold text-white mb-3"
+                            ),
                             dcc.Graph(
                                 id="security-pie-chart",
                                 style={"height": "300px"},
@@ -295,9 +380,9 @@ def update_metrics(n):
         font=dict(color="#fff"),
         mapbox=dict(
             style="carto-darkmatter",
-            center=dict(lat=40.7128, lon=-74.0060), # Default center
-            zoom=2
-        )
+            center=dict(lat=40.7128, lon=-74.0060),  # Default center
+            zoom=2,
+        ),
     )
 
     empty_figure = go.Figure()
@@ -308,52 +393,64 @@ def update_metrics(n):
         networks = []
         alerts = []
         sensors = {}
-        
+
         try:
             # Networks
-            resp_net = requests.get(f"{CONTROLLER_API}/api/v1/networks", headers=HEADERS, timeout=2)
+            resp_net = requests.get(
+                f"{CONTROLLER_API}/api/v1/networks", headers=HEADERS, timeout=2
+            )
             if resp_net.status_code == 200:
                 networks = resp_net.json().get("networks", [])
-            
+
             # Alerts
-            resp_alerts = requests.get(f"{CONTROLLER_API}/api/v1/alerts", headers=HEADERS, timeout=2)
+            resp_alerts = requests.get(
+                f"{CONTROLLER_API}/api/v1/alerts", headers=HEADERS, timeout=2
+            )
             if resp_alerts.status_code == 200:
                 alerts = resp_alerts.json().get("alerts", [])
-                
+
             # Sensors
-            resp_sensors = requests.get(f"{CONTROLLER_API}/api/v1/sensors", headers=HEADERS, timeout=2)
+            resp_sensors = requests.get(
+                f"{CONTROLLER_API}/api/v1/sensors", headers=HEADERS, timeout=2
+            )
             if resp_sensors.status_code == 200:
                 sensors = resp_sensors.json().get("sensors", {})
-                
+
         except Exception:
-            pass # Graceful degrade
+            pass  # Graceful degrade
 
         # --- PROCESS NETWORKS & MAP ---
         map_fig = go.Figure(go.Scattermapbox())
         map_fig.update_layout(**layout_override)
-        
+
         security_counts = {"OPEN": 0, "WEP": 0, "WPA2": 0, "WPA3": 0}
-        
+
         if networks:
             data = []
             for n in networks:
                 # Map Data
                 if n.get("lat") and n.get("lon"):
-                    data.append({
-                        "lat": n.get("lat"),
-                        "lon": n.get("lon"),
-                        "ssid": n.get("ssid", "Unknown"),
-                        "risk": n.get("risk_score", 0),
-                        "bssid": n.get("bssid", "")
-                    })
-                
+                    data.append(
+                        {
+                            "lat": n.get("lat"),
+                            "lon": n.get("lon"),
+                            "ssid": n.get("ssid", "Unknown"),
+                            "risk": n.get("risk_score", 0),
+                            "bssid": n.get("bssid", ""),
+                        }
+                    )
+
                 # Security Stats
                 sec = n.get("security", "OPEN").upper()
                 # Simple normalization
-                if "WPA3" in sec: security_counts["WPA3"] += 1
-                elif "WPA2" in sec: security_counts["WPA2"] += 1
-                elif "WEP" in sec: security_counts["WEP"] += 1
-                else: security_counts["OPEN"] += 1
+                if "WPA3" in sec:
+                    security_counts["WPA3"] += 1
+                elif "WPA2" in sec:
+                    security_counts["WPA2"] += 1
+                elif "WEP" in sec:
+                    security_counts["WEP"] += 1
+                else:
+                    security_counts["OPEN"] += 1
 
             if data:
                 df = pd.DataFrame(data)
@@ -377,18 +474,66 @@ def update_metrics(n):
         if alerts:
             for a in alerts[:8]:
                 severity = a.get("severity", "Info")
-                color = {"Critical": "#ff0844", "High": "#ffb199", "Medium": "#f7b733", "Low": "#00dbde"}.get(severity, "#8898aa")
-                alert_rows.append(html.Tr([
-                    html.Td(html.Div(style={"width": "6px", "height": "6px", "borderRadius": "50%", "background": color}), style={"width": "20px"}),
-                    html.Td([
-                        html.Div(a.get("title", "Alert"), className="fw-bold text-white", style={"fontSize": "0.9rem"}),
-                        html.Div(a.get("message", "")[:40] + "...", className="text-muted small"),
-                    ]),
-                    html.Td(html.Small(a.get("timestamp", "")[11:16], className="text-muted"), className="text-end")
-                ]))
-            alerts_component = dbc.Table(html.Tbody(alert_rows), borderless=True, className="table-custom mb-0", hover=True)
+                color = {
+                    "Critical": "#ff0844",
+                    "High": "#ffb199",
+                    "Medium": "#f7b733",
+                    "Low": "#00dbde",
+                }.get(severity, "#8898aa")
+                alert_rows.append(
+                    html.Tr(
+                        [
+                            html.Td(
+                                html.Div(
+                                    style={
+                                        "width": "6px",
+                                        "height": "6px",
+                                        "borderRadius": "50%",
+                                        "background": color,
+                                    }
+                                ),
+                                style={"width": "20px"},
+                            ),
+                            html.Td(
+                                [
+                                    html.Div(
+                                        a.get("title", "Alert"),
+                                        className="fw-bold text-white",
+                                        style={"fontSize": "0.9rem"},
+                                    ),
+                                    html.Div(
+                                        a.get("message", "")[:40] + "...",
+                                        className="text-muted small",
+                                    ),
+                                ]
+                            ),
+                            html.Td(
+                                html.Small(
+                                    a.get("timestamp", "")[11:16],
+                                    className="text-muted",
+                                ),
+                                className="text-end",
+                            ),
+                        ]
+                    )
+                )
+            alerts_component = dbc.Table(
+                html.Tbody(alert_rows),
+                borderless=True,
+                className="table-custom mb-0",
+                hover=True,
+            )
         else:
-            alerts_component = html.Div([html.I(className="fas fa-check-circle fa-2x mb-3 text-success", style={"opacity": "0.5"}), html.H6("All Systems Normal", className="text-white")], className="text-center p-5")
+            alerts_component = html.Div(
+                [
+                    html.I(
+                        className="fas fa-check-circle fa-2x mb-3 text-success",
+                        style={"opacity": "0.5"},
+                    ),
+                    html.H6("All Systems Normal", className="text-white"),
+                ],
+                className="text-center p-5",
+            )
 
         # --- PROCESS SENSOR TABLE ---
         sensor_rows = []
@@ -396,42 +541,90 @@ def update_metrics(n):
             for sid, sdata in sensors.items():
                 status = sdata.get("status", "offline")
                 status_color = "#00dbde" if status == "online" else "#8898aa"
-                sensor_rows.append(html.Tr([
-                    html.Td(html.I(className="fas fa-microchip text-muted")),
-                    html.Td(sid, className="fw-bold text-white"),
-                    html.Td(html.Span(status.upper(), style={"color": status_color, "fontSize": "0.8rem", "fontWeight": "bold"})),
-                    html.Td(sdata.get("last_seen", "")[11:19], className="text-muted small text-end")
-                ]))
-            sensor_table = dbc.Table(html.Tbody(sensor_rows), borderless=True, className="table-custom mb-0", hover=True)
+                sensor_rows.append(
+                    html.Tr(
+                        [
+                            html.Td(html.I(className="fas fa-microchip text-muted")),
+                            html.Td(sid, className="fw-bold text-white"),
+                            html.Td(
+                                html.Span(
+                                    status.upper(),
+                                    style={
+                                        "color": status_color,
+                                        "fontSize": "0.8rem",
+                                        "fontWeight": "bold",
+                                    },
+                                )
+                            ),
+                            html.Td(
+                                sdata.get("last_seen", "")[11:19],
+                                className="text-muted small text-end",
+                            ),
+                        ]
+                    )
+                )
+            sensor_table = dbc.Table(
+                html.Tbody(sensor_rows),
+                borderless=True,
+                className="table-custom mb-0",
+                hover=True,
+            )
         else:
-            sensor_table = html.Div("No active sensors", className="text-center text-muted p-3")
+            sensor_table = html.Div(
+                "No active sensors", className="text-center text-muted p-3"
+            )
 
         # --- PROCESS SECURITY PIE CHART ---
         pie_fig = px.pie(
             names=list(security_counts.keys()),
             values=list(security_counts.values()),
             hole=0.6,
-            color_discrete_sequence=["#ff0844", "#f7b733", "#00dbde", "#00f2fe"] # WPA3/2/WEP/Openish colors
+            color_discrete_sequence=[
+                "#ff0844",
+                "#f7b733",
+                "#00dbde",
+                "#00f2fe",
+            ],  # WPA3/2/WEP/Openish colors
         )
         pie_fig.update_layout(
             **layout_override,
             showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
         )
         # Update text info
-        pie_fig.update_traces(textinfo='percent+label', textposition='inside')
-
+        pie_fig.update_traces(textinfo="percent+label", textposition="inside")
 
         # Counters
         s_count = str(len(sensors))
         a_count = str(len(alerts))
         n_count = str(len(networks))
 
-        return map_fig, s_count, a_count, n_count, alerts_component, current_time, sensor_table, pie_fig
+        return (
+            map_fig,
+            s_count,
+            a_count,
+            n_count,
+            alerts_component,
+            current_time,
+            sensor_table,
+            pie_fig,
+        )
 
     except Exception as e:
         print(f"Error update: {e}")
-        return empty_figure, "-", "-", "-", html.Div("Error"), current_time, html.Div("Error"), empty_figure
+        return (
+            empty_figure,
+            "-",
+            "-",
+            "-",
+            html.Div("Error"),
+            current_time,
+            html.Div("Error"),
+            empty_figure,
+        )
+
 
 if __name__ == "__main__":
     app.run_server(debug=True, host="0.0.0.0", port=8050)

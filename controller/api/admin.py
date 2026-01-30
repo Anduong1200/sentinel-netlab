@@ -5,9 +5,10 @@ from dataclasses import asdict
 from flask import Blueprint, jsonify, request
 from .deps import config, db
 from .auth import require_auth, Permission, Role
-from .models import Token as APIToken # Use DB model alias
+from .models import Token as APIToken  # Use DB model alias
 
 bp = Blueprint("admin", __name__)
+
 
 @bp.route("/tokens", methods=["GET"])
 @require_auth(Permission.ADMIN)
@@ -42,10 +43,11 @@ def create_token():
         role=role_enum,
         sensor_id=data.get("sensor_id"),
         created_at=datetime.now(UTC),
-        expires_at=datetime.now(UTC) + timedelta(hours=config.security.token_expiry_hours),
-        is_active=True
+        expires_at=datetime.now(UTC)
+        + timedelta(hours=config.security.token_expiry_hours),
+        is_active=True,
     )
-    
+
     db.session.add(token_obj)
     db.session.commit()
 

@@ -74,9 +74,7 @@ class LabSafetyChecker:
         # In production this should be a strong secret, for lab defaults we check it's set
         if not auth_key or auth_key == "change_me":
             # Strict enforcement for lab mode
-            raise LabSafetyError(
-                "No secure SENTINEL_AUTH_KEY set. Attacks blocked."
-            )
+            raise LabSafetyError("No secure SENTINEL_AUTH_KEY set. Attacks blocked.")
 
         return True
 

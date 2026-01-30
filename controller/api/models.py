@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy.dialects.postgresql import JSONB
 from .deps import db, config
 
+
 class Telemetry(db.Model):
     __tablename__ = "telemetry"
     id = db.Column(db.Integer, primary_key=True)

@@ -13,6 +13,7 @@ try:
 except ImportError:
     import sys
     import os
+
     # Add root to path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     from sensor.frame_parser import FrameParser, ParsedFrame

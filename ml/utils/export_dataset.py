@@ -16,7 +16,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from common.features import extract_features, get_feature_names
 
-
 # Mock storage or import real if available
 # For this tool, we assume input is the raw JSON logs or DB
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +38,6 @@ def export_to_csv(input_file: str, output_file: str):
     # Define feature columns
     fieldnames = ["timestamp", "sensor_id", "label"] + get_feature_names()
 
-
     with open(output_file, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -48,14 +46,13 @@ def export_to_csv(input_file: str, output_file: str):
         for item in items:
             # Flatten/Normalize features via shared logic
             feats = extract_features(item)
-            
+
             row = {
                 "timestamp": item.get("timestamp_utc"),
                 "sensor_id": item.get("sensor_id"),
                 "label": item.get("label", "unknown"),
             }
             row.update(feats)
-
 
             writer.writerow(row)
             count += 1

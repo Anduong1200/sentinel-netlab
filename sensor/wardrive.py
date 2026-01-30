@@ -140,7 +140,9 @@ class WardriveCapture:
                     ),
                     "rssi_dbm": random.randint(-90, -30),  # nosec B311
                     "channel": random.choice([1, 6, 11, 36, 44]),  # nosec B311
-                    "security": random.choice(["WPA2", "WPA3", "WEP", "Open"]),  # nosec B311
+                    "security": random.choice(
+                        ["WPA2", "WPA3", "WEP", "Open"]
+                    ),  # nosec B311
                 }
             )
         return networks
@@ -149,6 +151,7 @@ class WardriveCapture:
 @dataclass
 class WardriveSighting:
     """Single network sighting"""
+
     timestamp: str
     bssid: str
     ssid: str | None
@@ -180,15 +183,16 @@ class WardriveSession:
     def save(self):
         """Save session to disk"""
         import json
+
         data = {
             "sensor_id": self.sensor_id,
             "start_time": self.start_time.isoformat(),
             "end_time": datetime.now(UTC).isoformat(),
             "total_sightings": len(self.sightings),
             "unique_networks": len(self.unique_bssids),
-            "sightings": [asdict(s) for s in self.sightings]
+            "sightings": [asdict(s) for s in self.sightings],
         }
-        
+
         try:
             with open(self.output_path, "w") as f:
                 json.dump(data, f, indent=2)

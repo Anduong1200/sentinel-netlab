@@ -134,7 +134,12 @@ class TelemetryNormalizer:
             sensor_id=self.sensor_id,
             timestamp_utc=datetime.now(UTC),
             sequence_id=self._sequence_id,
-            frame_type=parsed_frame.frame_type if parsed_frame.frame_type in ["beacon", "probe_req", "probe_resp", "auth", "assoc_req", "deauth"] else "beacon", # Fallback or need strict mapping
+            frame_type=(
+                parsed_frame.frame_type
+                if parsed_frame.frame_type
+                in ["beacon", "probe_req", "probe_resp", "auth", "assoc_req", "deauth"]
+                else "beacon"
+            ),  # Fallback or need strict mapping
             bssid=bssid,
             ssid=ssid,
             rssi_dbm=parsed_frame.rssi_dbm,
@@ -161,9 +166,7 @@ class TelemetryNormalizer:
         return {
             "sensor_id": self.sensor_id,
             "sequence_id": self._sequence_id,
-            "uptime_seconds": (
-                datetime.now(UTC) - self._start_time
-            ).total_seconds(),
+            "uptime_seconds": (datetime.now(UTC) - self._start_time).total_seconds(),
             "capture_method": self.capture_method,
             "anonymize_ssid": self.anonymize_ssid,
         }

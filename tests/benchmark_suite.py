@@ -396,12 +396,12 @@ class BenchmarkSuite:
             "total_readings": len(rssi_values),
             "valid_readings": len(valid_rssi),
             "invalid_readings": len(rssi_values) - len(valid_rssi),
-            "validity_rate": round(len(valid_rssi) / len(rssi_values) * 100, 2)
-            if rssi_values
-            else 0,
-            "avg_rssi": round(sum(valid_rssi) / len(valid_rssi), 2)
-            if valid_rssi
-            else 0,
+            "validity_rate": (
+                round(len(valid_rssi) / len(rssi_values) * 100, 2) if rssi_values else 0
+            ),
+            "avg_rssi": (
+                round(sum(valid_rssi) / len(valid_rssi), 2) if valid_rssi else 0
+            ),
             "min_rssi": min(valid_rssi) if valid_rssi else 0,
             "max_rssi": max(valid_rssi) if valid_rssi else 0,
         }
@@ -446,9 +446,9 @@ class BenchmarkSuite:
             "total_networks": total,
             "identified": total - unknown,
             "unknown": unknown,
-            "identification_rate": round((total - unknown) / total * 100, 2)
-            if total > 0
-            else 0,
+            "identification_rate": (
+                round((total - unknown) / total * 100, 2) if total > 0 else 0
+            ),
             "breakdown": detected,
         }
 

@@ -394,40 +394,48 @@ class SensorController:
 
                 # Advanced Detectors
                 net_dict = telemetry.model_dump(mode="json", exclude_none=True)
-                
+
                 # Jamming
                 jam_alert = self.jamming_detector.ingest(net_dict)
-                if jam_alert: self._handle_alert(jam_alert)
-                
+                if jam_alert:
+                    self._handle_alert(jam_alert)
+
                 # Wardrive
                 wd_alert = self.wardrive_detector.ingest(net_dict)
-                if wd_alert: self._handle_alert(wd_alert)
-                
+                if wd_alert:
+                    self._handle_alert(wd_alert)
+
                 # WEP IV
                 wep_alert = self.wep_detector.ingest(net_dict)
-                if wep_alert: self._handle_alert(wep_alert)
-                
+                if wep_alert:
+                    self._handle_alert(wep_alert)
+
                 # Karma
                 karma_alert = self.karma_detector.ingest(net_dict)
-                if karma_alert: self._handle_alert(karma_alert)
-                
+                if karma_alert:
+                    self._handle_alert(karma_alert)
+
                 # Rule Engine
-                re_alerts = self.rule_engine.evaluate(net_dict, sensor_id=self.sensor_id)
+                re_alerts = self.rule_engine.evaluate(
+                    net_dict, sensor_id=self.sensor_id
+                )
                 for alert in re_alerts:
                     self._handle_alert(alert.to_dict())
 
                 # Evil Twin
                 et_alerts = self.et_detector.ingest(net_dict)
                 for alert in et_alerts:
-                    self._handle_alert({
-                        "alert_type": "evil_twin",
-                        "severity": alert.severity,
-                        "title": f"Evil Twin Detected: {alert.ssid}",
-                        "description": alert.recommendation,
-                        "evidence": alert.evidence,
-                        "sensor_id": self.sensor_id,
-                        "risk_score": alert.score,
-                    })
+                    self._handle_alert(
+                        {
+                            "alert_type": "evil_twin",
+                            "severity": alert.severity,
+                            "title": f"Evil Twin Detected: {alert.ssid}",
+                            "description": alert.recommendation,
+                            "evidence": alert.evidence,
+                            "sensor_id": self.sensor_id,
+                            "risk_score": alert.score,
+                        }
+                    )
 
                 # Real-time Risk Assessment (Sampled)
                 # Real-time Risk Assessment
@@ -504,14 +512,16 @@ class SensorController:
 
     def _handle_alert(self, alert_dict: dict[str, Any]) -> None:
         """Process an alert, check for chains, and upload"""
-        logger.warning(f"Detection: [{alert_dict.get('severity')}] {alert_dict.get('title')}")
-        
+        logger.warning(
+            f"Detection: [{alert_dict.get('severity')}] {alert_dict.get('title')}"
+        )
+
         # Add sensor info
         alert_dict["sensor_id"] = self.sensor_id
-        
+
         # Upload individual alert
         self.transport.upload_alert(alert_dict)
-        
+
         # Check for exploit chains
         chain_alert = self.chain_analyzer.analyze(alert_dict)
         if chain_alert:

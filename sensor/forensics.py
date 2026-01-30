@@ -276,9 +276,7 @@ class ForensicAnalyzer:
         return report
 
 
-def analyze_pcap(
-    file_path: str, known_networks: dict | None = None
-) -> dict[str, Any]:
+def analyze_pcap(file_path: str, known_networks: dict | None = None) -> dict[str, Any]:
     """
     Convenience function for quick PCAP analysis.
 

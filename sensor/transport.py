@@ -156,22 +156,21 @@ class TransportClient:
             Response dict with success status and ack_id
         """
         import requests
-        
+
         # Validation
         try:
             # We import here to avoid circular or early import issues if sys.path isn't ready at module level
             from common.schemas.telemetry import TelemetryBatch
             from pydantic import ValidationError
-            
+
             # Validate
             # Note: batch dict might need adjustment if schema expects strict types
-            TelemetryBatch(**batch) 
+            TelemetryBatch(**batch)
         except ImportError:
-            pass # Pydantic/Schemas not available (e.g. running outside prod env), skip validation
+            pass  # Pydantic/Schemas not available (e.g. running outside prod env), skip validation
         except ValidationError as e:
             logger.error(f"Schema Validation Failed: {e}")
             return {"success": False, "error": f"Schema Validation Failed: {str(e)}"}
-
 
         # Check circuit breaker
         if self._circuit_open:
@@ -209,14 +208,15 @@ class TransportClient:
             # Using 0 or batch_id might be risky for monotonic check but we must match server expectation.
             # Controller verify_sequence checks against token.last_sequence.
             # We need to persist a sequence counter.
-            
+
             # Simple fix: Use time-based monotonic (not perfect) or 0 if not tracking
             # But the signature MUST include what we send in headers.
-            # Only X-Sequence header is optional in verify_hmac IF NOT sent. 
+            # Only X-Sequence header is optional in verify_hmac IF NOT sent.
             # But we likely want to catch replay.
-            
+
             # For now, let's sign timestamp + payload as sequence is optional in header construction below
             from urllib.parse import urlparse
+
             path = urlparse(self.upload_url).path
             signature = self._sign_payload("POST", path, payload, timestamp)
             headers["X-Signature"] = signature
@@ -248,7 +248,9 @@ class TransportClient:
                     return {
                         "success": True,
                         "ack_id": result.get("ack_id"),
-                        "accepted": result.get("accepted", len(batch.get("items", []))), # Use items
+                        "accepted": result.get(
+                            "accepted", len(batch.get("items", []))
+                        ),  # Use items
                     }
 
                 elif response.status_code >= 400 and response.status_code < 500:
@@ -288,16 +290,21 @@ class TransportClient:
         self._on_failure(last_error)
         return {"success": False, "error": last_error, "retries_exhausted": True}
 
-    def _sign_payload(self, method: str, path: str, payload: str, timestamp: str, sequence: str | None = None) -> str:
+    def _sign_payload(
+        self,
+        method: str,
+        path: str,
+        payload: str,
+        timestamp: str,
+        sequence: str | None = None,
+    ) -> str:
         """Sign payload with HMAC-SHA256 (Canonical: method + path + ts + seq + payload)"""
         data = method.encode() + path.encode() + timestamp.encode()
         if sequence:
             data += sequence.encode()
         data += payload.encode()
-        
-        signature = hmac.new(
-            self.hmac_secret.encode(), data, hashlib.sha256
-        )
+
+        signature = hmac.new(self.hmac_secret.encode(), data, hashlib.sha256)
         return signature.hexdigest()
 
     def _on_success(self) -> None:
@@ -323,18 +330,18 @@ class TransportClient:
     def upload_alert(self, alert_data: dict[str, Any]) -> dict[str, Any]:
         """
         Upload alert to controller immediately.
-        
+
         Args:
             alert_data: Alert dict matching AlertCreate schema
-            
+
         Returns:
             Response dict with success status
         """
         import requests
-        
+
         # Construct alerts URL (replace /telemetry with /alerts)
         alerts_url = self.upload_url.replace("/telemetry", "/alerts")
-        if "/alerts" not in alerts_url: # fallback if url structure differs
+        if "/alerts" not in alerts_url:  # fallback if url structure differs
             base = self.upload_url.rsplit("/", 3)[0]
             alerts_url = f"{base}/api/v1/alerts"
 
@@ -346,13 +353,16 @@ class TransportClient:
             "User-Agent": "Sentinel-Sensor/1.0",
             "X-Timestamp": timestamp,
         }
-        
+
         payload = json.dumps(alert_data)
-        
+
         if self.hmac_secret:
             from urllib.parse import urlparse
+
             path = urlparse(alerts_url).path
-            headers["X-Signature"] = self._sign_payload("POST", path, payload, timestamp)
+            headers["X-Signature"] = self._sign_payload(
+                "POST", path, payload, timestamp
+            )
 
         try:
             response = requests.post(
@@ -362,14 +372,16 @@ class TransportClient:
                 timeout=10,
                 verify=self.verify_ssl,
             )
-            
+
             if response.status_code == 200:
                 logger.info(f"Alert uploaded successfully: {alert_data.get('title')}")
                 return {"success": True, "alert_id": response.json().get("alert_id")}
             else:
-                logger.error(f"Alert upload failed: HTTP {response.status_code} {response.text}")
+                logger.error(
+                    f"Alert upload failed: HTTP {response.status_code} {response.text}"
+                )
                 return {"success": False, "error": f"HTTP {response.status_code}"}
-                
+
         except Exception as e:
             logger.error(f"Alert upload error: {e}")
             return {"success": False, "error": str(e)}

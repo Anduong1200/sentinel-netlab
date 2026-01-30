@@ -197,7 +197,7 @@ class FrameParser:
             )[0]
             result.seq_num = seq_ctrl >> 4
             result.ies["fragment_num"] = seq_ctrl & 0x0F
-            
+
             # Extract Retry bit
             result.ies["retry"] = bool(frame_control & 0x0800)
 
@@ -216,13 +216,15 @@ class FrameParser:
                 elif frame_subtype == self.SUBTYPE_ASSOC_RESP:
                     # Assoc Resp: Capabilities (2) + Status Code (2) + AID (2)
                     if len(raw_frame) >= body_start + 4:
-                        status = struct.unpack("<H", raw_frame[body_start + 2 : body_start + 4])[0]
+                        status = struct.unpack(
+                            "<H", raw_frame[body_start + 2 : body_start + 4]
+                        )[0]
                         result.ies["status_code"] = status
-            
-            elif frame_type == 2: # TYPE_DATA
+
+            elif frame_type == 2:  # TYPE_DATA
                 result.frame_type = "data"
                 # Extract WEP IV if privacy bit is set
-                if bool(frame_control & 0x4000): # Protected bit
+                if bool(frame_control & 0x4000):  # Protected bit
                     result.privacy = True
                     if len(raw_frame) >= body_start + 4:
                         iv_data = raw_frame[body_start : body_start + 3]

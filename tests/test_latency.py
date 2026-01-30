@@ -96,9 +96,11 @@ def run_latency_test(
                 "median_ms": round(statistics.median(latencies_ms), 2),
                 "p95_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.95)], 2),
                 "p99_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.99)], 2),
-                "stdev_ms": round(statistics.stdev(latencies_ms), 2)
-                if len(latencies_ms) > 1
-                else 0,
+                "stdev_ms": (
+                    round(statistics.stdev(latencies_ms), 2)
+                    if len(latencies_ms) > 1
+                    else 0
+                ),
             }
         else:
             endpoint_result = {

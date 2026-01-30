@@ -32,9 +32,7 @@ class Sensor(Base):
     name = Column(String(128))
     status = Column(String(20), default="offline")
     last_heartbeat = Column(DateTime(timezone=True))
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     config = Column(JSON, default={})
 
     telemetry = relationship("Telemetry", back_populates="sensor")
@@ -50,9 +48,7 @@ class Telemetry(Base):
     sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
     batch_id = Column(String(64), index=True)
     timestamp = Column(DateTime(timezone=True), index=True)
-    ingested_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     bssid = Column(String(17), index=True)
     ssid = Column(String(32))
@@ -111,9 +107,7 @@ class APIToken(Base):
     role = Column(String(20))
     sensor_id = Column(String(64), nullable=True)
 
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     expires_at = Column(DateTime(timezone=True))
     last_used = Column(DateTime(timezone=True))
     last_sequence = Column(Integer, default=0)
@@ -148,6 +142,7 @@ class AuditLog(Base):
 def get_engine(database_url: str = None):
     """Create database engine"""
     from controller.config import init_config
+
     config = init_config()
     url = database_url or config.database.url
     return create_engine(url)

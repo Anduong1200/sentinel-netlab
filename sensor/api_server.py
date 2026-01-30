@@ -311,8 +311,6 @@ def export_json():
         return jsonify({"error": str(e)}), 500
 
 
-
-
 @app.route("/forensics/events")
 def get_security_events():
     """Get realtime security events (Deauth detections, etc.)"""

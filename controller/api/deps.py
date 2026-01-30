@@ -10,6 +10,7 @@ from flask import request, g, jsonify
 # Validation
 try:
     from pydantic import BaseModel, ValidationError
+
     PYDANTIC_AVAILABLE = True
 except ImportError:
     PYDANTIC_AVAILABLE = False
@@ -21,8 +22,11 @@ config = init_config()
 # Logging
 try:
     from pythonjsonlogger import jsonlogger
+
     handler = logging.StreamHandler()
-    formatter = jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    formatter = jsonlogger.JsonFormatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s"
+    )
     handler.setFormatter(formatter)
     logging.getLogger().addHandler(handler)
     logging.getLogger().setLevel(logging.INFO)
@@ -44,11 +48,15 @@ from flask_limiter.util import get_remote_address
 # key_func is required.
 
 # Create global limiter instance
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(
+    key_func=get_remote_address, default_limits=["200 per day", "50 per hour"]
+)
+
 
 # Validator Decorator
 def validate_json(model_class):
     """Decorator to validate request JSON with Pydantic"""
+
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -60,23 +68,31 @@ def validate_json(model_class):
                 validated = model_class(**data)
                 g.validated_data = validated
             except ValidationError as e:
-                return jsonify({"error": "Validation failed", "details": e.errors()}), 400
+                return (
+                    jsonify({"error": "Validation failed", "details": e.errors()}),
+                    400,
+                )
             except Exception as e:
                 return jsonify({"error": f"Invalid JSON: {str(e)}"}), 400
 
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
+
 
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = config.security.secret_key
     app.config["SQLALCHEMY_DATABASE_URI"] = config.database.url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_CONTENT_LENGTH", 16 * 1024 * 1024)) # 16MB default
-    
+    app.config["MAX_CONTENT_LENGTH"] = int(
+        os.environ.get("MAX_CONTENT_LENGTH", 16 * 1024 * 1024)
+    )  # 16MB default
+
     CORS(app, resources={r"/api/*": {"origins": config.security.cors_origins}})
     db.init_app(app)
     limiter.init_app(app)
-    
+
     return app

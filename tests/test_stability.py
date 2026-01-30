@@ -142,12 +142,12 @@ def run_stability_test(
         "total_scans": scan_count,
         "successful_scans": success_count,
         "failed_scans": crash_count,
-        "success_rate": round(success_count / scan_count * 100, 2)
-        if scan_count > 0
-        else 0,
-        "avg_response_time_ms": round(sum(response_times) / len(response_times), 2)
-        if response_times
-        else 0,
+        "success_rate": (
+            round(success_count / scan_count * 100, 2) if scan_count > 0 else 0
+        ),
+        "avg_response_time_ms": (
+            round(sum(response_times) / len(response_times), 2) if response_times else 0
+        ),
         "max_response_time_ms": round(max(response_times), 2) if response_times else 0,
         "crash_count": crash_count,
     }

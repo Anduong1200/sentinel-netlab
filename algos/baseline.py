@@ -154,9 +154,7 @@ class TimeSeriesBaseline:
 
     def get_status(self) -> dict:
         """Get baseline learning status"""
-        elapsed = (
-            datetime.now(UTC) - self.learning_start
-        ).total_seconds() / 3600
+        elapsed = (datetime.now(UTC) - self.learning_start).total_seconds() / 3600
         return {
             "is_learning": self.is_learning,
             "learning_hours": self.learning_hours,

@@ -299,9 +299,9 @@ class SecurityAuditor:
         severity_order = ["Critical", "High", "Medium", "Low", "Info"]
         sorted_findings = sorted(
             self.findings,
-            key=lambda f: severity_order.index(f.severity)
-            if f.severity in severity_order
-            else 99,
+            key=lambda f: (
+                severity_order.index(f.severity) if f.severity in severity_order else 99
+            ),
         )
 
         # Count by severity

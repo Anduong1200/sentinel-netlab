@@ -33,7 +33,9 @@ class TelemetryRecord(BaseModel):
     sequence_id: int
     frame_type: FrameType
     frame_subtype: Optional[str] = None
-    mac_src: Optional[str] = Field(None, pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
+    mac_src: Optional[str] = Field(
+        None, pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+    )
     bssid: str = Field(pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     ssid: Optional[str] = None
     rssi_dbm: int = Field(ge=-120, le=0)
@@ -43,7 +45,7 @@ class TelemetryRecord(BaseModel):
     @classmethod
     def sanitize_ssid(cls, v: Optional[str]) -> Optional[str]:
         if v:
-             # Basic sanitization for display
+            # Basic sanitization for display
             return v.replace("\x00", "")
         return v
 
@@ -52,7 +54,7 @@ class TelemetryRecord(BaseModel):
     model_config = {
         "use_enum_values": True,
         "extra": "forbid",
-        "validate_assignment": True
+        "validate_assignment": True,
     }
 
 
@@ -61,7 +63,4 @@ class TelemetryBatch(BaseModel):
     sensor_id: str
     items: List[TelemetryRecord] = Field(default=[])
 
-    model_config = {
-        "extra": "forbid",
-        "validate_assignment": True
-    }
+    model_config = {"extra": "forbid", "validate_assignment": True}

@@ -6,9 +6,10 @@ from .deps import db, limiter, logger, validate_json, PYDANTIC_AVAILABLE, config
 from .auth import require_auth, require_signed, Permission
 from .models import DBAlert
 from controller.export_engine import ReportData, ReportEngine, ReportFormat, ReportType
-from common.schemas.alerts import AlertCreate # noqa: E402
+from common.schemas.alerts import AlertCreate  # noqa: E402
 
 bp = Blueprint("alerts", __name__)
+
 
 @bp.route("/alerts", methods=["POST"])
 @require_auth(Permission.WRITE_ALERTS)

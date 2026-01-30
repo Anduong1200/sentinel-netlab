@@ -13,6 +13,7 @@ try:
     from sensor.buffer_manager import BufferManager
 except ImportError:
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
     from sensor.buffer_manager import BufferManager
 
@@ -87,10 +88,10 @@ class TestBufferManager:
         # Load pending journals
         journals = list(buffer.load_pending_journals())
         assert len(journals) == 1
-        assert len(journals[0]["records"]) == 20 
+        assert len(journals[0]["records"]) == 20
         # Note: Journals stored on disk might still use "items" key inside JSON if write_journal method wasn't updated?
         # Let's check write_journal implementation in BufferManager...
-        # It dumps dict: {"items": items}. 
+        # It dumps dict: {"items": items}.
         # So load_pending_journals yields {"items": ...}.
         # Wait, I should verify if I need to update write_journal too?
         # buffer_manager.py:196 "items": items.

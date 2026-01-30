@@ -9,6 +9,7 @@ from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 
 bp = Blueprint("telemetry", __name__)
 
+
 @bp.route("/telemetry", methods=["POST"])
 @require_auth(Permission.WRITE_TELEMETRY)
 @require_signed()

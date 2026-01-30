@@ -11,6 +11,7 @@ import sys
 # Load .env explicitly for CLI usage
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -77,13 +78,17 @@ def run_monitor_wrapper(args):
     # Normalize arguments for sensor.cli compatibility
     if not hasattr(args, "iface"):
         args.iface = args.interface
-    
+
     # Set defaults for missing args (since we use a subset in this wrapper)
     defaults = {
         "sensor_id": os.environ.get("SENSOR_ID", "sentinel-monitor-cli"),
         "mock_mode": False,
         "dwell_ms": 200,
-        "upload_url": args.host if hasattr(args, "host") and "http" in args.host else f"http://{args.host}:{args.port}/api/v1/telemetry",
+        "upload_url": (
+            args.host
+            if hasattr(args, "host") and "http" in args.host
+            else f"http://{args.host}:{args.port}/api/v1/telemetry"
+        ),
         "auth_token": os.environ.get("SENTINEL_AUTH_KEY", "dev-key"),
         "batch_size": 200,
         "upload_interval": 5.0,
@@ -92,20 +97,20 @@ def run_monitor_wrapper(args):
         "store_raw_mac": False,
         "privacy_mode": "anonymized",
         "log_level": "INFO",
-        "gps_device": None
+        "gps_device": None,
     }
-    
+
     for k, v in defaults.items():
         if not hasattr(args, k):
             setattr(args, k, v)
 
     # Merge with empty file config (defaults)
     config = merge_config(args, {})
-    
+
     # Initialize system
     setup_logging(config["logging"]["level"])
     print_banner(config)
-    
+
     # Run
     run_sensor_logic(config)
 

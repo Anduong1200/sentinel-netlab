@@ -35,10 +35,10 @@ class CaptureConfig:
 @dataclass
 class SensorConfig:
     """Sensor identity settings."""
+
     id: str = "sensor-01"
     hostname: str = "localhost"
     group: str = "default"
-
 
 
 @dataclass
@@ -205,8 +205,16 @@ class ConfigManager:
             "LOG_LEVEL": ("log_level", None),
             # Privacy
             "SENSOR_PRIVACY_MODE": ("privacy", "mode"),
-            "SENSOR_PRIVACY_STORE_RAW_MAC": ("privacy", "store_raw_mac", lambda x: x.lower() == "true"),
-            "SENSOR_PRIVACY_ANONYMIZE_SSID": ("privacy", "anonymize_ssid", lambda x: x.lower() == "true"),
+            "SENSOR_PRIVACY_STORE_RAW_MAC": (
+                "privacy",
+                "store_raw_mac",
+                lambda x: x.lower() == "true",
+            ),
+            "SENSOR_PRIVACY_ANONYMIZE_SSID": (
+                "privacy",
+                "anonymize_ssid",
+                lambda x: x.lower() == "true",
+            ),
         }
 
         for env_var, mapping in env_mappings.items():

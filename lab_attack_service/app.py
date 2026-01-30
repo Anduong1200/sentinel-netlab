@@ -17,7 +17,9 @@ from flask_limiter.util import get_remote_address
 from attacks import AttackEngine, LabSafetyError
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -30,10 +32,13 @@ INTERFACE = os.environ.get("WIFI_INTERFACE", "wlan0")
 LAB_MODE = os.environ.get("SENTINEL_LAB_MODE", "false").lower() == "true"
 
 if not LAB_MODE:
-    logger.warning("SENTINEL_LAB_MODE is not true. Attacks will likely fail safety checks.")
+    logger.warning(
+        "SENTINEL_LAB_MODE is not true. Attacks will likely fail safety checks."
+    )
 
 # Initialize Engine
 engine = AttackEngine(interface=INTERFACE)
+
 
 @app.before_request
 def check_auth():
@@ -43,14 +48,18 @@ def check_auth():
         if api_key != API_KEY:
             return jsonify({"error": "Unauthorized"}), 401
 
+
 @app.route("/health")
 def health():
-    return jsonify({
-        "status": "ok",
-        "service": "lab_attack_service",
-        "lab_mode": LAB_MODE,
-        "interface": INTERFACE
-    })
+    return jsonify(
+        {
+            "status": "ok",
+            "service": "lab_attack_service",
+            "lab_mode": LAB_MODE,
+            "interface": INTERFACE,
+        }
+    )
+
 
 @app.route("/attack/deauth", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -67,7 +76,9 @@ def attack_deauth():
 
         success = engine.deauth(target_bssid, client_mac, count)
         if success:
-            return jsonify({"status": "success", "message": f"Deauth sent to {target_bssid}"})
+            return jsonify(
+                {"status": "success", "message": f"Deauth sent to {target_bssid}"}
+            )
         return jsonify({"error": "Attack failed"}), 500
 
     except LabSafetyError as e:
@@ -75,6 +86,7 @@ def attack_deauth():
     except Exception as e:
         logger.error(f"Deauth error: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/attack/fakeap", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -90,7 +102,12 @@ def attack_fakeap():
 
         success = engine.beacon_flood(ssids, count)
         if success:
-            return jsonify({"status": "success", "message": f"Beacon flood sent ({len(ssids)} SSIDs)"})
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": f"Beacon flood sent ({len(ssids)} SSIDs)",
+                }
+            )
         return jsonify({"error": "Attack failed"}), 500
 
     except LabSafetyError as e:
@@ -99,5 +116,8 @@ def attack_fakeap():
         logger.error(f"FakeAP error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == "__main__":
-    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=5001) # Dedicated port for lab service
+    app.run(
+        host=os.environ.get("HOST", "127.0.0.1"), port=5001
+    )  # Dedicated port for lab service

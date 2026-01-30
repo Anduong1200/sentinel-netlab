@@ -3,6 +3,7 @@
 Sentinel NetLab - Enhanced Controller API
 Production-ready with mTLS, Pydantic validation, rate limiting, and observability.
 """
+
 import time
 from datetime import UTC, datetime
 from flask import jsonify
@@ -31,6 +32,7 @@ with app.app_context():
     db.create_all()
     init_default_tokens()
 
+
 # System Endpoints
 @app.route("/api/v1/health")
 def health():
@@ -44,6 +46,7 @@ def health():
         }
     )
 
+
 @app.route("/api/v1/time")
 def time_sync():
     return jsonify(
@@ -52,6 +55,7 @@ def time_sync():
             "unix_timestamp": time.time(),
         }
     )
+
 
 @app.route("/api/v1/openapi.json")
 def openapi_spec():
@@ -66,10 +70,13 @@ def openapi_spec():
     }
     return jsonify(spec)
 
+
 @app.route("/metrics")
 def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
+
+    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+
 
 if __name__ == "__main__":
     app.run(host=config.host, port=config.port, debug=config.debug)

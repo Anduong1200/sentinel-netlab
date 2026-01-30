@@ -221,7 +221,7 @@ class AdvancedEvilTwinDetector:
 
         # Track SSID mapping
         self.ssid_to_bssids[ssid].add(bssid)
-        
+
         # print(f"DEBUG: Ingest {bssid} / {ssid}. Count: {len(self.ssid_to_bssids[ssid])}")
 
         # Check for duplicates
@@ -243,7 +243,7 @@ class AdvancedEvilTwinDetector:
 
                 # Calculate score
                 score, evidence = self._calculate_score(original, suspect)
-                
+
                 if score >= self.config.threshold_medium:
                     alert = self._handle_detection(original, suspect, score, evidence)
                     if alert:
@@ -470,7 +470,7 @@ class AdvancedEvilTwinDetector:
 
             # Check confirmation window
             delta = now - pending["first_seen"]
-            
+
             if delta < self.config.confirmation_window_seconds:
                 return None
             # Confirmed - emit alert

@@ -44,8 +44,8 @@ class MessageSigner:
         # Canonical string: method + path + timestamp + sequence + payload
         data_to_sign = method.encode() + path.encode() + timestamp.encode()
         if sequence is not None:
-             data_to_sign += str(sequence).encode()
-        
+            data_to_sign += str(sequence).encode()
+
         data_to_sign += payload
 
         signature = hmac.new(

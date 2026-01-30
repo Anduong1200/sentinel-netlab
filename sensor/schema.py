@@ -36,9 +36,11 @@ except ImportError:
                     d[k] = v.dict()
                 elif isinstance(v, list):
                     d[k] = [
-                        x.dict()
-                        if hasattr(x, "dict")
-                        else (x.value if hasattr(x, "value") else x)
+                        (
+                            x.dict()
+                            if hasattr(x, "dict")
+                            else (x.value if hasattr(x, "value") else x)
+                        )
                         for x in v
                     ]
                 elif hasattr(v, "value"):

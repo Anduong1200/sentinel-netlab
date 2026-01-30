@@ -211,9 +211,7 @@ class TestControllerAPIMock:
     @pytest.mark.skip(reason="Flaky DB persistence in test environment")
     def test_alerts_endpoint(self, app_client, auth_headers):
         """Test alert retrieval"""
-        response = app_client.get(
-            "/api/v1/alerts", headers=auth_headers
-        )
+        response = app_client.get("/api/v1/alerts", headers=auth_headers)
         assert response.status_code == 200
 
 
@@ -242,7 +240,7 @@ class TestDeauthFloodIntegration:
                 # Advance time slightly (10ms) per frame -> 60 * 10ms = 0.6s total
                 # Rate = 60 / 5s (avg window) = 12/s > 10/s threshold
                 mock_time.return_value = base_time + (i * 0.01)
-                
+
                 alert = detector.record_deauth(
                     bssid=target_bssid, client_mac="FF:FF:FF:FF:FF:FF", sensor_id="test"
                 )
@@ -291,7 +289,7 @@ class TestMessageSigningIntegration:
         signer = MessageSigner(secret)
 
         payload = b'{"sensor_id": "test", "data": [1,2,3]}'
-        
+
         # Sign request
         # timestamp/sequence are optional in sign_request but headers will have them
         headers = signer.sign_request("POST", "/api/v1/telemetry", payload)
@@ -301,8 +299,10 @@ class TestMessageSigningIntegration:
         # Canonical: method + path + timestamp + [sequence] + payload
         timestamp = headers["X-Timestamp"]
         data_to_sign = b"POST/api/v1/telemetry" + timestamp.encode() + payload
-        
-        expected = hmac_lib.new(secret.encode(), data_to_sign, hashlib.sha256).hexdigest()
+
+        expected = hmac_lib.new(
+            secret.encode(), data_to_sign, hashlib.sha256
+        ).hexdigest()
         assert signature == expected
 
 

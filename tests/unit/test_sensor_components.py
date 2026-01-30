@@ -239,7 +239,9 @@ class TestTransport:
 
         payload = '{"test": "data"}'
         timestamp = "2024-01-01T12:00:00Z"
-        signature = transport._sign_payload("POST", "/api/v1/telemetry", payload, timestamp)
+        signature = transport._sign_payload(
+            "POST", "/api/v1/telemetry", payload, timestamp
+        )
 
         # Signature should be hex string
         assert len(signature) == 64  # SHA256 hex

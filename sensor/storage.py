@@ -80,7 +80,9 @@ class SQLiteStorage:
         # Mitigation for S608: static query construction based on validated input
         # But f-string for column name is flagged by Bandit unless trusted.
         # Since we validated against whitelist, it is safe.
-        query = f"SELECT * FROM networks ORDER BY {order_by} DESC LIMIT ? OFFSET ?"  # nosec
+        query = (
+            f"SELECT * FROM networks ORDER BY {order_by} DESC LIMIT ? OFFSET ?"  # nosec
+        )
 
         cursor.execute(query, (limit, offset))
         rows = cursor.fetchall()

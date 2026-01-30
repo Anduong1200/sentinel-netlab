@@ -92,9 +92,11 @@ def merge_config(args: argparse.Namespace, file_config: dict) -> dict[str, Any]:
             or file_config.get("sensor", {}).get("interface", "wlan0"),
         },
         "capture": {
-            "method": "mock"
-            if args.mock_mode
-            else file_config.get("capture", {}).get("method", "scapy"),
+            "method": (
+                "mock"
+                if args.mock_mode
+                else file_config.get("capture", {}).get("method", "scapy")
+            ),
             "channels": (
                 [int(c) for c in args.channels.split(",")]
                 if args.channels

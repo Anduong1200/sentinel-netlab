@@ -95,9 +95,11 @@ class GPSReader:
                                     lon=msg.longitude,
                                     alt=msg.altitude,
                                     speed=0.0,
-                                    accuracy_m=float(msg.horizontal_dil)
-                                    if msg.horizontal_dil
-                                    else 5.0,
+                                    accuracy_m=(
+                                        float(msg.horizontal_dil)
+                                        if msg.horizontal_dil
+                                        else 5.0
+                                    ),
                                     timestamp=datetime.now(UTC).isoformat(),
                                 )
                     except Exception:
