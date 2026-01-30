@@ -141,7 +141,7 @@ def verify_hmac(method: str, path: str, payload: bytes, signature: str, timestam
     return hmac.compare_digest(expected, signature)
 
 
-def verify_sequence(token: APIToken, sequence: int) -> bool:
+def verify_sequence(token: Token, sequence: int) -> bool:
     """Verify monotonic sequence number for replay protection"""
     if sequence is None:
         return True  # Optional
