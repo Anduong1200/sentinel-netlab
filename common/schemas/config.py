@@ -11,7 +11,7 @@ class CaptureConfig(BaseModel):
 
 
 class ApiConfig(BaseModel):
-    host: str = "0.0.0.0"  # noqa: S104
+    host: str = "0.0.0.0"  # nosec B104 # noqa: S104
     port: int = 5000
     api_key: str = Field(min_length=8)
     ssl_enabled: bool = True

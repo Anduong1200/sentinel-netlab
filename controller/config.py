@@ -52,7 +52,7 @@ class ControllerConfig:
     environment: str
     security: SecurityConfig
     database: DatabaseConfig
-    host: str = "0.0.0.0"  # noqa: S104
+    host: str = "0.0.0.0"  # nosec B104 # noqa: S104
     port: int = 5000
     debug: bool = False
 
@@ -140,7 +140,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         environment=env,
         security=security,
         database=database,
-        host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # noqa: S104
+        host=os.getenv("CONTROLLER_HOST", os.getenv("HOST", "0.0.0.0")),  # nosec B104 # noqa: S104
         port=int(os.getenv("CONTROLLER_PORT", os.getenv("PORT", "5000"))),
         debug=os.getenv("CONTROLLER_DEBUG", os.getenv("FLASK_DEBUG", "false")).lower()
         == "true"

@@ -79,7 +79,7 @@ class SQLiteStorage:
 
         # Mitigation for S608: static query construction based on validated input
         # The 'order_by' variable is strictly validated against 'allowed_columns' above.
-        sql = f"SELECT * FROM networks ORDER BY {order_by} DESC LIMIT ? OFFSET ?"  # noqa: S608
+        sql = f"SELECT * FROM networks ORDER BY {order_by} DESC LIMIT ? OFFSET ?"  # nosec B608 # noqa: S608
         cursor.execute(sql, (limit, offset))
         rows = cursor.fetchall()
         conn.close()
