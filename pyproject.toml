@@ -21,39 +21,48 @@ classifiers = [
 
 
 dependencies = [
-    "scapy>=2.5.0",
-    "requests>=2.28.0",
-    "flask>=2.3.0",
-    "flask-cors>=4.0.0",
-    "flask-limiter>=3.5.0",
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
-    "prometheus-client>=0.19.0",
-    "jinja2>=3.1.0",
-    "sqlalchemy>=2.0.0",
-    "psycopg2-binary>=2.9.9",
-    "redis>=5.0.0",
-    "dash>=2.0.0",
-    "dash-bootstrap-components>=1.0.0",
-    "dash-auth>=1.3.0",
-    "plotly>=5.0.0",
-    "gunicorn>=20.1.0",
     "python-json-logger>=2.0.0",
-    "psutil>=5.9.0",
-    "pynmea2>=1.18.0",
-    "pyserial>=3.5",
-    "pandas>=2.0.0",
-    "flask-sqlalchemy>=3.0.0",
 ]
 
 [tool.setuptools]
 packages = ["sensor", "controller", "common", "algos", "ml"]
 py-modules = ["sentinel"]
 
-
-
-
 [project.optional-dependencies]
+controller = [
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "flask-limiter>=3.5.0",
+    "sqlalchemy>=2.0.0",
+    "flask-sqlalchemy>=3.0.0",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.0.0",
+    "gunicorn>=20.1.0",
+    "prometheus-client>=0.19.0",
+    "jinja2>=3.1.0",
+]
+sensor = [
+    "scapy>=2.5.0",
+    "psutil>=5.9.0",
+    "pynmea2>=1.18.0",
+    "pyserial>=3.5",
+    "requests>=2.28.0",
+]
+dashboard = [
+    "dash>=2.0.0",
+    "dash-bootstrap-components>=1.0.0",
+    "dash-auth>=1.3.0",
+    "plotly>=5.0.0",
+    "pandas>=2.0.0",
+]
+ml = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "torch>=2.0.0",
+]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -61,14 +70,13 @@ dev = [
     "ruff>=0.1.9",
     "mypy>=1.8.0",
     "bandit>=1.7.7",
+    "pip-audit>=2.7.0",
     "pre-commit>=3.6.0",
     "types-requests>=2.31.0",
+    "types-setuptools",
 ]
-ml = [
-    "numpy>=1.24.0",
-    "pandas>=2.0.0",
-    "scikit-learn>=1.3.0",
-    "torch>=2.0.0",
+all = [
+    "sentinel-netlab[controller,sensor,dashboard,ml]"
 ]
 
 [project.urls]
@@ -153,7 +161,9 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_ignores = true
 ignore_missing_imports = true
-exclude = ["tests/", "venv/", ".venv/"]
+check_untyped_defs = true
+disallow_untyped_defs = false
+exclude = ["tests/", "venv/", ".venv/", "ml/", "dashboard/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

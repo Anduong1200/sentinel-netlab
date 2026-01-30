@@ -10,108 +10,150 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+
 jobs:
-  security-check:
+  security:
+    name: Security
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Gitleaks Secret Detection
-        uses: zricethezav/gitleaks-action@v2
+      - name: Gitleaks Secret Detection (fail-closed)
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true # Fail open for now, tune later
+          # If you are in a GitHub Org, you may need a free license key:
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-      - name: Dependency Review
+      - name: Dependency Review (PR only)
         if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
-      - name: Set up Python 3.11
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
-          cache-dependency-path: |
-            sensor/requirements.txt
-            pyproject.toml
 
-      - name: Install Bandit
-        run: pip install bandit
+      - name: Install security tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit pip-audit
 
-      - name: Run Bandit
-        run: bandit -r controller sensor -ll
+      - name: Run Bandit (expanded)
+        run: |
+          bandit -r controller sensor common algos ml dashboard -ll \
+            -x tests,notebooks,tools,examples
+
+      - name: Python dependency vuln audit (pip-audit)
+        run: |
+          # Audits installed deps; best paired with a lock, but still useful early.
+          pip install ".[dev]" || true
+          pip-audit || true
 
   quality:
+    name: Quality (Ruff + Mypy)
     runs-on: ubuntu-latest
-    needs: security-check
+    needs: security
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            pyproject.toml
 
-      - name: Install dependencies
+      - name: Install project + dev tools
         run: |
-          pip install -r requirements.txt
-          pip install flake8 mypy black isort
+          python -m pip install --upgrade pip
+          # Prefer component extras; keep ML optional to avoid heavy installs unless needed.
+          pip install ".[dev,controller,sensor,dashboard]"
 
-      - name: Lint with flake8
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Ruff lint
+        run: |
+          ruff check --output-format=github .
 
-      - name: Check formatting with Black
-        run: black --check .
+      - name: Ruff format check
+        run: |
+          ruff format --check .
 
-  test:
+      - name: Mypy type check
+        run: |
+          mypy .
+
+  docs:
+    name: Docs validation (links)
     runs-on: ubuntu-latest
     needs: quality
-    permissions:
-      contents: read
-      checks: write # For test reporting if added later
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Link check (Lychee)
+        uses: lycheeverse/lychee-action@v1
+        with:
+          # Check markdown + docs tree; adjust as your docs evolve
+          args: >
+            --verbose
+            --no-progress
+            --accept 200,204,206,429
+            --exclude-mail
+            "README.md"
+            "docs/**/*.md"
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    name: Tests (single pass + coverage)
+    runs-on: ubuntu-latest
+    needs: docs
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            pyproject.toml
 
-      - name: Install dependencies
+      - name: Install project + test tools
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install ".[dev,controller,sensor,dashboard]"
           pip install pytest pytest-cov
 
-      - name: Run Unit Tests
+      - name: Run tests (unit + integration) with coverage
         run: |
-          pytest tests/unit --cov=sensor --cov=controller --cov-report=xml
+          pytest tests/unit tests/integration \
+            --cov=controller --cov=sensor --cov=common --cov=algos \
+            --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
 
-      - name: Run Tests
-        run: |
-          pytest tests/unit/ tests/integration/ --cov=. --cov-report=xml
-
   docker:
+    name: Docker build/push + scan
     runs-on: ubuntu-latest
     needs: test
     permissions:
@@ -132,7 +174,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -150,16 +193,54 @@ jobs:
             type=semver,pattern={{version}}
             type=sha
 
-      - name: Build and push
+      # PR: build locally (load) and scan locally
+      - name: Build (PR - local)
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: ${{ github.event_name != 'pull_request' }}
+          push: false
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy scan (PR - local image)
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ matrix.image }}:pr
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      # Push events: build & push, then scan remote ref (sha tag exists)
+      - name: Build and push (push/tag)
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan (pushed image - sha)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ matrix.image }}:sha-${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
 
   deploy-staging:
     name: Deploy Staging
@@ -175,36 +256,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH (staging)
+      - name: Deploy via SSH (staging) + healthcheck
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           script: |
-            # Example deployment script - adapt paths as needed
+            set -euo pipefail
             [ -d "/opt/sentinel" ] || mkdir -p /opt/sentinel
             cd /opt/sentinel
 
-            # Login to pull private images
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Update compose file (assuming it's in the repo or managed elsewhere)
-            # For simplicity, we assume the repo is pulled here or files are copied.
-            # Here we just pull and restart content-agnostically if compose exists.
+            # Prefer a stable PAT for GHCR pulls on the server:
+            # echo "${GHCR_PAT}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             if [ -f "docker-compose.staging.yml" ]; then
-                docker compose -f docker-compose.staging.yml pull
-                docker compose -f docker-compose.staging.yml up -d
-                docker image prune -f
+              docker compose -f docker-compose.staging.yml pull
+              docker compose -f docker-compose.staging.yml up -d --remove-orphans
+              docker image prune -f
+              # Basic healthcheck (adjust endpoint/port)
+              curl -fsS https://staging.sentinel-netlab.io/health >/dev/null
             else
-                echo "No compose file found, skipping start command."
+              echo "No compose file found, failing closed."
+              exit 1
             fi
 
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: [docker]
+    needs: docker
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment:
       name: production
@@ -215,39 +296,58 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy via SSH (production)
+      - name: Deploy via SSH (production) + healthcheck
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
+            set -euo pipefail
             cd /opt/sentinel
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
 
+            curl -fsS https://sentinel-netlab.io/health >/dev/null
+
   pypi-release:
+    name: PyPI Release
     runs-on: ubuntu-latest
-    needs: [test, quality, security-check]
+    needs: [security, quality, test]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
-      id-token: write # Mandatory for trusted publishing
+      id-token: write
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install build dependencies
-        run: pip install build
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Verify tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          echo "Tag: ${TAG} / pyproject version: ${PKG_VERSION}"
+          test "${TAG}" = "${PKG_VERSION}"
 
       - name: Build package
-        run: python -m build
+        run: |
+          python -m build
+          twine check dist/*
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
