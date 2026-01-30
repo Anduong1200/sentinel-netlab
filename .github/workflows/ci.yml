@@ -121,10 +121,10 @@ jobs:
       matrix:
         include:
           - name: controller
-            dockerfile: ops/controller.Dockerfile
+            dockerfile: ops/Dockerfile.controller
             image: ghcr.io/${{ github.repository }}/controller
           - name: sensor
-            dockerfile: ops/sensor.Dockerfile
+            dockerfile: ops/Dockerfile.sensor
             image: ghcr.io/${{ github.repository }}/sensor
     steps:
       - uses: actions/checkout@v4
