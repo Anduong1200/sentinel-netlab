@@ -27,8 +27,11 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["sensor", "controller", "common", "algos", "ml"]
 py-modules = ["sentinel"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sensor*", "controller*", "common*", "algos*", "ml*", "lab_attack_service*", "dashboard*"]
 
 [project.optional-dependencies]
 controller = [
