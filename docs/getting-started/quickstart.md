@@ -138,10 +138,10 @@ python sensor/main.py --mock
 
 ## Next Steps
 
-1. Read [Hardware Compatibility](hardware_compatibility.md)
-2. Review [Threat Model](threat_model.md)
-3. Configure [Alert Rules](../ops/alert_rules.yml)
-4. Set up [Grafana Dashboards](../ops/grafana/dashboards/)
+1. Read [Hardware Prerequisites](installation.md#prerequisite-hardware)
+2. Review [Threat Model](../architecture/threat_model.md)
+3. Configure [Alert Rules](../../ops/alert_rules.yml)
+4. Set up [Grafana Dashboards](../../ops/grafana/dashboards/)
 
 ---
 

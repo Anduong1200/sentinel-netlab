@@ -83,4 +83,4 @@ For existing sensors:
 
 - [Pydantic Documentation](https://docs.pydantic.dev/)
 - [common/contracts.py](../../common/contracts.py)
-- [Data Schema Documentation](../data_schema.md)
+- [Data Schema Documentation](../architecture/data_schema.md)

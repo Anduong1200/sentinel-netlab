@@ -104,4 +104,4 @@ Some parameters can be overridden via environment variables:
 
 ---
 
-*See also: [Installation Guide](getting-started/installation.md) | [THREAT_MODEL.md](THREAT_MODEL.md)*
+*See also: [Installation Guide](../getting-started/installation.md) | [Threat Model](../architecture/threat_model.md)*

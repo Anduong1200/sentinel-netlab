@@ -1,0 +1,13 @@
+# Lychee ignore file
+# Ignore localhost links as they fail in CI
+http://localhost:.*
+http://127.0.0.1:.*
+
+# Ignore external links that are currently problematic (403, 404, or network ERR)
+https://www.openwips-ng.org/
+https://arubanetworking.hpe.com/.*
+https://documentation.meraki.com/Platform_Management/Dashboard_Administration/Design_and_Configure/Architectures_and_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices
+https://www.mdpi.com/1424-8220/25/6/1913
+
+# Ignore sandbox placeholders
+sandbox:/.*
