@@ -26,6 +26,7 @@ class MockParsedFrame:
             "ies": {},
             "rssi_dbm": -70,
             "channel": 1,
+            "frame_type": "beacon",  # Default to beacon
         }
         for k, v in defaults.items():
             if not hasattr(self, k):
@@ -67,7 +68,7 @@ class TestPrivacyEnforcement(unittest.TestCase):
 
         # Default behavior: Anonymize last 3 bytes
         expected_prefix = "AA:BB:CC"
-        expected_suffix = "XX:XX:XX"
+        expected_suffix = "00:00:00"
 
         self.assertTrue(
             telemetry.bssid.startswith(expected_prefix), "OUI should be preserved"

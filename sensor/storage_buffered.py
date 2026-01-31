@@ -136,7 +136,7 @@ class BufferedStorage:
                     "timestamp": datetime.now().isoformat(),
                 }
             )
-            self.stats["total_buffered"] += 1
+            self.stats["total_buffered"] = int(self.stats.get("total_buffered", 0)) + 1
 
             if len(self.buffer) >= self.buffer_size:
                 self._do_flush()
@@ -151,7 +151,7 @@ class BufferedStorage:
                     "timestamp": datetime.now().isoformat(),
                 }
             )
-            self.stats["total_buffered"] += 1
+            self.stats["total_buffered"] = int(self.stats.get("total_buffered", 0)) + 1
 
             if len(self.buffer) >= self.buffer_size:
                 self._do_flush()
@@ -228,8 +228,8 @@ class BufferedStorage:
             flushed = len(self.buffer)
             self.buffer.clear()
 
-            self.stats["total_flushed"] += flushed
-            self.stats["flush_count"] += 1
+            self.stats["total_flushed"] = int(self.stats.get("total_flushed", 0)) + flushed
+            self.stats["flush_count"] = int(self.stats.get("flush_count", 0)) + 1
             self.stats["last_flush"] = datetime.now().isoformat()
 
             logger.debug(f"Flushed {flushed} records to database")

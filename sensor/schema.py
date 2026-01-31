@@ -24,7 +24,7 @@ try:
 except ImportError:
     PYDANTIC_AVAILABLE = False
 
-    class BaseModel:
+    class BaseModel:  # type: ignore[no-redef]
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
                 setattr(self, k, v)
@@ -49,10 +49,10 @@ except ImportError:
                     d[k] = v
             return d
 
-    def Field(*a, **k):
+    def Field(*a, **k):  # type: ignore[no-redef]
         return None
 
-    def validator(*a, **k):
+    def validator(*a, **k):  # type: ignore[no-redef]
         return lambda f: f
 
 

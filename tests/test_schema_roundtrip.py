@@ -54,11 +54,11 @@ def test_telemetry_batch_structure():
     )
 
     batch = TelemetryBatch(
-        batch_id="batch-001", sensor_id="test-sensor-01", records=[record]
+        batch_id="batch-001", sensor_id="test-sensor-01", items=[record]
     )
 
     json_batch = batch.model_dump(mode="json", exclude_none=True)
-    assert len(json_batch["records"]) == 1
+    assert len(json_batch["items"]) == 1
 
     # Test 'extra=forbid' behavior
     with pytest.raises(ValidationError):

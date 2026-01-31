@@ -20,7 +20,7 @@ def test_init_config_production_missing_secrets(monkeypatch):
     with pytest.raises(RuntimeError) as excinfo:
         config_mod.init_config(strict_production=True)
 
-    assert "Missing required production configuration" in str(excinfo.value)
+    assert "Application refused to start in PRODUCTION mode without these secrets" in str(excinfo.value)
 
 
 def test_init_config_dev_allows_missing(monkeypatch):

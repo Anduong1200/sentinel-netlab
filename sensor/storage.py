@@ -19,6 +19,9 @@ class MemoryStorage:
         self.networks = {}
         self.events = []
 
+    def count(self) -> int:
+        return len(self.networks)
+
     def add_network(self, network: dict):
         bssid = network.get("bssid")
         if bssid:

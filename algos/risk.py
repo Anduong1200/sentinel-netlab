@@ -81,14 +81,15 @@ class EnhancedRiskScorer:
             return {
                 "weights": {
                     "encryption": 0.40,
-                    "rssi_norm": 0.15,
-                    "beacon_anomaly": 0.12,
-                    "vendor_risk": 0.10,
-                    "ssid_suspicion": 0.08,
-                    "wps_flag": 0.06,
-                    "channel_crowd": 0.04,
-                    "hidden_ssid": 0.05,
-                    "temporal": 0.05,
+                    "rssi_norm": 0.10,
+                    "beacon_anomaly": 0.0,
+                    "vendor_risk": 0.05,
+                    "ssid_suspicion": 0.10,
+                    "wps_flag": 0.20,
+                    "channel_crowd": 0.0,
+                    "hidden_ssid": 0.0,
+                    "temporal": 0.0,
+                    "traffic": 0.15,
                 }
             }
 
@@ -121,17 +122,19 @@ class EnhancedRiskScorer:
 
         # 2. Calculate Weighted Score
         w = self.weights
+        handshake_score = 1.0 if network.get("handshake_captured") else 0.0
+
         raw_score = (
             features["enc_score"] * w.get("encryption", 0)
             + features["rssi_norm"] * w.get("rssi_norm", 0)
             + features["ssid_suspicious"] * w.get("ssid_suspicion", 0)
             + features["ssid_hidden"] * w.get("hidden_ssid", 0)
             + features["vendor_trust"] * w.get("vendor_risk", 0)
-            # Using channel weight
             + features["channel_unusual"] * w.get("channel_crowd", 0)
             + features["beacon_anomaly"] * w.get("beacon_anomaly", 0)
             + features["wps_flag"] * w.get("wps_flag", 0)
             + features["temporal_new"] * w.get("temporal", 0)
+            + handshake_score * w.get("traffic", 0)
             # Fallback if missing in yaml
             + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
@@ -188,14 +191,48 @@ class EnhancedRiskScorer:
             if self._map_weight_to_feature(k) == f_map
         }
 
+        # Legacy Factors for compatibility
+        factors_legacy = [
+            {
+                "name": "encryption",
+                "score": int(features["enc_score"] * 100),
+                "weight": w.get("encryption", 0),
+            },
+            {
+                "name": "rssi",
+                "score": int(features["rssi_norm"] * 100),
+                "weight": w.get("rssi_norm", 0),
+            },
+            {
+                "name": "ssid",
+                "score": int(features["ssid_suspicious"] * 100),
+                "weight": w.get("ssid_suspicion", 0),
+            },
+            {
+                "name": "vendor",
+                "score": int(features["vendor_trust"] * 100),
+                "weight": w.get("vendor_risk", 0),
+            },
+            {
+                "name": "wps",
+                "score": int(features["wps_flag"] * 100),
+                "weight": w.get("wps_flag", 0),
+            },
+            {
+                "name": "traffic",
+                "score": int(handshake_score * 100),
+                "weight": w.get("traffic", 0),
+            },
+        ]
+
         # Contributing factors (Human readable)
-        factors = []
+        human_factors = []
         if features["enc_score"] > 0.5:
-            factors.append(f"Weak Encryption ({network.get('encryption')})")
+            human_factors.append(f"Weak Encryption ({network.get('encryption')})")
         if features["ssid_suspicious"] > 0.5:
-            factors.append("Suspicious SSID Pattern")
+            human_factors.append("Suspicious SSID Pattern")
         if features["beacon_anomaly"] > 0.5:
-            factors.append("Beacon Anomaly Detected")
+            human_factors.append("Beacon Anomaly Detected")
 
         result = {
             "risk_score": risk_score,
@@ -203,7 +240,8 @@ class EnhancedRiskScorer:
             "confidence": confidence,
             "features": features,
             "explain": explain,
-            "contributing_factors": factors,
+            "factors": factors_legacy,
+            "contributing_factors": human_factors,
         }
 
         return result

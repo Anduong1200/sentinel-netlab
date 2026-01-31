@@ -16,7 +16,7 @@ from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap
 class TestActiveFeatures(unittest.TestCase):
     def setUp(self):
         from parser import WiFiParser
-        from risk import RiskScorer
+        from sensor.risk import RiskScorer
 
         self.parser = WiFiParser()
         self.scorer = RiskScorer()

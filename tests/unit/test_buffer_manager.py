@@ -44,9 +44,9 @@ class TestBufferManager:
         batch = buffer.get_batch(max_count=5)
 
         assert batch is not None
-        assert "records" in batch
-        assert len(batch["records"]) == 5
-        assert batch["records"][0]["id"] == 0
+        assert "items" in batch
+        assert len(batch["items"]) == 5
+        assert batch["items"][0]["id"] == 0
 
     def test_ring_buffer_overflow_drop_oldest(self, temp_dir):
         """When capacity exceeded, oldest dropped per policy"""
@@ -65,9 +65,9 @@ class TestBufferManager:
 
         # Get batch - should have newest items
         batch = buffer.get_batch(max_count=10)
-        assert len(batch["records"]) == 5
+        assert len(batch["items"]) == 5
         # First item should be id=5 (oldest remaining)
-        assert batch["records"][0]["id"] == 5
+        assert batch["items"][0]["id"] == 5
 
     def test_spill_to_disk_and_replay(self, temp_dir):
         """Persisted batch replayed after flush"""
@@ -88,7 +88,7 @@ class TestBufferManager:
         # Load pending journals
         journals = list(buffer.load_pending_journals())
         assert len(journals) == 1
-        assert len(journals[0]["records"]) == 20
+        assert len(journals[0]["items"]) == 20
         # Note: Journals stored on disk might still use "items" key inside JSON if write_journal method wasn't updated?
         # Let's check write_journal implementation in BufferManager...
         # It dumps dict: {"items": items}.
@@ -107,7 +107,7 @@ class TestBufferManager:
             buffer.append({"id": i})
 
         batch = buffer.get_batch(max_count=10)
-        assert len(batch["records"]) == 10
+        assert len(batch["items"]) == 10
 
     def test_get_batch_respects_max_bytes(self, buffer):
         """get_batch respects max_bytes parameter"""
@@ -119,7 +119,7 @@ class TestBufferManager:
         batch = buffer.get_batch(max_count=100, max_bytes=500)
 
         # Should get fewer items due to size limit
-        assert len(batch["records"]) < 100
+        assert len(batch["items"]) < 100
 
     def test_empty_buffer_returns_none(self, buffer):
         """get_batch on empty buffer returns None"""
@@ -132,7 +132,7 @@ class TestBufferManager:
         batch = buffer.get_batch()
 
         assert "batch_id" in batch
-        assert "records" in batch
+        assert "items" in batch
         # Removed batch_timestamp and item_count checks
 
     def test_stats_accuracy(self, buffer):

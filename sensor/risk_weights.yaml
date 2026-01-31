@@ -13,32 +13,35 @@ version: "1.0"
 # Score = Σ(weight × normalized_feature) × 100
 
 weights:
-  # Encryption strength (0=WPA3, 0.3=WPA2, 0.7=WEP, 1.0=Open)
-  encryption: 0.30
+  # Encryption strength
+  encryption: 0.40
 
-  # Signal strength normalized (0.0=weak, 1.0=strong/anomaly)
+  # Signal strength normalized
   rssi_norm: 0.10
 
-  # Vendor risk (unknown/suspicious vendors score higher)
-  vendor_risk: 0.15
+  # Vendor risk
+  vendor_risk: 0.05
 
-  # SSID suspiciousness (matches common phishing patterns)
-  ssid_suspicion: 0.15
+  # SSID suspiciousness
+  ssid_suspicion: 0.10
 
   # Hidden SSID penalty
-  hidden_ssid: 0.05
+  hidden_ssid: 0.00
 
-  # WPS enabled (vulnerable to PIN brute force)
-  wps_flag: 0.05
+  # WPS enabled
+  wps_flag: 0.20
 
-  # Beacon interval anomaly (deviation from 100ms standard)
-  beacon_anomaly: 0.10
+  # Beacon interval anomaly
+  beacon_anomaly: 0.00
 
-  # Channel congestion (unusually high/low channel)
-  channel_crowd: 0.05
+  # Channel congestion
+  channel_crowd: 0.00
 
-  # Temporal suspiciousness (newly observed)
-  temporal: 0.05
+  # Temporal suspiciousness
+  temporal: 0.00
+
+  # Handshake captured
+  traffic: 0.15
 
 # =============================================================================
 # THRESHOLDS

@@ -480,7 +480,7 @@ class SensorController:
 
                 if result.get("success"):
                     logger.debug(
-                        f"Uploaded batch {batch['batch_id']}: {len(batch['records'])} items"
+                        f"Uploaded batch {batch['batch_id']}: {len(batch['items'])} items"
                     )
                     self.metrics.record_upload(True)
                 else:

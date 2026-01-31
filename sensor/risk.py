@@ -7,4 +7,9 @@ import os
 import sys
 
 # Ensure algos is reachable
+# Ensure algos is reachable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from algos.risk import RiskScorer
+
+__all__ = ["RiskScorer"]

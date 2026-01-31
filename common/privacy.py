@@ -90,7 +90,7 @@ def anonymize_mac_oui(mac: str) -> str:
     normalized = normalize_mac(mac)
     parts = normalized.split(":")
     if len(parts) == 6:
-        return ":".join(parts[:3] + ["XX", "XX", "XX"])
+        return ":".join(parts[:3] + ["00", "00", "00"])
     return mac
 
 

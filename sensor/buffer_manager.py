@@ -143,7 +143,7 @@ class BufferManager:
 
             return {
                 "batch_id": batch_id,
-                "records": batch_items,
+                "items": batch_items,
             }
 
     def peek_batch(self, max_count: int = 200) -> list[dict[str, Any]]:
@@ -191,7 +191,7 @@ class BufferManager:
                 {
                     "created": datetime.now(UTC).isoformat(),
                     "count": len(items),
-                    "records": items,
+                    "items": items,
                 }
             ).encode()
 
@@ -222,7 +222,7 @@ class BufferManager:
                     yield {
                         "batch_id": jfile.stem,
                         "source_file": str(jfile),
-                        "records": data.get("records", data.get("items", [])),
+                        "items": data.get("items", data.get("records", [])),
                     }
             except Exception as e:
                 logger.error(f"Failed to load journal {jfile}: {e}")
