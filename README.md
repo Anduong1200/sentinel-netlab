@@ -42,6 +42,7 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Wardriving** | GPS-correlated mobile network mapping |
 | **Hybrid ML Analysis** | Rule-based engine boosted by Autoencoder Anomaly Detection |
 | **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
+| **Scenario Replay** | Replay captured traffic (PCAP) for regression testing and algorithm tuning |
 
 > [!IMPORTANT]
 > **WIDS vs WIPS Scope**:

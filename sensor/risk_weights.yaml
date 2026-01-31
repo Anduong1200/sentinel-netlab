@@ -14,28 +14,31 @@ version: "1.0"
 
 weights:
   # Encryption strength (0=WPA3, 0.3=WPA2, 0.7=WEP, 1.0=Open)
-  encryption: 0.25
+  encryption: 0.30
 
-  # Signal strength anomaly (unusually strong signal may indicate rogue AP)
-  rssi_anomaly: 0.10
+  # Signal strength normalized (0.0=weak, 1.0=strong/anomaly)
+  rssi_norm: 0.10
 
-  # Vendor trust (unknown/suspicious vendors score higher)
-  vendor_trust: 0.15
+  # Vendor risk (unknown/suspicious vendors score higher)
+  vendor_risk: 0.15
 
   # SSID suspiciousness (matches common phishing patterns)
-  ssid_pattern: 0.15
+  ssid_suspicion: 0.15
+
+  # Hidden SSID penalty
+  hidden_ssid: 0.05
 
   # WPS enabled (vulnerable to PIN brute force)
-  wps_enabled: 0.10
+  wps_flag: 0.05
 
   # Beacon interval anomaly (deviation from 100ms standard)
   beacon_anomaly: 0.10
 
-  # Channel congestion (unusual channel for the region)
-  channel_anomaly: 0.05
+  # Channel congestion (unusually high/low channel)
+  channel_crowd: 0.05
 
-  # First seen recency (new networks are more suspicious)
-  first_seen_recency: 0.10
+  # Temporal suspiciousness (newly observed)
+  temporal: 0.05
 
 # =============================================================================
 # THRESHOLDS

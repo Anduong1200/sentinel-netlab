@@ -9,12 +9,15 @@ $$ Risk = \sum (w_i \times f_i) \times 100 $$
 Where $w_i$ are configurable weights and $f_i$ are normalized feature values.
 
 ### Default Weights (Configurable)
-- `encryption`: 0.3 (Insecure encryption is risky)
-- `signal`: 0.2 (Anomalous signal strength)
-- `vendor`: 0.2 (OUI mismatch or randomized MAC)
-- `ssid`: 0.1 (Suspicious keywords like "Free WiFi")
-- `wps`: 0.1 (WPS enabled is a vulnerability)
-- `beacon`: 0.1 (Jitter or irregular intervals)
+- `encryption`: 0.30 (Insecure encryption is risky)
+- `rssi_norm`: 0.10 (Strong signal anomaly)
+- `vendor_risk`: 0.15 (Unknown/Suspicious OUI)
+- `ssid_suspicion`: 0.15 (Phishing patterns)
+- `wps_flag`: 0.05 (WPS enabled)
+- `beacon_anomaly`: 0.10 (Timing jitter)
+- `hidden_ssid`: 0.05 (Hidden network)
+- `channel_crowd`: 0.05 (Unusual channel)
+- `temporal`: 0.05 (New network appearance)
 
 ## 2. Feature Normalization
 

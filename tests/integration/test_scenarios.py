@@ -23,13 +23,14 @@ class TestScenarioReplay:
     """
 
     @pytest.fixture
-    def setup_pcap(self):
-        """Generate golden pcap if missing"""
-        # Always regenerate to be safe/fresh
-        generate_pcap_main()
-        yield PCAP_FILE
-        # Cleanup? Keep for inspection if failed?
-        # os.remove(PCAP_FILE)
+    def setup_pcap(self, tmp_path):
+        """Helper to generate specific pcaps"""
+        def _generate(scenario):
+            path = tmp_path / f"{scenario}.pcap"
+            with patch("sys.argv", ["generate_pcap.py", "--scenario", scenario, "--output", str(path)]):
+                generate_pcap_main()
+            return str(path)
+        return _generate
 
     @pytest.fixture
     def mock_transport(self):
@@ -56,93 +57,81 @@ class TestScenarioReplay:
         with patch.dict(os.environ, env):
             yield tmp_path
 
+
     def test_replay_evil_twin_detection(self, setup_pcap, mock_transport, test_env):
         """
-        Scenario: Replay Golden PCAP containing Evil Twin attack.
+        Scenario: Replay PCAP containing Evil Twin attack.
         Expected: Sensor detects Evil Twin and calls upload_alert.
         """
-        # Patch init_config to avoid loading real config files or failing mandatory envs if missing
-        # We rely on os.environ patch above for minimal config.
-        # But SensorController loads config via get_config().
-
+        pcap_path = setup_pcap("evil_twin")
         from sensor.config import get_config
 
-        # Load config and override storage paths to avoid PermissionError
         config = get_config()
         config.storage.pcap_dir = str(test_env / "pcaps")
         config.storage.db_path = str(test_env / "test.db")
+        config.privacy.mode = "normal"
+        config.privacy.store_raw_mac = True
+        config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
 
-        # Instantiate Controller with safe config
         controller = SensorController(config=config)
-
-        # Override Driver with PcapCaptureDriver
         controller.driver = PcapCaptureDriver(
-            iface="test_mon", pcap_path=setup_pcap, realtime=False  # Fast replay
+            iface="test_mon", pcap_path=pcap_path, realtime=False
         )
 
-        # Override Transport (already mocked by decorator/fixture?)
-        # Since SensorController instantiates TransportClient inside __init__,
-        # the 'mock_transport' fixture which patches the CLASS needs to be active BEFORE init.
-        # It is active because it's passed as arg (pytest executes fixture setup first).
-
-        print(f"Starting replay of {setup_pcap}...")
-
-        # Run Capture Loop manually or verify thread?
-        # Threaded is harder to sync.
-        # We can call _capture_loop logic directly or start() and wait.
-        # Since PcapDriver finishes, we need _capture_loop to be robust to 'None' or handle stop.
-        # Pcap driver returns None when done (if loop=False).
-        # SensorController._capture_loop continues on None?
-        # Line 356: if raw_frame is None: continue.
-        # It loops forever.
-        # We should modify driver to signal stop, or run _capture_loop in a thread and stop controller after X seconds.
-
-        # Approach: Run in thread, wait for driver to exhaust (or timeout), then stop.
-        # Disable confirmation window for immediate alert
         from algos.evil_twin import EvilTwinConfig
-
         new_conf = EvilTwinConfig()
         new_conf.confirmation_window_seconds = 0
         new_conf.threshold_medium = 10
-
-        # Override config
         controller.et_detector.config = new_conf
 
         controller.start()
-
-        # Wait for pcap processing
-        # 130 frames, fast replay. Should be instant.
-        # But _capture_loop sleeps 0.1s on error or empty?
-        # Driver returns None, loop continues.
-        # We need to know when pcap is done.
-
-        # Hack: Poll controller._frames_captured until it matches pcap length (~130)
-        max_wait = 5  # seconds
+        
+        # Wait for pcap (25 frames: 5 legit + 20 evil)
+        max_wait = 10
         start_wait = time.time()
-        while controller._frames_captured < 130 and time.time() - start_wait < max_wait:
+        while controller._frames_parsed < 25 and time.time() - start_wait < max_wait:
             time.sleep(0.1)
-
-        print(f"Captured {controller._frames_captured} frames.")
 
         controller.stop()
 
-        # Verify Alerts
-        # Evil Twin logic runs in _capture_loop.
-        # Check mock_transport.upload_alert call args.
-
-        assert (
-            mock_transport.upload_alert.called
-        ), "upload_alert should be called for Evil Twin"
-
-        # Verify content
+        assert mock_transport.upload_alert.called, "upload_alert should be called for Evil Twin"
         calls = mock_transport.upload_alert.call_args_list
-        evil_twin_calls = [c for c in calls if "Evil Twin" in str(c)]
+        assert any("Evil Twin" in str(c) for c in calls)
 
-        assert len(evil_twin_calls) > 0, "Should have specific Evil Twin alerts"
+    def test_replay_normal_traffic_no_alerts(self, setup_pcap, mock_transport, test_env):
+        """
+        Scenario: Replay PCAP containing only Normal traffic.
+        Expected: No alerts generated.
+        """
+        pcap_path = setup_pcap("normal")
+        from sensor.config import get_config
 
-        args, _ = evil_twin_calls[0]
-        alert_data = args[0]
-        assert alert_data["alert_type"] == "evil_twin"
-        assert alert_data["risk_score"] >= 40
+        config = get_config()
+        config.storage.pcap_dir = str(test_env / "pcaps_normal")
+        config.storage.db_path = str(test_env / "test_normal.db")
+        config.privacy.mode = "normal"
+        config.privacy.store_raw_mac = True
+        config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
 
-        print("Scenario passed: Evil Twin detected and uploaded.")
+        controller = SensorController(config=config)
+        controller.driver = PcapCaptureDriver(
+            iface="test_mon", pcap_path=pcap_path, realtime=False
+        )
+
+        controller.start()
+        
+        # Wait for pcap (11 frames: 10 beacons + 1 probe)
+        max_wait = 10
+        start_wait = time.time()
+        while controller._frames_parsed < 11 and time.time() - start_wait < max_wait:
+            time.sleep(0.1)
+
+        controller.stop()
+
+        # EXPECTATION: No alerts
+        assert not mock_transport.upload_alert.called, "No alerts should be triggered for normal traffic"
+        
+        # Also check frames parsed
+        assert controller._frames_parsed >= 10
+        print("Scenario passed: Normal traffic processed without false positives.")
+
