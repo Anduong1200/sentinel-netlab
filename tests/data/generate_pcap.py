@@ -52,12 +52,12 @@ def main():
 
     legit_bssid = "DC:A6:32:33:44:55"
     client_mac = "aa:bb:cc:dd:ee:ff"
-    
+
     if args.scenario in ["all", "normal"]:
         print("[-] Generating Normal Traffic...")
         for i in range(10):
             packets.append(create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i))
-        
+
         packets.append(
             RadioTap()
             / Dot11(
@@ -77,7 +77,7 @@ def main():
         # Legit AP baseline
         for i in range(5):
             packets.append(create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i))
-            
+
         # Evil Twin
         evil_bssid = "de:ad:be:ef:00:00"
         print("[-] Generating Evil Twin frames...")

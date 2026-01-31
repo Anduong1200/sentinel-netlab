@@ -20,7 +20,34 @@
 - `401 Unauthorized`: Invalid API Key
 - `400 Bad Request`: Schema validation failure
 
-### 2. Sensor Heartbeat
+### 2. Alert Upload
+**POST** `/api/v1/alerts`
+
+Real-time alert submission for critical security events.
+
+**Body**: `AlertCreate`
+```json
+{
+  "alert_type": "evil_twin",
+  "severity": "High",
+  "title": "Possible Evil Twin Detected",
+  "description": "SSID 'CorpWiFi' seen with mismatched vendor OUI.",
+  "bssid": "AA:BB:CC:DD:EE:FF",
+  "evidence": {
+    "rssi_delta": 20,
+    "vendor_mismatch": true
+  }
+}
+```
+
+**Responses**:
+- `200 OK`: Alert accepted
+  ```json
+  {"status": "success", "alert_id": "alert-12345"}
+  ```
+- `422 Unprocessable Entity`: Schema validation failure
+
+### 3. Sensor Heartbeat
 **POST** `/api/v1/heartbeat`
 
 Used for status reporting and config updates.

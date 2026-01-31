@@ -9,9 +9,6 @@ from sensor.capture_driver import PcapCaptureDriver
 # Import modules to test
 from sensor.sensor_controller import SensorController
 from tests.data.generate_pcap import (
-    OUTPUT_FILE as PCAP_FILE,
-)
-from tests.data.generate_pcap import (
     main as generate_pcap_main,
 )
 
@@ -85,7 +82,7 @@ class TestScenarioReplay:
         controller.et_detector.config = new_conf
 
         controller.start()
-        
+
         # Wait for pcap (25 frames: 5 legit + 20 evil)
         max_wait = 10
         start_wait = time.time()
@@ -119,7 +116,7 @@ class TestScenarioReplay:
         )
 
         controller.start()
-        
+
         # Wait for pcap (11 frames: 10 beacons + 1 probe)
         max_wait = 10
         start_wait = time.time()
@@ -130,7 +127,7 @@ class TestScenarioReplay:
 
         # EXPECTATION: No alerts
         assert not mock_transport.upload_alert.called, "No alerts should be triggered for normal traffic"
-        
+
         # Also check frames parsed
         assert controller._frames_parsed >= 10
         print("Scenario passed: Normal traffic processed without false positives.")

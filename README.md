@@ -286,8 +286,12 @@ Detailed documentation is available in the [docs/](docs/README.md) directory.
 - [Lab Mode Overview](docs/lab_mode/mode_b_overview.md) (Active Capabilities)
 - [Reproducibility Guide](docs/reproducibility/experiment_steps.md)
 - [Evaluation Metrics](docs/evaluation/metrics.md)
+- [Troubleshooting Guide](docs/operations/runbooks/troubleshooting.md)
 
-### 5. Reference
+### 5. Testing & Validation
+- [PCAP Replay Guide](docs/testing/pcap_replay.md)
+
+### 6. Reference
 - [API Documentation](docs/reference/api_overview.md)
 - [Configuration Reference](docs/appendix/config_reference.md)
 

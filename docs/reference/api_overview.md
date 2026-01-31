@@ -1,6 +1,7 @@
-# API Reference
+# Sensor API Reference
 
-> Complete REST API documentation for Sentinel NetLab Sensor
+> REST API documentation for the standalone Sentinel NetLab Sensor agent (`sensor/api_server.py`).
+> For Controller API, see [Controller Ingestion API](api_ingest.md).
 
 ---
 
