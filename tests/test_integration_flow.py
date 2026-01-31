@@ -73,15 +73,24 @@ class TestIntegrationFlow(unittest.TestCase):
             data=frame_data, timestamp=time.monotonic(), channel=6, iface="test0"
         )
 
-        from sensor.config import APIConfig, CaptureConfig, Config, PrivacyConfig, SensorConfig, StorageConfig
+        from sensor.config import (
+            APIConfig,
+            CaptureConfig,
+            Config,
+            PrivacyConfig,
+            SensorConfig,
+            StorageConfig,
+        )
 
         config = Config(
             sensor=SensorConfig(id="test-sensor-integration"),
             capture=CaptureConfig(interface="test0", channels=[6], dwell_time=0.1),
-            api=APIConfig(host="mock-controller", port=80, api_key="test-key", ssl_enabled=False),
+            api=APIConfig(
+                host="mock-controller", port=80, api_key="test-key", ssl_enabled=False
+            ),
             storage=StorageConfig(pcap_dir=self.storage_path),
             privacy=PrivacyConfig(),
-            mock_mode=True
+            mock_mode=True,
         )
 
         # Initialize controller in mock mode

@@ -24,7 +24,12 @@ from typing import Any
 class SentinelError(Exception):
     """Base exception for all Sentinel NetLab errors"""
 
-    def __init__(self, message: str, code: str | None = None, details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        message: str,
+        code: str | None = None,
+        details: dict[str, Any] | None = None,
+    ):
         super().__init__(message)
         self.code = code or self.__class__.__name__
         self.details = details or {}
@@ -53,7 +58,9 @@ class ControllerError(SentinelError):
 class FrameParseError(SensorError):
     """Error parsing WiFi frame data"""
 
-    def __init__(self, message: str, frame_type: str | None = None, offset: int | None = None):
+    def __init__(
+        self, message: str, frame_type: str | None = None, offset: int | None = None
+    ):
         super().__init__(message, details={"frame_type": frame_type, "offset": offset})
         self.frame_type = frame_type
         self.offset = offset
@@ -85,7 +92,9 @@ class CorruptedDataError(FrameParseError):
 class RadioFailure(SensorError):
     """WiFi radio/adapter failure"""
 
-    def __init__(self, message: str, interface: str | None = None, driver: str | None = None):
+    def __init__(
+        self, message: str, interface: str | None = None, driver: str | None = None
+    ):
         super().__init__(message, details={"interface": interface, "driver": driver})
         self.interface = interface
         self.driver = driver
@@ -123,7 +132,9 @@ class CaptureError(RadioFailure):
 class NetworkSendError(SensorError):
     """Failed to send data to controller"""
 
-    def __init__(self, message: str, url: str | None = None, status_code: int | None = None):
+    def __init__(
+        self, message: str, url: str | None = None, status_code: int | None = None
+    ):
         super().__init__(message, details={"url": url, "status_code": status_code})
         self.url = url
         self.status_code = status_code
@@ -243,7 +254,9 @@ class TokenExpiredError(ControllerError):
 class PermissionDeniedError(ControllerError):
     """Insufficient permissions"""
 
-    def __init__(self, message: str, required: str | None = None, actual: str | None = None):
+    def __init__(
+        self, message: str, required: str | None = None, actual: str | None = None
+    ):
         super().__init__(message, details={"required": required, "actual": actual})
 
 

@@ -54,7 +54,9 @@ class FeatureExtractor:
         features["ssid_hidden"] = (
             1.0 if not network.get("ssid") or network.get("ssid") == "<hidden>" else 0.0
         )
-        features["wps_flag"] = 1.0 if network.get("wps_enabled") or network.get("wps") else 0.0
+        features["wps_flag"] = (
+            1.0 if network.get("wps_enabled") or network.get("wps") else 0.0
+        )
         features["channel_unusual"] = self._extract_channel(network)
         features["beacon_anomaly"] = self._extract_beacon_anomaly(network)
         features["temporal_new"] = self._extract_temporal(network)

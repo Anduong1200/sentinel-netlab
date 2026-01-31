@@ -228,7 +228,9 @@ class BufferedStorage:
             flushed = len(self.buffer)
             self.buffer.clear()
 
-            self.stats["total_flushed"] = int(self.stats.get("total_flushed", 0)) + flushed
+            self.stats["total_flushed"] = (
+                int(self.stats.get("total_flushed", 0)) + flushed
+            )
             self.stats["flush_count"] = int(self.stats.get("flush_count", 0)) + 1
             self.stats["last_flush"] = datetime.now().isoformat()
 
