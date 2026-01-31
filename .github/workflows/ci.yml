@@ -195,7 +195,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
-            type=sha
+            type=sha,prefix=sha-,format=long
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=pr,enable=${{ github.event_name == 'pull_request' }}
 
       # PR: build locally (load) and scan locally
@@ -223,7 +224,31 @@ jobs:
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
 
-      # Push events: build & push, then scan remote ref (sha tag exists)
+      # Push events: build locally first, scan, then push
+      - name: Build and load (push/tag)
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan (local image - sha)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.IMAGE_LOWER }}:sha-${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
       - name: Build and push (push/tag)
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
@@ -235,17 +260,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Trivy scan (pushed image - sha)
-        if: github.event_name != 'pull_request'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ env.IMAGE_LOWER }}:sha-${{ github.sha }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
 
   deploy-staging:
     name: Deploy Staging
