@@ -1,17 +1,17 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
 # Install system dependencies (libpcap for scapy)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     libpcap-dev \
     tcpdump \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements (simplified)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install scapy flask flask-cors flask-limiter
+# Install python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+RUN pip install --no-cache-dir scapy flask flask-cors flask-limiter
 
 # Copy app
 COPY . .

@@ -11,7 +11,7 @@ FROM python:3.11-slim-bookworm AS builder
 WORKDIR /build
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -24,7 +24,7 @@ COPY sentinel.py ./
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN pip install --no-cache-dir --upgrade pip && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context && \
     pip install --no-cache-dir ".[controller]"
 
 # -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     APP_HOME=/app
 
 # Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/* \
