@@ -17,7 +17,7 @@ This deploys the complete environment including the Controller API, Time-Series 
 
 ```bash
 # Clone repository
-git clone https://github.com/Anduong1200/sentinel-netlab.git
+git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 
 # Set up environment variables

@@ -7,7 +7,7 @@ Supported OS: Ubuntu 22.04 LTS or Raspberry Pi OS (Bullseye).
 
 1. **Clone Repository**:
    ```bash
-   git clone https://github.com/Anduong1200/sentinel-netlab.git
+   git clone https://github.com/anduong1200/sentinel-netlab.git
    cd sentinel-netlab
    ```
 2. **Install Dependencies**:

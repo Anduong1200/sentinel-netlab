@@ -18,7 +18,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/Anduong1200/sentinel-netlab.git
+git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 
 # Configure secrets
@@ -49,7 +49,7 @@ sudo apt update
 sudo apt install -y python3.11 python3-venv python3-pip aircrack-ng git
 
 # Clone repository
-git clone https://github.com/Anduong1200/sentinel-netlab.git
+git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 
 # Create virtual environment

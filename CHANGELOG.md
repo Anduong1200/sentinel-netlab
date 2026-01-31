@@ -75,6 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR**: New features, significant improvements
 - **PATCH**: Bug fixes, documentation updates
 
-[Unreleased]: https://github.com/Anduong1200/sentinel-netlab/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Anduong1200/sentinel-netlab/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Anduong1200/sentinel-netlab/releases/tag/v0.1.0
+[Unreleased]: https://github.com/anduong1200/sentinel-netlab/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/anduong1200/sentinel-netlab/releases/tag/v0.1.0

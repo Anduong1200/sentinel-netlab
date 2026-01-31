@@ -84,10 +84,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Anduong1200/sentinel-netlab"
-Documentation = "https://github.com/Anduong1200/sentinel-netlab/tree/main/docs"
-Repository = "https://github.com/Anduong1200/sentinel-netlab.git"
-Issues = "https://github.com/Anduong1200/sentinel-netlab/issues"
+Homepage = "https://github.com/anduong1200/sentinel-netlab"
+Documentation = "https://github.com/anduong1200/sentinel-netlab/tree/main/docs"
+Repository = "https://github.com/anduong1200/sentinel-netlab.git"
+Issues = "https://github.com/anduong1200/sentinel-netlab/issues"
 
 [project.scripts]
 sentinel-netlab = "sentinel:main"

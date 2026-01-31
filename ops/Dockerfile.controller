@@ -41,7 +41,7 @@ FROM python:3.11-slim-bookworm AS runtime
 # Labels
 LABEL org.opencontainers.image.title="Sentinel NetLab Controller"
 LABEL org.opencontainers.image.description="Wireless security monitoring controller"
-LABEL org.opencontainers.image.source="https://github.com/Anduong1200/sentinel-netlab"
+LABEL org.opencontainers.image.source="https://github.com/anduong1200/sentinel-netlab"
 LABEL org.opencontainers.image.version="1.0.0"
 
 # Environment

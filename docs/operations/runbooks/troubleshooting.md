@@ -47,3 +47,19 @@ export CONTROLLER_SECRET_KEY=your-secure-random-key
 **Fix**:
 - Reduce channel hop rate.
 - Disable `ml_enabled` in `config.yaml` if running on low-power hardware (e.g., Pi Zero).
+
+## 5. CI/CD & Docker Issues
+
+### Trivy Scan: "Fatal error: image scan error: ... failed to parse the image name"
+**Cause**: Image names in GHCR/Docker must be entirely lowercase. Repository owner name (e.g., `anduong1200`) was mixed case.
+**Fix**: Ensure all image references in `.github/workflows/ci.yml` and `docker-compose.yml` are lowercase.
+
+### Trivy Scan: "MANIFEST_UNKNOWN"
+**Cause**: Registry latency or tag mismatch (short vs long SHA).
+**Fix**:
+1. Configure `docker/metadata-action` to use `format: long` for SHA tags.
+2. Build and **load** the image locally in CI before scanning, ensuring Trivy checks the local daemon instead of the remote registry.
+
+### "ModuleNotFoundError: No module named 'controller.api'"
+**Context**: Occurs during CI integration tests or production container runs.
+**Fix**: Ensure `pyproject.toml` uses `tool.setuptools.packages.find` with correct `include` patterns for all sub-packages (`sensor*`, `controller*`, etc.).

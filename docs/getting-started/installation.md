@@ -50,7 +50,7 @@ sudo usermod -aG docker $USER
 Clone the repository and set up the Python environment.
 
 ```bash
-git clone https://github.com/Anduong1200/sentinel-netlab.git
+git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 
 # Create Virtual Environment

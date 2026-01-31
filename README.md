@@ -6,9 +6,9 @@
 
 <p align="center">
 <p align="center">
-  <a href="https://github.com/Anduong1200/sentinel-netlab/actions"><img src="https://img.shields.io/github/actions/workflow/status/Anduong1200/sentinel-netlab/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
+  <a href="https://github.com/anduong1200/sentinel-netlab/actions"><img src="https://img.shields.io/github/actions/workflow/status/anduong1200/sentinel-netlab/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.9%2B-blue.svg?style=flat-square" alt="Python"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg?style=flat-square" alt="Python"></a>
   <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square" alt="Code Style"></a>
 </p>
 </p>
@@ -140,7 +140,7 @@ sentinel-netlab/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/Anduong1200/sentinel-netlab.git
+   git clone https://github.com/anduong1200/sentinel-netlab.git
    cd sentinel-netlab
    ```
 
@@ -362,7 +362,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) 
 
 ## 📬 Contact
 
-- **Issues**: [GitHub Issues](https://github.com/Anduong1200/sentinel-netlab/issues)
+- **Issues**: [GitHub Issues](https://github.com/anduong1200/sentinel-netlab/issues)
 - **Security**: See [SECURITY.md](.github/SECURITY.md) for reporting vulnerabilities
 
 ---

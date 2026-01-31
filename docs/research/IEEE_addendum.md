@@ -54,7 +54,7 @@ Figure 2 shows the cumulative distribution function (CDF) of detection latency. 
 Average CPU load on sensor nodes remained below 15% during standard operation, peaking at 42% during intense flood attacks (Table 2).
 
 ## 4. Reproducibility
-The complete source code, datasets, and configuration files are available at: `https://github.com/Anduong1200/sentinel-netlab`.
+The complete source code, datasets, and configuration files are available at: `https://github.com/anduong1200/sentinel-netlab`.
 
 To reproduce the experiments:
 1. Provision 2 sensor nodes and 1 controller.

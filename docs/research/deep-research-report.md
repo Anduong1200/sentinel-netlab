@@ -138,7 +138,7 @@ Finally, if the goal is eventual market-facing value, aim for “integration val
 Taken together, these moves reposition Sentinel NetLab from “a new WIDS” to “a reproducible, modern Wi‑Fi security research testbed that is PMF-aware and ethically gated”—a niche with clearer scientific novelty and a realistic adoption path.
 
 ## Preferences
-[1]  https://github.com/Anduong1200/sentinel-netlab
+[1]  https://github.com/anduong1200/sentinel-netlab
 [2]  https://commoncriteria.github.io/pp/wids/wids-release.html
 [3]  https://www.nist.gov/publications/guide-intrusion-detection-and-prevention-systems-idps
 [4]  https://www.cisa.gov/news-events/news/securing-enterprise-wireless-networks
@@ -164,4 +164,4 @@ Taken together, these moves reposition Sentinel NetLab from “a new WIDS” to 
 [24] https://documentation.meraki.com/Wireless/Design_and_Configure/Configuration_Guides/Encryption_and_Authentication/WPA3_Encryption_and_Configuration_Guide
 [25] https://documentation.meraki.com/Platform_Management/Dashboard_Administration/Design_and_Configure/Architectures_and_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices_-_Security
 [26] https://docs.fcc.gov/public/attachments/DA-14-1444A1.pdf
-[27] https://github.com/Anduong1200/sentinel-netlab
+[27] https://github.com/anduong1200/sentinel-netlab
