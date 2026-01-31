@@ -16,6 +16,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade system-wide python security-sensitive packages
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+
 # Copy project definition
 COPY pyproject.toml README.md ./
 COPY sentinel.py ./
@@ -24,8 +27,7 @@ COPY sentinel.py ./
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context && \
-    pip install --no-cache-dir ".[controller]"
+RUN pip install --no-cache-dir ".[controller]"
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
@@ -51,6 +53,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
+# Upgrade system-wide python security-sensitive packages in runtime stage
+# This ensures Trivy scan passes for the system environment
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
 
 # Create non-root user
 RUN groupadd --gid 1000 sentinel && \
