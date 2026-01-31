@@ -182,16 +182,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase image name
+        run: |
+          echo "IMAGE_LOWER=$(echo ${{ matrix.image }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ matrix.image }}
+          images: ${{ env.IMAGE_LOWER }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=sha
+            type=raw,value=pr,enable=${{ github.event_name == 'pull_request' }}
 
       # PR: build locally (load) and scan locally
       - name: Build (PR - local)
@@ -211,7 +216,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ matrix.image }}:pr
+          image-ref: ${{ env.IMAGE_LOWER }}:pr
           format: table
           exit-code: "1"
           ignore-unfixed: true
@@ -235,7 +240,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ matrix.image }}:sha-${{ github.sha }}
+          image-ref: ${{ env.IMAGE_LOWER }}:sha-${{ github.sha }}
           format: table
           exit-code: "1"
           ignore-unfixed: true
