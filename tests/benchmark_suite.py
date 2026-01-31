@@ -35,9 +35,7 @@ class BenchmarkSuite:
         self.api_key = config.get("api_key", "")
         self.interface = config.get("interface", "wlan0")
 
-    def _api_request(
-        self, endpoint: str, method: str = "GET", **kwargs
-    ) -> dict | None:
+    def _api_request(self, endpoint: str, method: str = "GET", **kwargs) -> dict | None:
         """Make API request."""
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         headers = {"X-API-Key": self.api_key} if self.api_key else {}

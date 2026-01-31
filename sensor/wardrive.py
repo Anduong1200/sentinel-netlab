@@ -140,9 +140,7 @@ class WardriveCapture:
                     ),
                     "rssi_dbm": random.randint(-90, -30),  # noqa: S311
                     "channel": random.choice([1, 6, 11, 36, 44]),  # noqa: S311
-                    "security": random.choice(
-                        ["WPA2", "WPA3", "WEP", "Open"]
-                    ),  # noqa: S311
+                    "security": random.choice(["WPA2", "WPA3", "WEP", "Open"]),  # noqa: S311
                 }
             )
         return networks

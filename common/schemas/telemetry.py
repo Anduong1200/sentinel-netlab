@@ -33,9 +33,7 @@ class TelemetryRecord(BaseModel):
     sequence_id: int
     frame_type: FrameType
     frame_subtype: str | None = None
-    mac_src: str | None = Field(
-        None, pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
-    )
+    mac_src: str | None = Field(None, pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     bssid: str = Field(pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     ssid: str | None = None
     rssi_dbm: int = Field(ge=-120, le=0)

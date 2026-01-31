@@ -1,5 +1,3 @@
-
-
 def test_telemetry_ingestion_flow(
     app_client, auth_headers, sensor_auth_headers, mock_telemetry_batch
 ):

@@ -22,11 +22,16 @@ class TestScenarioReplay:
     @pytest.fixture
     def setup_pcap(self, tmp_path):
         """Helper to generate specific pcaps"""
+
         def _generate(scenario):
             path = tmp_path / f"{scenario}.pcap"
-            with patch("sys.argv", ["generate_pcap.py", "--scenario", scenario, "--output", str(path)]):
+            with patch(
+                "sys.argv",
+                ["generate_pcap.py", "--scenario", scenario, "--output", str(path)],
+            ):
                 generate_pcap_main()
             return str(path)
+
         return _generate
 
     @pytest.fixture
@@ -54,7 +59,6 @@ class TestScenarioReplay:
         with patch.dict(os.environ, env):
             yield tmp_path
 
-
     def test_replay_evil_twin_detection(self, setup_pcap, mock_transport, test_env):
         """
         Scenario: Replay PCAP containing Evil Twin attack.
@@ -76,6 +80,7 @@ class TestScenarioReplay:
         )
 
         from algos.evil_twin import EvilTwinConfig
+
         new_conf = EvilTwinConfig()
         new_conf.confirmation_window_seconds = 0
         new_conf.threshold_medium = 10
@@ -91,11 +96,15 @@ class TestScenarioReplay:
 
         controller.stop()
 
-        assert mock_transport.upload_alert.called, "upload_alert should be called for Evil Twin"
+        assert mock_transport.upload_alert.called, (
+            "upload_alert should be called for Evil Twin"
+        )
         calls = mock_transport.upload_alert.call_args_list
         assert any("Evil Twin" in str(c) for c in calls)
 
-    def test_replay_normal_traffic_no_alerts(self, setup_pcap, mock_transport, test_env):
+    def test_replay_normal_traffic_no_alerts(
+        self, setup_pcap, mock_transport, test_env
+    ):
         """
         Scenario: Replay PCAP containing only Normal traffic.
         Expected: No alerts generated.
@@ -126,9 +135,10 @@ class TestScenarioReplay:
         controller.stop()
 
         # EXPECTATION: No alerts
-        assert not mock_transport.upload_alert.called, "No alerts should be triggered for normal traffic"
+        assert not mock_transport.upload_alert.called, (
+            "No alerts should be triggered for normal traffic"
+        )
 
         # Also check frames parsed
         assert controller._frames_parsed >= 10
         print("Scenario passed: Normal traffic processed without false positives.")
-

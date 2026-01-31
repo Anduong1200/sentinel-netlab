@@ -3,7 +3,6 @@ Sentinel NetLab - Unit Tests for Frame Parser
 Tests frame_parser.py with sample pcap data.
 """
 
-
 import pytest
 
 # Import will work when tests run from sensor directory

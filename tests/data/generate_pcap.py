@@ -20,7 +20,12 @@ OUTPUT_FILE = os.path.join(OUTPUT_DIR, "golden_vectors.pcap")
 def create_beacon(ssid, bssid, channel=6, rssi=-60, seq=0):
     """Create an 802.11 Beacon Frame"""
     dot11 = Dot11(
-        type=0, subtype=8, addr1="ff:ff:ff:ff:ff:ff", addr2=bssid, addr3=bssid, SC=seq << 4
+        type=0,
+        subtype=8,
+        addr1="ff:ff:ff:ff:ff:ff",
+        addr2=bssid,
+        addr3=bssid,
+        SC=seq << 4,
     )
     beacon = Dot11Beacon(cap="ESS+privacy")
     essid = Dot11Elt(ID="SSID", info=ssid, len=len(ssid))
@@ -34,7 +39,9 @@ def create_beacon(ssid, bssid, channel=6, rssi=-60, seq=0):
 
 def create_deauth(target, bssid, reason=7, seq=0):
     """Create a Deauthentication Frame"""
-    dot11 = Dot11(type=0, subtype=12, addr1=target, addr2=bssid, addr3=bssid, SC=seq << 4)
+    dot11 = Dot11(
+        type=0, subtype=12, addr1=target, addr2=bssid, addr3=bssid, SC=seq << 4
+    )
     deauth = Dot11Deauth(reason=reason)
     radiotap = RadioTap(present=0xDB00, dBm_AntSignal=-55)
     return radiotap / dot11 / deauth
@@ -42,8 +49,11 @@ def create_deauth(target, bssid, reason=7, seq=0):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", choices=["all", "normal", "evil_twin", "deauth"], default="all")
+    parser.add_argument(
+        "--scenario", choices=["all", "normal", "evil_twin", "deauth"], default="all"
+    )
     parser.add_argument("--output", default=OUTPUT_FILE)
     args = parser.parse_args()
 
@@ -56,7 +66,9 @@ def main():
     if args.scenario in ["all", "normal"]:
         print("[-] Generating Normal Traffic...")
         for i in range(10):
-            packets.append(create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i))
+            packets.append(
+                create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i)
+            )
 
         packets.append(
             RadioTap()
@@ -66,7 +78,7 @@ def main():
                 addr1="ff:ff:ff:ff:ff:ff",
                 addr2=client_mac,
                 addr3="ff:ff:ff:ff:ff:ff",
-                SC=10 << 4
+                SC=10 << 4,
             )
             / Dot11ProbeReq()
             / Dot11Elt(ID="SSID", info="Corporate_WiFi")
@@ -76,13 +88,17 @@ def main():
         print("[-] Generating Evil Twin Attack (prepending legit beacons)...")
         # Legit AP baseline
         for i in range(5):
-            packets.append(create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i))
+            packets.append(
+                create_beacon("Corporate_WiFi", legit_bssid, channel=6, rssi=-60, seq=i)
+            )
 
         # Evil Twin
         evil_bssid = "de:ad:be:ef:00:00"
         print("[-] Generating Evil Twin frames...")
         for i in range(20):
-            packets.append(create_beacon("Corporate_WiFi", evil_bssid, channel=6, rssi=-30, seq=i))
+            packets.append(
+                create_beacon("Corporate_WiFi", evil_bssid, channel=6, rssi=-30, seq=i)
+            )
 
     if args.scenario in ["all", "deauth"]:
         print("[-] Generating Deauth Flood...")

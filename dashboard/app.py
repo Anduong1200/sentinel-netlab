@@ -591,7 +591,11 @@ def update_metrics(n):
             **layout_override,
             showlegend=True,
             legend={
-                "orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 1.02,
+                "xanchor": "right",
+                "x": 1,
             },
         )
         # Update text info
@@ -629,6 +633,7 @@ def update_metrics(n):
 
 if __name__ == "__main__":
     import os
+
     host = os.getenv("DASHBOARD_HOST", "127.0.0.1")
     port = int(os.getenv("DASHBOARD_PORT", "8050"))
     # Bandit B104: Hardcoded bind all interfaces
