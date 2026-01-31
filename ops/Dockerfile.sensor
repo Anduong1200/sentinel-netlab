@@ -35,6 +35,7 @@ COPY ml/ ./ml/
 
 # Create venv and install
 RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context && \
     /opt/venv/bin/pip install --no-cache-dir .
 
 # Copy application code

@@ -9,10 +9,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade system-wide python security-sensitive packages
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
-
 # Install python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
 RUN pip install --no-cache-dir scapy flask flask-cors flask-limiter
 
 # Copy app

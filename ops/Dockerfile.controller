@@ -27,6 +27,10 @@ COPY sentinel.py ./
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip and related tools INSIDE the venv
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+
+# Install project dependencies
 RUN pip install --no-cache-dir ".[controller]"
 
 # -----------------------------------------------------------------------------
