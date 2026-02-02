@@ -35,6 +35,7 @@ CLEANUP_PATTERNS = [
 # Root directory (assumes script is in tools/)
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 
+
 def cleanup():
     print(f"Cleaning repository at: {ROOT_DIR}")
     removed_count = 0
@@ -54,6 +55,7 @@ def cleanup():
                 print(f"Error removing {path}: {e}")
 
     print(f"Cleanup complete. Removed {removed_count} items.")
+
 
 if __name__ == "__main__":
     cleanup()

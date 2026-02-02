@@ -309,8 +309,12 @@ class SensorCLI:
                 uptime = time.time() - self.start_ts
 
                 if uptime > 60 and time_since_packet > 30:
-                    logger.critical(f"FATAL: No packets received for {time_since_packet:.1f}s. Stale capture state detected.")
-                    logger.critical("Initiating fail-fast exit to trigger supervisor restart.")
+                    logger.critical(
+                        f"FATAL: No packets received for {time_since_packet:.1f}s. Stale capture state detected."
+                    )
+                    logger.critical(
+                        "Initiating fail-fast exit to trigger supervisor restart."
+                    )
                     self.running = False
                     sys.exit(2)  # Exit code 2 for systemd restart trigger
 

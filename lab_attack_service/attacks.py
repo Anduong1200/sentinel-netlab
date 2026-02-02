@@ -113,7 +113,7 @@ class LabSafetyChecker:
         """Check for physical presence of authorization file"""
         auth_file = os.environ.get("LAB_AUTH_FILE", "/app/data/LAB_AUTHORIZED")
         if not os.path.exists(auth_file):
-             raise LabSafetyError(
+            raise LabSafetyError(
                 f"Missing authorization file at {auth_file}.\n"
                 "You must explicitly create this file to acknowledge legal responsibility."
             )
