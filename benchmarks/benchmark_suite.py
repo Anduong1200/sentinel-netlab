@@ -11,6 +11,7 @@ Usage:
 import argparse
 import csv
 import json
+import logging
 import os
 import subprocess
 import time
@@ -311,7 +312,8 @@ class BenchmarkSuite:
                     process_mem = max(
                         process_mem, proc.info["memory_info"].rss / 1024 / 1024
                     )
-            except Exception:
+            except Exception as e:
+                logging.debug(f"Skipping process access error: {e}")
                 continue
 
         result = {
