@@ -1,99 +1,47 @@
-# =============================================================================
-# Sentinel NetLab - Controller Dockerfile (Production)
-# Multi-stage build with security hardening
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# Stage 1: Builder
-# -----------------------------------------------------------------------------
+# syntax=docker/dockerfile:1.7
 FROM python:3.11-slim-bookworm AS builder
-
 WORKDIR /build
 
-# Install build dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade system-wide python security-sensitive packages
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+COPY pyproject.toml README.md sentinel.py ./
+COPY controller/ controller/
+COPY common/ common/
+COPY algos/ algos/
+COPY ml/ ml/
 
-# Copy project definition
-COPY pyproject.toml README.md ./
-COPY sentinel.py ./
-
-# Create virtual environment and install dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Upgrade pip and related tools INSIDE the venv
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
+RUN pip install -U pip setuptools wheel && \
+    pip wheel --wheel-dir /wheels ".[controller]"
 
-# Install project dependencies
-RUN pip install --no-cache-dir ".[controller]"
-
-# -----------------------------------------------------------------------------
-# Stage 2: Runtime
-# -----------------------------------------------------------------------------
 FROM python:3.11-slim-bookworm AS runtime
+WORKDIR /app
 
-# Labels
-LABEL org.opencontainers.image.title="Sentinel NetLab Controller"
-LABEL org.opencontainers.image.description="Wireless security monitoring controller"
-LABEL org.opencontainers.image.source="https://github.com/anduong1200/sentinel-netlab"
-LABEL org.opencontainers.image.version="1.0.0"
+RUN apt-get update && apt-get install -y --no-install-recommends curl libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Environment
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONFAULTHANDLER=1 \
-    PATH="/opt/venv/bin:$PATH" \
-    APP_HOME=/app
-
-# Install runtime dependencies only
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
-    libpq5 \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
-# Upgrade system-wide python security-sensitive packages in runtime stage
-# This ensures Trivy scan passes for the system environment
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
-
-# Create non-root user
-RUN groupadd --gid 1000 sentinel && \
-    useradd --uid 1000 --gid sentinel --shell /bin/bash --create-home sentinel
-
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
-
-# Set working directory
-WORKDIR ${APP_HOME}
-
-# Copy application code
-COPY --chown=sentinel:sentinel controller/ ./controller/
-COPY --chown=sentinel:sentinel algos/ ./algos/
-COPY --chown=sentinel:sentinel common/ ./common/
-COPY --chown=sentinel:sentinel ml/ ./ml/
-COPY --chown=sentinel:sentinel sensor/schema.py ./sensor/schema.py
-COPY --chown=sentinel:sentinel sensor/errors.py ./sensor/errors.py
-
-# Create data directory
-RUN mkdir -p /app/data && chown sentinel:sentinel /app/data
-
-# Switch to non-root user
+RUN useradd -m -u 10001 sentinel
 USER sentinel
 
-# Expose port
-EXPOSE 5000
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/api/v1/health || exit 1
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
 
-# Default command (use gunicorn for production)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--threads", "2", \
-    "--worker-class", "gthread", "--access-logfile", "-", "--error-logfile", "-", \
-    "controller.api_server:app"]
+COPY --chown=sentinel:sentinel controller/ ./controller/
+COPY --chown=sentinel:sentinel common/ ./common/
+COPY --chown=sentinel:sentinel algos/ ./algos/
+COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:5000/api/v1/health || exit 1
+
+CMD ["python", "sentinel.py", "controller"]

@@ -3,8 +3,8 @@
 Sentinel NetLab - Time-Series Baseline
 """
 
-import logging
 from datetime import UTC, datetime
+import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -22,54 +22,72 @@ classifiers = [
 
 dependencies = [
     "pydantic>=2.0.0",
-    "python-dotenv>=1.0.0",
+    "requests>=2.28.0",
     "python-json-logger>=2.0.0",
+    "prometheus-client>=0.19.0",
 ]
 
 [tool.setuptools]
 py-modules = ["sentinel"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+sensor = ["*.yaml", "*.yml", "schema/*.json", "rules/*.json", "templates/*.html"]
+controller = ["openapi.yaml"]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sensor*", "controller*", "common*", "algos*", "ml*", "lab_attack_service*", "dashboard*"]
 
 [project.optional-dependencies]
+# Runtime components
 controller = [
     "flask>=2.3.0",
-    "flask-cors>=4.0.0",
     "flask-limiter>=3.5.0",
     "sqlalchemy>=2.0.0",
     "flask-sqlalchemy>=3.0.0",
     "psycopg2-binary>=2.9.9",
     "redis>=5.0.0",
     "gunicorn>=20.1.0",
-    "prometheus-client>=0.19.0",
-    "jinja2>=3.1.0",
+    "PyYAML>=6.0",
 ]
+
 sensor = [
     "scapy>=2.5.0",
     "psutil>=5.9.0",
     "pynmea2>=1.18.0",
     "pyserial>=3.5",
-    "requests>=2.28.0",
+    "python-dotenv>=1.0.0",
 ]
+
 dashboard = [
     "dash>=2.0.0",
     "dash-bootstrap-components>=1.0.0",
     "dash-auth>=1.3.0",
     "plotly>=5.0.0",
     "pandas>=2.0.0",
+    "gunicorn>=20.1.0",
 ]
+
 ml = [
     "numpy>=1.24.0",
-    "pandas>=2.0.0",
     "scikit-learn>=1.3.0",
-    "torch>=2.0.0",
+    # Torch excluded by default to keep size down
+    # "torch>=2.0.0",
 ]
+
+# Lab-only / isolated (Option B)
+# NOT included in default images/installs
+lab = [
+    "scapy>=2.5.0",
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+]
+
+# Tooling
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.21.0",
     "ruff>=0.1.9",
     "mypy>=1.8.0",
     "bandit>=1.7.7",
@@ -77,10 +95,6 @@ dev = [
     "pre-commit>=3.6.0",
     "types-requests>=2.31.0",
     "types-setuptools",
-    "types-PyYAML",
-]
-all = [
-    "sentinel-netlab[controller,sensor,dashboard,ml]"
 ]
 
 [project.urls]
@@ -122,12 +136,10 @@ select = [
     "S",   # flake8-bandit (security)
 ]
 ignore = [
-    "E501",  # line too long (handled by formatter)
+    "E501",  # line too long
     "S101",  # assert used
     "S603",  # subprocess calls (needed for sensor)
     "S607",  # partial path
-    "UP006", # standard collections types (allow List/Dict for now)
-    "UP035", # standard collections types (allow List/Dict for now)
 ]
 
 

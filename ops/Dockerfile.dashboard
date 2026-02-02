@@ -1,24 +1,36 @@
-FROM python:3.11-slim-bookworm
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim-bookworm AS builder
+WORKDIR /build
 
-WORKDIR /app
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
-# Install system dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade system-wide python security-sensitive packages
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context
-
-# Install python dependencies
 COPY pyproject.toml README.md sentinel.py ./
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel jaraco.context && \
-    pip install --no-cache-dir ".[dashboard]"
+COPY dashboard/ dashboard/
+COPY common/ common/
 
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy dashboard code
-COPY dashboard/ ./dashboard/
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install ".[dashboard]"
 
-# Run dashboard
-CMD ["python", "dashboard/app.py"]
+FROM python:3.11-slim-bookworm AS runtime
+WORKDIR /app
+
+RUN useradd -m -u 10001 sentinel
+USER sentinel
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY --chown=sentinel:sentinel dashboard/ ./dashboard/
+COPY --chown=sentinel:sentinel common/ ./common/
+
+ENV DEBUG="false"
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8050", "dashboard.app:server"]

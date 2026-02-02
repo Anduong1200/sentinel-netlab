@@ -4,7 +4,7 @@
 # =============================================================================
 #
 # Usage:
-#   cp .env.example .env  # Configure secrets
+#   cp .env.example .env  # Configure secrets (REQUIRED)
 #   docker compose up -d
 #
 # Services:
@@ -42,26 +42,26 @@ services:
       FLASK_ENV: production
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FORMAT: json
-      
+
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
-      
+
       # Redis
       REDIS_URL: redis://redis:6379/0
-      
-      # Secrets (from .env)
+
+      # Secrets (from .env - NO DEFAULTS)
       CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
       CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
-      
+
       # Security
       REQUIRE_HMAC: ${REQUIRE_HMAC:-true}
       REQUIRE_TLS: ${REQUIRE_TLS:-false}
       MAX_TIME_DRIFT_SECONDS: ${MAX_TIME_DRIFT_SECONDS:-300}
-      
+
       # Rate limiting
       RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-100 per minute}
       RATE_LIMIT_SENSOR: ${RATE_LIMIT_SENSOR:-200 per minute}
-      
+
       # S3/MinIO
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
@@ -75,7 +75,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/v1/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/api/v1/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -93,7 +93,7 @@ services:
     environment:
       <<: *common-env
       POSTGRES_USER: ${POSTGRES_USER:-sentinel}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}
       POSTGRES_DB: ${POSTGRES_DB:-sentinel}
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -101,7 +101,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -121,7 +121,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -138,14 +138,14 @@ services:
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_PASSWORD_REQUIRED}
     volumes:
       - minio-data:/data
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -246,11 +246,11 @@ services:
     image: ghcr.io/anduong1200/sentinel-sensor:${VERSION:-latest}
     container_name: sentinel-mock-sensor
     restart: "no"
-    profiles: ["testing"]  # Only start with: docker compose --profile testing up
+    profiles: [ "testing" ] # Only start with: docker compose --profile testing up
     environment:
       CONTROLLER_URL: http://controller:5000
       SENSOR_ID: mock-sensor-01
-      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:-sensor-01-token}
+      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:-mock-token}
       SENSOR_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
 
     depends_on:
@@ -258,7 +258,7 @@ services:
         condition: service_healthy
     networks:
       - sentinel-net
-  
+
   # ===========================================================================
   # UI: Dash Dashboard
   # ===========================================================================
@@ -280,7 +280,7 @@ services:
         condition: service_healthy
     networks:
       - sentinel-net
-  
+
   # ===========================================================================
   # LAB: Attack Service (Isolated)
   # ===========================================================================
@@ -290,14 +290,14 @@ services:
       dockerfile: lab_attack_service/Dockerfile
     image: sentinel-lab-service:latest
     container_name: sentinel-lab-service
-    profiles: ["lab"]
+    profiles: [ "lab" ]
     restart: "no"
     privileged: true # Required for interface access
     network_mode: "host" # Often required for WiFi injection
     environment:
       SENTINEL_LAB_MODE: "true"
       WIFI_INTERFACE: ${WIFI_INTERFACE:-wlan0}
-      LAB_API_KEY: ${LAB_API_KEY:-sentinel-lab-default}
+      LAB_API_KEY: ${LAB_API_KEY}
 
 # =============================================================================
 # VOLUMES
@@ -312,9 +312,9 @@ volumes:
   alertmanager-data:
   nginx-logs:
 
-# =============================================================================
-# NETWORKS
-# =============================================================================
+    # =============================================================================
+    # NETWORKS
+    # =============================================================================
 networks:
   sentinel-net:
     driver: bridge

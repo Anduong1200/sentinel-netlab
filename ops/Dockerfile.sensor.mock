@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.7
+FROM python:3.11-slim-bookworm
+WORKDIR /app
+
+# Install dependencies for testing/mocking
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+COPY pyproject.toml README.md sentinel.py ./
+COPY sensor/ sensor/
+COPY common/ common/
+COPY algos/ algos/
+COPY ml/ ml/
+COPY tests/ tests/
+
+# Install sensor + dev/test dependencies
+RUN pip install ".[sensor,dev]"
+
+# Create non-root user
+RUN useradd -m -u 10001 sentinel
+USER sentinel
+
+# Mock credentials are okay here for CI
+ENV SENSOR_AUTH_TOKEN="mock-ci-token"
+ENV MOCK_MODE="true"
+
+CMD ["python", "sentinel.py", "monitor", "--mock-mode"]

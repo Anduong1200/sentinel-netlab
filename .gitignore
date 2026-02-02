@@ -1,102 +1,42 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
-venv/
-env/
-ENV/
-.env
-.venv
-env.bak/
-venv.bak/
-
-# IDE / Editor
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Project Config & Secrets
-config.yaml
-config.yml
-secrets/
-*.pem
-*.key
-*.p12
-*.crt
-creds.json
-token.json
-.streamlit/secrets.toml
-
-# Logs and Databases
-*.log
-*.sqlite
-*.db
-journal/
-*.pcap
-*.pcapng
-
-# Testing
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-.mypy_cache/
-test-reports/
-htmlcov/
-*_report.json
-test_output*.txt
-test_flow_*.txt
+# Hygiene / Artifacts
+bandit_output*.txt
 integration_output*.txt
 unit_test_output*.txt
-bandit_report.json
-safety_report.json
-ruff_errors*.txt
-bandit_output*.txt
 bluetooth_log.json
 file_list.txt
-
-# Flask
-instance/
-
-# Docker
-docker-compose.override.yml
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Tools
+.dos_state.json
+test_sentinel.db
+.env
+.coverage
+htmlcov/
+site/
+.pytest_cache/
 .ruff_cache/
-
-# OS
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*.so
+.vscode/
+.idea/
+*.swp
 .DS_Store
-Thumbs.db
+
+# User-specific configuration
+config.yaml
+
+# Research and temporary files
+research/pcaps/
+research/*.pcap
+*.pcap
+# Hygiene
+*_output*.txt
+bluetooth_log.json
+file_list.txt
+.dos_state.json
+*.db

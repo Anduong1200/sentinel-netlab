@@ -47,7 +47,7 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 > [!IMPORTANT]
 > **WIDS vs WIPS Scope**:
 > *   **WIDS (Supported)**: Passive detecting, logging, and alerting on threats (Rogue AP, Deauth, Evil Twin). This is the core function of Sentinel NetLab.
-> *   **WIPS (Experimental)**: Active countermeasures (e.g., Deauth containment) are **experimental** and often restricted by hardware/driver support or legal constraints. We provide interfaces for these in `algorithms/active_defense.py` but they are **disabled by default** and not guaranteed to work on all chipsets.
+> *   **WIPS (Experimental)**: Active countermeasures (e.g., Deauth containment) are **experimental** and often restricted by hardware/driver support or legal constraints. We provide interfaces for these in `lab_attack_service/attacks.py` but they are **disabled by default**, **isolated**, and require **strict authorization**.
 >
 > Proceed with caution and ensure you have authorization before enabling any active response features.
 
@@ -105,7 +105,6 @@ sentinel-netlab/
 │   ├── data_schema.md         # Data models
 │   └── adr/                   # Architecture decisions
 │
-├── ops/                        # ⚙️ Docker & Operations
 ├── ops/                        # ⚙️ Operations & Docker
 │   ├── docker-compose.yml     # Full stack deployment
 │   ├── Dockerfile.controller  # Controller image
@@ -136,37 +135,47 @@ sentinel-netlab/
 - Linux (for Monitor Mode) or Windows (Development)
 - WiFi Adapter supporting Monitor Mode (e.g., Alfa AWUS036ACM)
 
-### Installation
+### 1. Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/anduong1200/sentinel-netlab.git
-   cd sentinel-netlab
-   ```
+**Prerequisites**: Python 3.11+, Linux (for Sensor w/ Monitor Mode) or Windows (Controller/Dashboard).
 
-2. **Set up Virtual Environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
+```bash
+# Clone
+git clone https://github.com/anduong1200/sentinel-netlab.git
+cd sentinel-netlab
 
-3. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   # For development tools (testing, linting):
-   pip install -r requirements-dev.txt
-   ```
+# Venv
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-4. **Install Logic**
-   ```bash
-   pip install -e .
-   ```
+# Install Dependencies (Pick your role)
+pip install ".[controller]"  # For Controller only
+pip install ".[sensor]"      # For Sensor only
+pip install ".[dashboard]"   # For Dashboard only
+pip install ".[dev]"         # For Development (Tests, Linting)
+```
 
-5. **Configuration**
-   ```bash
-   cp config.example.yaml config.yaml
-   # Edit config.yaml with specific settings
-   ```
+### 2. Deployment (Docker)
+
+```bash
+# Configure secrets (Required! No default keys provided)
+cp .env.example .env
+nano .env
+
+# Start stack
+docker compose -f ops/docker-compose.yml up -d
+```
+
+### 3. Safety & Lab Mode (Active Defense)
+
+> [!WARNING]
+> **Active Defense features are ISOLATED and DISABLED by default.**
+> To enable them for authorized lab testing, you must:
+> 1. Set `SENTINEL_LAB_MODE=true` environment variable.
+> 2. Create an authorization file `LAB_AUTHORIZED` in the data directory.
+> 3. Explicitly configure an `allowed_bssid_prefixes` allowlist in `config.yaml`.
+>
+> See [docs/lab_mode/mode_b_overview.md](docs/lab_mode/mode_b_overview.md) for full compliance details.
 
 ### Usage
 

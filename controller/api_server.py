@@ -60,15 +60,19 @@ def time_sync():
 @app.route("/api/v1/openapi.json")
 def openapi_spec():
     """Serve OpenAPI specification"""
-    spec = {
-        "openapi": "3.0.3",
-        "info": {
-            "title": "Sentinel NetLab Controller API",
-            "version": "2.0.0",
-            "description": "WiFi Security Monitoring Controller",
-        },
-    }
-    return jsonify(spec)
+    import yaml
+    import os
+    
+    spec_path = os.path.join(os.path.dirname(__file__), "openapi.yaml")
+    
+    try:
+        with open(spec_path, "r", encoding="utf-8") as f:
+            spec = yaml.safe_load(f)
+        return jsonify(spec)
+    except FileNotFoundError:
+        return jsonify({"error": "OpenAPI spec not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/metrics")

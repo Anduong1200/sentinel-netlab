@@ -90,17 +90,34 @@ class LabSafetyChecker:
                     "This may be a production device. Attack blocked."
                 )
 
-        # Check allowed prefixes (if configured)
-        if self.config.allowed_bssid_prefixes:
-            allowed = any(
-                bssid_upper.startswith(prefix.upper())
-                for prefix in self.config.allowed_bssid_prefixes
+        # Check allowed prefixes (STRICT: Must be configured)
+        if not self.config.allowed_bssid_prefixes:
+            raise LabSafetyError(
+                "No Allowlist configured. Active attacks require an explicit allowlist.\n"
+                "Define allowed_bssid_prefixes in config."
             )
-            if not allowed:
-                raise LabSafetyError(
-                    f"BSSID {bssid} not in allowed list.\n"
-                    "Configure allowed_bssid_prefixes or clear whitelist."
-                )
+
+        allowed = any(
+            bssid_upper.startswith(prefix.upper())
+            for prefix in self.config.allowed_bssid_prefixes
+        )
+        if not allowed:
+            raise LabSafetyError(
+                f"BSSID {bssid} not in allowed list.\n"
+                "Configure allowed_bssid_prefixes or clear whitelist."
+            )
+
+        return True
+
+    def check_auth_file(self) -> bool:
+        """Check for physical presence of authorization file"""
+        auth_file = os.environ.get("LAB_AUTH_FILE", "/app/data/LAB_AUTHORIZED")
+        if not os.path.exists(auth_file):
+             raise LabSafetyError(
+                f"Missing authorization file at {auth_file}.\n"
+                "You must explicitly create this file to acknowledge legal responsibility."
+            )
+        return True
 
         return True
 
@@ -146,6 +163,7 @@ class LabSafetyChecker:
 
     def validate_deauth(self, target_bssid: str, count: int) -> bool:
         """Full validation for deauth attack"""
+        self.check_auth_file()
         self.check_environment()
         self.check_bssid(target_bssid)
         self.check_count(count, self.config.max_deauth_count, "Deauth")
@@ -154,6 +172,7 @@ class LabSafetyChecker:
 
     def validate_beacon_flood(self, ssid_list: list[str], count: int) -> bool:
         """Full validation for beacon flood"""
+        self.check_auth_file()
         self.check_environment()
         self.check_count(count, self.config.max_beacon_count, "Beacon flood")
         self.confirm_attack("Beacon Flood", f"{len(ssid_list)} SSIDs", count)
