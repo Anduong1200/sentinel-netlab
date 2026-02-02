@@ -262,7 +262,7 @@ class BenchmarkSuite:
                     timeout=60,
                 )
                 return len(result.stdout.strip().split("\n"))
-            except:
+            except Exception:
                 return 0
 
         gt_count = count_frames(gt_pcap)
@@ -311,7 +311,7 @@ class BenchmarkSuite:
                     process_mem = max(
                         process_mem, proc.info["memory_info"].rss / 1024 / 1024
                     )
-            except:
+            except Exception:
                 pass
 
         result = {
@@ -349,7 +349,7 @@ class BenchmarkSuite:
                     success_count += 1
                 else:
                     crash_count += 1
-            except:
+            except Exception:
                 crash_count += 1
 
             if i < total_scans - 1:

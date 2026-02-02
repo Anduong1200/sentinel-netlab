@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum
-from typing import List
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -59,6 +58,6 @@ class TelemetryRecord(BaseModel):
 class TelemetryBatch(BaseModel):
     batch_id: str
     sensor_id: str
-    items: List[TelemetryRecord] = Field(default=[])
+    items: list[TelemetryRecord] = Field(default=[])
 
     model_config = {"extra": "forbid", "validate_assignment": True}

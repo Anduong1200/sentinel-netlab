@@ -84,7 +84,7 @@ def run_latency_test(
                 print(f"  Progress: {i + 1}/{num_requests}")
 
         if latencies:
-            latencies_ms = [l * 1000 for l in latencies]
+            latencies_ms = [latency_s * 1000 for latency_s in latencies]
             sorted_latencies = sorted(latencies_ms)
 
             endpoint_result = {

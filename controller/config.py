@@ -7,7 +7,7 @@ Centralized, type-safe configuration with strict secrets management.
 import logging
 import os
 from dataclasses import asdict, dataclass
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

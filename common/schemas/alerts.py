@@ -1,4 +1,3 @@
-from typing import Dict
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +10,7 @@ class AlertCreate(BaseModel):
     title: str = Field(..., max_length=200)
     description: str | None = Field(None, max_length=2000)
     bssid: str | None = None
-    evidence: Dict | None = None
+    details: dict | None = None
 
     schema_version: str = "1.0"
 

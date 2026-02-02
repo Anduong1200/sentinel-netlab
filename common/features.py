@@ -3,10 +3,10 @@ Sentinel NetLab - Feature Extraction
 Standardizes feature engineering for both streaming inference and offline training.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 
-def extract_features(telemetry_item: Dict[str, Any]) -> Dict[str, float]:
+def extract_features(telemetry_item: dict[str, Any]) -> dict[str, float]:
     """
     Extract numerical features from a telemetry item dict.
 
@@ -55,7 +55,7 @@ def extract_features(telemetry_item: Dict[str, Any]) -> Dict[str, float]:
     }
 
 
-def get_feature_names() -> List[str]:
+def get_feature_names() -> list[str]:
     """Return the ordered list of feature names"""
     return [
         "rssi_dbm",

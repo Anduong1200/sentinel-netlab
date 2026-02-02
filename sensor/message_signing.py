@@ -6,7 +6,6 @@ Handles HMAC signature generation and verification for API requests.
 import hashlib
 import hmac
 from datetime import UTC
-from typing import Dict
 
 
 class MessageSigner:
@@ -22,7 +21,7 @@ class MessageSigner:
         payload: bytes,
         timestamp: str | None = None,
         sequence: int | None = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Generate headers for signed request.
 

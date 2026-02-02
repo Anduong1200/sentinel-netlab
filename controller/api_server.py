@@ -66,7 +66,7 @@ def openapi_spec():
     spec_path = os.path.join(os.path.dirname(__file__), "openapi.yaml")
     
     try:
-        with open(spec_path, "r", encoding="utf-8") as f:
+        with open(spec_path, encoding="utf-8") as f:
             spec = yaml.safe_load(f)
         return jsonify(spec)
     except FileNotFoundError:

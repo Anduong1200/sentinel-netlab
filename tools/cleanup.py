@@ -4,10 +4,8 @@ Repository Cleanup Script
 Removes artifacts, caches, and temporary files to maintain repository hygiene.
 """
 
-import os
-import shutil
-import glob
 from pathlib import Path
+import shutil
 
 # Patterns to clean
 CLEANUP_PATTERNS = [

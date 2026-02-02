@@ -12,7 +12,8 @@ import uuid
 from collections import deque
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 logger = logging.getLogger(__name__)
 

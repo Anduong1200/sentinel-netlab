@@ -1,11 +1,11 @@
-from typing import List
+import re
 
 from pydantic import BaseModel, Field
 
 
 class CaptureConfig(BaseModel):
     interface: str = "wlan0"
-    channels: List[int] = [1, 6, 11]
+    channels: list[int] = [1, 6, 11]
     dwell_time: float = 0.4
     enable_channel_hop: bool = True
 
