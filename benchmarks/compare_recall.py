@@ -87,9 +87,7 @@ def parse_poc_json(filepath: str) -> set[str]:
     return bssids
 
 
-def calculate_metrics(
-    ground_truth: set[str], detected: set[str]
-) -> dict[str, Any]:
+def calculate_metrics(ground_truth: set[str], detected: set[str]) -> dict[str, Any]:
     """
     Calculate precision, recall, and F1 score.
 
