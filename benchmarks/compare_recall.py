@@ -12,6 +12,7 @@ import csv
 import json
 import sys
 from datetime import datetime
+from typing import Any
 
 
 def parse_airodump_csv(filepath: str) -> set[str]:
