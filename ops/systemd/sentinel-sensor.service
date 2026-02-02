@@ -1,0 +1,68 @@
+[Unit]
+Description=Sentinel NetLab Sensor (WIDS)
+After=network-online.target
+Wants=network-online.target
+
+# Nếu máy dùng NetworkManager dễ giành interface, cân nhắc:
+# After=NetworkManager.service
+# Wants=NetworkManager.service
+
+[Service]
+Type=simple
+
+# Nên tạo user riêng, không chạy root
+User=sentinel
+Group=sentinel
+WorkingDirectory=/opt/sentinel
+
+# ENV không commit, đặt ở /etc/sentinel/sensor.env
+EnvironmentFile=/etc/sentinel/sensor.env
+
+# Fail-fast: app nên tự kiểm tra token/secret thiếu -> exit 2
+# Chạy entrypoint chuẩn của repo (ưu tiên sentinel.py nếu repo dùng file này)
+ExecStart=/opt/sentinel/.venv/bin/python /opt/sentinel/sentinel.py sensor --config /etc/sentinel/sensor.yaml
+
+# Nếu repo của bạn dùng module entrypoint thay vì sentinel.py, dùng dòng dưới:
+# ExecStart=/opt/sentinel/.venv/bin/python -m sensor.main --config /etc/sentinel/sensor.yaml
+
+# --- Self-heal policy (quan trọng) ---
+Restart=on-failure
+RestartSec=5s
+
+# Chặn restart storm
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+# --- Hardening (đủ dùng) ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallArchitectures=native
+
+# Sensor cần ghi log/state: chỉ cho phép các path này
+ReadWritePaths=/var/lib/sentinel /var/log/sentinel
+
+# Nếu sensor cần raw capture/monitor mode, phải cấp capability.
+# (Tuỳ cách bạn chạy; nếu capture thực sự cần, bật 2 dòng dưới)
+# AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+# CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+
+# Log
+StandardOutput=journal
+StandardError=journal
+
+# Timeout start/stop (tránh treo)
+TimeoutStartSec=30
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

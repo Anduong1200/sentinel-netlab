@@ -40,7 +40,10 @@ class SensorCLI:
         self.risk_scorer = None
         self.evil_twin_detector = None
         self.watchdog = None
+        self.watchdog = None
         self.api_thread = None
+        self.last_packet_ts = time.time()
+        self.start_ts = time.time()
 
     def setup_capture_engine(self):
         """Initialize capture engine based on mode."""
@@ -138,6 +141,9 @@ class SensorCLI:
                     self.storage.add_network(result)
                 elif hasattr(self.storage, "save_network"):
                     self.storage.save_network(result)
+
+                # Update operational heartbeat (self-healing)
+                self.last_packet_ts = time.time()
 
                 # Log
                 if result.get("type") == "deauth_detected":
@@ -296,6 +302,17 @@ class SensorCLI:
                     print(
                         f"[Stats] Networks: {stats['network_count']} | Packets: {stats['packet_count']} | Events: {len(self.parser.security_events)}"
                     )
+
+                # Self-Healing Check (Operational Requirement)
+                # If no packets for 30s and up > 60s, assume stale capture
+                time_since_packet = time.time() - self.last_packet_ts
+                uptime = time.time() - self.start_ts
+
+                if uptime > 60 and time_since_packet > 30:
+                    logger.critical(f"FATAL: No packets received for {time_since_packet:.1f}s. Stale capture state detected.")
+                    logger.critical("Initiating fail-fast exit to trigger supervisor restart.")
+                    self.running = False
+                    sys.exit(2)  # Exit code 2 for systemd restart trigger
 
         except KeyboardInterrupt:
             pass

@@ -24,6 +24,12 @@ version: "3.9"
 x-common-env: &common-env
   TZ: UTC
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # ===========================================================================
   # CORE: Controller API
@@ -42,6 +48,7 @@ services:
       FLASK_ENV: production
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FORMAT: json
+
 
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
@@ -80,6 +87,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
     networks:
       - sentinel-net
 
@@ -100,6 +115,12 @@ services:
       - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}" ]
       interval: 10s
@@ -120,6 +141,7 @@ services:
       - redis-data:/data
     ports:
       - "6379:6379"
+    logging: *default-logging
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -274,6 +296,7 @@ services:
     environment:
       CONTROLLER_URL: http://controller:5000
       DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:-analyst-token}
+    logging: *default-logging
 
     depends_on:
       controller:
