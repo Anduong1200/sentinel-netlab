@@ -16,7 +16,7 @@ import os
 import subprocess
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import psutil
 import requests
@@ -134,8 +134,8 @@ class BenchmarkSuite:
         with open(poc_file) as f:
             data: Any = json.load(f)
 
-        poc_bssids: Set[str] = set()
-        networks: List[Dict[str, Any]] = []
+        poc_bssids: set[str] = set()
+        networks: list[dict[str, Any]] = []
 
         if isinstance(data, list):
             networks = data
