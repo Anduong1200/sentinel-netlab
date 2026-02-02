@@ -62,9 +62,8 @@ def openapi_spec():
     """Serve OpenAPI specification"""
     import yaml
     import os
-    
     spec_path = os.path.join(os.path.dirname(__file__), "openapi.yaml")
-    
+
     try:
         with open(spec_path, encoding="utf-8") as f:
             spec = yaml.safe_load(f)

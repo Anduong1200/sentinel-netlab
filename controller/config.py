@@ -28,7 +28,7 @@ class SecurityConfig:
     rate_limit_alerts: str = "50 per minute"
 
     # Redacted representation for logging
-    def safe_dict(self) -> Dict[str, Any]:
+    def safe_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["secret_key"] = "***"  # noqa: S105
         d["hmac_secret"] = "***"  # noqa: S105
@@ -41,7 +41,7 @@ class DatabaseConfig:
 
     url: str
 
-    def safe_dict(self) -> Dict[str, Any]:
+    def safe_dict(self) -> dict[str, Any]:
         return {"url": self.url.split("@")[-1] if "@" in self.url else "sqlite://..."}
 
 
@@ -56,7 +56,7 @@ class ControllerConfig:
     port: int = 5000
     debug: bool = False
 
-    def safe_dict(self) -> Dict[str, Any]:
+    def safe_dict(self) -> dict[str, Any]:
         return {
             "environment": self.environment,
             "security": self.security.safe_dict(),

@@ -10,9 +10,9 @@ import os
 import threading
 import uuid
 from collections import deque
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
-from collections.abc import Iterator
 from typing import Any
 
 logger = logging.getLogger(__name__)

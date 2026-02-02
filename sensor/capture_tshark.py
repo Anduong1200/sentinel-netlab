@@ -11,8 +11,8 @@ import subprocess  # nosec B404
 import tempfile
 import threading
 import time
-from datetime import datetime
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 logging.basicConfig(level=logging.INFO)

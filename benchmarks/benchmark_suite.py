@@ -312,7 +312,7 @@ class BenchmarkSuite:
                         process_mem, proc.info["memory_info"].rss / 1024 / 1024
                     )
             except Exception:
-                pass
+                continue
 
         result = {
             "system_cpu_avg_percent": round(sum(cpu_samples) / len(cpu_samples), 2),
