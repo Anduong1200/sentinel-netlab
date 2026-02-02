@@ -140,7 +140,9 @@ class BenchmarkSuite:
         if isinstance(data, list):
             networks = data
         elif isinstance(data, dict):
-            networks = data.get("networks", data.get("results", data.get("data", []))) or []
+            networks = (
+                data.get("networks", data.get("results", data.get("data", []))) or []
+            )
 
         for net in networks:
             if isinstance(net, dict):
