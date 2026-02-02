@@ -18,7 +18,7 @@ import requests
 
 
 def run_scan(
-    base_url: str, api_key: str = None, timeout: float = 30.0
+    base_url: str, api_key: str | None = None, timeout: float = 30.0
 ) -> dict[str, Any]:
     """
     Run a single scan operation.
@@ -77,7 +77,7 @@ def run_stability_test(
     base_url: str,
     duration_minutes: int = 30,
     interval_minutes: int = 2,
-    api_key: str = None,
+    api_key: str | None = None,
 ) -> dict[str, Any]:
     """
     Run stability test for specified duration.
@@ -85,7 +85,7 @@ def run_stability_test(
     Returns:
         Test results dictionary
     """
-    results = {
+    results: dict[str, Any] = {
         "start_time": datetime.now().isoformat(),
         "end_time": None,
         "duration_minutes": duration_minutes,
@@ -117,7 +117,9 @@ def run_stability_test(
         print(f"[{elapsed:.1f}m] Scan #{scan_count}/{total_scans}...", end=" ")
 
         result = run_scan(base_url, api_key)
-        results["scans"].append(result)
+        # Ensure 'scans' is treated as a list
+        if isinstance(results["scans"], list):
+            results["scans"].append(result)
 
         if result["success"]:
             success_count += 1

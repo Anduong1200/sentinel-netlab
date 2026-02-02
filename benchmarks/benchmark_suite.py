@@ -36,7 +36,7 @@ class BenchmarkSuite:
         self.api_key = config.get("api_key", "")
         self.interface = config.get("interface", "wlan0")
 
-    def _api_request(self, endpoint: str, method: str = "GET", **kwargs) -> dict | None:
+    def _api_request(self, endpoint: str, method: str = "GET", **kwargs) -> Any:
         """Make API request."""
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
         headers = {"X-API-Key": self.api_key} if self.api_key else {}
@@ -432,7 +432,7 @@ class BenchmarkSuite:
             "WPA2-Enterprise",
         ]
 
-        detected = {}
+        detected: dict[str, int] = {}
         unknown = 0
         for net in network_list:
             enc = net.get("encryption", "Unknown")

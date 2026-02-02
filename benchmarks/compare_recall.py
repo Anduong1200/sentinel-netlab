@@ -74,6 +74,8 @@ def parse_poc_json(filepath: str) -> set[str]:
         networks = data
     elif isinstance(data, dict):
         networks = data.get("networks", data.get("results", data.get("data", [])))
+        if networks is None:
+            networks = []
 
     for net in networks:
         if isinstance(net, dict):
@@ -84,7 +86,9 @@ def parse_poc_json(filepath: str) -> set[str]:
     return bssids
 
 
-def calculate_metrics(ground_truth: set[str], detected: set[str]) -> dict[str, float]:
+def calculate_metrics(
+    ground_truth: set[str], detected: set[str]
+) -> dict[str, Any]:
     """
     Calculate precision, recall, and F1 score.
 

@@ -18,7 +18,10 @@ import requests
 
 
 def measure_latency(
-    url: str, endpoint: str, headers: dict = None, timeout: float = 10.0
+    url: str,
+    endpoint: str,
+    headers: dict[str, Any] | None = None,
+    timeout: float = 10.0,
 ) -> float:
     """
     Measure latency for a single request.
@@ -44,8 +47,8 @@ def measure_latency(
 def run_latency_test(
     base_url: str,
     num_requests: int = 50,
-    api_key: str = None,
-    endpoints: list[str] = None,
+    api_key: str | None = None,
+    endpoints: list[str] | None = None,
 ) -> dict[str, Any]:
     """
     Run latency test on multiple endpoints.
@@ -87,7 +90,7 @@ def run_latency_test(
             latencies_ms = [latency_s * 1000 for latency_s in latencies]
             sorted_latencies = sorted(latencies_ms)
 
-            endpoint_result = {
+            endpoint_range_result = {
                 "successful_requests": len(latencies),
                 "failed_requests": errors,
                 "avg_ms": round(statistics.mean(latencies_ms), 2),
@@ -97,19 +100,19 @@ def run_latency_test(
                 "p95_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.95)], 2),
                 "p99_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.99)], 2),
                 "stdev_ms": (
-                    round(statistics.stdev(latencies_ms), 2)
+                    round(statistics.stdev(latencies_ms), 2)  # type: ignore
                     if len(latencies_ms) > 1
                     else 0
                 ),
             }
         else:
-            endpoint_result = {
+            endpoint_range_result = {
                 "successful_requests": 0,
                 "failed_requests": errors,
                 "error": "All requests failed",
             }
 
-        results["endpoints"][endpoint] = endpoint_result
+        results["endpoints"][endpoint] = endpoint_range_result
 
     return results
 
