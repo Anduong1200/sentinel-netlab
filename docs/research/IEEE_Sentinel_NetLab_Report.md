@@ -11,7 +11,7 @@
 
 ## Abstract
 
-This paper presents Sentinel NetLab, a lightweight hybrid wireless intrusion detection system (WIDS) designed for educational laboratories and authorized security research environments. The system combines signature-based detection with behavioral anomaly analysis to identify common WiFi attacks including rogue access points, evil twin attacks, and deauthentication floods. We describe the system architecture, implementation methodology, and experimental evaluation across an 8-week development cycle. Results demonstrate detection precision of 94.2% for evil twin attacks and 97.8% for deauthentication floods, with a mean time to detection (MTTD) of 2.3 seconds. The distributed sensor architecture achieves linear scalability while maintaining resource efficiency suitable for deployment on Raspberry Pi hardware. All components are open-source and designed with ethical considerations for authorized testing only.
+This paper presents Sentinel NetLab, a lightweight hybrid wireless intrusion detection system (WIDS) designed for educational laboratories and authorized security research environments. The system combines signature-based detection with behavioral anomaly analysis to identify common WiFi attacks including rogue access points, evil twin attacks, and deauthentication floods. We describe the system architecture, implementation methodology, and experimental evaluation across an 8-week development cycle. Preliminary results demonstrate detection precision of ~94.2% for evil twin attacks and ~97.8% for deauthentication floods, with a mean time to detection (MTTD) of 2.3 seconds (Results are preliminary and subject to further validation). The distributed sensor architecture achieves linear scalability while maintaining resource efficiency suitable for deployment on Raspberry Pi hardware. All components are open-source and designed with ethical considerations for authorized testing only.
 
 **Keywords:** Wireless Security, Intrusion Detection, 802.11, Evil Twin, Raspberry Pi, Machine Learning
 
@@ -221,7 +221,7 @@ Where:
 
 ### A. Detection Performance
 
-| Attack Type | Precision | Recall | F1-Score | MTTD |
+| Attack Type | Precision (Preliminary) | Recall (Preliminary) | F1-Score | MTTD |
 |-------------|-----------|--------|----------|------|
 | Evil Twin | 94.2% | 91.5% | 92.8% | 2.3s |
 | Deauth Flood | 97.8% | 99.1% | 98.4% | 0.8s |
@@ -239,7 +239,7 @@ Mitigation: Configurable similarity thresholds and whitelist support.
 
 ### C. Resource Consumption
 
-| Metric | Raspberry Pi 4 | Ubuntu VM |
+| Metric | Raspberry Pi 4 (Est.) | Ubuntu VM (Est.) |
 |--------|----------------|-----------|
 | CPU (idle) | 8% | 3% |
 | CPU (capture) | 45% | 22% |

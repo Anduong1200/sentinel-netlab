@@ -30,7 +30,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --chown=sentinel:sentinel dashboard/ ./dashboard/
 COPY --chown=sentinel:sentinel common/ ./common/
+COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
+COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
 
+# Security: Enforce Production Mode
 ENV DEBUG="false"
-
-CMD ["gunicorn", "--bind", "0.0.0.0:8050", "dashboard.app:server"]
+# Bind 0.0.0.0 is okay inside container, but controlled by compose
+CMD ["gunicorn", "--bind", "0.0.0.0:8050", "--workers", "2", "dashboard.app:server"]

@@ -13,17 +13,20 @@ COPY pyproject.toml README.md sentinel.py ./
 COPY controller/ controller/
 COPY common/ common/
 COPY algos/ algos/
+# ML might be needed for analysis
 COPY ml/ ml/
 
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Build wheels for controller dependencies
 RUN pip install -U pip setuptools wheel && \
     pip wheel --wheel-dir /wheels ".[controller]"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
 
+# runtime deps for postgres
 RUN apt-get update && apt-get install -y --no-install-recommends curl libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,6 +43,7 @@ COPY --chown=sentinel:sentinel controller/ ./controller/
 COPY --chown=sentinel:sentinel common/ ./common/
 COPY --chown=sentinel:sentinel algos/ ./algos/
 COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
+COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fsS http://127.0.0.1:5000/api/v1/health || exit 1

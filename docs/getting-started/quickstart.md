@@ -31,13 +31,46 @@ cd ops && docker-compose up -d
 
 # Verify
 curl http://localhost:5000/api/v1/health
-# Expected: {"status": "ok", ...}
-```
+- Python 3.11+
+- Linux (for Sensor) or Windows/Mac (for Controller/Dashboard)
+- WiFi Adapter supporting Monitor Mode (e.g., Alfa AWUS036ACM) - see [Hardware Guide](../reference/hardware_compatibility.md) (Stub)
 
-**Access:**
-- API: http://localhost:5000
-- Grafana: http://localhost:3000 (admin/admin123)
-- Prometheus: http://localhost:9090
+> [!NOTE]
+> See [Threat Model](../architecture/threat_model.md) for security scope.
+
+## Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/anduong1200/sentinel-netlab.git
+    cd sentinel-netlab
+    ```
+
+2.  **Set up Virtual Environment**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # Windows: venv\Scripts\activate
+    ```
+
+3.  **Install Dependencies**
+    Select the installation based on your role:
+
+    ```bash
+    # For Controller (Server)
+    pip install ".[controller]"
+
+    # For Sensor (Capture Device)
+    pip install ".[sensor]"
+
+    # For Dashboard (UI)
+    pip install ".[dashboard]"
+
+    # For Development (Tests, Linting)
+    pip install ".[dev]"
+    ```
+
+4.  **Install Logic**
+    (Included in step 3 via `.` install)
 
 ---
 

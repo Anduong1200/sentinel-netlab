@@ -57,9 +57,28 @@ cd sentinel-netlab
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Dependencies
-pip install --upgrade pip
-pip install -e .
+### 3. Install Dependencies
+
+We use `pyproject.toml` with optional dependencies ("extras") to keep installs lightweight.
+
+**For Controller (Server):**
+```bash
+pip install ".[controller]"
+```
+
+**For Sensor (Node):**
+```bash
+pip install ".[sensor]"
+```
+
+**For Dashboard (UI):**
+```bash
+pip install ".[dashboard]"
+```
+
+**For Development (All tools):**
+```bash
+pip install ".[dev]"
 ```
 
 ---

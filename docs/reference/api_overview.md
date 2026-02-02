@@ -11,9 +11,24 @@
 http://<sensor-ip>:5000
 ```
 
+## API Overview
+
+Sentinel NetLab uses two distinct APIs:
+
+1.  **Controller API**: Central management (REST/OpenAPI). See [openapi.yaml](../reference/openapi.yaml) for the full specification.
+2.  **Sensor API**: Internal local API for sensor management.
+
 ## Authentication
 
-All endpoints except `/health` and `/metrics` require API key authentication.
+All Controller endpoints require headers:
+- `X-API-Key`: For internal services (if configured) or Bearer tokens.
+- `Authorization`: `Bearer <token>` (JWT) for users.
+
+> [!WARNING]
+> **Active Defense Endpoints**
+> Endpoints related to "Active Defense" (e.g., `/api/v1/lab/attack`) are **ISOLATED**, **DISABLED BY DEFAULT**, and only available when `LAB_MODE=true`. See [Lab Mode](../lab_mode/mode_b_overview.md) for details. Do NOT use these in production.
+
+## Sensor API (Internal)
 
 **Header:**
 ```
