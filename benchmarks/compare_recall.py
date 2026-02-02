@@ -74,15 +74,15 @@ def parse_poc_json(filepath: str) -> set[str]:
     if isinstance(data, list):
         networks = data
     elif isinstance(data, dict):
-        networks = data.get("networks", data.get("results", data.get("data", [])))
-        if networks is None:
-            networks = []
+        networks = data.get("networks", data.get("results", data.get("data", []))) or []
 
     for net in networks:
         if isinstance(net, dict):
-            bssid = net.get("bssid", net.get("BSSID", "")).strip().upper()
-            if bssid and len(bssid) == 17:
-                bssids.add(bssid)
+            val = net.get("bssid", net.get("BSSID", ""))
+            if val:
+                bssid = str(val).strip().upper()
+                if len(bssid) == 17:
+                    bssids.add(bssid)
 
     return bssids
 

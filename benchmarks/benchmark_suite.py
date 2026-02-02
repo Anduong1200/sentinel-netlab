@@ -16,7 +16,7 @@ import os
 import subprocess
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List, Set
 
 import psutil
 import requests
@@ -27,7 +27,7 @@ class BenchmarkSuite:
 
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.results = {
+        self.results: dict[str, Any] = {
             "timestamp": datetime.now().isoformat(),
             "config": config,
             "metrics": {},
@@ -132,14 +132,23 @@ class BenchmarkSuite:
 
         # Parse PoC JSON
         with open(poc_file) as f:
-            data = json.load(f)
+            data: Any = json.load(f)
 
-        poc_bssids = set()
-        networks = data if isinstance(data, list) else data.get("networks", [])
+        poc_bssids: Set[str] = set()
+        networks: List[Dict[str, Any]] = []
+
+        if isinstance(data, list):
+            networks = data
+        elif isinstance(data, dict):
+            networks = data.get("networks", data.get("results", data.get("data", []))) or []
+
         for net in networks:
-            bssid = net.get("bssid", "").strip().upper()
-            if bssid:
-                poc_bssids.add(bssid)
+            if isinstance(net, dict):
+                val = net.get("bssid", net.get("BSSID", ""))
+                if val:
+                    bssid = str(val).strip().upper()
+                    if len(bssid) == 17:
+                        poc_bssids.add(bssid)
 
         # Calculate metrics
         tp = len(gt_bssids & poc_bssids)

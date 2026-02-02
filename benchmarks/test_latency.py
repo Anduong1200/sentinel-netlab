@@ -63,7 +63,7 @@ def run_latency_test(
     if api_key:
         headers["X-API-Key"] = api_key
 
-    results = {
+    results: dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
         "base_url": base_url,
         "num_requests": num_requests,
@@ -90,7 +90,7 @@ def run_latency_test(
             latencies_ms = [latency_s * 1000 for latency_s in latencies]
             sorted_latencies = sorted(latencies_ms)
 
-            endpoint_range_result = {
+            endpoint_range_result: dict[str, Any] = {
                 "successful_requests": len(latencies),
                 "failed_requests": errors,
                 "avg_ms": round(statistics.mean(latencies_ms), 2),
@@ -100,7 +100,7 @@ def run_latency_test(
                 "p95_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.95)], 2),
                 "p99_ms": round(sorted_latencies[int(len(sorted_latencies) * 0.99)], 2),
                 "stdev_ms": (
-                    round(statistics.stdev(latencies_ms), 2)  # type: ignore
+                    round(statistics.stdev(latencies_ms), 2)
                     if len(latencies_ms) > 1
                     else 0
                 ),
