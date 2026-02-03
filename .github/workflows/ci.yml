@@ -112,6 +112,7 @@ jobs:
             --accept 200,204,206,429
             --exclude-mail
             --exclude "doi.org/10.1177/1550147718795838"
+            --exclude "docs.fcc.gov"
             "README.md"
             "docs/**/*.md"
           fail: true
