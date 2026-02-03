@@ -111,6 +111,7 @@ jobs:
             --no-progress
             --accept 200,204,206,429
             --exclude-mail
+            --exclude "doi.org/10.1177/1550147718795838"
             "README.md"
             "docs/**/*.md"
           fail: true
