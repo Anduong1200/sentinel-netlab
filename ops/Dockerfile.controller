@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Security: Upgrade base image packages to fix CVE-2026-23949 and CVE-2026-24049
+# This MUST be done BEFORE creating venv since venv symlinks to base
+RUN pip install --upgrade pip setuptools "wheel>=0.46.2" "jaraco.context>=6.1.0"
+
 COPY pyproject.toml README.md sentinel.py ./
 COPY controller/ controller/
 COPY common/ common/
@@ -16,11 +20,8 @@ COPY algos/ algos/
 # ML might be needed for analysis
 COPY ml/ ml/
 
-# Build wheels only (no venv installation)
-RUN pip install -U pip setuptools wheel && \
-    pip wheel --wheel-dir /wheels ".[controller]" && \
-    # Security: Build wheels for vulnerable packages at secure versions
-    pip wheel --wheel-dir /wheels "jaraco.context>=6.1.0" "wheel>=0.46.2"
+# Build wheels only
+RUN pip wheel --wheel-dir /wheels ".[controller]"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
@@ -31,13 +32,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl libpq5 \
 
 RUN useradd -m -u 10001 sentinel
 
-# Create fresh venv in runtime (not copied from builder to avoid stale packages)
+# Security: Upgrade base image packages BEFORE creating venv
+RUN pip install --upgrade pip setuptools "wheel>=0.46.2" "jaraco.context>=6.1.0"
+
+# Create venv (will now use upgraded packages from base)
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Upgrade pip and install security-patched packages FIRST
-RUN pip install --no-cache-dir -U pip && \
-    pip install --no-cache-dir "jaraco.context>=6.1.0" "wheel>=0.46.2"
+# Upgrade venv pip as well
+RUN pip install --no-cache-dir -U pip
 
 COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
