@@ -43,6 +43,7 @@ include = ["sensor*", "controller*", "common*", "algos*", "ml*", "lab_attack_ser
 # Runtime components
 controller = [
     "flask>=2.3.0",
+    "flask-cors>=4.0.0",
     "flask-limiter>=3.5.0",
     "sqlalchemy>=2.0.0",
     "flask-sqlalchemy>=3.0.0",
