@@ -81,7 +81,7 @@ class BenchmarkSuite:
             if ssid and ssid != "<Hidden>":
                 unique_ssids.add(ssid)
 
-        result = {
+        result: dict[str, Any] = {
             "ap_count": len(unique_bssids),
             "ssid_count": len(unique_ssids),
             "hidden_networks": len(
