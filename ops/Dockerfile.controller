@@ -38,7 +38,10 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
+RUN pip install --no-cache-dir /wheels/*.whl && \
+    # Security: Force upgrade to fix CVE-2026-23949 and CVE-2026-24049
+    pip install --no-cache-dir --upgrade "jaraco.context>=6.1.0" "wheel>=0.46.2" && \
+    rm -rf /wheels
 
 # Change ownership of venv to sentinel user
 RUN chown -R sentinel:sentinel /opt/venv
