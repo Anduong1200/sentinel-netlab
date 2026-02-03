@@ -16,23 +16,32 @@ COPY algos/ algos/
 # ML is needed if sensor uses ML analysis locally
 COPY ml/ ml/
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Install sensor dependencies only (no dev, no dashboard)
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install ".[sensor]" && \
-    # Security: Force upgrade vulnerable transitive dependencies
-    pip install --upgrade "jaraco.context>=6.1.0" "wheel>=0.46.2"
+# Build wheels only (no venv installation to avoid stale metadata)
+RUN pip install -U pip setuptools wheel && \
+    pip wheel --wheel-dir /wheels ".[sensor]" && \
+    # Security: Build wheels for vulnerable packages at secure versions
+    pip wheel --wheel-dir /wheels "jaraco.context>=6.1.0" "wheel>=0.46.2"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
 
 RUN useradd -m -u 10001 sentinel
-USER sentinel
 
-COPY --from=builder /opt/venv /opt/venv
+# Create fresh venv in runtime (not copied from builder to avoid stale packages)
+RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip and install security-patched packages FIRST
+RUN pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir "jaraco.context>=6.1.0" "wheel>=0.46.2"
+
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
+
+# Change ownership of venv to sentinel user
+RUN chown -R sentinel:sentinel /opt/venv
+
+USER sentinel
 
 COPY --chown=sentinel:sentinel sensor/ ./sensor/
 COPY --chown=sentinel:sentinel common/ ./common/

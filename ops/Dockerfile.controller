@@ -16,10 +16,7 @@ COPY algos/ algos/
 # ML might be needed for analysis
 COPY ml/ ml/
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Build wheels for controller dependencies
+# Build wheels only (no venv installation)
 RUN pip install -U pip setuptools wheel && \
     pip wheel --wheel-dir /wheels ".[controller]" && \
     # Security: Build wheels for vulnerable packages at secure versions
@@ -34,14 +31,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl libpq5 \
 
 RUN useradd -m -u 10001 sentinel
 
-COPY --from=builder /opt/venv /opt/venv
+# Create fresh venv in runtime (not copied from builder to avoid stale packages)
+RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip and install security-patched packages FIRST
+RUN pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir "jaraco.context>=6.1.0" "wheel>=0.46.2"
+
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/*.whl && \
-    # Security: Force upgrade to fix CVE-2026-23949 and CVE-2026-24049
-    pip install --no-cache-dir --upgrade "jaraco.context>=6.1.0" "wheel>=0.46.2" && \
-    rm -rf /wheels
+RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
 
 # Change ownership of venv to sentinel user
 RUN chown -R sentinel:sentinel /opt/venv
