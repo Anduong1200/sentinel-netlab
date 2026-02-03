@@ -158,7 +158,7 @@ Taken together, these moves reposition Sentinel NetLab from “a new WIDS” to 
 [18] https://shield-datasets.in/guest/projects/dataset-details-publicly/96
 [19] https://doaj.org/article/08ade75e1e6346a69d5bb3e88f5f93a1
 [20] https://ouci.dntb.gov.ua/en/works/lDMoXMd9/
-[21] https://link.springer.com/article/10.1186/s13677-020-0154-7
+[21] https://journalofcloudcomputing.springeropen.com/articles/10.1186/s13677-020-0154-7
 [22] https://ar5iv.org/abs/2110.04259
 [23] https://www.kismet-wifi.net/docs/readme/datasources/datasources/
 [24] https://documentation.meraki.com/Wireless/Design_and_Configure/Configuration_Guides/Encryption_and_Authentication/WPA3_Encryption_and_Configuration_Guide
