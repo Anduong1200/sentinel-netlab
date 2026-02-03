@@ -3,26 +3,24 @@
 ## 1. Daily Maintenance
 
 ### Monitoring
-- **Dashboard**: Check `http://<controller-ip>:5000/dashboard` for sensor health status.
-- **Logs**: Monitor standard output for `[CRITICAL]` or `[ERROR]` messages.
+- **Dashboard**: Check `http://<controller-ip>:8050` for real-time visualization.
+- **Health Check**: `curl http://<controller-ip>:5000/api/v1/health`
+- **Logs**: Monitor hardened services via Docker.
   ```bash
-  docker logs -f sentinel-controller
+  docker compose -f ops/docker-compose.prod.yml logs -f controller
   ```
 
 ### Database Backups
-- **SQLite**: Copy `data/sentinel.db`.
-- **PostgreSQL**: Use `pg_dump`.
+- **PostgreSQL**: Use `pg_dump` on the `sentinel_db` container.
+- **PCAPs**: Back up the `data/pcaps` volume.
 
 ## 2. Updates
 
 ### Controller Update
-1.  Pull latest image:
+1.  Pull latest code or image.
+2.  Restart hardened stack:
     ```bash
-    docker pull ghcr.io/anduong1200/sentinel-controller:latest
-    ```
-2.  Restart container:
-    ```bash
-    docker-compose -f ops/docker-compose.yml restart controller
+    docker compose -f ops/docker-compose.prod.yml up -d --build controller
     ```
 
 ## 3. CI/CD Security Gates
@@ -33,11 +31,8 @@ The project implements automated security gating in GitHub Actions:
 - **Trivy**: Scans Docker images for OS and library vulnerabilities.
 - **Lychee**: Validates all documentation links.
 
-### Maintenance Note
-If a Trivy scan fails due to a new CVE (e.g., OpenSSL), follow these steps to remediate:
-1. Update the base image in `ops/Dockerfile.*`.
-2. Add `apt-get upgrade -y` to pull the latest security patches.
-3. Commit and push to trigger a fresh security-hardened build.
+## 4. Production Performance
+See [Resilience & Performance Guide](operations/resilience_and_performance.md) for self-healing logic and resource limits.
 
-## 4. Security Rotation
+## 5. Security Rotation
 See [Troubleshooting Runbook](operations/runbooks/troubleshooting.md) for HMAC/Secret rotation procedures.

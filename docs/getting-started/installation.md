@@ -95,8 +95,8 @@ The controller manages sensors and aggregates data. It is best run via Docker.
 
 2.  **Start Services**:
     ```bash
-    make docker-up
-    # Or manually: cd ops && docker-compose up -d
+    # Hardened production stack
+    docker compose -f ops/docker-compose.prod.yml up -d
     ```
 
 3.  **Verify**:
@@ -124,8 +124,8 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
     # Ensure you are in venv
     source venv/bin/activate
     
-    # Run
-    sudo env PATH=$PATH python sentinel.py monitor \
+    # Run via unified entry point
+    sudo ./venv/bin/python sentinel.py monitor \
         --sensor-id "sensor-01" \
         --iface wlan1 \
         --upload-url "http://<CONTROLLER_IP>:5000/api/v1/telemetry"
@@ -148,6 +148,5 @@ Check your interface name with `ip link` or `iwconfig`. It might be `wlan0`, `wl
 ### "Database connection failed" (Controller)
 Ensure Docker containers are running (`docker ps`). Check if `postgres` is healthy.
 ```bash
-cd ops
-docker-compose logs postgres
+docker compose -f ops/docker-compose.prod.yml logs postgres
 ```

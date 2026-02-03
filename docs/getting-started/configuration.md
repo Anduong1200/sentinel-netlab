@@ -119,21 +119,20 @@ Override configuration via command line:
 | `--channels` | Channel list (comma-separated) | `1,6,11` |
 | `--dwell-ms` | Channel dwell time | `200` |
 | `--upload-url` | Controller endpoint | from config |
-| `--mock-mode` | Use mock capture driver | `false` |
+| `--mock` | Use mock capture driver | `false` |
 | `--log-level` | Logging level | `INFO` |
-| `--anonymize-ssid` | Enable SSID hashing | `false` |
 
 ### Examples
 
 ```bash
 # Basic operation
-python cli.py --sensor-id rpi-01 --iface wlan0
+python sentinel.py monitor --sensor-id rpi-01 --iface wlan0
 
 # Custom channels
-python cli.py --sensor-id rpi-01 --iface wlan0 --channels 1,6,11,36,40,44
+python sentinel.py monitor --sensor-id rpi-01 --iface wlan0 --channels 1,6,11,36,40,44
 
 # Development mode
-python cli.py --sensor-id dev --iface mock0 --mock-mode --log-level DEBUG
+python sentinel.py monitor --sensor-id dev --iface mock0 --mock --log-level DEBUG
 ```
 
 ---

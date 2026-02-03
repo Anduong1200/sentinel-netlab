@@ -1,4 +1,4 @@
-# Sentine NetLab Documentation
+# Sentinel NetLab Documentation
 
 Welcome to the official documentation for the **Sentinel NetLab** project. This documentation is structured to align with the IEEE System Paper framework.
 
@@ -34,6 +34,7 @@ Welcome to the official documentation for the **Sentinel NetLab** project. This 
 - [Datasets & Test Vectors](evaluation/datasets.md)
 - [Metrics](evaluation/metrics.md)
 - [System Limitations](evaluation/limitations.md)
+- [Resilience & Performance](operations/resilience_and_performance.md)
 
 ## 6. Reproducibility
 - [Artifact Description](reproducibility/artifacts.md)
@@ -45,7 +46,14 @@ Welcome to the official documentation for the **Sentinel NetLab** project. This 
 - [Legal Scope](ethics_legal/legal_scope.md)
 - [Responsible Use](ethics_legal/responsible_use.md)
 
-## 8. Appendix
+## 8. Threat & Attack Library (Vietnamese)
+- [Name Resolution & SMB Attacks](reference/attacks/windows_smb_relay.md)
+- [DNS Cache Poisoning](reference/attacks/dns_cache_poisoning.md)
+- [SNMP Exploits](reference/attacks/snmp_exploits.md)
+- [FTP Exploits](reference/attacks/ftp_exploits.md)
+- [Pass-the-Hash Attacks](reference/attacks/pass_the_hash.md)
+
+## 9. Appendix
 - [Glossary](appendix/glossary.md)
 - [Configuration Reference](appendix/config_reference.md)
 - [FAQ](appendix/faq.md)

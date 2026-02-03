@@ -71,13 +71,13 @@ flowchart LR
 | **CaptureDriver** | `capture_driver.py` | Monitor mode, channel hopping, raw frame capture |
 | **FrameParser** | `frame_parser.py` | Radiotap parsing, IE extraction, deduplication |
 | **Normalizer** | `normalizer.py` | OUI lookup, timestamp normalization, anonymization |
-| **RiskEngine** | `risk.py` | Weighted scoring, threat classification |
-| **Detection** | `detection.py` | Evil twin, deauth flood, pattern matching |
+| **RiskScorer** | `algos/risk.py` | Weighted scoring, threat classification |
+| **EvilTwinDetector** | `algos/evil_twin.py` | Advanced SSIDs similarity & MAC verification |
 | **BufferManager** | `buffer_manager.py` | Ring buffer, disk journal, batch selection |
-| **TransportClient** | `transport_client.py` | Upload, retry, circuit breaker |
+| **Transport** | `transport.py` | Upload, retry, circuit breaker |
 | **GeoMapper** | `geo_mapping.py` | Signal trilateration, Kalman filtering, heatmap generation |
 | **Wardrive** | `wardrive.py` | GPS correlation, mobile capture, session management |
-| **ActiveDefense** | `attacks.py` | Deauth, FakeAP (controlled lab use only) |
+| **ActiveDefense** | `attacks.py` | Deauth, FakeAP (strictly isolated; see Lab Mode) |
 | **Audit** | `audit.py` | Security posture analysis, report generation |
 
 ---
@@ -160,7 +160,7 @@ flowchart LR
     
     subgraph "Weighted Scoring"
         ENC & RSSI & VEND & SSID & WPS & BCN --> SUM["Σ(w × x)"]
-        YAML[(risk_weights.yaml)] -.-> SUM
+        YML[(risk_weights.yaml)] -.-> SUM
         SUM --> SCORE[Score 0-100]
     end
     
@@ -288,8 +288,8 @@ All telemetry data conforms to JSON Schema (Draft-07):
 
 | Layer | Technology |
 |-------|------------|
-| **Capture** | Scapy, libpcap, iw |
-| **Processing** | Python 3.9+ |
+| **Capture** | Scapy, libpcap, tshark |
+| **Processing** | Python 3.11+ |
 | **API** | Flask, Gunicorn |
 | **Storage** | SQLite, PostgreSQL (planned) |
 | **Queue** | Redis (planned) |

@@ -58,17 +58,20 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 ```
 sentinel-netlab/
 ├── sensor/                     # 🔊 Capture Agent
-│   ├── cli.py                 # Entry point & CLI
+│   ├── sensor_cli.py          # Unified entry point & CLI
 │   ├── sensor_controller.py   # Main orchestrator
 │   ├── capture_driver.py      # Monitor mode driver
 │   ├── frame_parser.py        # 802.11 frame decoder
 │   ├── normalizer.py          # Telemetry normalization
-│   ├── transport_client.py    # Upload with retry
+│   ├── transport.py           # Upload with retry logic
 │   ├── detection.py           # Threat detection logic
-│   ├── risk.py                # Risk scoring engine
-│   ├── attacks.py             # ⚔️ Active Defense (Lab only)
-│   ├── audit.py               # 📋 Security Audit
+│   ├── risk.py                # Risk scoring hooks
+│   ├── rule_engine.py         # Pattern matching engine
 │   └── schema/                # JSON schemas
+│
+├── benchmarks/                 # 📈 Performance & Accuracy tests
+│   ├── benchmark_suite.py     # Comprehensive metrics
+│   └── compare_recall.py      # Ground truth comparison
 │
 ├── dashboard/                  # 📊 Web UI (Dash/Plotly)
 │   └── app.py                 # Dashboard Entry Point
@@ -95,7 +98,6 @@ sentinel-netlab/
 │   ├── contracts.py           # Pydantic data models
 │   ├── frame_constants.py     # 802.11 constants
 │   ├── privacy.py             # MAC anonymization
-│   ├── risk_engine.py         # Risk scoring
 │   └── metrics.py             # Prometheus metrics
 │
 ├── docs/                       # 📚 Documentation
@@ -106,23 +108,17 @@ sentinel-netlab/
 │   └── adr/                   # Architecture decisions
 │
 ├── ops/                        # ⚙️ Operations & Docker
-│   ├── docker-compose.yml     # Full stack deployment
+│   ├── docker-compose.prod.yml # Hardened production stack
+│   ├── docker-compose.yml     # Development stack
 │   ├── Dockerfile.controller  # Controller image
 │   ├── Dockerfile.sensor      # Sensor image
-│   └── systemd/               # Systemd services
+│   └── systemd/               # Sentinel Systemd units
 │
 ├── examples/                   # 📝 Sample Data
 │   ├── sample_telemetry.json  # Telemetry example
 │   └── sample_alert.json      # Alert example
 │
-├── tests/                      # 🧪 Test Suite
-│   ├── unit/                  # Unit tests
-│   └── integration/           # Integration tests
-│
-├── config.example.yaml         # Configuration template
-├── requirements.txt            # Runtime dependencies
-├── requirements-dev.txt        # Dev dependencies
-├── pyproject.toml              # Build configuration
+├── pyproject.toml              # Modern Python build config
 └── Makefile                    # Build/test commands
 ```
 
@@ -207,13 +203,14 @@ The core Distributed Wireless Intrusion Detection System.
 **1. Run Sensor Agent**
 Starts the continuous monitoring daemon.
 ```bash
-python sensor/cli.py --sensor-id sensor-01 --iface wlan0mon --config config.yaml
+# Fail-fast check for config and connectivity
+python sensor/sensor_cli.py --sensor-id sensor-01 --iface wlan0mon --config config.yaml
 ```
 
-**2. Deploy Controller**
-Start the central management backend.
+**2. Deploy Controller (Production)**
+Start the central management backend with hardened configs.
 ```bash
-docker-compose -f ops/docker-compose.yml up -d
+docker compose -f ops/docker-compose.prod.yml up -d
 ```
 
 **3. Dashboard**

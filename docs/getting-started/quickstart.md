@@ -27,7 +27,7 @@ cp .env.example .env
 # Generate with: openssl rand -hex 32
 
 # Start stack (includes Postgres, Redis, Prometheus, Grafana)
-cd ops && docker-compose up -d
+docker compose -f ops/docker-compose.prod.yml up -d
 
 # Verify
 curl http://localhost:5000/api/v1/health
@@ -88,7 +88,7 @@ cd sentinel-netlab
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install ".[sensor]"
 
 # Configure sensor
 cp config.example.yaml config.yaml
@@ -102,8 +102,8 @@ sudo airmon-ng check kill
 sudo airmon-ng start wlan0
 # Note: interface becomes wlan0mon
 
-# Start sensor
-sudo python sensor/main.py --interface wlan0mon
+# Start sensor (Unified CLI)
+sudo ./venv/bin/python sensor/sensor_cli.py --interface wlan0mon
 ```
 
 ---
@@ -138,7 +138,7 @@ open http://localhost:3000
 
 ```bash
 # For testing without WiFi adapter
-python sensor/main.py --mock
+python sensor/sensor_cli.py --mock
 
 # Generates synthetic network data
 ```
@@ -149,12 +149,12 @@ python sensor/main.py --mock
 
 | Task | Command |
 |------|---------|
-| Start controller | `cd ops && docker-compose up -d` |
-| Stop controller | `cd ops && docker-compose down` |
-| View logs | `docker-compose logs -f controller` |
+| Start controller | `docker compose -f ops/docker-compose.prod.yml up -d` |
+| Stop controller | `docker compose -f ops/docker-compose.prod.yml down` |
+| View logs | `docker compose -f ops/docker-compose.prod.yml logs -f controller` |
 | Enable monitor mode | `sudo airmon-ng start wlan0` |
-| Start sensor | `sudo python sensor/main.py --interface wlan0mon` |
-| Run tests | `make test` |
+| Start sensor | `sudo python sensor/sensor_cli.py --interface wlan0mon` |
+| Run tests | `pytest tests/` |
 
 ---
 

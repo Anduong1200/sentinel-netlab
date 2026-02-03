@@ -4,10 +4,10 @@ Sentinel-NetLab follows a distributed sensor–controller architecture designed
 to reflect real-world wireless monitoring deployments.
 
 ## Components
-- Sensor: Passive wireless monitor operating in monitor mode
-- Controller: Central ingestion, detection, scoring, and alerting service
-- Dashboard: Visualization and analyst-facing interface
-- Lab Attack Service (Mode B): Isolated research-only attack module
+- **Sensor Agent**: Lightweight capture and detection agent. Entry point: `sensor/sensor_cli.py`.
+- **Controller**: Central ingestion and management service. Production: `ops/docker-compose.prod.yml`.
+- **Dashboard**: Real-time visualization platform (Port 8050).
+- **Lab Mode (Option B)**: Isolated research-only attack module for authorized environments.
 
 ## Design Rationale
 - Separation of concerns prevents sensor compromise from escalating to control.
