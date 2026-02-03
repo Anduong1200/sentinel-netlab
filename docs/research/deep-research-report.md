@@ -157,7 +157,7 @@ Taken together, these moves reposition Sentinel NetLab from “a new WIDS” to 
 [17] https://doaj.org/article/fd96e0dc4ee9486fb78d41d6fc6cdf04
 [18] https://shield-datasets.in/guest/projects/dataset-details-publicly/96
 [19] https://doaj.org/article/08ade75e1e6346a69d5bb3e88f5f93a1
-[20] https://journals.sagepub.com/doi/10.1177/1550147718795838
+[20] https://doi.org/10.1177/1550147718795838
 [21] https://journalofcloudcomputing.springeropen.com/articles/10.1186/s13677-020-0154-7
 [22] https://ar5iv.org/abs/2110.04259
 [23] https://www.kismet-wifi.net/docs/readme/datasources/datasources/
