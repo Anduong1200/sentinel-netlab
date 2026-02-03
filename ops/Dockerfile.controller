@@ -21,7 +21,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Build wheels for controller dependencies
 RUN pip install -U pip setuptools wheel && \
-    pip wheel --wheel-dir /wheels ".[controller]"
+    pip wheel --wheel-dir /wheels ".[controller]" && \
+    # Security: Build wheels for vulnerable packages at secure versions
+    pip wheel --wheel-dir /wheels "jaraco.context>=6.1.0" "wheel>=0.46.2"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
