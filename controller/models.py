@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Float,
     String,
     Text,
     create_engine,
@@ -86,6 +87,13 @@ class Alert(Base):
     ssid = Column(String(32))
 
     evidence = Column(JSON, default={})
+    reason_codes = Column(JSON, default=[])  # List[str] codes
+    
+    # Scoring
+    confidence = Column(Float)  # 0.0 - 1.0
+    impact = Column(Float)      # 0.0 - 100.0
+    risk_score = Column(Float)  # 0.0 - 100.0
+
     mitre_attack = Column(String(20))
 
     status = Column(String(20), default="open", index=True)

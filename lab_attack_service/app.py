@@ -24,7 +24,18 @@ CORS(app)
 limiter = Limiter(key_func=get_remote_address, app=app)
 
 # Configuration
-API_KEY = os.environ.get("LAB_API_KEY", "sentinel-lab-default")
+# Configuration
+from common.security.secrets import require_secret
+
+env = os.getenv("ENVIRONMENT", "lab").lower()
+
+API_KEY = require_secret(
+    "Lab API Key", 
+    "LAB_API_KEY", 
+    min_len=16, 
+    allow_dev_autogen=True, # Allowed in Lab/Dev
+    env=env
+)
 INTERFACE = os.environ.get("WIFI_INTERFACE", "wlan0")
 LAB_MODE = os.environ.get("SENTINEL_LAB_MODE", "false").lower() == "true"
 

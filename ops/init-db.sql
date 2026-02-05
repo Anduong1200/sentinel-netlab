@@ -46,18 +46,86 @@ CREATE TABLE IF NOT EXISTS telemetry (
 );
 
 -- Convert to hypertable (TimescaleDB)
-SELECT create_hypertable('telemetry', 'timestamp', if_not_exists => TRUE);
+-- P1 Scale: Partition by time AND sensor_id (Space Partitioning)
+SELECT create_hypertable('telemetry', 'timestamp', 
+    partitioning_column => 'sensor_id', 
+    number_partitions => 4,
+    if_not_exists => TRUE
+);
 
 -- Indexes
 CREATE INDEX idx_telemetry_sensor_id ON telemetry(sensor_id, timestamp DESC);
 CREATE INDEX idx_telemetry_bssid ON telemetry(bssid, timestamp DESC);
 
--- Compression (optional, enable after 7 days)
--- ALTER TABLE telemetry SET (timescaledb.compress);
--- SELECT add_compression_policy('telemetry', INTERVAL '7 days');
+-- Compression (Active after 7 days)
+ALTER TABLE telemetry SET (
+    timescaledb.compress,
+    timescaledb.compress_segmentby = 'sensor_id',
+    timescaledb.compress_orderby = 'timestamp DESC'
+);
+SELECT add_compression_policy('telemetry', INTERVAL '7 days', if_not_exists => TRUE);
 
--- Retention policy: 90 days
--- SELECT add_retention_policy('telemetry', INTERVAL '90 days');
+-- Retention policy: 30 days (Raw data)
+-- Keeps storage usage predictable.
+SELECT add_retention_policy('telemetry', INTERVAL '30 days', if_not_exists => TRUE);
+
+-- =============================================================================
+-- Continuous Aggregates (Downsampling)
+-- =============================================================================
+
+-- 1 Minute Aggregation (Signal quality monitoring)
+CREATE MATERIALIZED VIEW telemetry_1m
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 minute', timestamp) AS bucket,
+    sensor_id,
+    AVG(rssi_dbm) AS avg_rssi,
+    COUNT(*) AS frame_count,
+    COUNT(DISTINCT bssid) AS unique_bssids
+FROM telemetry
+GROUP BY bucket, sensor_id;
+
+SELECT add_continuous_aggregate_policy('telemetry_1m',
+    start_offset => INTERVAL '1 day',
+    end_offset => INTERVAL '1 minute',
+    schedule_interval => INTERVAL '1 minute');
+
+-- 1 Hour Aggregation (Long-term trends)
+CREATE MATERIALIZED VIEW telemetry_1h
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 hour', timestamp) AS bucket,
+    sensor_id,
+    AVG(rssi_dbm) AS avg_rssi,
+    SUM(COUNT(*))::BIGINT AS frame_count, -- Sum of counts
+    COUNT(DISTINCT bssid) AS unique_bssids
+FROM telemetry
+GROUP BY bucket, sensor_id;
+
+SELECT add_continuous_aggregate_policy('telemetry_1h',
+    start_offset => INTERVAL '7 days',
+    end_offset => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '1 hour');
+
+
+-- =============================================================================
+-- Ingest Jobs (DB-Backed Queue)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS ingest_jobs (
+    job_id VARCHAR(64) PRIMARY KEY, -- batch_id
+    sensor_id VARCHAR(64) NOT NULL,
+    received_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    status VARCHAR(20) DEFAULT 'queued', -- queued, processing, done, failed
+    payload JSONB, -- Compressed/Raw batch data
+    
+    attempts INTEGER DEFAULT 0,
+    next_attempt_at TIMESTAMPTZ DEFAULT NOW(),
+    error_msg TEXT
+);
+
+CREATE INDEX idx_jobs_status_next ON ingest_jobs(status, next_attempt_at);
+-- No idx_ingest_received needed if we prioritize by next_attempt_at
 
 -- =============================================================================
 -- Alerts Table
@@ -92,7 +160,7 @@ CREATE INDEX idx_alerts_type ON alerts(alert_type);
 -- API Tokens Table
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS api_tokens (
-    id VARCHAR(32) PRIMARY KEY,
+    token_id VARCHAR(32) PRIMARY KEY,
     token_hash VARCHAR(64) UNIQUE NOT NULL,
     name VARCHAR(128),
     role VARCHAR(20) NOT NULL,
@@ -133,14 +201,14 @@ CREATE INDEX idx_audit_event_type ON audit_log(event_type);
 
 -- Create default admin token (hash of 'admin-token-dev')
 -- In production, generate a real token and store the hash
-INSERT INTO api_tokens (id, token_hash, name, role, expires_at)
+INSERT INTO api_tokens (token_id, token_hash, name, role, expires_at)
 VALUES (
     'admin-01',
     encode(sha256('admin-token-dev'::bytea), 'hex'),
     'Default Admin Token',
-    'ADMIN',
+    'admin',
     NOW() + INTERVAL '365 days'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (token_id) DO NOTHING;
 
 -- Grant permissions
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sentinel;

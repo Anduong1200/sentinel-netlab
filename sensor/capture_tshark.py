@@ -45,7 +45,7 @@ class TsharkCaptureEngine:
         self.channels = [1, 6, 11]
 
         # Ensure output directory exists
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
 
     def enable_monitor_mode(self) -> bool:
         """Enable monitor mode on interface."""
@@ -142,7 +142,7 @@ class TsharkCaptureEngine:
 
         try:
             self.process = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             self.is_capturing = True
             logger.info(f"Tshark capture started: {self.capture_file}")

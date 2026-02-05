@@ -41,8 +41,7 @@ services:
     image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
     container_name: sentinel-controller
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+
     environment:
       <<: *common-env
       FLASK_ENV: production
@@ -99,10 +98,52 @@ services:
       - sentinel-net
 
   # ===========================================================================
+  # WORKER: Celery Background Tasks
+  # ===========================================================================
+  worker:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-worker
+    restart: unless-stopped
+    # command: celery -A controller.celery_app worker --loglevel=info
+    # P1 Scale: Run DB-Backed Ingest Worker
+    command: python -m controller.ingest.worker
+    environment:
+      <<: *common-env
+      FLASK_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # Secrets
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
   # DATABASE: PostgreSQL with TimescaleDB
   # ===========================================================================
   postgres:
-    image: timescale/timescaledb:latest-pg15
+    image: timescale/timescaledb:2.13.0-pg15
     container_name: sentinel-postgres
     restart: unless-stopped
     environment:
@@ -113,8 +154,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "5432:5432"
     logging: *default-logging
     deploy:
       resources:
@@ -133,14 +172,12 @@ services:
   # CACHE: Redis
   # ===========================================================================
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     container_name: sentinel-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}
     volumes:
       - redis-data:/data
-    ports:
-      - "6379:6379"
     logging: *default-logging
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -163,9 +200,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_PASSWORD_REQUIRED}
     volumes:
       - minio-data:/data
-    ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Console
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
@@ -211,8 +245,6 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus-data:/prometheus
-    ports:
-      - "9090:9090"
     networks:
       - sentinel-net
 
@@ -233,8 +265,6 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports:
-      - "3000:3000"
     depends_on:
       - prometheus
     networks:
@@ -253,8 +283,6 @@ services:
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager-data:/alertmanager
-    ports:
-      - "9093:9093"
     networks:
       - sentinel-net
 
@@ -291,8 +319,6 @@ services:
     image: ghcr.io/anduong1200/sentinel-dashboard:${VERSION:-latest}
     container_name: sentinel-dashboard
     restart: unless-stopped
-    ports:
-      - "8050:8050"
     environment:
       CONTROLLER_URL: http://controller:5000
       DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:-analyst-token}

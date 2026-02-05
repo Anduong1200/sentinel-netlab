@@ -12,11 +12,13 @@ Supports:
 
 import json
 import logging
+import html
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from string import Template
+from controller.reporting.renderer import SafeRenderer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -369,31 +371,35 @@ class ReportEngine:
         # Build networks table
         networks_rows = []
         for net in data.networks[:50]:  # Limit to 50 for readability
-            risk_class = net.get("risk_level", "low").lower()
+            risk_class = SafeRenderer.escape(net.get("risk_level", "low")).lower()
+            
+            # Manually constructing row for custom badge logic, but using escaping
+            bssid = SafeRenderer.escape(net.get("bssid", "N/A"))
+            ssid = SafeRenderer.escape(net.get("ssid", "[Hidden]") or "[Hidden]")
+            channel = SafeRenderer.escape(net.get("channel", "N/A"))
+            security = SafeRenderer.escape(net.get("security", "Unknown"))
+            
+            # Using f-string but with PRE-ESCAPED variables
             networks_rows.append(f"""
                 <tr>
-                    <td><code>{net.get("bssid", "N/A")}</code></td>
-                    <td>{net.get("ssid", "[Hidden]") or "[Hidden]"}</td>
-                    <td>{net.get("channel", "N/A")}</td>
-                    <td>{net.get("security", "Unknown")}</td>
+                    <td><code>{bssid}</code></td>
+                    <td>{ssid}</td>
+                    <td>{channel}</td>
+                    <td>{security}</td>
                     <td><span class="badge badge-{risk_class}">{risk_class.upper()}</span></td>
                 </tr>
             """)
 
         # Build findings HTML
-        findings_html = []
-        for finding in data.findings[:10]:
-            severity = finding.get("severity", "medium").lower()
-            findings_html.append(f"""
-                <div class="finding {severity}">
-                    <h4>{finding.get("title", "Finding")}</h4>
-                    <p>{finding.get("description", "")}</p>
-                </div>
-            """)
+        findings_html = [
+            SafeRenderer.render_finding(finding) 
+            for finding in data.findings[:10]
+        ]
 
         # Build recommendations HTML
         recommendations_html = "\n".join(
-            f"<li>{rec}</li>" for rec in data.recommendations
+            SafeRenderer.render_list_item(rec) 
+            for rec in data.recommendations
         )
 
         # Fill content template

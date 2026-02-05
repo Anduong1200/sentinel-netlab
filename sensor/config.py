@@ -60,7 +60,7 @@ class APIConfig:
     host: str = "0.0.0.0"  # nosec B104
     port: int = 5000
     debug: bool = False
-    api_key: str = "student-project-2024"
+    api_key: str = "" # Enforced via require_secret in ConfigManager
     rate_limit: str = "60/minute"
     cors_enabled: bool = True
     ssl_enabled: bool = False
@@ -217,8 +217,29 @@ class ConfigManager:
             ),
         }
 
+        # Environment check
+        env = os.getenv("ENVIRONMENT", "production").lower()
+        from common.security.secrets import require_secret
+
         for env_var, mapping in env_mappings.items():
             value = os.environ.get(env_var)
+            
+            # Special handling for Fail-Fast Secrets
+            if env_var in ["WIFI_SCANNER_API_KEY", "SENSOR_AUTH_TOKEN"]:
+                # Use require_secret to validate/enforce
+                try:
+                    value = require_secret(
+                        "Sensor API Key", 
+                        env_var, 
+                        min_len=16, 
+                        allow_dev_autogen=True, 
+                        env=env
+                    )
+                except RuntimeError as e:
+                    # ConfigManager usually shouldn't crash the app on init unless critical,
+                    # but for this specific "fail-fast" requirement, we propagate the error.
+                    raise e
+
             if value is not None:
                 try:
                     if len(mapping) == 2:
@@ -235,7 +256,7 @@ class ConfigManager:
                         section_obj = getattr(self.config, section)
                         setattr(section_obj, key, converted_value)
 
-                    logger.debug(f"Applied {env_var}={value}")
+                    logger.debug(f"Applied {env_var} to config")
                 except Exception as e:
                     logger.warning(f"Failed to apply {env_var}: {e}")
 

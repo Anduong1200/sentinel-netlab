@@ -1,25 +1,51 @@
 import secrets
+import threading
+import time
 from datetime import UTC, datetime
+from typing import Any
 
 from flask import Blueprint, g, jsonify, request
+from sqlalchemy.exc import IntegrityError
 
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
 from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
 from .models import Telemetry
+from controller.ingest.queue import IngestQueue
+from common.observability.metrics import create_counter
 
 bp = Blueprint("telemetry", __name__)
+
+# Business Metrics
+INGEST_REQUEST = create_counter(
+    "ingest_requests_total", "Ingestion requests", ["endpoint", "status"]
+)
+INGEST_ITEMS = create_counter(
+    "ingest_items_total", "Ingestion item outcomes", ["endpoint", "outcome"]
+)
 
 
 @bp.route("/telemetry", methods=["POST"])
 @require_auth(Permission.WRITE_TELEMETRY)
 @require_signed()
 @limiter.limit(config.security.rate_limit_telemetry)
-@validate_json(TelemetryBatch) if PYDANTIC_AVAILABLE else lambda f: f
+@validate_json(TelemetryBatch)
 def ingest_telemetry():
     """Batch telemetry ingestion with full validation"""
-    if PYDANTIC_AVAILABLE and hasattr(g, "validated_data"):
+    import gzip
+
+    # 1. Parse Data
+    if request.headers.get("Content-Encoding") == "gzip":
+        try:
+            content = gzip.decompress(request.get_data())
+            import json
+            data = json.loads(content)
+        except Exception as e:
+             logger.error(f"GZIP decompression failed: {e}")
+             INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
+             return jsonify({"error": "Invalid GZIP data"}), 400
+    elif PYDANTIC_AVAILABLE and hasattr(g, "validated_data"):
         if hasattr(g.validated_data, "model_dump"):
             data = g.validated_data.model_dump(mode="json")
         else:
@@ -29,37 +55,52 @@ def ingest_telemetry():
 
     sensor_id = data.get("sensor_id")
     items = data.get("items", [])
-    batch_id = data.get("batch_id", secrets.token_hex(8))
+    batch_id = data.get("batch_id")
+    
+    # Fallback to header if empty in body
+    if not batch_id:
+        batch_id = request.headers.get("X-Idempotency-Key") or secrets.token_hex(8)
 
     if g.token.sensor_id and g.token.sensor_id != sensor_id:
+        INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
         return jsonify({"error": "Sensor ID mismatch"}), 403
 
-    accepted = 0
-    for item in items:
-        if isinstance(item, dict):
-            # Enrich
-            item["_ingested_at"] = datetime.now(UTC).isoformat()
-
-            db_item = Telemetry(sensor_id=sensor_id, batch_id=batch_id, data=item)
-            db.session.add(db_item)
-            accepted += 1
-
+    # Backpressure Check
+    # Stop enqueueing if system is overloaded
     try:
-        db.session.commit()
+        stats = IngestQueue.get_stats()
+        if stats.queue_depth > 1000: # Threshold should be in config
+            logger.warning(f"Backpressure active: queue_depth={stats.queue_depth}")
+            INGEST_REQUEST.labels(endpoint="telemetry", status="overloaded").inc()
+            return jsonify({"error": "System overloaded, retry later"}), 503, {"Retry-After": "30"}
     except Exception as e:
-        db.session.rollback()
-        logger.error(f"DB Commit failed: {e}")
-        return jsonify({"error": "Database error"}), 500
+        logger.error(f"Failed to check queue stats: {e}")
+        # Proceed with caution or fail open/closed? Fail open (try to enqueue)
+        pass
 
+    # 2. Idempotency & Enqueue (DB-Backed)
+    # The queue handles idempotency internally via PK check
+    
+    try:
+        ack_id = IngestQueue.enqueue(sensor_id, batch_id, data)
+    except Exception as e:
+        logger.error(f"Failed to enqueue: {e}")
+        INGEST_REQUEST.labels(endpoint="telemetry", status="internal_error").inc()
+        return jsonify({"error": "Internal Queue Error"}), 500
+
+    # Update Registry
     SENSOR_REGISTRY[sensor_id] = {
         "last_seen": datetime.now(UTC).isoformat(),
         "status": "online",
         "last_batch": batch_id,
     }
 
-    logger.info(f"Ingested {accepted} items from {sensor_id}")
+    INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
+    return jsonify({"success": True, "status": "queued", "ack_id": ack_id}), 202
 
-    return jsonify({"success": True, "ack_id": batch_id, "accepted": accepted})
+
+
+
 
 
 @bp.route("/telemetry", methods=["GET"])

@@ -21,6 +21,19 @@ from controller.api.admin import bp as admin_bp
 # Initialize App
 app = create_app()
 
+# Observability Middleware (Request ID, Logs, Context)
+from controller.api.middleware import ObservabilityMiddleware
+from common.observability.metrics import HTTPMetricsMiddleware
+from controller.security.proxy import TrustedProxyMiddleware
+
+app.wsgi_app = ObservabilityMiddleware(app.wsgi_app)
+app.wsgi_app = HTTPMetricsMiddleware(app.wsgi_app)
+app.wsgi_app = TrustedProxyMiddleware(
+    app.wsgi_app,
+    trusted_cidrs=config.security.trusted_proxies,
+    require_tls=config.security.require_tls
+)
+
 # Register Blueprints
 app.register_blueprint(telemetry_bp, url_prefix="/api/v1")
 app.register_blueprint(alerts_bp, url_prefix="/api/v1")
@@ -77,9 +90,9 @@ def openapi_spec():
 
 @app.route("/metrics")
 def metrics():
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-
-    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+    from common.observability.metrics import metrics_endpoint
+    data, content_type = metrics_endpoint()
+    return data, 200, {"Content-Type": content_type}
 
 
 if __name__ == "__main__":

@@ -193,6 +193,9 @@ class TransportClient:
 
         # Sign if HMAC configured
         # Headers
+        # Headers
+        import uuid
+        request_id = str(uuid.uuid4())
         timestamp = self.get_server_time().isoformat()
         headers = {
             "Authorization": f"Bearer {self.auth_token}",
@@ -200,6 +203,8 @@ class TransportClient:
             "User-Agent": "Sentinel-Sensor/1.0",
             "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
             "X-Timestamp": timestamp,
+            "X-Request-ID": request_id,
+            "X-Sensor-ID": batch.get("sensor_id", "unknown"),
         }
 
         if self.hmac_secret:
@@ -215,11 +220,20 @@ class TransportClient:
             # Only X-Sequence header is optional in verify_hmac IF NOT sent.
             # But we likely want to catch replay.
 
-            # For now, let's sign timestamp + payload as sequence is optional in header construction below
+            # Sign payload using server time to prevent replay
+            # Canonical: method + path + timestamp + [sequence] + payload + [content_encoding]
+            
+            content_encoding = "gzip" if compress else "identity"
             from urllib.parse import urlparse
 
             path = urlparse(self.upload_url).path
-            signature = self._sign_payload("POST", path, payload, timestamp)
+            signature = self._sign_payload(
+                "POST", 
+                path, 
+                payload, 
+                timestamp, 
+                content_encoding=content_encoding
+            )
             headers["X-Signature"] = signature
 
         # Compress
@@ -298,12 +312,14 @@ class TransportClient:
         payload: str,
         timestamp: str,
         sequence: str | None = None,
+        content_encoding: str = "identity",
     ) -> str:
-        """Sign payload with HMAC-SHA256 (Canonical: method + path + ts + seq + payload)"""
+        """Sign payload with HMAC-SHA256 (Canonical: method + path + ts + seq + payload + encoding)"""
         data = method.encode() + path.encode() + timestamp.encode()
         if sequence:
             data += sequence.encode()
         data += payload.encode()
+        data += content_encoding.encode()
 
         signature = hmac.new(self.hmac_secret.encode(), data, hashlib.sha256)
         return signature.hexdigest()

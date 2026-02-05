@@ -99,32 +99,46 @@ class EnhancedRiskScorer:
         return int(result.get("risk_score", 0))
 
     def calculate_risk(
-        self, network: dict, ground_truth_label: str | None = None
+        self, 
+        network: dict, 
+        ground_truth_label: str | None = None,
+        deviation_score: float = 0.0
     ) -> dict:
         """
         Calculate risk score using modular features and configurable weights.
+        Risk = (Base_Prob + Deviation) * Impact
         """
-        # Check whitelist
         ssid = network.get("ssid", "")
         bssid = network.get("bssid", "")
-        if ssid in self.whitelist or bssid in self.whitelist:
+        
+        # 0. Determine Impact (Asset Criticality)
+        # In actual prod, this comes from an Asset DB.
+        # Here: Whitelisted = High Value Target (Impact 1.0) if Deviated, else Trusted (Impact 0.0)
+        is_known = ssid in self.whitelist or bssid in self.whitelist
+        
+        if is_known and deviation_score == 0:
+            # Trusted Network, No Deviation -> Zero Risk
             return {
                 "risk_score": 0,
-                "risk_level": "Whitelisted",
+                "risk_level": "Trusted",
                 "confidence": 1.0,
                 "features": {},
-                "explain": {},
+                "explain": {"trusted": True},
                 "contributing_factors": [],
             }
+            
+        # Impact Factor
+        # Known Assets have High Impact (1.0). Unknown/Public have Medium (0.5).
+        impact = 1.0 if is_known else 0.5
 
         # 1. Extract Features via separate module
         features = self.feature_extractor.extract(network)
 
-        # 2. Calculate Weighted Score
+        # 2. Calculate Base Probability (Inherent Risk)
         w = self.weights
         handshake_score = 1.0 if network.get("handshake_captured") else 0.0
 
-        raw_score = (
+        base_prob = (
             features["enc_score"] * w.get("encryption", 0)
             + features["rssi_norm"] * w.get("rssi_norm", 0)
             + features["ssid_suspicious"] * w.get("ssid_suspicion", 0)
@@ -135,9 +149,19 @@ class EnhancedRiskScorer:
             + features["wps_flag"] * w.get("wps_flag", 0)
             + features["temporal_new"] * w.get("temporal", 0)
             + handshake_score * w.get("traffic", 0)
-            # Fallback if missing in yaml
             + features["privacy_concern"] * w.get("privacy_flags", 0.05)
         )
+        
+        # 3. Combine with Deviation (Attack Probability)
+        # P(Attack) = Max(Base, Deviation) or weighted sum?
+        # A deviation is a strong indicator of attack (or anomaly).
+        # We treat deviation as additive to probability, capped at 1.0.
+        
+        total_prob = min(1.0, base_prob + deviation_score)
+        
+        # 4. Final Risk Score
+        raw_score = total_prob * impact * 100
+
 
         # ML Anomaly Boost
         if self.ml_model:

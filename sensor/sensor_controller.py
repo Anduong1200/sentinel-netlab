@@ -23,12 +23,17 @@ from algos.risk import RiskScorer
 from algos.wardrive_detector import WardriveDetector
 from algos.wep_iv_detector import WEPIVDetector
 from common.metrics import MetricsCollector
+from sensor.alert_manager import AlertManager
+from sensor.baseline import BaselineManager
 from sensor.buffer_manager import BufferManager
 from sensor.capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
 from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
 from sensor.normalizer import TelemetryNormalizer
+from sensor.queue import SqliteQueue
 from sensor.transport import TransportClient
+from sensor.worker import TransportWorker
+from sensor.monitor import SensorMonitor
 
 from .rule_engine import RuleEngine
 
@@ -221,6 +226,26 @@ class SensorController:
             hmac_secret=hmac_secret,
         )
 
+        # Persistent Queue (Spool) for reliable delivery
+        spool_path = os.path.join(
+            config.storage.pcap_dir.replace("pcaps", "data"), "spool.db"
+        )
+        self.queue = SqliteQueue(db_path=spool_path)
+
+        # Background upload worker
+        self.upload_worker = TransportWorker(
+            queue=self.queue,
+            client=self.transport,
+            on_success=self._on_upload_success,
+            on_failure=self._on_upload_failure,
+        )
+        
+        # Baseline Manager
+        baseline_path = os.path.join(
+            config.storage.pcap_dir.replace("pcaps", "data"), "baseline.db"
+        )
+        self.baseline = BaselineManager(db_path=baseline_path)
+
         self.hopper = ChannelHopper(
             driver=self.driver,
             channels=config.capture.channels,
@@ -246,6 +271,12 @@ class SensorController:
 
         # Metrics
         self.metrics = MetricsCollector(self.sensor_id)
+        
+        # Helper Managers
+        from sensor.health import HealthServer
+        self.health_server = HealthServer(port=8000, get_status_callback=self.status)
+        self.alert_manager = AlertManager(dedup_window=600)
+        self.monitor = SensorMonitor(self.sensor_id, self.queue)
 
         # State
         self._running = False
@@ -284,6 +315,9 @@ class SensorController:
 
         # Start channel hopping
         self.hopper.start()
+        
+        # Recover stuck inflight items on startup
+        self.queue.recover_stuck_inflight()
 
         # Start capture processing thread
         self._capture_thread = threading.Thread(
@@ -291,9 +325,12 @@ class SensorController:
         )
         self._capture_thread.start()
 
-        # Start upload thread
+        # Start upload worker (consumes from queue)
+        self.upload_worker.start()
+
+        # Start batch preparation thread (pushes to queue)
         self._upload_thread = threading.Thread(
-            target=self._upload_loop, daemon=True, name="Uploader"
+            target=self._upload_loop, daemon=True, name="BatchPreparer"
         )
         self._upload_thread.start()
 
@@ -302,6 +339,12 @@ class SensorController:
             target=self._heartbeat_loop, daemon=True, name="Heartbeat"
         )
         self._heartbeat_thread.start()
+
+        # Start health server
+        self.health_server.start()
+
+        # Start observability monitor
+        self.monitor.start()
 
         logger.info("Sensor started successfully")
         return True
@@ -314,7 +357,12 @@ class SensorController:
 
         # Stop components
         self.hopper.stop()
+        self.health_server.stop()
+        self.monitor.stop()
         self.driver.stop_capture()
+
+        # Stop upload worker (graceful - finishes current upload)
+        self.upload_worker.stop(timeout=10.0)
 
         # Wait for threads
         for thread in [
@@ -325,8 +373,11 @@ class SensorController:
             if thread and thread.is_alive():
                 thread.join(timeout=5)
 
-        # Flush remaining buffer
+        # Flush remaining buffer to queue
         self.buffer.flush_to_disk()
+
+        # Close queue (persists any remaining data)
+        self.queue.close()
 
         # Restore interface
         self.driver.disable_monitor_mode()
@@ -348,10 +399,18 @@ class SensorController:
             "uptime_seconds": uptime,
             "frames_captured": self._frames_captured,
             "frames_parsed": self._frames_parsed,
-            "frames_duplicates": self._frames_duplicates,
             "buffer": self.buffer.get_stats(),
             "transport": self.transport.get_stats(),
-            "normalizer": self.normalizer.get_stats(),
+            "queue": self.queue.stats(),
+            "upload_worker": self.upload_worker.stats(),
+            "threads": {
+                "capture": self._capture_thread.is_alive() if self._capture_thread else False,
+                "upload": self._upload_thread.is_alive() if self._upload_thread else False,
+                "worker": self.upload_worker.is_healthy(),
+            },
+            "baseline": {
+                "learning_mode": self.baseline.learning_mode,
+            }
         }
 
     def _capture_loop(self) -> None:
@@ -441,16 +500,51 @@ class SensorController:
                 if self._frames_captured % 10 == 0:
                     # Convert telemetry to dict for risk scoring
                     net_dict = telemetry.model_dump(mode="json", exclude_none=True)
-                    risk_result = self.risk_engine.calculate_risk(net_dict)
+                    
+                    # 1. Baseline Check
+                    deviation = self.baseline.check_deviation(net_dict)
+                    
+                    if self.baseline.learning_mode:
+                        # Skip all alerting in learning mode
+                        return
 
-                    if risk_result.get("risk_score", 0) > 70:
+                    # 2. Risk Calculation (Integrated Probability x Impact)
+                    dev_score = deviation["score"] if deviation else 0.0
+                    risk_result = self.risk_engine.calculate_risk(net_dict, deviation_score=dev_score)
+                    current_score = risk_result.get("risk_score", 0)
+                    
+                    # 3. Handle Deviation Alert (Specific)
+                    if deviation:
+                        logger.warning(f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})")
+                        
+                        # Send specific Baseline Alert with reasons
+                        self._handle_alert({
+                            "alert_type": "baseline_deviation",
+                            "severity": "high" if current_score > 70 else "medium",
+                            "title": f"Baseline Deviation: {telemetry.ssid}",
+                            "description": "; ".join(deviation["reasons"]),
+                            "evidence": deviation.get("baseline"),
+                            "risk_score": current_score,
+                            "bssid": telemetry.bssid,
+                            "ssid": telemetry.ssid,
+                            "impact": risk_result.get("impact", 0.5), # Assuming risk engine provides this or implicit
+                            "confidence": risk_result.get("confidence", 0.5)
+                        })
+
+                    # 4. Handle General Risk Alert
+                    if current_score > 70 and not deviation:
+                        # If deviation exists, we already alerted above. 
+                        # Don't double alert unless it's a different issue?
+                        # Actually risk engine might find other things (Weak Enc + Deviation).
+                        # Let's deduplicate via Alert Manager (Next Task).
+                        # For now, just log and set metric.
                         logger.warning(
-                            f"High Risky Network: {telemetry.ssid} (Score: {risk_result['risk_score']})"
+                            f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
                         )
-                        # Generate alert
-                        self.metrics.set_risk_score(
-                            telemetry.bssid, risk_result["risk_score"]
-                        )
+                        
+                    self.metrics.set_risk_score(
+                        telemetry.bssid, current_score
+                    )
 
                 # Record activity for adaptive hopping
                 self.hopper.record_activity(parsed.channel, 1)
@@ -462,35 +556,44 @@ class SensorController:
                 time.sleep(0.1)  # Backoff to avoid spinning
 
     def _upload_loop(self) -> None:
-        """Upload batches to controller"""
+        """Prepare batches and push to persistent queue (worker handles upload)"""
         while self._running:
             try:
                 time.sleep(self.upload_interval)
 
-                # Get batch
+                # Get batch from buffer
                 batch = self.buffer.get_batch(max_count=self.batch_size)
                 if batch is None:
                     continue
 
                 # Add sensor_id to batch
                 batch["sensor_id"] = self.sensor_id
+                
+                # Generate persistent batch_id
+                seq = self.queue.next_seq(self.sensor_id)
+                batch_id = f"{self.sensor_id}:{seq}"
+                batch["batch_id"] = batch_id
 
-                # Upload
-                result = self.transport.upload(batch)
-
-                if result.get("success"):
+                # Push to persistent queue (worker will handle upload)
+                if self.queue.push(batch, batch_id):
                     logger.debug(
-                        f"Uploaded batch {batch['batch_id']}: {len(batch['items'])} items"
+                        f"Spooled batch {batch_id}: {len(batch.get('items', []))} items"
                     )
-                    self.metrics.record_upload(True)
                 else:
-                    logger.warning(f"Upload failed: {result.get('error')}")
-                    self.metrics.record_upload(
-                        False, reason=result.get("error", "Unknown")
-                    )
+                    logger.warning("Failed to spool batch (queue full or disk issue)")
 
             except Exception as e:
-                logger.error(f"Upload loop error: {e}")
+                logger.error(f"Batch preparation error: {e}")
+
+    def _on_upload_success(self, batch_id: str, response: dict) -> None:
+        """Callback when upload worker succeeds"""
+        self.metrics.record_upload(True)
+        logger.debug(f"Upload success: {batch_id} -> ack_id={response.get('ack_id')}")
+
+    def _on_upload_failure(self, batch_id: str, error: str) -> None:
+        """Callback when upload worker fails"""
+        self.metrics.record_upload(False, reason=error)
+        logger.warning(f"Upload failed: {batch_id} -> {error}")
 
     def _heartbeat_loop(self) -> None:
         """Send periodic heartbeats"""
@@ -511,6 +614,11 @@ class SensorController:
 
     def _handle_alert(self, alert_dict: dict[str, Any]) -> None:
         """Process an alert, check for chains, and upload"""
+        
+        # 1. Deduplication / Triage
+        if not self.alert_manager.process(alert_dict):
+            return
+
         logger.warning(
             f"Detection: [{alert_dict.get('severity')}] {alert_dict.get('title')}"
         )
@@ -573,6 +681,7 @@ Examples:
     parser.add_argument("--iface", help="Capture interface")
     parser.add_argument("--channels", help="Comma-separated channels")
     parser.add_argument("--mock-mode", action="store_true", help="Enable mock mode")
+    parser.add_argument("--learning-mode", action="store_true", help="Enable Baseline Learning Mode")
 
     args = parser.parse_args()
 
@@ -598,6 +707,9 @@ Examples:
 
     # Create controller
     controller = SensorController(config=config)
+    
+    if args.learning_mode:
+        controller.baseline.set_learning_mode(True)
 
     # Signal handlers
     def signal_handler(sig, frame):

@@ -11,30 +11,21 @@ from controller.config import init_config
 # Validation
 try:
     from pydantic import ValidationError
-
-    PYDANTIC_AVAILABLE = True
 except ImportError:
-    PYDANTIC_AVAILABLE = False
+    raise ImportError("Pydantic is strictly required for the Controller.")
+
+PYDANTIC_AVAILABLE = True
 
 # Initialize Config
 config = init_config()
 
 # Logging
-# Logging
-try:
-    from pythonjsonlogger import jsonlogger
+from common.observability.logging import configure_logging
 
-    handler = logging.StreamHandler()
-    formatter = jsonlogger.JsonFormatter(
-        "%(asctime)s %(levelname)s %(name)s %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logging.getLogger().addHandler(handler)
-    logging.getLogger().setLevel(logging.INFO)
-except ImportError:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    )
+# Configure Logging (JSON + Correlation)
+debug_mode = config.debug
+log_level = "DEBUG" if debug_mode else "INFO"
+logger = configure_logging("controller", level=log_level, json_mode=True)
 logger = logging.getLogger(__name__)
 
 # DB
@@ -61,8 +52,6 @@ def validate_json(model_class):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if not PYDANTIC_AVAILABLE:
-                return f(*args, **kwargs)
 
             try:
                 data = request.get_json()

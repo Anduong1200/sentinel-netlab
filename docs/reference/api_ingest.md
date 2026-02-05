@@ -10,13 +10,29 @@
 - `Content-Type: application/json`
 - `Content-Encoding: gzip` (optional, recommended)
 
+### HMAC with GZIP
+
+When using `Content-Encoding: gzip`:
+1. **Sign the uncompressed JSON payload.**
+2. Set `Content-Encoding: gzip` header.
+3. The server canonicalizes using the payload (uncompressed) + content-encoding.
+
+**Canonical signature input**: `method + path + timestamp + [sequence] + uncompressed_payload + content_encoding`
+
+Client should compute signature BEFORE compressing.
+
 **Body**: `TelemetryBatch` (see valid JSON in `docs/data_schema.md`)
 
 **Responses**:
-- `200 OK`: Batch accepted
-  ```json
-  {"status": "success", "processed_items": 50}
-  ```
+### Response
+
+```json
+{
+  "success": true,
+  "ack_id": "batch-134ac56",
+  "accepted": 50
+}
+```
 - `401 Unauthorized`: Invalid API Key
 - `400 Bad Request`: Schema validation failure
 

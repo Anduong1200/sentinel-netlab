@@ -18,7 +18,16 @@ def list_tokens():
     tokens = APIToken.query.all()
     results = []
     for t in tokens:
-        d = asdict(t)
+        d = {
+            "token_id": t.token_id,
+            "name": t.name,
+            "role": t.role,
+            "sensor_id": t.sensor_id,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "expires_at": t.expires_at.isoformat() if t.expires_at else None,
+            "is_active": t.is_active,
+            "last_used": t.last_used.isoformat() if t.last_used else None,
+        }
         d["token_hash"] = "***"  # noqa: S105
         results.append(d)
     return jsonify({"tokens": results})
@@ -42,7 +51,7 @@ def create_token():
         token_id=secrets.token_hex(8),
         token_hash=token_hash,
         name=data.get("name", "Token"),
-        role=role_enum,
+        role=role_enum.value,  # Store string, not enum object
         sensor_id=data.get("sensor_id"),
         created_at=datetime.now(UTC),
         expires_at=datetime.now(UTC)

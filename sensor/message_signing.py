@@ -21,6 +21,7 @@ class MessageSigner:
         payload: bytes,
         timestamp: str | None = None,
         sequence: int | None = None,
+        content_encoding: str = "identity",
     ) -> dict[str, str]:
         """
         Generate headers for signed request.
@@ -31,6 +32,7 @@ class MessageSigner:
             payload: Request body bytes (JSON)
             timestamp: ISO timestamp (optional, defaults to now)
             sequence: Sequence number (optional)
+            content_encoding: Content-Encoding header value (default: identity)
 
         Returns:
             Dictionary of headers (X-Signature, X-Timestamp, etc)
@@ -40,12 +42,13 @@ class MessageSigner:
 
             timestamp = datetime.now(UTC).isoformat()
 
-        # Canonical string: method + path + timestamp + sequence + payload
+        # Canonical string: method + path + timestamp + sequence + payload + encoding
         data_to_sign = method.encode() + path.encode() + timestamp.encode()
         if sequence is not None:
             data_to_sign += str(sequence).encode()
 
         data_to_sign += payload
+        data_to_sign += content_encoding.encode()
 
         signature = hmac.new(
             self.secret.encode("utf-8"), data_to_sign, hashlib.sha256
@@ -59,5 +62,8 @@ class MessageSigner:
 
         if sequence is not None:
             headers["X-Sequence"] = str(sequence)
-
+        
+        # Note: Caller must set Content-Encoding header if not identity, 
+        # but the signature header itself doesn't contain it (it verifies it).
+        
         return headers

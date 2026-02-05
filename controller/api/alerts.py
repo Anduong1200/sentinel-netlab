@@ -10,8 +10,14 @@ from controller.export_engine import ReportData, ReportEngine, ReportFormat, Rep
 from .auth import Permission, require_auth, require_signed
 from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
 from .models import DBAlert
+from common.observability.metrics import create_counter
+from controller.tasks import process_alert
 
 bp = Blueprint("alerts", __name__)
+
+ALERTS_EMITTED = create_counter(
+    "alerts_emitted_total", "Alerts emissions", ["severity", "detector"]
+)
 
 
 @bp.route("/alerts", methods=["POST"])
@@ -28,20 +34,32 @@ def create_alert():
     else:
         data = request.get_json()
 
-    alert = DBAlert(
-        id=secrets.token_hex(8),
-        sensor_id=g.token.sensor_id,
-        alert_type=data.get("alert_type"),
-        severity=data.get("severity"),
-        title=data.get("title"),
-        description=data.get("description"),
-        evidence=data.get("evidence"),
-    )
+    alert_id = secrets.token_hex(8)
+    
+    # Prepare data for worker
+    alert_payload = {
+        "id": alert_id,
+        "alert_type": data.get("alert_type"),
+        "severity": data.get("severity"),
+        "title": data.get("title"),
+        "description": data.get("description"),
+        "evidence": data.get("evidence"),
+    }
 
-    db.session.add(alert)
-    db.session.commit()
-
-    return jsonify({"success": True, "alert_id": alert.id})
+    try:
+        process_alert.delay(alert_payload, g.token.sensor_id)
+        
+        # We assume accepted for metrics here, or let worker handle it.
+        # Original code incremented ALERTS_EMITTED here.
+        # We can increment "alert_requests_accepted" if we had that metric.
+        # But ALERTS_EMITTED is "emitted" so maybe keeping it here is misleading if it fails processing.
+        # Let's rely on worker metric.
+        
+        return jsonify({"success": True, "alert_id": alert_id, "status": "accepted"}), 202
+        
+    except Exception as e:
+        logger.error(f"Failed to enqueue alert: {e}")
+        return jsonify({"error": "Internal processing error"}), 500
 
 
 @bp.route("/alerts", methods=["GET"])

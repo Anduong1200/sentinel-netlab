@@ -1,0 +1,9 @@
+Starting dashboard on port 8051...
+Dashboard is running!
+Health check: 401
+Cleanup: 
+Dash is running on http://127.0.0.1:8051/dashboard/
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+

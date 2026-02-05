@@ -1,0 +1,33 @@
+[Unit]
+Description=Sentinel Sensor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sentinel
+Group=sentinel
+# Environment Config
+EnvironmentFile=-/etc/sentinel/sensor.env
+# Main Execution
+ExecStart=/usr/bin/python3 -m sensor.cli --config /etc/sentinel/config.yaml
+# Restart Policy
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+KillSignal=SIGTERM
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sentinel /var/log/sentinel
+
+# Health Check (requires httpie or curl)
+# ExecStartPost can be used to wait for health, or external monitoring
+# Systemd itself doesn't pull /healthz natively in [Service] unless Type=notify/reloading
+# But we can verify manually.
+
+[Install]
+WantedBy=multi-user.target

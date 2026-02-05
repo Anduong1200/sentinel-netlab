@@ -48,10 +48,19 @@ CORS(app)  # Allow Windows GUI to connect
 limiter = Limiter(key_func=get_remote_address, app=app)
 
 # Configuration
-API_KEY = os.environ.get("WIFI_SCANNER_API_KEY")
-if not API_KEY:
-    logger.warning("WIFI_SCANNER_API_KEY not set! Using default development key.")
-    API_KEY = "sentinel-dev-2024"
+# Configuration
+from common.security.secrets import require_secret
+
+# Determine environment (Sensor usually runs in prod/dev modes)
+env = os.getenv("ENVIRONMENT", "production").lower()
+
+API_KEY = require_secret(
+    "Sensor API Key", 
+    "WIFI_SCANNER_API_KEY", 
+    min_len=32, 
+    allow_dev_autogen=True, 
+    env=env
+)
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")
 
 # Initialize components
@@ -375,4 +384,5 @@ if __name__ == "__main__":
     print("  GET /forensics/report/<id> - Forensic report")
     print("=" * 50)
 
-    app.run(host="0.0.0.0", port=5000, debug=False)  # nosec B104
+    host = os.environ.get("SENSOR_HOST", "127.0.0.1")
+    app.run(host=host, port=5000, debug=False)  # nosec B104
