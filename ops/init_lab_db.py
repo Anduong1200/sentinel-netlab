@@ -39,7 +39,7 @@ def main():
 
     # 2. Seed Admin Token
     # 2. Seed Admin Token
-    token_hash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"  # sha256('admin') # noqa: S105
+    token_hash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"  # sha256('admin') # noqa: S105 # gitleaks:allow
 
     existing = session.query(APIToken).filter_by(token_id="admin-01").first()  # noqa: S106
     if not existing:
