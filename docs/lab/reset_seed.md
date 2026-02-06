@@ -1,99 +1,70 @@
-# Lab Reset & Seed Guide
+# Lab Reset & Seeding Guide
 
-> **How `make lab-reset` works and what data it creates.**
-
----
-
-## Quick Reference
-
-```bash
-# Full reset (wipe + reseed)
-make lab-reset
-
-# Just restart (keep data)
-make lab-down && make lab-up
-```
+> **Command**: `make lab-reset`
+> **Purpose**: Restore the lab environment to a clean, predictable state for training or demos.
 
 ---
 
-## What `make lab-reset` Does
+## 🛑 What Happens During Reset?
 
-| Step | Action | Command |
-|------|--------|---------|
-| 1 | Stop containers | `docker-compose down` |
-| 2 | Remove volumes | `docker volume prune` |
-| 3 | Regenerate secrets | `python ops/gen_lab_secrets.py` |
-| 4 | Initialize database | `python ops/init_lab_db.py` |
-| 5 | Seed demo data | `python ops/seed_lab_data.py` |
-| 6 | Start containers | `docker-compose up -d` |
+When you run `make lab-reset`, the system performs a **destructive** cleanup followed by a fresh initialization.
+
+### 1. Destructive Actions (Wipe)
+*   **Stops Containers**: All running lab containers are stopped.
+*   **Removes Volumes**: The persistent volumes for:
+    *   Database (`postgres_data`) -> **ALL telemetry and alerts are deleted.**
+    *   Redis (`redis_data`) -> **Queue is cleared.**
+    *   Grafana (`grafana_data`) -> **Dashboards reset to defaults.**
+
+### 2. Initialization Actions (Re-init)
+*   **Regenerate Secrets**: New random keys for `CONTROLLER_SECRET_KEY` and `POSTGRES_PASSWORD` are generated in `.env.lab`.
+*   **Initialize Database**: The SQLite schema is recreated from scratch.
+
+### 3. Seeding (Load Data)
+*   **Default Admin**: Creates `admin` user (API Token: `admin-token-dev`).
+*   **Sample Data**:
+    *   Injects a "Gold Standard" PCAP replay scenario.
+    *   Creates synthetic **Alerts** (Evil Twin, Deauth Flood).
+    *   Creates synthetic **Telemetry** (Beacons, Probes).
 
 ---
 
-## Seeded Data
+## 🧩 Default Seed Data
 
-### Sensor
-| Field | Value |
-|-------|-------|
-| ID | `sensor-01` |
-| Name | Lab Demo Sensor |
-| Location | Lab Environment |
+After a reset, your environment is pre-populated with:
 
-### Telemetry
-
-Loaded from `examples/sample_telemetry_output.json`:
-
-- ~10 beacon frames
-- Mixed SSIDs (CorpNet, GuestWiFi)
-- Various RSSI levels
+### Sensors
+*   `sensor-mock-01`: A virtual sensor actively reporting data.
 
 ### Alerts
+| Severity | Type | Title | Description |
+| :--- | :--- | :--- | :--- |
+| **High** | `evil_twin` | Potential Evil Twin AP | SSID 'FreeWifi' seen with mismatched BSSID/Vendor. |
+| **Critical** | `deauth_flood` | Deauth Flood Detected | Excessive deauth frames targeting 'Corporate-Guest'. |
 
-Loaded from `examples/sample_alert_output.json`:
-
-- 1 Evil Twin alert (CorpNet)
-- Severity: HIGH
-- Full evidence chain
-
----
-
-## Default Credentials
-
-| Service | Username | Password/Token |
-|---------|----------|----------------|
-| Dashboard | admin | See `.env.lab` → `DASH_PASSWORD` |
-| API | - | `admin` (token hash) |
-| Postgres | postgres | See `.env.lab` → `POSTGRES_PASSWORD` |
+### Networks
+*   `FreeWifi` (Open, High Risk)
+*   `Corporate-Guest` (WPA2, Secure)
 
 ---
 
-## Data Locations
+## 🛠 Manual Seeding (Advanced)
 
-| Data | Location | Persisted? |
-|------|----------|------------|
-| SQLite DB | `ops/lab.db` | No (wiped on reset) |
-| Secrets | `ops/.env.lab` | Yes (regenerated if missing) |
-| Logs | Docker volumes | No (wiped on reset) |
+If you want to re-seed data *without* wiping the database (e.g., to add more noise), you can run:
 
----
+```bash
+# Run the seeder script independently
+python ops/seed_lab_data.py
+```
 
-## Custom Seeding
-
-To add your own demo data:
-
-1. Create JSON files in `examples/`:
-   - `my_telemetry.json` (same format as `sample_telemetry_output.json`)
-   - `my_alerts.json` (same format as `sample_alert_output.json`)
-
-2. Modify `ops/seed_lab_data.py` to load your files
-
-3. Run `make lab-reset`
+*Note: This may create duplicate records if run multiple times without a reset.*
 
 ---
 
-## Troubleshooting Reset
+## ❓ Frequently Asked Questions
 
-| Issue | Solution |
-|-------|----------|
-| Reset hangs | Run `docker-compose down -v --remove-orphans` |
-| Data still there | Check `ops/lab.db` was deleted |
-| Secrets error | Delete `ops/.env.lab` and re-run |
+**Q: Will `make lab-reset` affect my production deployment?**
+A: **No.** The reset script explicitly targets `docker-compose.lab.yml` and `.env.lab`. Production config is separate.
+
+**Q: Can I customize the seed data?**
+A: Yes, modify `ops/seed_lab_data.py`. It uses standard Python `requests` to push data to the Controller API.

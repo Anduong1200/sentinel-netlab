@@ -184,8 +184,8 @@ def require_auth(permission: Permission = None):
             # TLS check
             if config.security.require_tls and not request.is_secure:
                 # Only trust X-Forwarded-Proto if allowed (TODO: Implement full trusted proxy CIDR check)
-                # For now, we assume if the header is present and we are behind a proxy that sets it, it's valid 
-                # BUT this is risky without an allowlist. 
+                # For now, we assume if the header is present and we are behind a proxy that sets it, it's valid
+                # BUT this is risky without an allowlist.
                 # Adding a simple check if we are in production.
                 forwarded = request.headers.get("X-Forwarded-Proto")
                 if not forwarded or forwarded != "https":

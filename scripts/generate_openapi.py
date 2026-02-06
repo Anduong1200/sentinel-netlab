@@ -2,11 +2,11 @@
 """
 Generate OpenAPI schema from Pydantic models and Flask routes.
 """
-import json
 import yaml
-from common.contracts import TelemetryBatch, NormalizedFrame, Alert
-from controller.api_server import app  # Import your Flask app
 from pydantic.schema import schema
+
+from common.contracts import Alert, NormalizedFrame, TelemetryBatch
+
 
 def generate_openapi():
     # 1. Base Open API Structure
@@ -42,7 +42,7 @@ def generate_openapi():
     # 3. Add to paths (Manual or Introspection)
     # Ideally, use an extension like flask-openapi3 or apispec, but for now we dump the models
     # as the "Source of Truth" for the payload structure.
-    
+
     print(yaml.dump(openapi, sort_keys=False))
 
 if __name__ == "__main__":

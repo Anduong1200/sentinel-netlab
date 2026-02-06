@@ -1,5 +1,9 @@
 # Quickstart Guide
 
+> [!WARNING]
+> **DEPRECATED**: This document is kept for reference. Use [docs/lab/quickstart.md](../lab/quickstart.md) or [docs/prod/deployment.md](../prod/deployment.md).
+
+
 > Get Sentinel NetLab running in 15 minutes
 
 ---

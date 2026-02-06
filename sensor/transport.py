@@ -190,7 +190,8 @@ class TransportClient:
 
         # Prepare payload
         payload_str = json.dumps(batch)
-        
+        headers = {}  # Initialize headers
+
         # Compress first
         if compress:
             payload_bytes = gzip.compress(payload_str.encode())
@@ -205,7 +206,9 @@ class TransportClient:
         import uuid
         request_id = str(uuid.uuid4())
         timestamp = self.get_server_time().isoformat()
+
         headers.update({
+            "Authorization": f"Bearer {self.auth_token}",
             "Authorization": f"Bearer {self.auth_token}",
             "Content-Type": "application/json",
             "User-Agent": "Sentinel-Sensor/1.0",
@@ -218,13 +221,13 @@ class TransportClient:
         if self.hmac_secret:
             from urllib.parse import urlparse
             path = urlparse(self.upload_url).path
-            
+
             # Sign the WIRE BYTES (compressed or not)
             signature = self._sign_payload(
-                "POST", 
-                path, 
-                payload_bytes, 
-                timestamp, 
+                "POST",
+                path,
+                payload_bytes,
+                timestamp,
                 content_encoding=content_encoding
             )
             headers["X-Signature"] = signature
@@ -304,12 +307,12 @@ class TransportClient:
         data = method.encode() + path.encode() + timestamp.encode()
         if sequence:
             data += sequence.encode()
-        
+
         if isinstance(payload, str):
             data += payload.encode()
         else:
             data += payload
-            
+
         data += content_encoding.encode()
 
         signature = hmac.new(self.hmac_secret.encode(), data, hashlib.sha256)

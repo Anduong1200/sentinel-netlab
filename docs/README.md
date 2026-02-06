@@ -1,59 +1,55 @@
-# Sentinel NetLab Documentation
+# Documentation: Sentinel NetLab
 
-Welcome to the official documentation for the **Sentinel NetLab** project. This documentation is structured to align with the IEEE System Paper framework.
+**Welcome to Sentinel NetLab Documentation.**
 
-## 0. Getting Started
-- [Installation Guide](getting-started/installation.md)
-- [Quick Start Tutorial](getting-started/quickstart.md)
-- [Configuration Reference](getting-started/configuration.md)
+Sentinel NetLab is a specialized platform for WiFi security research and intrusion detection.
 
-## 1. Architecture
-- [System Overview](architecture/overview.md)
-- [Trust Model](architecture/trust_model.md)
-- [Threat Model](architecture/threat_model.md)
-- [Data Flow](architecture/data_flow.md)
+## 🚀 Choose Your Path
 
-## 2. Detection Logic
-- [Hybrid Detection Overview](detection/overview.md)
-- [Rule-Based Engines](detection/rule_based.md)
-- [Risk Scoring Algorithm](detection/risk_scoring.md)
-- [ML Anomaly Detection](detection/ml_anomaly.md)
+| I want to... | Profile | Recommended For |
+| :--- | :--- | :--- |
+| **Learn & Research** | **[Lab (Quickstart)](lab/quickstart.md)** | Developers, Researchers, Educational use. Uses SQLite, mock sensors, and offline-first mode. |
+| **Deploy & Monitor** | **[Production](prod/deployment.md)** | Security Operations, Permanent deployment. Requires PostgreSQL, TLS, and secure secrets. |
 
-## 3. Security Architecture
-- [Telemetry Integrity (HMAC)](security/telemetry_integrity.md)
-- [Sensor Hardening](security/sensor_hardening.md)
-- [Controller Security](security/controller_security.md)
+---
 
-## 4. Lab Mode (Research)
-- [Mode B Overview](lab_mode/mode_b_overview.md)
-- [Guardrails](lab_mode/guardrails.md)
-- [Authorization Model](lab_mode/authorization.md)
+## 🔒 Security Principles
 
-## 5. Evaluation
-- [Methodology](evaluation/methodology.md)
-- [Datasets & Test Vectors](evaluation/datasets.md)
-- [Metrics](evaluation/metrics.md)
-- [System Limitations](evaluation/limitations.md)
-- [Resilience & Performance](operations/resilience_and_performance.md)
+1.  **Lab Mode**: Defaults to `localhost` binding only. Databases and services are NOT exposed to the network. Secrets are auto-generated for convenience.
+2.  **Production Mode**: Explicit configuration required. **TLS/SSL is mandatory** between components. Secrets must be provided via environment variables (fail-fast).
+3.  **Offensive Capabilities**: Lab-only offensive modules (if installed) are strictly gated and will not run unless explicitly enabled in the profile configuration.
 
-## 6. Reproducibility
-- [Artifact Description](reproducibility/artifacts.md)
-- [Environment Setup](reproducibility/environment.md)
-- [Experiment Reproduction Steps](reproducibility/experiment_steps.md)
+---
 
-## 7. Ethics & Legal
-- [Ethics Statement](ethics_legal/ethics_statement.md)
-- [Legal Scope](ethics_legal/legal_scope.md)
-- [Responsible Use](ethics_legal/responsible_use.md)
+## 🔍 Scope: What's In / What's Out
 
-## 8. Threat & Attack Library (Vietnamese)
-- [Name Resolution & SMB Attacks](reference/attacks/windows_smb_relay.md)
-- [DNS Cache Poisoning](reference/attacks/dns_cache_poisoning.md)
-- [SNMP Exploits](reference/attacks/snmp_exploits.md)
-- [FTP Exploits](reference/attacks/ftp_exploits.md)
-- [Pass-the-Hash Attacks](reference/attacks/pass_the_hash.md)
+| Feature | **Lab Profile** | **Prod Profile** |
+| :--- | :--- | :--- |
+| **Database** | SQLite (Embedded) | PostgreSQL + TimescaleDB |
+| **Network** | Localhost (127.0.0.1) | Internal Network / Reverse Proxy |
+| **Secrets** | Auto-generated (`.env.lab`) | Explicit ENV vars required |
+| **Components** | Mock Sensor available | Real Sensors only |
+| **Data** | Ephemeral (Reset allowed) | Persistent (Retention policies) |
 
-## 9. Appendix
-- [Glossary](appendix/glossary.md)
-- [Configuration Reference](appendix/config_reference.md)
-- [FAQ](appendix/faq.md)
+---
+
+## 📚 Reference Documentation
+
+*   **[API Reference](reference/api.md)**: REST API contract, authentication, and endpoints.
+*   **[Configuration](reference/config.md)**: Environment variables and profile settings.
+*   **[Database Schema](reference/schema.md)**: Data models and schema definitions.
+
+---
+
+## ⚠️ Deprecated Documentation
+
+We are reorganizing our documentation. Older guides have been moved or marked as deprecated.
+Please check **[docs/deprecated/README.md](deprecated/README.md)** for a list of legacy files.
+
+---
+
+### Support
+
+*   **Issues**: Please file bug reports on GitHub.
+*   **Security**: Report security vulnerabilities via our private disclosure program.
+*   **Status**: Profile support: `lab` (Stable), `prod` (Beta).

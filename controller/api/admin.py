@@ -1,6 +1,5 @@
 import hashlib
 import secrets
-from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
 from flask import Blueprint, jsonify, request

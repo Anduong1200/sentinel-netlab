@@ -1,4 +1,7 @@
 
+> [!WARNING]
+> **DEPRECATED**: This document is kept for reference. Use [docs/prod/ops-runbook.md](prod/ops-runbook.md) (Tuning section).
+
 # Sentinel NetLab Tuning Guide
 
 ## Baseline Profiling

@@ -12,12 +12,12 @@ Supports:
 
 import json
 import logging
-import html
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from string import Template
+
 from controller.reporting.renderer import SafeRenderer
 
 logging.basicConfig(level=logging.INFO)
@@ -372,13 +372,13 @@ class ReportEngine:
         networks_rows = []
         for net in data.networks[:50]:  # Limit to 50 for readability
             risk_class = SafeRenderer.escape(net.get("risk_level", "low")).lower()
-            
+
             # Manually constructing row for custom badge logic, but using escaping
             bssid = SafeRenderer.escape(net.get("bssid", "N/A"))
             ssid = SafeRenderer.escape(net.get("ssid", "[Hidden]") or "[Hidden]")
             channel = SafeRenderer.escape(net.get("channel", "N/A"))
             security = SafeRenderer.escape(net.get("security", "Unknown"))
-            
+
             # Using f-string but with PRE-ESCAPED variables
             networks_rows.append(f"""
                 <tr>
@@ -392,13 +392,13 @@ class ReportEngine:
 
         # Build findings HTML
         findings_html = [
-            SafeRenderer.render_finding(finding) 
+            SafeRenderer.render_finding(finding)
             for finding in data.findings[:10]
         ]
 
         # Build recommendations HTML
         recommendations_html = "\n".join(
-            SafeRenderer.render_list_item(rec) 
+            SafeRenderer.render_list_item(rec)
             for rec in data.recommendations
         )
 

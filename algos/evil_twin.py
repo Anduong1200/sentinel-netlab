@@ -167,7 +167,7 @@ class EvilTwinAlert:
 
     evidence: dict
     recommendation: str
-    
+
     # Human-readable reason codes for Lab/Dashboard display
     reason_codes: list[str] = field(default_factory=list)
 
@@ -503,10 +503,10 @@ class AdvancedEvilTwinDetector:
             len(evidence.ie_differences) > 0,
         ]
         confidence = sum(confidence_factors) / len(confidence_factors)
-        
+
         # Build human-readable reason codes
         reason_codes = ["DUPLICATE_SSID"]  # Always present for Evil Twin
-        
+
         if evidence.rssi_delta > 0:
             reason_codes.append(f"STRONGER_SIGNAL (+{evidence.rssi_delta:.0f}dB)")
         if not evidence.vendor_match:

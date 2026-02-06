@@ -223,16 +223,16 @@ class ConfigManager:
 
         for env_var, mapping in env_mappings.items():
             value = os.environ.get(env_var)
-            
+
             # Special handling for Fail-Fast Secrets
             if env_var in ["WIFI_SCANNER_API_KEY", "SENSOR_AUTH_TOKEN"]:
                 # Use require_secret to validate/enforce
                 try:
                     value = require_secret(
-                        "Sensor API Key", 
-                        env_var, 
-                        min_len=16, 
-                        allow_dev_autogen=True, 
+                        "Sensor API Key",
+                        env_var,
+                        min_len=16,
+                        allow_dev_autogen=True,
                         env=env
                     )
                 except RuntimeError as e:

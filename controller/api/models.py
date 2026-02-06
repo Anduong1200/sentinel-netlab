@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -12,9 +12,9 @@ class Telemetry(db.Model):
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     sensor_id = db.Column(db.String(64), index=True)
     batch_id = db.Column(db.String(64), index=True)
-    timestamp = db.Column(db.DateTime(timezone=True), index=True) 
+    timestamp = db.Column(db.DateTime(timezone=True), index=True)
     ingested_at = db.Column(db.DateTime(timezone=True), default=datetime.now(UTC))
-    
+
     # Specific Columns
     bssid = db.Column(db.String(17), index=True)
     ssid = db.Column(db.String(32))
@@ -22,7 +22,7 @@ class Telemetry(db.Model):
     rssi_dbm = db.Column(db.Integer)
     frequency_mhz = db.Column(db.Integer)
     security = db.Column(db.String(20))
-    
+
     # JSON Data
     data = db.Column(JSONB if "postgresql" in config.database.url else db.JSON, name="raw_data")
     capabilities = db.Column(JSONB if "postgresql" in config.database.url else db.JSON, default={})
@@ -33,10 +33,10 @@ class IngestJob(db.Model):
     job_id = db.Column(db.String(64), primary_key=True) # batch_id
     sensor_id = db.Column(db.String(64), nullable=False)
     received_at = db.Column(db.DateTime(timezone=True), default=datetime.now(UTC))
-    
+
     status = db.Column(db.String(20), default="queued") # queued, processing, done, failed
     payload = db.Column(JSONB if "postgresql" in config.database.url else db.JSON)
-    
+
     attempts = db.Column(db.Integer, default=0)
     next_attempt_at = db.Column(db.DateTime(timezone=True), default=datetime.now(UTC))
     error_msg = db.Column(db.Text)

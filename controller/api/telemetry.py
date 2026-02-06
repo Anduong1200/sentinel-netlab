@@ -1,19 +1,20 @@
 import secrets
-import threading
-import time
 from datetime import UTC, datetime
-from typing import Any
 
 from flask import Blueprint, g, jsonify, request
-from sqlalchemy.exc import IntegrityError
 
+from common.observability.metrics import (
+    INGEST_FAILURE,
+    INGEST_SUCCESS,
+    INGEST_TOTAL,
+    create_counter,
+)
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
+from controller.ingest.queue import IngestQueue
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
-from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
+from .deps import PYDANTIC_AVAILABLE, config, limiter, logger, validate_json
 from .models import Telemetry
-from controller.ingest.queue import IngestQueue
-from common.observability.metrics import create_counter, INGEST_TOTAL, INGEST_SUCCESS, INGEST_FAILURE
 
 bp = Blueprint("telemetry", __name__)
 
@@ -36,7 +37,7 @@ def ingest_telemetry():
     import gzip
 
     sensor_id = "unknown"  # Default for metrics if parsing fails early
-    
+
     # 1. Parse Data
     if request.headers.get("Content-Encoding") == "gzip":
         try:
@@ -59,10 +60,10 @@ def ingest_telemetry():
     sensor_id = data.get("sensor_id", "unknown")
     items = data.get("items", [])
     batch_id = data.get("batch_id")
-    
+
     # Track total ingest attempts
     INGEST_TOTAL.labels(sensor_id=sensor_id).inc()
-    
+
     # Fallback to header if empty in body
     if not batch_id:
         batch_id = request.headers.get("X-Idempotency-Key") or secrets.token_hex(8)
@@ -88,7 +89,7 @@ def ingest_telemetry():
 
     # 2. Idempotency & Enqueue (DB-Backed)
     # The queue handles idempotency internally via PK check
-    
+
     try:
         ack_id = IngestQueue.enqueue(sensor_id, batch_id, data)
     except Exception as e:

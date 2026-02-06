@@ -17,6 +17,10 @@
   A research-focused WiFi security monitoring platform combining signature-based detection with ML-enhanced anomaly analysis for educational and authorized security testing environments.
 </p>
 
+> [!TIP]
+> **📚 Documentation**: Start here → **[docs/README.md](docs/README.md)**  
+> (Supports **Lab Mode** and **Production Deployment**)
+
 ---
 
 ## 🎯 Overview

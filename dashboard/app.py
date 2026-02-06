@@ -1,5 +1,6 @@
 
 import os
+
 import dash
 import dash_auth
 import dash_bootstrap_components as dbc
@@ -31,6 +32,7 @@ API_TOKEN = os.environ.get("DASHBOARD_API_TOKEN", "")
 
 # Security
 from common.security.secrets import require_secret
+
 env = os.getenv("ENVIRONMENT", "production").lower()
 
 _username = require_secret(

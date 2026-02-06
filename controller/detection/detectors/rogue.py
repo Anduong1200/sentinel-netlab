@@ -1,39 +1,41 @@
 
-from typing import List, Dict, Any, Optional
-from controller.detection.interface import AbstractDetector
-from controller.baseline.store import BaselineStore
-from common.detection.evidence import Finding, Evidence
+from typing import Any
+
+from common.detection.evidence import Evidence, Finding
 from common.detection.reason_codes import ReasonCodes
+from controller.baseline.store import BaselineStore
+from controller.detection.interface import AbstractDetector
+
 
 class RogueAPDetector(AbstractDetector):
     """
     Detects rogue APs by comparing against site baselines.
     Checks: Channel Stability, RSSI Range.
     """
-    
-    def __init__(self, baseline_store: BaselineStore, config: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, baseline_store: BaselineStore, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.store = baseline_store
 
-    def process(self, telemetry: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> List[Finding]:
+    def process(self, telemetry: dict[str, Any], context: dict[str, Any] | None = None) -> list[Finding]:
         findings = []
         site_id = context.get("site_id") if context else None
-        
+
         if not site_id:
             return [] # Cannot baseline without site context
 
         ssid = telemetry.get("ssid")
         if not ssid:
             return []
-            
+
         security = telemetry.get("security", "")
         bssid = telemetry.get("bssid", "")
         channel = str(telemetry.get("channel", ""))
         rssi = telemetry.get("rssi_dbm")
-        
+
         network_key = f"{ssid}|{security}"
         profile = self.store.get_profile(site_id, network_key)
-        
+
         if not profile:
             # New/Unknown Network observed in this site
             # If explicit "authorized_ssids" list exists, we could flag known-SSID-but-no-profile here

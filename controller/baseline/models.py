@@ -1,7 +1,10 @@
 
 from datetime import UTC, datetime
-from sqlalchemy import Column, String, Integer, DateTime, JSON, ForeignKey, Index
+
+from sqlalchemy import JSON, Column, DateTime, Index, Integer, String
+
 from controller.models import Base
+
 
 class BaselineProfile(Base):
     """
@@ -11,19 +14,19 @@ class BaselineProfile(Base):
     __tablename__ = "baseline_profiles"
 
     # Composite PK might be complex, using ID for simplicity and unique constraint
-    id = Column(String(64), primary_key=True)  # hash(site_id + network_key) ?? Or just UUID. 
+    id = Column(String(64), primary_key=True)  # hash(site_id + network_key) ?? Or just UUID.
     # Let's use string composite key representation or just separate fields.
     # To avoid complex composite PKs in SQLAlchemy for now, let's use a synthetic ID or string ID.
-    
+
     site_id = Column(String(64), nullable=False, index=True)
-    network_key = Column(String(128), nullable=False, index=True) 
+    network_key = Column(String(128), nullable=False, index=True)
     # network_key example: "network|OpenCafe" or "bssid|11:22:33..."
-    
+
     first_seen = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     last_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    
+
     sample_count = Column(Integer, default=0)
-    
+
     # Feature Stats (JSON)
     # {
     #   "channels": {"1": 50, "6": 10},

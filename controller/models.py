@@ -7,14 +7,14 @@ from datetime import UTC, datetime
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     Column,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
-    BigInteger,
-    Float,
     String,
     Text,
     create_engine,
@@ -48,7 +48,7 @@ class Telemetry(Base):
     # TimescaleDB requires timestamp to be part of the primary key for hypertables
     timestamp = Column(DateTime(timezone=True), primary_key=True, index=True)
     id = Column(Integer, primary_key=True, autoincrement=True)
-    
+
     sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
     batch_id = Column(String(64), index=True)
     ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -91,7 +91,7 @@ class Alert(Base):
 
     evidence = Column(JSON, default={})
     reason_codes = Column(JSON, default=[])  # List[str] codes
-    
+
     # Scoring
     confidence = Column(Float)  # 0.0 - 1.0
     impact = Column(Float)      # 0.0 - 100.0

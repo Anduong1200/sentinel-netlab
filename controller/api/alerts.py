@@ -4,14 +4,14 @@ from pathlib import Path
 
 from flask import Blueprint, g, jsonify, request, send_file
 
+from common.observability.metrics import create_counter
 from common.schemas.alerts import AlertCreate  # noqa: E402
 from controller.export_engine import ReportData, ReportEngine, ReportFormat, ReportType
+from controller.tasks import process_alert
 
 from .auth import Permission, require_auth, require_signed
-from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
+from .deps import PYDANTIC_AVAILABLE, config, limiter, logger, validate_json
 from .models import DBAlert
-from common.observability.metrics import create_counter
-from controller.tasks import process_alert
 
 bp = Blueprint("alerts", __name__)
 
@@ -35,7 +35,7 @@ def create_alert():
         data = request.get_json()
 
     alert_id = secrets.token_hex(8)
-    
+
     # Prepare data for worker
     alert_payload = {
         "id": alert_id,
@@ -48,15 +48,15 @@ def create_alert():
 
     try:
         process_alert.delay(alert_payload, g.token.sensor_id)
-        
+
         # We assume accepted for metrics here, or let worker handle it.
         # Original code incremented ALERTS_EMITTED here.
         # We can increment "alert_requests_accepted" if we had that metric.
         # But ALERTS_EMITTED is "emitted" so maybe keeping it here is misleading if it fails processing.
         # Let's rely on worker metric.
-        
+
         return jsonify({"success": True, "alert_id": alert_id, "status": "accepted"}), 202
-        
+
     except Exception as e:
         logger.error(f"Failed to enqueue alert: {e}")
         return jsonify({"error": "Internal processing error"}), 500

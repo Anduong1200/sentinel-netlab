@@ -4,16 +4,15 @@ Standardizes metric naming and registration.
 """
 
 import time
-from typing import List, Optional
 
 try:
     from prometheus_client import (
         CONTENT_TYPE_LATEST,
+        REGISTRY,
         CollectorRegistry,
         Counter,
         Gauge,
         Histogram,
-        REGISTRY,
         generate_latest,
         multiprocess,
         start_http_server,
@@ -59,15 +58,15 @@ class DummyMetric:
     def observe(self, value): pass
     def time(self): return _DummyTimer()
 
-def create_counter(name: str, desc: str, labels: List[str]) -> Counter:
+def create_counter(name: str, desc: str, labels: list[str]) -> Counter:
     if not PROMETHEUS_AVAILABLE: return DummyMetric()
     return Counter(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
 
-def create_gauge(name: str, desc: str, labels: List[str]) -> Gauge:
+def create_gauge(name: str, desc: str, labels: list[str]) -> Gauge:
     if not PROMETHEUS_AVAILABLE: return DummyMetric()
     return Gauge(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
 
-def create_histogram(name: str, desc: str, labels: List[str], buckets=None) -> Histogram:
+def create_histogram(name: str, desc: str, labels: list[str], buckets=None) -> Histogram:
     if not PROMETHEUS_AVAILABLE: return DummyMetric()
     kwargs = {"registry": REGISTRY}
     if buckets: kwargs["buckets"] = buckets
@@ -92,7 +91,7 @@ class HTTPMetricsMiddleware:
     Measures latency and counts requests.
     """
 
-    def __init__(self, app, exclude_paths: List[str] = None):
+    def __init__(self, app, exclude_paths: list[str] = None):
         self.app = app
         self.exclude_paths = exclude_paths or ["/metrics", "/health", "/healthz"]
 
@@ -108,7 +107,7 @@ class HTTPMetricsMiddleware:
             # Extract status code (e.g. "200 OK" -> "200")
             status_code = status.split()[0]
             duration = time.time() - start_time
-            
+
             if HTTP_REQUEST_DURATION_SECONDS:
                 HTTP_REQUEST_DURATION_SECONDS.labels(
                     method=method, endpoint=path, status_code=status_code

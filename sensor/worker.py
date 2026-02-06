@@ -12,7 +12,8 @@ import logging
 import signal
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .queue import SpoolEntry, SqliteQueue
 from .transport import TransportClient
@@ -172,7 +173,7 @@ class TransportWorker:
 
         if self.on_failure:
             self.on_failure(entry.batch_id, error)
-        
+
         # Add a small global backoff if failures are consecutive to avoid rapid spinning
         # if the network is down and many items are ready for initial attempt.
         # Max 1s just to be polite to CPU.

@@ -55,10 +55,10 @@ from common.security.secrets import require_secret
 env = os.getenv("ENVIRONMENT", "production").lower()
 
 API_KEY = require_secret(
-    "Sensor API Key", 
-    "WIFI_SCANNER_API_KEY", 
-    min_len=32, 
-    allow_dev_autogen=True, 
+    "Sensor API Key",
+    "WIFI_SCANNER_API_KEY",
+    min_len=32,
+    allow_dev_autogen=True,
     env=env
 )
 INTERFACE = os.environ.get("WIFI_SCANNER_INTERFACE", "wlan0")

@@ -1,22 +1,21 @@
-import os
 import logging
+import os
 import secrets
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 # Known weak/default passwords to reject in production
 WEAK_PASSWORDS = {
-    "admin", "password", "123456", "sentinel", 
+    "admin", "password", "123456", "sentinel",
     "admin123", "secret", "changeme", "sentinel-dev-2024"
-}
+}  # noqa: S105
 
 def require_secret(
-    name: str, 
-    env_var: str, 
-    *, 
-    min_len: int = 8, 
-    allow_dev_autogen: bool = False, 
+    name: str,
+    env_var: str,
+    *,
+    min_len: int = 8,
+    allow_dev_autogen: bool = False,
     env: str = "production"
 ) -> str:
     """
@@ -44,7 +43,7 @@ def require_secret(
             msg = f"CRITICAL: Missing required production secret '{env_var}' ({name}). Application refused to start."
             logger.critical(msg)
             raise RuntimeError(msg)
-        
+
         if allow_dev_autogen:
             val = secrets.token_hex(min_len)
             logger.warning(f"DEV MODE: Auto-generated ephemeral secret for '{env_var}'. Do not use in production.")
@@ -61,7 +60,7 @@ def require_secret(
     # 2. Validate Strength (Prod Only or High Security)
     # We check blacklist for everyone to discourage bad habits, but only hard fail in prod
     validation_error = _validate_strength(val, min_len)
-    
+
     if validation_error:
         if is_prod:
             safe_msg = f"CRITICAL: Weak production secret '{env_var}': {validation_error}. Application refused to start."
@@ -72,13 +71,13 @@ def require_secret(
 
     return val
 
-def _validate_strength(val: str, min_len: int) -> Optional[str]:
+def _validate_strength(val: str, min_len: int) -> str | None:
     if len(val) < min_len:
         return f"Length {len(val)} < {min_len}"
-    
+
     if val.lower() in WEAK_PASSWORDS:
         return "Value is in blacklist of common weak passwords"
-        
+
     return None
 
 def redact(val: str) -> str:

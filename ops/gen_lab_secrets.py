@@ -44,15 +44,15 @@ def main():
         return 0
 
     print(f"[{sys.argv[0]}] Generating new .env.lab with strong secrets...")
-    
+
     with open(env_path, "w") as f:
         f.write("# Sentinel NetLab - Lab Secrets (Auto-generated)\n")
         f.write("# DO NOT COMMIT THIS FILE TO GIT\n\n")
-        
+
         # Write Defaults
         for key, value in DEFAULTS.items():
              f.write(f"{key}={value}\n")
-        
+
         f.write("\n# Auto-generated Secrets\n")
         for key, length in KEYS.items():
             secret_val = generate_secret(length)

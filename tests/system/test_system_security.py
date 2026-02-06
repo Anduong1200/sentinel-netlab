@@ -3,7 +3,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -70,8 +69,8 @@ def test_tls_gating_when_enabled(tmp_path: Path, tokens):
         # Simulate reverse proxy TLS termination
         r2 = requests.post(
             f"{base}/api/v1/telemetry",
-            json={}, 
-            headers={"X-Forwarded-Proto": "https"}, 
+            json={},
+            headers={"X-Forwarded-Proto": "https"},
             timeout=3
         )
         # Should be 401 (Missing auth) NOT 403, proving TLS check passed

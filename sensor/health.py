@@ -7,7 +7,9 @@ import http.server
 import json
 import logging
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,26 +23,26 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
                 # specific health check logic
                 # The server instance has the callback attached
                 status = self.server.get_status_callback()
-                
+
                 # Determine overall health
                 # Basic rules: capturing? uploading not stuck?
                 is_healthy = True
                 if not status.get("running"):
                     is_healthy = False
-                
+
                 # Prepare response
                 import time
-                
+
                 # Derive metrics
                 queue_stats = status.get("queue", {})
                 worker_stats = status.get("upload_worker", {})
                 threads = status.get("threads", {})
-                
+
                 # Calculate offsets
                 last_upload = worker_stats.get("last_upload_time")
                 age_sec = -1
                 if last_upload:
-                    if isinstance(last_upload, str): 
+                    if isinstance(last_upload, str):
                         # Parse if string (ISO)
                         try:
                             t_iso = datetime.fromisoformat(last_upload).timestamp()
@@ -102,7 +104,7 @@ class HealthServer:
             self._httpd = http.server.HTTPServer(("127.0.0.1", self.port), HealthHandler)
             # Attach callback to server instance so handler can access it
             self._httpd.get_status_callback = self.get_status_callback # type: ignore
-            
+
             self._thread = threading.Thread(target=self._run, daemon=True, name="HealthServer")
             self._thread.start()
             logger.info(f"Health server started on 127.0.0.1:{self.port}")

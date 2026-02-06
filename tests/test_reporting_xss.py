@@ -1,9 +1,10 @@
 
-import pytest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from controller.export_engine import ReportData, ReportEngine, ReportFormat, ReportType
 from controller.reporting.renderer import SafeRenderer
-from controller.export_engine import ReportEngine, ReportData, ReportType, ReportFormat
+
 
 def test_safe_renderer_escaping():
     """Verify SafeRenderer escapes HTML entities."""
@@ -11,10 +12,10 @@ def test_safe_renderer_escaping():
     payload = "<script>alert(1)</script>"
     escaped = SafeRenderer.escape(payload)
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" == escaped
-    
+
     # 2. None handling
     assert SafeRenderer.escape(None) == ""
-    
+
     # 3. Finding rendering
     finding = {
         "title": "Bad <script> Title",
@@ -34,7 +35,7 @@ def test_report_engine_xss_integration():
     """Verify ReportEngine generates XSS-safe HTML."""
     with TemporaryDirectory() as tmpdir:
         engine = ReportEngine(Path(tmpdir))
-        
+
         # Create data with XSS payloads
         data = ReportData(
             report_type=ReportType.SECURITY_ASSESSMENT,
@@ -60,23 +61,23 @@ def test_report_engine_xss_integration():
                 "Rec <1>"
             ]
         )
-        
+
         # Generate HTML
         output_path = engine.generate(data, ReportFormat.HTML)
         content = output_path.read_text(encoding="utf-8")
-        
+
         # Verify content is escaped
         # Title in <title> and <h1>
         assert "&lt;script&gt;Title&lt;/script&gt;" in content
         assert "<script>Title</script>" not in content
-        
+
         # SSID in table
         assert "&lt;img src=x onerror=alert(1)&gt;" in content
         assert "<img src=x onerror=alert(1)>" not in content
-        
+
         # Finding
         assert "XSS &lt;Finding&gt;" in content
         assert "Bad &lt;br&gt; tag" in content
-        
+
         # Recommendation
         assert "Rec &lt;1&gt;" in content

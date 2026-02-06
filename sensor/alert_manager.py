@@ -6,7 +6,6 @@ Handles alert deduplication, aggregation, and triage before transmission.
 import logging
 import threading
 import time
-from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -42,20 +41,20 @@ class AlertManager:
             str(alert.get("title", ""))
         ]
         key = "|".join(key_parts)
-        
+
         with self._lock:
             now = time.time()
             last_seen = self._dedup_cache.get(key, 0)
-            
+
             # Cleanup old entries periodically (lazy cleanup)
             if len(self._dedup_cache) > 1000:
                 self._cleanup(now)
-            
+
             if now - last_seen < self.dedup_window:
                 # Suppress
                 logger.debug(f"Suppressed duplicate alert: {key}")
                 return False
-            
+
             # Allow and update timestamp
             self._dedup_cache[key] = now
             return True

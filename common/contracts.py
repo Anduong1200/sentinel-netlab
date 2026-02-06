@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import time
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 
-class FrameType(str, Enum):
+class FrameType(StrEnum):
     """802.11 frame types"""
 
     MANAGEMENT = "management"
@@ -32,7 +32,7 @@ class FrameType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class FrameSubtype(str, Enum):
+class FrameSubtype(StrEnum):
     """802.11 management frame subtypes"""
 
     # Management frames (type 0)
@@ -64,7 +64,7 @@ class FrameSubtype(str, Enum):
     UNKNOWN = "unknown"
 
 
-class SecurityType(str, Enum):
+class SecurityType(StrEnum):
     """WiFi security types"""
 
     OPEN = "open"
@@ -76,7 +76,7 @@ class SecurityType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     """Alert severity levels"""
 
     CRITICAL = "Critical"
@@ -86,7 +86,7 @@ class AlertSeverity(str, Enum):
     INFO = "Info"
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     """Detection alert types"""
 
     EVIL_TWIN = "evil_twin"
@@ -102,7 +102,7 @@ class AlertType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Risk assessment levels"""
 
     CLEAN = "clean"

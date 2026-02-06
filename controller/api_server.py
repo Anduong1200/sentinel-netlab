@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from flask import jsonify
 
 # Import Core Dependencies (Config, DB, Limiter)
-from controller.api.deps import create_app, config, db
+from controller.api.deps import create_app, config
 from controller.api.auth import init_default_tokens
 
 # Import Blueprints
@@ -43,7 +43,7 @@ app.register_blueprint(admin_bp, url_prefix="/api/v1")
 # Create tables
 with app.app_context():
     # In production, we assume DB is initialized via ops/init-db.sql or Alembic
-    # db.create_all() 
+    # db.create_all()
     init_default_tokens()
 
 

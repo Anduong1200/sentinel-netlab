@@ -1,6 +1,7 @@
 
 from common.scoring.types import Confidence, Impact, RiskScore, Severity
 
+
 class RiskModel:
     """
     Core Risk Calculation Logic.
@@ -22,7 +23,7 @@ class RiskModel:
     - 40-69: MEDIUM
     - <40: LOW
     """
-    
+
     @staticmethod
     def calculate(confidence: Confidence, impact: Impact) -> RiskScore:
         """

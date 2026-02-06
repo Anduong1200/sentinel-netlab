@@ -1,7 +1,10 @@
-import pytest
 import os
 from unittest.mock import patch
-from common.security.secrets import require_secret, redact, WEAK_PASSWORDS
+
+import pytest
+
+from common.security.secrets import redact, require_secret
+
 
 def test_require_secret_prod_missing():
     """Verify require_secret raises RuntimeError in prod if missing"""

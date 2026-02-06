@@ -81,23 +81,23 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
 
     # Load Secrets (Fail-Fast)
     from common.security.secrets import require_secret
-    
+
     secret_key = require_secret(
-        "Controller Secret Key", 
-        "CONTROLLER_SECRET_KEY", 
-        min_len=16, 
-        allow_dev_autogen=True, 
+        "Controller Secret Key",
+        "CONTROLLER_SECRET_KEY",
+        min_len=16,
+        allow_dev_autogen=True,
         env=env
     )
-    
+
     hmac_secret = require_secret(
-        "HMAC Signing Key", 
-        "CONTROLLER_HMAC_SECRET", 
-        min_len=32, 
-        allow_dev_autogen=True, 
+        "HMAC Signing Key",
+        "CONTROLLER_HMAC_SECRET",
+        min_len=32,
+        allow_dev_autogen=True,
         env=env
     )
-    
+
     db_url = os.getenv("CONTROLLER_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not db_url:
         if is_prod:
@@ -105,7 +105,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         else:
             db_url = "sqlite:///data/sentinel.db"
             logger.info("Using default SQLite database (Dev Mode)")
-    
+
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
        # Redis is critical for Celery now

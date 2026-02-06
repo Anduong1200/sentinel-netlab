@@ -1,4 +1,5 @@
 from celery import Celery
+
 from controller.config import init_config
 
 # Initialize Config
@@ -11,7 +12,7 @@ def make_celery():
         backend=config.redis_url,
         include=["controller.tasks"]
     )
-    
+
     app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -19,7 +20,7 @@ def make_celery():
         timezone="UTC",
         enable_utc=True,
     )
-    
+
     return app
 
 celery = make_celery()

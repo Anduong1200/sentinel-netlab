@@ -119,7 +119,7 @@ class DeauthFloodDetector:
     ) -> DeauthFloodAlert:
         """Create deauth flood alert"""
         self.alert_count += 1
-        
+
         # Determine severity based on rate
         if rate >= self.threshold_per_sec * 5:
             severity = "CRITICAL"
@@ -127,7 +127,7 @@ class DeauthFloodDetector:
             severity = "HIGH"
         else:
             severity = "MEDIUM"
-        
+
         # Build reason codes
         is_broadcast = client_mac == "ff:ff:ff:ff:ff:ff"
         reason_codes = [

@@ -1,8 +1,9 @@
 
 import os
-import sys
 import subprocess
+import sys
 import time
+
 
 def debug_run():
     env = os.environ.copy()
@@ -30,7 +31,7 @@ def debug_run():
         env=env,
         text=True
     )
-    
+
     time.sleep(5)
     if proc.poll() is not None:
         print(f"Controller exited early with code {proc.returncode}")

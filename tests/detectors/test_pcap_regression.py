@@ -16,8 +16,8 @@ import pytest
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from algos.evil_twin import AdvancedEvilTwinDetector, EvilTwinConfig
 from algos.dos import DeauthFloodDetector
+from algos.evil_twin import AdvancedEvilTwinDetector, EvilTwinConfig
 
 # Paths
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "pcap_annotated"
@@ -113,7 +113,7 @@ class TestEvilTwinRegression:
 
         # Assertions
         assert len(alerts) >= 1, "Expected at least one Evil Twin alert"
-        
+
         # Verify alert quality
         alert = alerts[0]
         assert alert.ssid == "CorpNet", f"Expected SSID 'CorpNet', got '{alert.ssid}'"
@@ -170,14 +170,14 @@ class TestDeauthFloodRegression:
             if ann.get("frame_type") == "deauth":
                 bssid = ann.get("bssid", "00:00:00:00:00:00").upper()
                 client = ann.get("target_client", "ff:ff:ff:ff:ff:ff").upper()
-                
+
                 result = dos_detector.record_deauth(bssid, client, "test-sensor")
                 if result:
                     alerts.append(result)
 
         # Assertions
         assert len(alerts) >= 1, "Expected at least one Deauth Flood alert"
-        
+
         # Verify alert quality
         alert = alerts[0]
         assert "DEAUTH_FLOOD" in alert.reason_codes

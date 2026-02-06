@@ -13,7 +13,6 @@ import logging
 import math
 import sqlite3
 import threading
-import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,7 +34,7 @@ class BaselineEntry:
     capabilities: dict[str, Any]
     first_seen: datetime
     last_seen: datetime
-    
+
     def is_vendor_match(self, observed_vendor: str | None) -> bool:
         """Check if observed vendor matches baseline."""
         if not self.vendor or not observed_vendor:
@@ -51,21 +50,21 @@ class BaselineEntry:
         """
         if self.rssi_samples < 10:
             return 0.0 # Not enough samples
-            
+
         diff = rssi - self.rssi_avg
         if diff <= 0:
             return 0.0 # Weaker signal is usually fine (moving away)
-            
+
         # If signal is significantly stronger than average + sigma
         # It implies the source is much closer than expected -> Potential Evil Twin
-        
+
         sigma = max(self.rssi_std, 5.0) # Min sigma 5dB to avoid noise sensitivity
         z_score = diff / sigma
-        
+
         if z_score > threshold_sigma:
             # Map z_score 3.0 -> 0.6, 5.0 -> 1.0
             return min(1.0, (z_score - threshold_sigma) / 2.0 + 0.5)
-            
+
         return 0.0
 
 
@@ -73,7 +72,7 @@ class BaselineManager:
     """
     Manages operational baselines for WiFi networks.
     """
-    
+
     DEFAULT_DB_PATH = "data/baseline.db"
 
     def __init__(self, db_path: str | None = None):
@@ -81,10 +80,10 @@ class BaselineManager:
         self._lock = threading.RLock()
         self._conn: sqlite3.Connection | None = None
         self.learning_mode = False
-        
+
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
-        
+
     def _get_conn(self) -> sqlite3.Connection:
         if self._conn is None:
             self._conn = sqlite3.connect(
@@ -130,11 +129,11 @@ class BaselineManager:
 
         with self._lock:
             conn = self._get_conn()
-            
+
             # Fetch existing
             cursor = conn.execute("SELECT * FROM baselines WHERE bssid = ?", (bssid,))
             row = cursor.fetchone()
-            
+
             now_iso = datetime.now(UTC).isoformat()
             rssi = frame_data.get("rssi_dbm", -100)
             channel = frame_data.get("channel")
@@ -146,17 +145,17 @@ class BaselineManager:
                 new_sum = row["rssi_sum"] + rssi
                 new_sq_sum = row["rssi_sq_sum"] + (rssi * rssi)
                 new_samples = row["rssi_samples"] + 1
-                
+
                 # Update Channels
                 channels = json.loads(row["channel_history"] or "[]")
                 if channel and channel not in channels:
                     channels.append(channel)
                     channels.sort()
-                
+
                 # Identity updates (Snapshot if not set)
                 curr_ssid = row["ssid"] or ssid
                 curr_vendor = row["vendor"] or vendor
-                
+
                 conn.execute("""
                     UPDATE baselines SET
                         rssi_sum = ?, rssi_sq_sum = ?, rssi_samples = ?,
@@ -165,7 +164,7 @@ class BaselineManager:
                         ssid = ?, vendor = ?
                     WHERE bssid = ?
                 """, (new_sum, new_sq_sum, new_samples, json.dumps(channels), now_iso, curr_ssid, curr_vendor, bssid))
-                
+
             else:
                 # New Entry
                 conn.execute("""
@@ -175,12 +174,12 @@ class BaselineManager:
                         first_seen, last_seen, capabilities
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
-                    bssid, ssid, vendor, 
+                    bssid, ssid, vendor,
                     json.dumps([channel] if channel else []),
                     rssi, rssi * rssi, 1,
                     now_iso, now_iso, "{}"
                 ))
-            
+
             conn.commit()
 
     def check_deviation(self, frame_data: dict[str, Any]) -> dict[str, Any] | None:
@@ -200,14 +199,14 @@ class BaselineManager:
             conn = self._get_conn()
             cursor = conn.execute("SELECT * FROM baselines WHERE bssid = ?", (bssid,))
             row = cursor.fetchone()
-            
+
             if not row:
                 # Unknown Device
-                # In strict mode, this might be an alert. 
+                # In strict mode, this might be an alert.
                 # For now, we auto-learn new devices conservatively or return "New Device" info.
                 self.learn(frame_data)
                 return None
-        
+
         # Parse Baseline
         rssi_samples = row["rssi_samples"]
         if rssi_samples < 5:
@@ -217,7 +216,7 @@ class BaselineManager:
         avg = row["rssi_sum"] / rssi_samples
         variance = (row["rssi_sq_sum"] / rssi_samples) - (avg * avg)
         std_dev = math.sqrt(max(0, variance))
-        
+
         baseline = BaselineEntry(
             bssid=row["bssid"],
             ssid=row["ssid"],
@@ -230,23 +229,23 @@ class BaselineManager:
             first_seen=datetime.fromisoformat(row["first_seen"]),
             last_seen=None # Not needed here
         )
-        
+
         deviations = []
         score = 0.0
-        
+
         # 1. Vendor Check
         observed_vendor = frame_data.get("vendor_oui")
         if baseline.vendor and observed_vendor:
             if not baseline.is_vendor_match(observed_vendor):
                 deviations.append(f"Vendor Mismatch: Expected {baseline.vendor}, Got {observed_vendor}")
                 score += 1.0 # Critical
-        
+
         # 2. Signal Check
         sig_score = baseline.check_signal_deviation(frame_data.get("rssi_dbm", -100))
         if sig_score > 0:
             deviations.append(f"Signal Anomaly: RSSI {frame_data.get('rssi_dbm')} vs Avg {avg:.1f} (Z={sig_score:.1f})")
             score += sig_score
-            
+
         # 3. Channel Check
         # Optional: Evil Twin on different channel?
         curr_channel = frame_data.get("channel")
@@ -254,10 +253,10 @@ class BaselineManager:
              # Weak evidence, APs can switch. But if fixed infra...
              # deviations.append(f"New Channel: {curr_channel}")
              pass
-             
+
         # Always passive learn to update stats slowly
         self.learn(frame_data)
-        
+
         if deviations:
             return {
                 "score": min(1.0, score),
@@ -267,7 +266,7 @@ class BaselineManager:
                     "avg_rssi": round(avg, 1)
                 }
             }
-            
+
         return None
 
     def close(self):

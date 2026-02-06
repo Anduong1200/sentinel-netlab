@@ -1,5 +1,9 @@
 # Operations Manual
 
+> [!WARNING]
+> **DEPRECATED**: This document is kept for reference. Use [docs/prod/ops-runbook.md](prod/ops-runbook.md).
+
+
 ## 1. Daily Maintenance
 
 ### Monitoring

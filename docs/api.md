@@ -1,5 +1,9 @@
 # API Documentation
 
+> [!WARNING]
+> **DEPRECATED**: This document is kept for reference. Use [docs/reference/api.md](reference/api.md).
+
+
 The Sentinel NetLab API follows the OpenAPI 3.0 specification.
 
 ## Interactive Documentation

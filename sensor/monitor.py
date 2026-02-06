@@ -2,10 +2,9 @@
 Sensor Monitor: Background thread for System and Spool metrics.
 """
 
+import logging
 import threading
 import time
-import logging
-from typing import Any
 
 import psutil
 
@@ -51,7 +50,7 @@ class SensorMonitor:
                 # 1. System Metrics
                 cpu = psutil.cpu_percent(interval=None)
                 mem = psutil.virtual_memory().percent
-                
+
                 SYSTEM_CPU.labels(sensor_id=self.sensor_id).set(cpu)
                 SYSTEM_MEMORY.labels(sensor_id=self.sensor_id).set(mem)
 
@@ -68,5 +67,5 @@ class SensorMonitor:
 
             except Exception as e:
                 logger.error(f"Monitor error: {e}")
-            
+
             time.sleep(self.interval)

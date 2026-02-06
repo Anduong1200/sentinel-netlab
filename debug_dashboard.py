@@ -1,13 +1,14 @@
 
 import os
-import sys
 import subprocess
+import sys
 import time
+
 
 def debug_dashboard():
     # Use a specific port for debug
     port = "8051"
-    
+
     env = os.environ.copy()
     env.update({
         "CONTROLLER_URL": "http://127.0.0.1:5000",
@@ -27,9 +28,9 @@ def debug_dashboard():
         env=env,
         text=True
     )
-    
+
     time.sleep(10)
-    
+
     if proc.poll() is not None:
         print(f"Dashboard exited early with code {proc.returncode}")
         print("Output:")
@@ -43,7 +44,7 @@ def debug_dashboard():
              print(f"Health check: {r.status_code}")
         except Exception as e:
              print(f"Health check failed: {e}")
-             
+
         proc.terminate()
         try:
             print("Cleanup: \n" + proc.stdout.read())

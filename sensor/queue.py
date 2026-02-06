@@ -14,7 +14,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from common.observability.metrics import create_counter
+
 logger = logging.getLogger(__name__)
+
+SPOOL_DROPS = create_counter(
+    "spool_drops_total", "Dropped batches due to full spool", ["reason"]
+)
+
 
 
 @dataclass
@@ -38,11 +45,7 @@ class SqliteQueue:
     MAX_SIZE = 10000
     MAX_BYTES = 100 * 1024 * 1024  # 100MB
 
-from common.observability.metrics import create_counter
-
-SPOOL_DROPS = create_counter(
-    "spool_drops_total", "Dropped batches due to full spool", ["reason"]
-)
+    MAX_BYTES = 100 * 1024 * 1024  # 100MB
 
     def __init__(
         self,
@@ -79,7 +82,7 @@ SPOOL_DROPS = create_counter(
     def _init_db(self) -> None:
         with self._lock:
             conn = self._get_conn()
-            
+
             # Key-Value store for Sequences
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS kv (
@@ -106,10 +109,10 @@ SPOOL_DROPS = create_counter(
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_spool_state_next ON spool(state, next_attempt_at)"
             )
-            
+
             # Migration: Drop old 'batches' table if exists from previous version
             conn.execute("DROP TABLE IF EXISTS batches")
-            
+
             conn.commit()
             logger.info(f"Spool DB initialized: {self.db_path}")
 
@@ -129,7 +132,7 @@ SPOOL_DROPS = create_counter(
     def push(self, payload: dict[str, Any], batch_id: str) -> bool:
         """Enqueue a batch."""
         payload_json = json.dumps(payload)
-        
+
         with self._lock:
             conn = self._get_conn()
 
@@ -144,7 +147,7 @@ SPOOL_DROPS = create_counter(
                 logger.warning("Spool full (count)")
                 SPOOL_DROPS.labels(reason="count_limit").inc()
                 return False
-            
+
             if total_bytes + len(payload_json) > self.max_bytes:
                 logger.warning("Spool full (bytes)")
                 SPOOL_DROPS.labels(reason="bytes_limit").inc()
@@ -179,7 +182,7 @@ SPOOL_DROPS = create_counter(
                 ORDER BY created_at ASC
                 LIMIT 1
             """, (now,))
-            
+
             row = cursor.fetchone()
             if not row:
                 return None
@@ -213,7 +216,7 @@ SPOOL_DROPS = create_counter(
         """Handle failure: schedule retry."""
         with self._lock:
             conn = self._get_conn()
-            
+
             # Get current attempts
             cursor = conn.execute("SELECT attempts FROM spool WHERE batch_id = ?", (batch_id,))
             row = cursor.fetchone()
@@ -221,18 +224,18 @@ SPOOL_DROPS = create_counter(
                 return # Gone?
 
             attempts = row['attempts'] + 1
-            
+
             # Backoff calculation
             backoff = self._calculate_backoff(attempts)
             next_attempt = int(time.time() + backoff)
 
             state = 'queued'
-            # Optional: Dead letter if too many attempts? User didn't specify strict max, 
+            # Optional: Dead letter if too many attempts? User didn't specify strict max,
             # but backoff cap is 60s. Let's keep retrying indefinitely or set a high limit logic if needed.
-            # User doc implies "Backoff chuẩn", doesn't explicitly say "Dead letter after X". 
+            # User doc implies "Backoff chuẩn", doesn't explicitly say "Dead letter after X".
             # But the schema has 'dead' state. I'll define a reasonable max (e.g. 50 attempts) or just keep queued.
             # I will just keep queued for now as "Mất mạng... -> không mất".
-            
+
             conn.execute("""
                 UPDATE spool 
                 SET state = ?, attempts = ?, next_attempt_at = ?, last_error = ?

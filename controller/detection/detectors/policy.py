@@ -1,22 +1,24 @@
 
-from typing import List, Dict, Any, Optional
-from controller.detection.interface import AbstractDetector
-from common.detection.evidence import Finding, Evidence
+from typing import Any
+
+from common.detection.evidence import Evidence, Finding
 from common.detection.reason_codes import ReasonCodes
+from controller.detection.interface import AbstractDetector
+
 
 class PolicyDetector(AbstractDetector):
     """
     Detects violations of static security policies.
     Example: Open networks, WEP encryption.
     """
-    
-    def process(self, telemetry: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> List[Finding]:
+
+    def process(self, telemetry: dict[str, Any], context: dict[str, Any] | None = None) -> list[Finding]:
         findings = []
-        
+
         ssid = telemetry.get("ssid", "")
         bssid = telemetry.get("bssid", "")
         security = telemetry.get("security", "Open")
-        
+
         # 1. Check for Open Networks
         if security == "Open":
             f = Finding(
@@ -40,7 +42,7 @@ class PolicyDetector(AbstractDetector):
                 detector_id="policy_wep_net",
                 entity_key=f"policy|{ssid}|{bssid}",
                 confidence_raw=1.0
-            ) 
+            )
             f.add_reason(ReasonCodes.SECURITY_DOWNGRADE)
             f.evidence_list.append(Evidence(
                 type="configuration",

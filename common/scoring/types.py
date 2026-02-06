@@ -1,11 +1,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import NewType
 
 # Type aliases for clarity and potential validation later
 # Confidence: 0.0 to 1.0 representing probability/certainty
-Confidence = float 
+Confidence = float
 
 # Impact: 0.0 to 100.0 representing potential damage/criticality
 Impact = float
@@ -43,6 +42,6 @@ class RiskScore:
         # Clamp values loosely (strict validation can be done in models)
         c = max(0.0, min(1.0, confidence))
         i = max(0.0, min(100.0, impact))
-        
+
         score = c * i
         return cls(value=score, severity=Severity.from_score(score))

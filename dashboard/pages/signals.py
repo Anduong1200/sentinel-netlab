@@ -1,16 +1,17 @@
 
-import dash
-import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html, callback
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-import requests
 import os
 import random
 from datetime import datetime, timedelta
 
-from dashboard.components.cards import GLASS_STYLE, COLOR_PRIMARY
+import dash
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import requests
+from dash import Input, Output, callback, dcc, html
+
+from dashboard.components.cards import COLOR_PRIMARY, GLASS_STYLE
 
 dash.register_page(__name__, path="/signals", title="Sentinel NetLab - Signals")
 
@@ -36,7 +37,7 @@ layout = html.Div(
             ),
             className="mb-4",
         ),
-        
+
         # Charts Row 1
         dbc.Row(
             [
@@ -64,7 +65,7 @@ layout = html.Div(
                 ),
             ]
         ),
-        
+
         # Charts Row 2 (Time Series)
         dbc.Row(
             dbc.Col(
@@ -79,7 +80,7 @@ layout = html.Div(
                 width=12,
             )
         ),
-        
+
          dcc.Interval(
             id="signals-interval",
             interval=15000, # Update every 15s
@@ -126,8 +127,8 @@ def update_signals(n):
             channels = [n.get("channel") for n in networks if n.get("channel")]
             df_ch = pd.DataFrame(channels, columns=["channel"])
             fig_ch = px.histogram(
-                df_ch, 
-                x="channel", 
+                df_ch,
+                x="channel",
                 nbins=14,
                 color_discrete_sequence=[COLOR_PRIMARY]
             )
@@ -142,7 +143,7 @@ def update_signals(n):
             rssi = [n.get("rssi", -100) for n in networks if n.get("rssi")]
             # Filter out errors
             rssi = [r for r in rssi if -100 <= r <= 0]
-            
+
             fig_rssi = go.Figure()
             fig_rssi.add_trace(go.Violin(
                 y=rssi,
@@ -160,30 +161,30 @@ def update_signals(n):
         # === 3. Discovery Graph (Mocked Timeline) ===
         # Since we don't have historical API yet, we simulate a "trend" based on current count
         # In a real app, this would query `telemetry_1h`
-        
+
         now = datetime.now()
         times = [(now - timedelta(hours=i)).strftime("%H:00") for i in range(24, 0, -1)]
-        
+
         # Mock trend: randomly fluctuate around current count / 10
         base_count = max(len(networks) // 5, 5)
         counts = [max(0, base_count + random.randint(-2, 5)) for _ in times]
-        
+
         fig_disc = go.Figure()
         fig_disc.add_trace(go.Scatter(
-            x=times, 
+            x=times,
             y=counts,
             mode='lines+markers',
             fill='tozeroy',
             line=dict(color="#f7b733", width=3), # Orange/Gold
             name="New Networks"
         ))
-        
+
         fig_disc.update_layout(**layout_override)
         fig_disc.update_layout(
              xaxis_title="Time (Last 24h)",
              yaxis_title="Networks Detected"
         )
-        
+
         return fig_ch, fig_rssi, fig_disc
 
     except Exception as e:

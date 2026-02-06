@@ -4,18 +4,17 @@ Uses contextvars to manage request-scoped data (thread-safe and async-safe).
 """
 
 from contextvars import ContextVar
-from typing import Dict, Optional
 
 # Define context variables with default values
-_request_id: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
-_sensor_id: ContextVar[Optional[str]] = ContextVar("sensor_id", default=None)
-_batch_id: ContextVar[Optional[str]] = ContextVar("batch_id", default=None)
+_request_id: ContextVar[str | None] = ContextVar("request_id", default=None)
+_sensor_id: ContextVar[str | None] = ContextVar("sensor_id", default=None)
+_batch_id: ContextVar[str | None] = ContextVar("batch_id", default=None)
 
 
 def set_context(
-    request_id: Optional[str] = None,
-    sensor_id: Optional[str] = None,
-    batch_id: Optional[str] = None,
+    request_id: str | None = None,
+    sensor_id: str | None = None,
+    batch_id: str | None = None,
 ) -> None:
     """
     Set correlation parameters for the current context.
@@ -29,7 +28,7 @@ def set_context(
         _batch_id.set(batch_id)
 
 
-def get_context() -> Dict[str, Optional[str]]:
+def get_context() -> dict[str, str | None]:
     """
     Retrieve current correlation parameters.
     """

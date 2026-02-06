@@ -62,8 +62,8 @@ class MessageSigner:
 
         if sequence is not None:
             headers["X-Sequence"] = str(sequence)
-        
-        # Note: Caller must set Content-Encoding header if not identity, 
+
+        # Note: Caller must set Content-Encoding header if not identity,
         # but the signature header itself doesn't contain it (it verifies it).
-        
+
         return headers

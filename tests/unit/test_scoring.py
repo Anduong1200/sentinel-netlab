@@ -1,8 +1,8 @@
 
-import pytest
-from common.scoring.types import RiskScore, Severity
-from common.detection.reason_codes import ReasonCodes, ReasonCategory
+from common.detection.reason_codes import ReasonCategory, ReasonCodes
+from common.scoring.types import Severity
 from controller.scoring.risk import RiskModel
+
 
 def test_risk_calculation():
     """Verify Risk = Confidence * Impact logic."""
@@ -34,7 +34,7 @@ def test_clamping():
     # Over 1.0 confidence -> treated as 1.0
     score = RiskModel.calculate(confidence=1.5, impact=100.0)
     assert score.value == 100.0
-    
+
     # Negative impact -> treated as 0.0
     score = RiskModel.calculate(confidence=1.0, impact=-50.0)
     assert score.value == 0.0
@@ -45,7 +45,7 @@ def test_reason_codes():
     rc = ReasonCodes.SSID_SPOOFING
     assert rc.code == "SSID_SPOOFING"
     assert rc.category == ReasonCategory.THREAT
-    
+
     # 2. Check formatting
     msg = rc.format(ssid="CorpWiFi", bssid="AA:BB:CC:DD:EE:FF")
     assert "SSID 'CorpWiFi'" in msg

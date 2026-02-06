@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Optional
+from typing import Any
 
 from common.observability.context import get_context
 from common.privacy import anonymize_ssid
@@ -67,11 +67,11 @@ class JSONFormatter(logging.Formatter):
         """In-place PII redaction for common sensitive keys"""
         # Dictionary of keys to redact and the function to use
         # This is simple; for deep nesting, need recursion
-        
+
         # SSID
         if "ssid" in data and isinstance(data["ssid"], str):
              data["ssid"] = anonymize_ssid(data["ssid"])
-        
+
         # Secrets - should be filtered before logging, but catch obvious ones
         for key in ["password", "token", "secret", "key"]:
             if key in data:
@@ -81,7 +81,7 @@ class JSONFormatter(logging.Formatter):
 def configure_logging(
     component: str,
     level: str = "INFO",
-    log_dir: Optional[str] = None,
+    log_dir: str | None = None,
     json_mode: bool = True,
 ) -> logging.Logger:
     """
@@ -105,7 +105,7 @@ def configure_logging(
             "%(asctime)s [%(levelname)s] [%(name)s] %(message)s"
         )
         stream_handler.setFormatter(formatter)
-    
+
     root_logger.addHandler(stream_handler)
 
     # File Handler (Optional) with Rotation

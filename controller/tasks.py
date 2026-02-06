@@ -2,11 +2,10 @@ import logging
 from datetime import UTC, datetime
 
 from sqlalchemy.exc import IntegrityError
-from celery.exceptions import SoftTimeLimitExceeded
 
-from controller.celery_app import celery
 from controller.api.deps import create_app, db
 from controller.api.models import IngestBatch, Telemetry
+from controller.celery_app import celery
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
     """
     with app.app_context():
         logger.info(f"Processing batch {batch_id} for {sensor_id} ({len(items)} items)")
-        
+
         # 1. Idempotency Check (Persistent)
         existing_batch = db.session.get(IngestBatch, batch_id)
         if existing_batch:
@@ -55,29 +54,29 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
                  # Note: _ingested_at should ideally be "now" or preserved if passed from API?
                  # Implementation in API used datetime.now(UTC), so we do the same here.
                 item["_ingested_at"] = datetime.now(UTC).isoformat()
-                
+
                 # Align with Schema: Extract indexed fields
                 db_item = Telemetry(
-                    sensor_id=sensor_id, 
+                    sensor_id=sensor_id,
                     batch_id=batch_id,
                     timestamp=datetime.fromisoformat(item.get("timestamp")) if item.get("timestamp") else datetime.now(UTC),
-                    
+
                     bssid=item.get("bssid"),
                     ssid=item.get("ssid"),
                     channel=item.get("channel"),
                     rssi_dbm=item.get("rssi_dbm"),
                     frequency_mhz=item.get("frequency_mhz"), # Optional if exists
                     security=item.get("security"),
-                    
+
                     raw_data=item # Store full payload
                 )
                 db.session.add(db_item)
                 accepted += 1
-            
+
             # Update batch status
             new_batch.status = "processed"
             db.session.commit()
-            
+
             logger.info(f"Batch {batch_id} processed successfully ({accepted} items)")
             return {"status": "success", "accepted": accepted}
 
@@ -95,8 +94,8 @@ def process_alert(self, alert_data: dict, sensor_id: str):
     """
     Process an alert asynchronously.
     """
-    from controller.api.models import DBAlert
     from common.observability.metrics import create_counter
+    from controller.api.models import DBAlert
 
     ALERTS_EMITTED_WORKER = create_counter(
         "alerts_emitted_total", "Alerts emissions", ["severity", "detector"]
@@ -105,7 +104,7 @@ def process_alert(self, alert_data: dict, sensor_id: str):
     with app.app_context():
         alert_id = alert_data.get("id")
         logger.info(f"Processing alert {alert_id} for {sensor_id}")
-        
+
         try:
             alert = DBAlert(
                 id=alert_id,
@@ -116,19 +115,19 @@ def process_alert(self, alert_data: dict, sensor_id: str):
                 description=alert_data.get("description"),
                 evidence=alert_data.get("evidence"),
             )
-            
+
             db.session.add(alert)
             db.session.commit()
-            
+
             # Metrics (Note: PromMetrics in multiprocess worker is tricky, but we try)
             ALERTS_EMITTED_WORKER.labels(
                 severity=alert.severity or "unknown",
                 detector=alert.alert_type or "unknown"
             ).inc()
-            
+
             logger.info(f"Alert {alert_id} persisted")
             return {"status": "success", "alert_id": alert_id}
-            
+
         except IntegrityError:
             db.session.rollback()
             logger.info(f"Duplicate alert: {alert_id}")

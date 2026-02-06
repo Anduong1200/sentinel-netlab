@@ -30,9 +30,9 @@ from common.security.secrets import require_secret
 env = os.getenv("ENVIRONMENT", "lab").lower()
 
 API_KEY = require_secret(
-    "Lab API Key", 
-    "LAB_API_KEY", 
-    min_len=16, 
+    "Lab API Key",
+    "LAB_API_KEY",
+    min_len=16,
     allow_dev_autogen=True, # Allowed in Lab/Dev
     env=env
 )

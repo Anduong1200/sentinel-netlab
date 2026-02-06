@@ -4,9 +4,9 @@ import socket
 import subprocess
 import sys
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterator, Optional
 
 import pytest
 import requests
@@ -20,7 +20,7 @@ def _free_port() -> int:
 
 def _wait_http(url: str, timeout_s: float = 15.0) -> None:
     deadline = time.time() + timeout_s
-    last_err: Optional[Exception] = None
+    last_err: Exception | None = None
     while time.time() < deadline:
         try:
             r = requests.get(url, timeout=1.0)
@@ -37,7 +37,7 @@ class ControllerHandle:
     base_url: str
     proc: subprocess.Popen
     log_path: Path
-    env: Dict[str, str]
+    env: dict[str, str]
 
 
 @pytest.fixture
@@ -94,7 +94,7 @@ def controller_handle(tmp_path: Path) -> Iterator[ControllerHandle]:
 
 
 @pytest.fixture
-def tokens() -> Dict[str, str]:
+def tokens() -> dict[str, str]:
     """Default dev tokens created when ALLOW_DEV_TOKENS=true (testing mode)."""
     return {
         "admin": "admin-token-dev",
@@ -104,12 +104,12 @@ def tokens() -> Dict[str, str]:
 
 
 @pytest.fixture
-def auth_header(tokens: Dict[str, str]) -> Dict[str, str]:
+def auth_header(tokens: dict[str, str]) -> dict[str, str]:
     return {"Authorization": f"Bearer {tokens['admin']}"}
 
 
 @pytest.fixture
-def sensor_auth_header(tokens: Dict[str, str]) -> Dict[str, str]:
+def sensor_auth_header(tokens: dict[str, str]) -> dict[str, str]:
     return {"Authorization": f"Bearer {tokens['sensor']}"}
 
 
@@ -117,7 +117,7 @@ def make_telemetry_batch(sensor_id: str = "sensor-01", batch_id: str = "batch-1"
     """Generate a schema-valid TelemetryBatch."""
     import datetime as _dt
 
-    now = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    now = _dt.datetime.now(_dt.UTC).isoformat()
     items = []
     for i in range(n):
         items.append(

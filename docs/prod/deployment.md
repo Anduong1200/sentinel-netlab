@@ -1,181 +1,146 @@
 # Production Deployment Guide
 
-> **Deploy Sentinel NetLab for real-world wireless threat monitoring.**
+> **Scope**: "Pilot" or "Small Production" deployment.
+> **Assumptions**: You own or have authorization for the network. Strict security is enforced.
 
 ---
 
-## Prerequisites
+## 1. Reference Architecture
 
-| Requirement | Minimum |
-|-------------|---------|
-| Docker | v20.10+ |
-| Docker Compose | v2.x |
-| RAM | 8 GB |
-| Storage | 50 GB SSD |
-| Network | Dedicated VLAN for sensors |
+For production, we enforce a **Zero-Trust Network Architecture**:
 
----
+*   **Public Zone** (`0.0.0.0:443`): **Reverse Proxy ONLY** (Nginx/Traefik).
+*   **Private Zone** (Internal Docker Network):
+    *   **Controller**: API & Ingestion Logic.
+    *   **Database**: PostgreSQL + TimescaleDB (Persistent Data).
+    *   **Redis**: Job Queue & Cache.
+    *   **Worker**: Async Task Processing (Ingest/Alerts).
 
-## Architecture Overview
-
-```
-                    ┌─────────────────────┐
-                    │   Reverse Proxy     │
-                    │   (Nginx/Traefik)   │
-                    │   :443 (TLS)        │
-                    └─────────┬───────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-┌───────▼───────┐     ┌───────▼───────┐     ┌───────▼───────┐
-│   Dashboard   │     │  Controller   │     │    Grafana    │
-│    :8050      │     │    :5000      │     │    :3000      │
-└───────────────┘     └───────┬───────┘     └───────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-┌───────▼───────┐     ┌───────▼───────┐     ┌───────▼───────┐
-│   Postgres    │     │    Redis      │     │    Worker     │
-│  (Timescale)  │     │   (Queue)     │     │  (Celery)     │
-└───────────────┘     └───────────────┘     └───────────────┘
-```
+### Network Rules
+1.  **NO direct database exposure**. Port 5432 must NOT be bound to host.
+2.  **NO direct Redis exposure**. Port 6379 must NOT be bound to host.
+3.  **TLS Termination** happens at the Reverse Proxy.
+4.  **HSTS** is mandatory.
 
 ---
 
-## Step 1: Prepare Secrets
+## 2. Secrets & Configuration (Fail-Fast)
 
-**Production requires explicit secrets - no defaults allowed.**
+Production will **crash immediately** if default secrets or insecure configs are detected.
 
-Create `.env` file (NOT `.env.lab`):
+### Required Environment Variables (`.env.prod`)
 
-```bash
-# Required - generate with: openssl rand -hex 32
-CONTROLLER_SECRET_KEY=<64-char-hex>
-POSTGRES_PASSWORD=<strong-password>
-REDIS_PASSWORD=<strong-password>
-API_AUTH_TOKEN=<64-char-hex>
+| Service | Variable | Purpose |
+| :--- | :--- | :--- |
+| **Global** | `SENTINEL_ENV=prod` | Enforces production mode settings. |
+| **Controller** | `CONTROLLER_SECRET_KEY` | Flask session signing (64-char hex). |
+| | `CONTROLLER_HMAC_SECRET` | Sensor data signing key (64-char hex). |
+| | `API_AUTH_TOKEN` | Admin API access token. |
+| | `DATABASE_URL` | Postgres connection string. |
+| | `REDIS_URL` | Redis connection string. |
+| | `TRUSTED_PROXY_CIDRS` | List of trusted proxy IPs (e.g., `172.16.0.0/12`). |
+| **Dashboard** | `DASH_PASSWORD` | Access password (No default allowed). |
+| **Postgres** | `POSTGRES_PASSWORD` | Database password. |
 
-# Required for sensors
-SENSOR_AUTH_TOKEN=<64-char-hex>
-
-# Required for dashboard
-DASH_PASSWORD=<strong-password>
-```
-
-> ⚠️ **Never commit secrets to git.** Use a secrets manager in production.
+> [!CAUTION]
+> **NEVER** commit `.env.prod` to version control. Use a secrets manager or secure injection.
 
 ---
 
-## Step 2: Configure TLS
+## 3. Deployment Profile
 
-### Option A: Traefik (Recommended)
+Use the canonical production compose file: `ops/docker-compose.prod.yml`.
 
-```yaml
-# docker-compose.prod.yml - traefik service
-services:
-  traefik:
-    image: traefik:v2.10
-    command:
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@example.com"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-    ports:
-      - "443:443"
-      - "80:80"
-    volumes:
-      - "./letsencrypt:/letsencrypt"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-```
+### Key Differences from Lab
+*   **Restarts**: `unless-stopped` (vs `no`).
+*   **Logging**: JSON driver with rotation enabled.
+*   **Volumes**: Named volumes for persistence.
+*   **Ports**: Only expose Proxy ports (80/443).
 
-### Option B: Nginx + Certbot
+### Step-by-Step Deploy
+
+1.  **Prepare Secrets**:
+    ```bash
+    # Generate strong keys
+    openssl rand -hex 32
+    ```
+    Populate `.env.prod`.
+
+2.  **Pull Images**:
+    ```bash
+    docker compose -f ops/docker-compose.prod.yml pull
+    ```
+
+3.  **Run Database Migrations** (Crucial - do not skip):
+    ```bash
+    # Start DB first
+    docker compose -f ops/docker-compose.prod.yml up -d postgres
+    sleep 5
+
+    # Run Alembic migrations
+    docker compose -f ops/docker-compose.prod.yml run --rm controller alembic upgrade head
+    ```
+
+4.  **Start Full Stack**:
+    ```bash
+    docker compose -f ops/docker-compose.prod.yml up -d
+    ```
+
+---
+
+## 4. Trusted Proxy & TLS
+
+Because the Controller sits behind a proxy, it must know *which* proxy to trust for IP resolution.
+
+### Nginx Configuration (Example)
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name sentinel.example.com;
-
-    ssl_certificate /etc/letsencrypt/live/sentinel.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/sentinel.example.com/privkey.pem;
+    # ... certs ...
 
     location / {
-        proxy_pass http://dashboard:8050;
+        proxy_pass http://controller:5000;
+        
+        # Mandatory Headers
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://controller:5000;
+        proxy_set_header X-Forwarded-Host $host;
     }
 }
 ```
 
----
-
-## Step 3: Deploy
-
-```bash
-# Set profile
-export SENTINEL_PROFILE=prod
-
-# Start production stack
-docker-compose -f ops/docker-compose.prod.yml up -d
-
-# Verify health
-curl -k https://localhost/api/v1/health
-```
+### Controller Config
+Set `TRUSTED_PROXY_CIDRS` to match your Docker network subnet (often `172.16.0.0/12` or `10.0.0.0/8` depending on setup).
 
 ---
 
-## Step 4: Database Migrations
+## 5. Data Lifecycle & Maintenance
 
-```bash
-# Run migrations
-docker-compose exec controller python -m alembic upgrade head
+### Retention Policy
+Disk usage can grow rapidly with high-frequency telemetry.
+*   **Telemetry**: Defaults to 30 days (`TELEMETRY_RETENTION_DAYS`).
+*   **PCAPs**: Manual cleanup required (or cron job).
 
-# Verify schema
-docker-compose exec postgres psql -U postgres -d sentinel -c "\dt"
-```
+### Backup Strategy
+*   **Database**: Daily `pg_dump`.
+    ```bash
+    docker exec sentinel-prod-postgres pg_dump -U postgres sentinel > backup_$(date +%F).sql
+    ```
+*   **Restore**:
+    ```bash
+    cat backup.sql | docker exec -i sentinel-prod-postgres psql -U postgres sentinel
+    ```
 
----
-
-## Trusted Proxy Configuration
-
-When behind a reverse proxy, configure trusted proxy headers:
-
-```python
-# controller/app.py
-from werkzeug.middleware.proxy_fix import ProxyFix
-
-app.wsgi_app = ProxyFix(
-    app.wsgi_app,
-    x_for=1,      # Number of proxy hops
-    x_proto=1,
-    x_host=1,
-    x_prefix=1
-)
-```
-
-Environment variable:
-```
-TRUSTED_PROXY_COUNT=1
-```
+### Upgrades
+1.  Update `docker-compose.prod.yml` image tags.
+2.  `docker compose pull`.
+3.  `docker compose up -d` (Recreates containers).
+4.  Run migrations again (Idempotent).
 
 ---
 
-## Security Checklist
-
-- [ ] All secrets in `.env` (not defaults)
-- [ ] TLS enabled on all external endpoints
-- [ ] Database not exposed externally
-- [ ] Redis not exposed externally
-- [ ] Sensor auth tokens unique per sensor
-- [ ] Firewall rules configured
-- [ ] Log retention policy set
-
----
-
-## Next Steps
-
-- [Operations Runbook](runbook.md) - Day-to-day operations
-- [Data Lifecycle](data_lifecycle.md) - Backup and retention
+## 🔗 Related Documentation
+*   [Configuration Reference](../reference/config.md)
+*   [Database Schema](../reference/schema.md)
+*   [Operations Runbook](ops-runbook.md)

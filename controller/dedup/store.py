@@ -1,8 +1,9 @@
 
 from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Dict, Optional
-from common.scoring.types import Severity, RiskModel
+from datetime import UTC, datetime
+
+from common.scoring.types import Severity
+
 
 @dataclass
 class EventState:
@@ -18,17 +19,17 @@ class EventStore:
     Stores state of active/recent detection events.
     Currently In-Memory. In production, use Redis.
     """
-    
-    def __init__(self):
-        self._store: Dict[str, EventState] = {}
 
-    def get_state(self, fingerprint: str) -> Optional[EventState]:
+    def __init__(self):
+        self._store: dict[str, EventState] = {}
+
+    def get_state(self, fingerprint: str) -> EventState | None:
         return self._store.get(fingerprint)
 
     def update_state(self, fingerprint: str, severity: Severity, risk_score: float, emitted: bool = False) -> EventState:
         now = datetime.now(UTC)
         state = self._store.get(fingerprint)
-        
+
         if not state:
             state = EventState(
                 first_seen=now,
@@ -44,11 +45,11 @@ class EventStore:
             state.count += 1
             if emitted:
                 state.last_emitted = now
-                
+
             if risk_score > state.max_risk_score:
                 state.max_risk_score = risk_score
                 state.max_severity = severity
-                
+
             self._store[fingerprint] = state
-            
+
         return state

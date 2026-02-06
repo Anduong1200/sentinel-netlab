@@ -1,9 +1,11 @@
 
 from datetime import UTC, datetime
-from typing import Optional
+
 from sqlalchemy.orm import Session
+
 from controller.baseline.models import BaselineProfile
 from controller.models import get_session
+
 
 class BaselineStore:
     """
@@ -13,10 +15,10 @@ class BaselineStore:
     def __init__(self, session: Session = None):
         self.session = session or get_session()
 
-    def get_profile(self, site_id: str, network_key: str) -> Optional[BaselineProfile]:
+    def get_profile(self, site_id: str, network_key: str) -> BaselineProfile | None:
         """Fetch existing profile or None."""
         return self.session.query(BaselineProfile).filter_by(
-            site_id=site_id, 
+            site_id=site_id,
             network_key=network_key
         ).first()
 
@@ -29,7 +31,7 @@ class BaselineStore:
             # Let's use site_id + network_key as ID implies 1:1
             import hashlib
             profile_id = hashlib.sha256(f"{site_id}:{network_key}".encode()).hexdigest()[:32]
-            
+
             profile = BaselineProfile(
                 id=profile_id,
                 site_id=site_id,

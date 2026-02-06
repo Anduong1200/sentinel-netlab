@@ -29,11 +29,11 @@ from sensor.buffer_manager import BufferManager
 from sensor.capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
 from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
+from sensor.monitor import SensorMonitor
 from sensor.normalizer import TelemetryNormalizer
 from sensor.queue import SqliteQueue
 from sensor.transport import TransportClient
 from sensor.worker import TransportWorker
-from sensor.monitor import SensorMonitor
 
 from .rule_engine import RuleEngine
 
@@ -239,7 +239,7 @@ class SensorController:
             on_success=self._on_upload_success,
             on_failure=self._on_upload_failure,
         )
-        
+
         # Baseline Manager
         baseline_path = os.path.join(
             config.storage.pcap_dir.replace("pcaps", "data"), "baseline.db"
@@ -271,7 +271,7 @@ class SensorController:
 
         # Metrics
         self.metrics = MetricsCollector(self.sensor_id)
-        
+
         # Helper Managers
         from sensor.health import HealthServer
         self.health_server = HealthServer(port=8000, get_status_callback=self.status)
@@ -315,7 +315,7 @@ class SensorController:
 
         # Start channel hopping
         self.hopper.start()
-        
+
         # Recover stuck inflight items on startup
         self.queue.recover_stuck_inflight()
 
@@ -500,10 +500,10 @@ class SensorController:
                 if self._frames_captured % 10 == 0:
                     # Convert telemetry to dict for risk scoring
                     net_dict = telemetry.model_dump(mode="json", exclude_none=True)
-                    
+
                     # 1. Baseline Check
                     deviation = self.baseline.check_deviation(net_dict)
-                    
+
                     if self.baseline.learning_mode:
                         # Skip all alerting in learning mode
                         return
@@ -512,11 +512,11 @@ class SensorController:
                     dev_score = deviation["score"] if deviation else 0.0
                     risk_result = self.risk_engine.calculate_risk(net_dict, deviation_score=dev_score)
                     current_score = risk_result.get("risk_score", 0)
-                    
+
                     # 3. Handle Deviation Alert (Specific)
                     if deviation:
                         logger.warning(f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})")
-                        
+
                         # Send specific Baseline Alert with reasons
                         self._handle_alert({
                             "alert_type": "baseline_deviation",
@@ -533,7 +533,7 @@ class SensorController:
 
                     # 4. Handle General Risk Alert
                     if current_score > 70 and not deviation:
-                        # If deviation exists, we already alerted above. 
+                        # If deviation exists, we already alerted above.
                         # Don't double alert unless it's a different issue?
                         # Actually risk engine might find other things (Weak Enc + Deviation).
                         # Let's deduplicate via Alert Manager (Next Task).
@@ -541,7 +541,7 @@ class SensorController:
                         logger.warning(
                             f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
                         )
-                        
+
                     self.metrics.set_risk_score(
                         telemetry.bssid, current_score
                     )
@@ -568,7 +568,7 @@ class SensorController:
 
                 # Add sensor_id to batch
                 batch["sensor_id"] = self.sensor_id
-                
+
                 # Generate persistent batch_id
                 seq = self.queue.next_seq(self.sensor_id)
                 batch_id = f"{self.sensor_id}:{seq}"
@@ -614,7 +614,7 @@ class SensorController:
 
     def _handle_alert(self, alert_dict: dict[str, Any]) -> None:
         """Process an alert, check for chains, and upload"""
-        
+
         # 1. Deduplication / Triage
         if not self.alert_manager.process(alert_dict):
             return
@@ -707,7 +707,7 @@ Examples:
 
     # Create controller
     controller = SensorController(config=config)
-    
+
     if args.learning_mode:
         controller.baseline.set_learning_mode(True)
 

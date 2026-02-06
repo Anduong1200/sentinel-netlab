@@ -1,11 +1,10 @@
 
+import os
+
 import dash
 import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html, callback
-import pandas as pd
 import requests
-import os
-from datetime import datetime
+from dash import Input, Output, callback, dcc, html
 
 from dashboard.components.cards import GLASS_STYLE
 
@@ -52,7 +51,7 @@ layout = html.Div(
             ],
             className="mb-4 align-items-center",
         ),
-        
+
         # Threat Table
         dbc.Row(
             dbc.Col(
@@ -101,7 +100,7 @@ def update_threats(n, filter_val):
             sev = a.get("severity", "Info")
             if filter_val != "ALL" and sev != filter_val:
                 continue
-            
+
             # Enrich/Format
             a['time_str'] = a.get("timestamp", "")[11:19]
             filtered_alerts.append(a)
@@ -123,7 +122,7 @@ def update_threats(n, filter_val):
                 "Medium": "#f7b733",
                 "Low": "#00dbde",
             }.get(severity, "#8898aa")
-            
+
             rows.append(
                 html.Tr(
                     [
@@ -161,7 +160,7 @@ def update_threats(n, filter_val):
             borderless=True,
             className="table-custom"
         )
-        
+
         return table
 
     except Exception as e:

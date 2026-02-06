@@ -1,12 +1,13 @@
 
+import os
+
 import dash
 import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html, callback
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
 import requests
-import os
+from dash import Input, Output, callback, dcc, html
 
 from dashboard.components.cards import GLASS_STYLE
 
@@ -99,7 +100,7 @@ def update_map(n, filter_val):
         "font": {"color": "#fff"},
         "mapbox": {
             "style": "carto-darkmatter",
-            "center": {"lat": 40.7128, "lon": -74.0060}, 
+            "center": {"lat": 40.7128, "lon": -74.0060},
             "zoom": 10,
         },
     }
@@ -115,7 +116,7 @@ def update_map(n, filter_val):
                 networks = resp_net.json().get("networks", [])
         except:
             pass
-            
+
         if not networks:
              fig = go.Figure(go.Scattermapbox())
              fig.update_layout(**layout_override)
@@ -126,25 +127,25 @@ def update_map(n, filter_val):
         for net in networks:
             if not (net.get("lat") and net.get("lon")):
                 continue
-            
+
             sec = net.get("security", "").upper()
-            
+
             if filter_val == "OPEN" and "OPEN" not in sec:
                 continue
             if filter_val == "WEP" and "WEP" not in sec:
                 continue
             if filter_val == "WPA" and "WPA" not in sec:
                 continue
-                
+
             # Compute Color
             color = "#00dbde" # Cyan (Safe)
             if "WEP" in sec: color = "#f7b733" # Orange
             if "OPEN" in sec: color = "#ff0844" # Red
-            
+
             net["color"] = color
             net["risk"] = net.get("risk_score", 0)
             filtered_nets.append(net)
-            
+
         if not filtered_nets:
              fig = go.Figure(go.Scattermapbox())
              fig.update_layout(**layout_override)
@@ -163,12 +164,12 @@ def update_map(n, filter_val):
             zoom=12,
             height=600
         )
-        
-        # Manually set colors scatter for multiple traces? 
+
+        # Manually set colors scatter for multiple traces?
         # px.scatter_mapbox with 'color' column requires careful mapping.
         # Let's use graph_objects for precise control if needed, but PX is easier.
         # PX with 'color_discrete_sequence' is tricky if we don't use 'color' dim.
-        
+
         # Better: Use 'risk' for color or 'security' category.
         fig = px.scatter_mapbox(
             df,
@@ -183,11 +184,11 @@ def update_map(n, filter_val):
             mapbox_style="carto-darkmatter",
              zoom=12,
         )
-        
+
         fig.update_layout(**layout_override)
         if hasattr(fig, 'update_coloraxes'):
             fig.update_coloraxes(showscale=False)
-            
+
         return fig
 
     except Exception as e:

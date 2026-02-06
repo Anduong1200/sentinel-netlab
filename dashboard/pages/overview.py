@@ -1,15 +1,16 @@
 
-import dash
-import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html, callback
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-import requests
 import os
 from datetime import datetime
 
-from dashboard.components.cards import build_stat_card, GLASS_STYLE, COLOR_PRIMARY
+import dash
+import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import requests
+from dash import Input, Output, callback, dcc, html
+
+from dashboard.components.cards import GLASS_STYLE, build_stat_card
 
 dash.register_page(__name__, path="/", title="Sentinel NetLab - Overview")
 
@@ -238,9 +239,9 @@ def update_metrics(n):
             if resp_sensors.status_code == 200:
                 sensors = resp_sensors.json().get("sensors", {})
 
-        except Exception as e:
+        except Exception:
             # print(f"Dashboard data fetch failed (graceful): {e}")
-            pass 
+            pass
 
         # --- PROCESS NETWORKS & MAP ---
         map_fig = go.Figure(go.Scattermapbox())
@@ -437,7 +438,7 @@ def update_metrics(n):
             pie_fig,
         )
 
-    except Exception as e:
+    except Exception:
         # print(f"Error update: {e}")
         return (
             empty_figure,
