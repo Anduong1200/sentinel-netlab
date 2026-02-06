@@ -15,7 +15,7 @@ import re
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
@@ -38,7 +38,7 @@ class Severity(str, Enum):
     INFO = "Info"
 
 
-class CheckStatus(str, Enum):
+class CheckStatus(StrEnum):
     PASS = "Pass"  # nosec B105
     FAIL = "Fail"
     WARN = "Warn"

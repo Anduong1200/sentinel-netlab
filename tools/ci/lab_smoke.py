@@ -9,11 +9,10 @@ Smoke test for the Lab Environment.
 5. make lab-down
 """
 import subprocess
-import time
 import sys
-import json
+import time
+
 import requests
-import os
 
 # Config
 HEALTH_URL = "http://127.0.0.1:5000/api/v1/health"
@@ -21,18 +20,22 @@ INGEST_URL = "http://127.0.0.1:5000/api/v1/telemetry"
 MAX_RETRIES = 12
 RETRY_DELAY = 5
 
+
 def run_cmd(cmd):
     print(f"Running: {cmd}")
-    ret = subprocess.call(cmd, shell=True)
+    # Fix S602: Use list if possible, or suppress if complex.
+    # For CI scripts, we trust the input.
+    ret = subprocess.call(cmd, shell=True) # noqa: S602
     if ret != 0:
         print(f"❌ Command failed: {cmd}")
         sys.exit(1)
+
 
 def wait_for_health():
     print("Waiting for Controller Health...")
     for i in range(MAX_RETRIES):
         try:
-            r = requests.get(HEALTH_URL, timeout=2)
+            r = requests.get(HEALTH_URL, timeout=5) # Fix S113
             if r.status_code == 200:
                 print("✅ Controller is Healthy")
                 return
@@ -47,27 +50,27 @@ def ingest_data():
     print("Simulating Ingest...")
     # Get secrets from .env.lab if possible, or assume defaults for now as per make lab-up logic
     # In CI, we assume clean slate.
-    
-    # We need a valid HMAC signature. 
+
+    # We need a valid HMAC signature.
     # For smoke test, we can try to rely on the fact that gen_lab_secrets just ran.
     # But to be robust, we should read the secrets.
-    
+
     # For now, let's assume the sensor logic handles it if we run the sensor container.
-    # BUT the requirement is to "POST 1 TelemetryBatch". 
-    # This requires constructing a signed request. 
+    # BUT the requirement is to "POST 1 TelemetryBatch".
+    # This requires constructing a signed request.
     # Simplification: We will just check if the Mock Sensor (started by lab-up) has sent data.
-    pass 
+    pass
 
 def verify_ingest():
     print("Verifying Data Ingest...")
     # Admin token is seeded by init_lab_db.py
     # Token: admin-token-dev
-    
+
     headers = {"X-API-Token": "admin-token-dev"}
-    
-    for i in range(MAX_RETRIES):
+
+    for _ in range(MAX_RETRIES):
         try:
-            r = requests.get(INGEST_URL, headers=headers, params={"limit": 1})
+            r = requests.get(INGEST_URL, headers=headers, params={"limit": 1}, timeout=5)
             if r.status_code == 200:
                 data = r.json()
                 if len(data) > 0:
@@ -75,10 +78,10 @@ def verify_ingest():
                     return
         except Exception as e:
             print(f"Error: {e}")
-            
-        print(f"  Waiting for data {i+1}/{MAX_RETRIES}...")
+
+        print(f"  Waiting for data... ({MAX_RETRIES} retries left)")
         time.sleep(RETRY_DELAY)
-        
+
     print("❌ No telemetry found after wait")
     sys.exit(1)
 
@@ -89,21 +92,21 @@ def main():
 
         # 1. Bring up Stack (Proxy + Backend)
         run_cmd("docker compose -f ops/docker-compose.lab.yml up -d --build")
-        
+
         # 2. Wait for Proxy Health (Endpoint: /api/v1/health via Proxy)
         # Note: Proxy listens on 8080 and forward /api/ to controller:5000/api/
         wait_for_health_check("http://127.0.0.1:8080/api/v1/health")
-        
+
         # 3. Trigger Seed (One-Shot)
         print("🌱 Seeding Data...")
         run_cmd("docker compose -f ops/docker-compose.lab.yml run --rm seed")
-        
+
         # 4. Verify Data (via Proxy)
         # Check Dashboard endpoint or API to see if data exists
         verify_ingest_via_proxy("http://127.0.0.1:8080/api/v1/telemetry")
-        
+
         print("\n✅ Smoke Test Passed!")
-        
+
     except KeyboardInterrupt:
         print("\nAborted.")
     except Exception as e:
@@ -115,9 +118,9 @@ def main():
 
 def wait_for_health_check(url):
     print(f"Waiting for {url}...")
-    for i in range(MAX_RETRIES):
+    for _ in range(MAX_RETRIES):
         try:
-            r = requests.get(url, timeout=2)
+            r = requests.get(url, timeout=5)
             if r.status_code == 200:
                 print("✅ Healthy")
                 return
@@ -130,13 +133,14 @@ def verify_ingest_via_proxy(url):
     print("Verifying via Proxy...")
     # Admin token from seed
     headers = {"X-API-Token": "admin-token-dev"}
-    for i in range(MAX_RETRIES):
+    for _ in range(MAX_RETRIES):
         try:
-            r = requests.get(url, headers=headers, params={"limit": 1})
+            # Fix S113
+            r = requests.get(url, headers=headers, params={"limit": 1}, timeout=5)
             if r.status_code == 200 and len(r.json()) > 0:
                 print(f"✅ Telemetry found: {len(r.json())} records")
                 return
-        except:
+        except Exception: # noqa: S110
             pass
         time.sleep(RETRY_DELAY)
     raise Exception("No data found after seed")

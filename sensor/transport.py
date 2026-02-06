@@ -209,7 +209,6 @@ class TransportClient:
 
         headers.update({
             "Authorization": f"Bearer {self.auth_token}",
-            "Authorization": f"Bearer {self.auth_token}",
             "Content-Type": "application/json",
             "User-Agent": "Sentinel-Sensor/1.0",
             "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),

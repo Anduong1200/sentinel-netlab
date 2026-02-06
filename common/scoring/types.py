@@ -1,6 +1,6 @@
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 # Type aliases for clarity and potential validation later
 # Confidence: 0.0 to 1.0 representing probability/certainty
@@ -12,7 +12,7 @@ Impact = float
 # Risk: 0.0 to 100.0 derived from Confidence * Impact
 Risk = float
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"

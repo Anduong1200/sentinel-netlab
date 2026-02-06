@@ -47,7 +47,8 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
                         try:
                             t_iso = datetime.fromisoformat(last_upload).timestamp()
                             age_sec = round(time.time() - t_iso, 1)
-                        except: pass
+                        except (ValueError, TypeError):
+                            pass
                     elif isinstance(last_upload, (int, float)):
                         age_sec = round(time.time() - last_upload, 1)
 

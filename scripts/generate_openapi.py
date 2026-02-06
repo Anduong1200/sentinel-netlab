@@ -28,7 +28,7 @@ def generate_openapi():
     # Assuming v1 compat or v2:
     try:
         # Pydantic V2
-        from pydantic.json_schema import models_json_schema
+        # from pydantic.json_schema import models_json_schema # Unused
         top_models = [(TelemetryBatch, "TelemetryBatch"), (NormalizedFrame, "NormalizedFrame"), (Alert, "Alert")]
         # This is complex in V2, simplified approach:
         for model, name in top_models:

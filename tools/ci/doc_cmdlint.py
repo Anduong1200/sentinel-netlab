@@ -3,10 +3,12 @@
 doc_cmdlint.py
 Checks that commands and files referenced in documentation actually exist.
 """
+import os
 import re
 import sys
-import os
-from pathlib import Path
+
+# F401: Path unused provided by os
+# from pathlib import Path
 
 # Config
 DOC_FILES = [
@@ -19,8 +21,8 @@ def get_make_targets(makefile_path):
     targets = set()
     if not os.path.exists(makefile_path):
         return targets
-    
-    with open(makefile_path, "r", encoding="utf-8") as f:
+
+    with open(makefile_path, encoding="utf-8") as f:
         for line in f:
             match = re.match(r"^([a-zA-Z0-9_-]+):", line)
             if match:
@@ -30,16 +32,16 @@ def get_make_targets(makefile_path):
 def check_docs():
     errors = []
     make_targets = get_make_targets(MAKEFILE)
-    
+
     for doc_path in DOC_FILES:
         if not os.path.exists(doc_path):
             errors.append(f"Missing doc file: {doc_path}")
             continue
-            
+
         print(f"Checking {doc_path}...")
-        with open(doc_path, "r", encoding="utf-8") as f:
+        with open(doc_path, encoding="utf-8") as f:
             content = f.read()
-            
+
         # 1. Check Make targets
         # Pattern: `make <target>`
         make_calls = re.findall(r"`make\s+([a-zA-Z0-9_-]+)`", content)

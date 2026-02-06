@@ -14,7 +14,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from string import Template
 
@@ -24,13 +24,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ReportFormat(str, Enum):
+class ReportFormat(StrEnum):
     HTML = "html"
     PDF = "pdf"
     JSON = "json"
 
 
-class ReportType(str, Enum):
+class ReportType(StrEnum):
     SECURITY_ASSESSMENT = "security_assessment"
     INCIDENT = "incident"
     AUDIT = "audit"

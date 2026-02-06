@@ -114,7 +114,7 @@ def update_map(n, filter_val):
             )
             if resp_net.status_code == 200:
                 networks = resp_net.json().get("networks", [])
-        except:
+        except Exception: # noqa: S110
             pass
 
         if not networks:
@@ -139,8 +139,10 @@ def update_map(n, filter_val):
 
             # Compute Color
             color = "#00dbde" # Cyan (Safe)
-            if "WEP" in sec: color = "#f7b733" # Orange
-            if "OPEN" in sec: color = "#ff0844" # Red
+            if "WEP" in sec:
+                color = "#f7b733" # Orange
+            if "OPEN" in sec:
+                color = "#ff0844" # Red
 
             net["color"] = color
             net["risk"] = net.get("risk_score", 0)

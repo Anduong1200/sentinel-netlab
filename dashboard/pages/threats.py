@@ -92,7 +92,7 @@ def update_threats(n, filter_val):
             )
             if resp_alerts.status_code == 200:
                 alerts = resp_alerts.json().get("alerts", [])
-        except:
+        except Exception: # noqa: S110
              pass
 
         filtered_alerts = []

@@ -237,7 +237,7 @@ class SqliteQueue:
             # I will just keep queued for now as "Mất mạng... -> không mất".
 
             conn.execute("""
-                UPDATE spool 
+                UPDATE spool
                 SET state = ?, attempts = ?, next_attempt_at = ?, last_error = ?
                 WHERE batch_id = ?
             """, (state, attempts, next_attempt, error, batch_id))
@@ -247,7 +247,7 @@ class SqliteQueue:
     def _calculate_backoff(self, attempts: int, base=1.0, cap=60.0) -> float:
         # 1, 2, 4, 8... capped + jitter 0.5-1.5x
         raw = min(cap, base * (2 ** max(0, attempts - 1)))
-        return raw * random.uniform(0.5, 1.5)
+        return raw * random.uniform(0.5, 1.5)  # noqa: S311
 
     def recover_stuck_inflight(self, age_seconds=60) -> None:
         """Reset stuck inflight items to queued on startup."""
@@ -268,7 +268,7 @@ class SqliteQueue:
         with self._lock:
             conn = self._get_conn()
             cursor = conn.execute("""
-                SELECT 
+                SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN state='queued' THEN 1 ELSE 0 END) as queued,
                     SUM(CASE WHEN state='inflight' THEN 1 ELSE 0 END) as inflight,

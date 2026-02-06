@@ -5,7 +5,7 @@ import hmac
 import os
 import secrets
 from datetime import UTC, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from functools import wraps
 
 from flask import g, jsonify, request
@@ -20,7 +20,7 @@ from .models import Token
 # =============================================================================
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     READ_TELEMETRY = "telemetry:read"
     WRITE_TELEMETRY = "telemetry:write"
     READ_ALERTS = "alerts:read"
@@ -29,7 +29,7 @@ class Permission(str, Enum):
     ADMIN = "admin:all"
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     SENSOR = "sensor"
     OPERATOR = "operator"
     ANALYST = "analyst"

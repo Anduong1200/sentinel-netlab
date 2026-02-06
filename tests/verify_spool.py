@@ -12,7 +12,8 @@ if os.path.exists("data"):
              os.remove(DB_PATH)
              os.remove(DB_PATH + "-wal")
              os.remove(DB_PATH + "-shm")
-        except: pass
+        except:
+             pass
 else:
     os.makedirs("data")
 

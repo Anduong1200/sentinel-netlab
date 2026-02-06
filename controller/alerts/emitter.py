@@ -46,8 +46,10 @@ class AlertEmitter:
             impact = 50.0 # Default Medium
             if finding.reason_codes:
                 cat = finding.reason_codes[0].category
-                if "threat" in cat.lower(): impact = 90.0
-                elif "configuration" in cat.lower(): impact = 40.0
+                if "threat" in cat.lower():
+                    impact = 90.0
+                elif "configuration" in cat.lower():
+                    impact = 40.0
 
             risk_score = RiskModel.calculate(finding.confidence_raw, impact)
 

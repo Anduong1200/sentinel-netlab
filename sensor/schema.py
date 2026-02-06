@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 try:
@@ -61,7 +61,7 @@ except ImportError:
 # =============================================================================
 
 
-class SecurityType(str, Enum):
+class SecurityType(StrEnum):
     OPEN = "open"
     WEP = "wep"
     WPA = "wpa"
@@ -70,7 +70,7 @@ class SecurityType(str, Enum):
     WPA3 = "wpa3"
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
@@ -78,7 +78,7 @@ class AlertSeverity(str, Enum):
     INFO = "Info"
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     EVIL_TWIN = "evil_twin"
     DEAUTH_FLOOD = "deauth_flood"
     ROGUE_AP = "rogue_ap"
@@ -87,13 +87,13 @@ class AlertType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class SensorStatus(str, Enum):
+class SensorStatus(StrEnum):
     ONLINE = "online"
     DEGRADED = "degraded"
     OFFLINE = "offline"
 
 
-class LabelSource(str, Enum):
+class LabelSource(StrEnum):
     MANUAL = "manual"
     AUTOMATED = "automated"
     GROUND_TRUTH = "ground_truth"

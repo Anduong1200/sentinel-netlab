@@ -16,12 +16,18 @@ DB_PATH = "data/test_baseline.db"
 def cleanup():
     if os.path.exists("data"):
          if os.path.exists(DB_PATH):
-             try: os.remove(DB_PATH)
-             except: pass
-         try: os.remove(DB_PATH + "-wal")
-         except: pass
-         try: os.remove(DB_PATH + "-shm")
-         except: pass
+             try:
+                 os.remove(DB_PATH)
+             except:
+                 pass
+         try:
+             os.remove(DB_PATH + "-wal")
+         except:
+             pass
+         try:
+             os.remove(DB_PATH + "-shm")
+         except:
+             pass
 
 def test_phase2():
     print("=== Phase 2 Verification ===")

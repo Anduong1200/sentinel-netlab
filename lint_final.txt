@@ -1,0 +1,131 @@
+S311 Standard pseudo-random generators are not suitable for cryptographic purposes
+   --> sensor\queue.py:250:22
+    |
+248 |         # 1, 2, 4, 8... capped + jitter 0.5-1.5x
+249 |         raw = min(cap, base * (2 ** max(0, attempts - 1)))
+250 |         return raw * random.uniform(0.5, 1.5)
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^
+251 |
+252 |     def recover_stuck_inflight(self, age_seconds=60) -> None:
+    |
+
+W291 [*] Trailing whitespace
+  --> tests\verify_phase2.py:21:21
+   |
+19 |              try:
+20 |                  os.remove(DB_PATH)
+21 |              except: 
+   |                     ^
+22 |                  pass
+23 |          try: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_phase2.py:23:14
+   |
+21 |              except: 
+22 |                  pass
+23 |          try: 
+   |              ^
+24 |              os.remove(DB_PATH + "-wal")
+25 |          except: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_phase2.py:25:17
+   |
+23 |          try: 
+24 |              os.remove(DB_PATH + "-wal")
+25 |          except: 
+   |                 ^
+26 |              pass
+27 |          try: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_phase2.py:27:14
+   |
+25 |          except: 
+26 |              pass
+27 |          try: 
+   |              ^
+28 |              os.remove(DB_PATH + "-shm")
+29 |          except: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_phase2.py:29:17
+   |
+27 |          try: 
+28 |              os.remove(DB_PATH + "-shm")
+29 |          except: 
+   |                 ^
+30 |              pass
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_reliability.py:16:13
+   |
+14 | def cleanup():
+15 |     if os.path.exists(TEST_SPOOL_PATH):
+16 |         try: 
+   |             ^
+17 |             os.remove(TEST_SPOOL_PATH)
+18 |         except: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_reliability.py:18:16
+   |
+16 |         try: 
+17 |             os.remove(TEST_SPOOL_PATH)
+18 |         except: 
+   |                ^
+19 |             pass
+20 |     if os.path.exists(TEST_SPOOL_PATH + "-wal"):
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_reliability.py:21:13
+   |
+19 |             pass
+20 |     if os.path.exists(TEST_SPOOL_PATH + "-wal"):
+21 |         try: 
+   |             ^
+22 |             os.remove(TEST_SPOOL_PATH + "-wal")
+23 |         except: 
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_reliability.py:23:16
+   |
+21 |         try: 
+22 |             os.remove(TEST_SPOOL_PATH + "-wal")
+23 |         except: 
+   |                ^
+24 |             pass
+   |
+help: Remove trailing whitespace
+
+W291 [*] Trailing whitespace
+  --> tests\verify_spool.py:15:16
+   |
+13 |              os.remove(DB_PATH + "-wal")
+14 |              os.remove(DB_PATH + "-shm")
+15 |         except: 
+   |                ^
+16 |              pass
+17 | else:
+   |
+help: Remove trailing whitespace
+
+Found 11 errors.
+[*] 10 fixable with the `--fix` option.

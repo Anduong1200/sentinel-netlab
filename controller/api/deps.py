@@ -12,7 +12,7 @@ from controller.config import init_config
 try:
     from pydantic import ValidationError
 except ImportError:
-    raise ImportError("Pydantic is strictly required for the Controller.")
+    raise ImportError("Pydantic is strictly required for the Controller.") from None
 
 PYDANTIC_AVAILABLE = True
 
@@ -20,7 +20,7 @@ PYDANTIC_AVAILABLE = True
 config = init_config()
 
 # Logging
-from common.observability.logging import configure_logging
+from common.observability.logging import configure_logging  # noqa: E402
 
 # Configure Logging (JSON + Correlation)
 debug_mode = config.debug
@@ -32,14 +32,11 @@ logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 
 # Limiter
-# Limiter
 from flask_limiter import Limiter  # noqa: E402
 from flask_limiter.util import get_remote_address  # noqa: E402
 
 # Create global limiter instance
 # key_func is required.
-
-# Create global limiter instance
 limiter = Limiter(
     key_func=get_remote_address, default_limits=["200 per day", "50 per hour"]
 )

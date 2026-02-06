@@ -44,7 +44,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to register batch: {e}")
-            raise self.retry(exc=e, countdown=5)
+            raise self.retry(exc=e, countdown=5) from e
 
         # 3. Process Items
         accepted = 0
@@ -86,7 +86,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
             # Mark batch as failed? Or just retry?
             # If we retry, we need to handle partial insertions?
             # Telemetry inserts are atomic with the transaction above.
-            raise self.retry(exc=e, countdown=10)
+            raise self.retry(exc=e, countdown=10) from e
 
 
 @celery.task(bind=True, max_retries=3, soft_time_limit=10)
@@ -135,4 +135,4 @@ def process_alert(self, alert_data: dict, sensor_id: str):
         except Exception as e:
             db.session.rollback()
             logger.error(f"Failed to process alert {alert_id}: {e}")
-            raise self.retry(exc=e, countdown=5)
+            raise self.retry(exc=e, countdown=5) from e

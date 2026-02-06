@@ -25,7 +25,7 @@ limiter = Limiter(key_func=get_remote_address, app=app)
 
 # Configuration
 # Configuration
-from common.security.secrets import require_secret
+from common.security.secrets import require_secret  # noqa: E402
 
 env = os.getenv("ENVIRONMENT", "lab").lower()
 

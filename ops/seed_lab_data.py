@@ -7,8 +7,8 @@ Ensures the dashboard has visible content immediately after reset.
 """
 import json
 import logging
-import sys
 import random
+import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -127,7 +127,7 @@ def seed_data():
         # Fallback: Deterministic Generation
         logger.warning(f"Scenario file {alert_path} not found. Generating deterministic mock data.")
         random.seed(42) # Ensure every student gets the same "random" data
-        
+
         # specific "Evil Twin" alert for consistency with Quickstart
         alert = Alert(
             id="generated-evil-twin-001",

@@ -49,7 +49,7 @@ limiter = Limiter(key_func=get_remote_address, app=app)
 
 # Configuration
 # Configuration
-from common.security.secrets import require_secret
+from common.security.secrets import require_secret  # noqa: E402
 
 # Determine environment (Sensor usually runs in prod/dev modes)
 env = os.getenv("ENVIRONMENT", "production").lower()
@@ -263,16 +263,16 @@ def get_simulation_data():
     encryptions = ["Open", "WEP", "WPA2-PSK", "WPA3-SAE"]
 
     networks = []
-    for _i in range(random.randint(3, 8)):  # nosec B311
-        vendor = random.choice(vendors)  # nosec B311
+    for _i in range(random.randint(3, 8)):  # noqa: S311
+        vendor = random.choice(vendors)  # noqa: S311
         networks.append(
             {
-                "ssid": f"{vendor}_{random.randint(100, 999)}",  # nosec B311
-                "bssid": f"{random.randint(0xAA, 0xFF):02X}:{random.randint(0xBB, 0xFF):02X}:{random.randint(0xCC, 0xFF):02X}:"  # nosec B311
-                f"{random.randint(0x11, 0x99):02X}:{random.randint(0x22, 0x99):02X}:{random.randint(0x33, 0x99):02X}",  # nosec B311
-                "signal": random.randint(-90, -40),  # nosec B311
-                "channel": random.choice([1, 6, 11]),  # nosec B311
-                "encryption": random.choice(encryptions),  # nosec B311
+                "ssid": f"{vendor}_{random.randint(100, 999)}",  # noqa: S311
+                "bssid": f"{random.randint(0xAA, 0xFF):02X}:{random.randint(0xBB, 0xFF):02X}:{random.randint(0xCC, 0xFF):02X}:"  # noqa: S311
+                f"{random.randint(0x11, 0x99):02X}:{random.randint(0x22, 0x99):02X}:{random.randint(0x33, 0x99):02X}",  # noqa: S311
+                "signal": random.randint(-90, -40),  # noqa: S311
+                "channel": random.choice([1, 6, 11]),  # noqa: S311
+                "encryption": random.choice(encryptions),  # noqa: S311
                 "vendor": vendor,
             }
         )

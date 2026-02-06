@@ -42,7 +42,7 @@ def debug_run():
         proc.terminate()
         try:
             print(proc.stdout.read())
-        except:
+        except Exception: # noqa: S110
             pass
 
 if __name__ == "__main__":

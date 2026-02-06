@@ -119,7 +119,7 @@ def update_signals(n):
             )
             if resp_net.status_code == 200:
                 networks = resp_net.json().get("networks", [])
-        except:
+        except Exception: # noqa: S110
              pass
 
         # === 1. Channel Graph ===
@@ -167,7 +167,7 @@ def update_signals(n):
 
         # Mock trend: randomly fluctuate around current count / 10
         base_count = max(len(networks) // 5, 5)
-        counts = [max(0, base_count + random.randint(-2, 5)) for _ in times]
+        counts = [max(0, base_count + random.randint(-2, 5)) for _ in times]  # noqa: S311
 
         fig_disc = go.Figure()
         fig_disc.add_trace(go.Scatter(
@@ -175,7 +175,7 @@ def update_signals(n):
             y=counts,
             mode='lines+markers',
             fill='tozeroy',
-            line=dict(color="#f7b733", width=3), # Orange/Gold
+            line={"color": "#f7b733", "width": 3}, # Orange/Gold
             name="New Networks"
         ))
 

@@ -239,7 +239,7 @@ def update_metrics(n):
             if resp_sensors.status_code == 200:
                 sensors = resp_sensors.json().get("sensors", {})
 
-        except Exception:
+        except Exception: # noqa: S110
             # print(f"Dashboard data fetch failed (graceful): {e}")
             pass
 

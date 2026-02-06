@@ -27,7 +27,7 @@ class BaselineBuilder:
             # For this phase, let's track by SSID+Security as primary key for "Network Profile"
             ssid = item.get("ssid")
             security = item.get("security")
-            bssid = item.get("bssid")
+            # bssid = item.get("bssid") # Unused
 
             if not ssid:
                 continue # Skip hidden/probe requests without SSID for logical baseline

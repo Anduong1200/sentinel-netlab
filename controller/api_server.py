@@ -13,18 +13,18 @@ from controller.api.deps import create_app, config
 from controller.api.auth import init_default_tokens
 
 # Import Blueprints
-from controller.api.telemetry import bp as telemetry_bp
-from controller.api.alerts import bp as alerts_bp
-from controller.api.sensors import bp as sensors_bp
-from controller.api.admin import bp as admin_bp
+from controller.api.telemetry import bp as telemetry_bp  # noqa: E402
+from controller.api.alerts import bp as alerts_bp  # noqa: E402
+from controller.api.sensors import bp as sensors_bp  # noqa: E402
+from controller.api.admin import bp as admin_bp  # noqa: E402
 
 # Initialize App
 app = create_app()
 
 # Observability Middleware (Request ID, Logs, Context)
-from controller.api.middleware import ObservabilityMiddleware
-from common.observability.metrics import HTTPMetricsMiddleware
-from controller.security.proxy import TrustedProxyMiddleware
+from controller.api.middleware import ObservabilityMiddleware  # noqa: E402
+from common.observability.metrics import HTTPMetricsMiddleware  # noqa: E402
+from controller.security.proxy import TrustedProxyMiddleware  # noqa: E402
 
 app.wsgi_app = ObservabilityMiddleware(app.wsgi_app)
 app.wsgi_app = HTTPMetricsMiddleware(app.wsgi_app)

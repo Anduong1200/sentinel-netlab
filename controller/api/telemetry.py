@@ -58,7 +58,7 @@ def ingest_telemetry():
         data = request.get_json()
 
     sensor_id = data.get("sensor_id", "unknown")
-    items = data.get("items", [])
+    # items = data.get("items", []) # Unused
     batch_id = data.get("batch_id")
 
     # Track total ingest attempts

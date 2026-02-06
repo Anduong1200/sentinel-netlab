@@ -31,7 +31,7 @@ app = dash.Dash(
 API_TOKEN = os.environ.get("DASHBOARD_API_TOKEN", "")
 
 # Security
-from common.security.secrets import require_secret
+from common.security.secrets import require_secret  # noqa: E402
 
 env = os.getenv("ENVIRONMENT", "production").lower()
 

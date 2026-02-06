@@ -8,7 +8,7 @@ def generate_fingerprint(finding: Finding) -> str:
     """
     Generate a deterministic fingerprint for a Finding.
     Used to identify identical events for deduplication.
-    
+
     Format: hash(detector_id + entity_key + primary_reason_code)
     """
     # Use the first reason code as the primary driver for "Why"

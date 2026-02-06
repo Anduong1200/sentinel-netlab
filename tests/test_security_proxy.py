@@ -97,14 +97,14 @@ def test_tls_enforcement_block(mock_app):
         require_tls=True
     )
 
-    start_response = Mock()
     environ = {
         "REMOTE_ADDR": "10.0.0.1",
         "HTTP_X_FORWARDED_PROTO": "http", # Not HTTPS
         "PATH_INFO": "/api/v1/data"
     }
 
-    resp = middleware(environ, start_response)
+    start_response = Mock()
+    middleware(environ, start_response)
 
     # Expect 403 or redirect? We implemented 403 "HTTPS Required"
     # The middleware calls start_response with 403

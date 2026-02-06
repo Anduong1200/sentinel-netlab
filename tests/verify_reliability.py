@@ -13,11 +13,15 @@ TEST_SPOOL_PATH = "data/test_spool.db"
 
 def cleanup():
     if os.path.exists(TEST_SPOOL_PATH):
-        try: os.remove(TEST_SPOOL_PATH)
-        except: pass
+        try:
+            os.remove(TEST_SPOOL_PATH)
+        except:
+            pass
     if os.path.exists(TEST_SPOOL_PATH + "-wal"):
-        try: os.remove(TEST_SPOOL_PATH + "-wal")
-        except: pass
+        try:
+            os.remove(TEST_SPOOL_PATH + "-wal")
+        except:
+            pass
 
 def mock_server():
     """Simple mock server logic simulation"""

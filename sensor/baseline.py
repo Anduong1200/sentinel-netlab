@@ -169,8 +169,8 @@ class BaselineManager:
                 # New Entry
                 conn.execute("""
                     INSERT INTO baselines (
-                        bssid, ssid, vendor, channel_history, 
-                        rssi_sum, rssi_sq_sum, rssi_samples, 
+                        bssid, ssid, vendor, channel_history,
+                        rssi_sum, rssi_sq_sum, rssi_samples,
                         first_seen, last_seen, capabilities
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
