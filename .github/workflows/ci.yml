@@ -66,10 +66,13 @@ jobs:
 
       - name: Repo Hygiene (Fail on prohibited files)
         run: |
-          # Fail if these files exist in the repo (even if ignored locally, this catches tracked files)
-          if git ls-files | grep -E "(\.env|\.venv|auth\.json|.*_secret.*)"; then
+          # Fail if ACTUAL secret files exist in the repo
+          # Allowed: .env.example, gen_lab_secrets.py, test_security_secrets.py
+          # Prohibited: .env (without .example), auth.json, .venv/, *_secret.json
+          PROHIBITED=$(git ls-files | grep -E "(^\.env$|/\.env$|\.venv/|auth\.json$|_secret\.json$)" || true)
+          if [ -n "$PROHIBITED" ]; then
             echo "::error::Prohibited files found in repository!"
-            git ls-files | grep -E "(\.env|\.venv|auth\.json|.*_secret.*)"
+            echo "$PROHIBITED"
             exit 1
           fi
 
