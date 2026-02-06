@@ -1,10 +1,10 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class FrameType(str, Enum):
+class FrameType(StrEnum):
     BEACON = "beacon"
     PROBE_REQ = "probe_req"
     PROBE_RESP = "probe_resp"
@@ -18,7 +18,7 @@ class FrameType(str, Enum):
     DEAUTH = "deauth"
 
 
-class SecurityType(str, Enum):
+class SecurityType(StrEnum):
     OPEN = "open"
     WEP = "wep"
     WPA = "wpa"

@@ -5,14 +5,14 @@ Sentinel NetLab - Profile Management
 Provides profile-based behavior switching between Lab and Production modes.
 """
 import os
-from enum import Enum
+from enum import StrEnum
 
 # =============================================================================
 # PROFILE DEFINITION
 # =============================================================================
 
 
-class Profile(str, Enum):
+class Profile(StrEnum):
     """Deployment profile."""
     LAB = "lab"
     PROD = "prod"

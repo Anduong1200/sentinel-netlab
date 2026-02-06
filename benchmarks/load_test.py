@@ -123,8 +123,8 @@ async def run_load_test():
         print(f"Latency P50:    {statistics.median(latencies):.2f} ms")
         try:
             print(f"Latency P95:    {statistics.quantiles(latencies, n=20)[18]:.2f} ms") # approx P95
-        except:
-             pass
+        except Exception: 
+             pass # data might be too small
 
 if __name__ == "__main__":
     asyncio.run(run_load_test())

@@ -13,8 +13,6 @@ try:
         Gauge,
         Histogram,
         generate_latest,
-        multiprocess,
-        start_http_server,
     )
 
     PROMETHEUS_AVAILABLE = True
@@ -51,24 +49,37 @@ PREFIX = "sentinel"
 
 # Dummy Classes for safe fallback
 class DummyMetric:
-    def labels(self, **kwargs): return self
-    def inc(self, amount=1): pass
-    def set(self, value): pass
-    def observe(self, value): pass
-    def time(self): return _DummyTimer()
+    def labels(self, **kwargs):
+        return self
+
+    def inc(self, amount=1):
+        pass
+
+    def set(self, value):
+        pass
+
+    def observe(self, value):
+        pass
+
+    def time(self):
+        return _DummyTimer()
 
 def create_counter(name: str, desc: str, labels: list[str]) -> Counter:
-    if not PROMETHEUS_AVAILABLE: return DummyMetric()
+    if not PROMETHEUS_AVAILABLE:
+        return DummyMetric()
     return Counter(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
 
 def create_gauge(name: str, desc: str, labels: list[str]) -> Gauge:
-    if not PROMETHEUS_AVAILABLE: return DummyMetric()
+    if not PROMETHEUS_AVAILABLE:
+        return DummyMetric()
     return Gauge(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
 
 def create_histogram(name: str, desc: str, labels: list[str], buckets=None) -> Histogram:
-    if not PROMETHEUS_AVAILABLE: return DummyMetric()
+    if not PROMETHEUS_AVAILABLE:
+        return DummyMetric()
     kwargs = {"registry": REGISTRY}
-    if buckets: kwargs["buckets"] = buckets
+    if buckets:
+        kwargs["buckets"] = buckets
     return Histogram(f"{PREFIX}_{name}", desc, labels, **kwargs)
 
 
