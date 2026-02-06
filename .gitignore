@@ -7,6 +7,8 @@ file_list.txt
 .dos_state.json
 test_sentinel.db
 .env
+.env.lab
+ops/.env.lab
 .coverage
 htmlcov/
 site/

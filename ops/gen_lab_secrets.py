@@ -19,6 +19,7 @@ KEYS = {
     "REDIS_PASSWORD": 24,
     "DASHBOARD_API_TOKEN": 32,
     "LAB_API_KEY": 32,
+    "SENSOR_AUTH_TOKEN": 32,
     "DASH_PASSWORD": 16, # Default admin password
 }
 

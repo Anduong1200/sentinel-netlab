@@ -159,6 +159,35 @@ services:
     env_file:
       - .env.lab
 
+  # ===========================================================================
+  # SENSOR: Mock/Replay (Safe-by-Default)
+  # ===========================================================================
+  sensor:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.sensor
+    image: sentinel-sensor:lab
+    container_name: sentinel-lab-sensor
+    restart: unless-stopped
+    # Safe Mode: No privileged access, no host network
+    privileged: false
+    network_mode: "bridge"
+    environment:
+      SENSOR_ID: "lab-sensor-01"
+      SENSOR_MOCK_MODE: "true" # Simulates WiFi traffic
+      CONTROLLER_URL: "http://controller:5000"
+      SENSOR_AUTH_TOKEN: "lab-sensor-token" # Will be overridden by .env.lab SENSOR_AUTH_TOKEN if present, but we need to generate it
+      # In PR-02 we added gen_lab_secrets but didn't add SENSOR_AUTH_TOKEN explicitly to the list? 
+      # Let's check gen_lab_secrets.py. It has DASHBOARD_API_TOKEN but not SENSOR_AUTH_TOKEN?
+      # Actually, let's use a fixed token for lab sensor for now or update gen_lab_secrets.
+    depends_on:
+      controller:
+        condition: service_healthy
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
 volumes:
   sentinel-lab-postgres:
 

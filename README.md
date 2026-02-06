@@ -124,7 +124,24 @@ sentinel-netlab/
 
 ---
 
-## 🚀 Quick Start
+## 🎓 Lab Quick Start (Recommended for Learners)
+
+> **New to Sentinel NetLab?** Start here for the fastest path to a working demo.
+
+```bash
+git clone https://github.com/anduong1200/sentinel-netlab.git
+cd sentinel-netlab
+make lab-up
+```
+
+Then open [http://127.0.0.1:8050](http://127.0.0.1:8050) in your browser.
+
+📖 **Full Guide**: [docs/lab/quickstart.md](docs/lab/quickstart.md)
+🔧 **Troubleshooting**: [docs/lab/troubleshooting.md](docs/lab/troubleshooting.md)
+
+---
+
+## 🚀 Quick Start (Development/Production)
 
 ### Prerequisites
 - Python 3.11+

@@ -145,6 +145,13 @@ lab-reset:
 	@echo "Resetting Lab Environment (Wiping Data)..."
 	cd ops && docker-compose -f docker-compose.lab.yml down -v
 	@echo "Lab data wiped."
+	@echo "Re-initializing and Seeding..."
+	@$(PYTHON) ops/gen_lab_secrets.py
+	@$(PYTHON) ops/init_lab_db.py
+	@$(PYTHON) ops/seed_lab_data.py
+	@echo "Seed complete. Starting Lab..."
+	cd ops && docker-compose -f docker-compose.lab.yml up --build -d
+	@echo "Lab is ready! (Default Creds: admin/password)"
 
 lab-logs:
 	cd ops && docker-compose -f docker-compose.lab.yml logs -f

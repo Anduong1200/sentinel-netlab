@@ -21,12 +21,14 @@ class DeauthFloodAlert:
 
     alert_id: str
     timestamp: str
+    severity: str  # CRITICAL, HIGH, MEDIUM
     target_bssid: str
     target_client: str | None
     frame_count: int
     window_seconds: float
     rate_per_sec: float
     evidence: dict
+    reason_codes: list[str]  # Human-readable codes
 
 
 class DeauthFloodDetector:
@@ -117,20 +119,41 @@ class DeauthFloodDetector:
     ) -> DeauthFloodAlert:
         """Create deauth flood alert"""
         self.alert_count += 1
+        
+        # Determine severity based on rate
+        if rate >= self.threshold_per_sec * 5:
+            severity = "CRITICAL"
+        elif rate >= self.threshold_per_sec * 2:
+            severity = "HIGH"
+        else:
+            severity = "MEDIUM"
+        
+        # Build reason codes
+        is_broadcast = client_mac == "ff:ff:ff:ff:ff:ff"
+        reason_codes = [
+            "DEAUTH_FLOOD",
+            f"RATE_{int(rate)}_PER_SEC",
+        ]
+        if is_broadcast:
+            reason_codes.append("BROADCAST_TARGET")
+        else:
+            reason_codes.append("TARGETED_CLIENT")
 
         return DeauthFloodAlert(
             alert_id=f"DF-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}",
             timestamp=datetime.now(UTC).isoformat(),
+            severity=severity,
             target_bssid=bssid,
-            target_client=client_mac if client_mac != "ff:ff:ff:ff:ff:ff" else None,
+            target_client=client_mac if not is_broadcast else None,
             frame_count=count,
             window_seconds=self.window_seconds,
             rate_per_sec=rate,
             evidence={
                 "sensor_id": sensor_id,
                 "threshold_per_sec": self.threshold_per_sec,
-                "is_broadcast": client_mac == "ff:ff:ff:ff:ff:ff",
+                "is_broadcast": is_broadcast,
             },
+            reason_codes=reason_codes,
         )
 
     def get_stats(self) -> dict:

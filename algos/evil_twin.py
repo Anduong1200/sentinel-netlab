@@ -167,6 +167,9 @@ class EvilTwinAlert:
 
     evidence: dict
     recommendation: str
+    
+    # Human-readable reason codes for Lab/Dashboard display
+    reason_codes: list[str] = field(default_factory=list)
 
 
 # =============================================================================
@@ -500,6 +503,22 @@ class AdvancedEvilTwinDetector:
             len(evidence.ie_differences) > 0,
         ]
         confidence = sum(confidence_factors) / len(confidence_factors)
+        
+        # Build human-readable reason codes
+        reason_codes = ["DUPLICATE_SSID"]  # Always present for Evil Twin
+        
+        if evidence.rssi_delta > 0:
+            reason_codes.append(f"STRONGER_SIGNAL (+{evidence.rssi_delta:.0f}dB)")
+        if not evidence.vendor_match:
+            reason_codes.append("VENDOR_MISMATCH")
+        if not evidence.security_match:
+            reason_codes.append("SECURITY_MISMATCH")
+        if evidence.is_new_appearance:
+            reason_codes.append("NEW_AP")
+        if evidence.beacon_jitter_delta > self.config.jitter_threshold_ms:
+            reason_codes.append("BEACON_JITTER")
+        if evidence.ie_differences:
+            reason_codes.append("IE_FINGERPRINT_DIFF")
 
         return EvilTwinAlert(
             alert_id=f"ET-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alerts_generated:04d}",
@@ -514,6 +533,7 @@ class AdvancedEvilTwinDetector:
             mitre_tactic=self.config.mitre_tactic,
             evidence=asdict(evidence),
             recommendation=self._get_recommendation(severity, evidence),
+            reason_codes=reason_codes,
         )
 
     def _get_recommendation(self, severity: str, evidence: EvilTwinEvidence) -> str:
