@@ -37,11 +37,11 @@ async def sensor_worker(sensor_id: str, results: list):
             items = []
             for _ in range(BATCH_SIZE):
                 items.append({
-                    "bssid": f"00:11:22:33:44:{random.randint(10, 99)}",
-                    "ssid": f"TestNet-{random.randint(1,100)}",
+                    "bssid": f"00:11:22:33:44:{random.randint(10, 99)}", # noqa: S311
+                    "ssid": f"TestNet-{random.randint(1,100)}", # noqa: S311
                     "timestamp": datetime.now().isoformat(),
-                    "rssi_dbm": random.randint(-90, -30),
-                    "channel": random.choice([1, 6, 11]),
+                    "rssi_dbm": random.randint(-90, -30), # noqa: S311
+                    "channel": random.choice([1, 6, 11]), # noqa: S311
                     "security": "WPA2"
                 })
 

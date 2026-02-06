@@ -84,40 +84,23 @@ def verify_ingest():
 
 def main():
     try:
-        print("=== Lab Smoke Test (Option A) ===")
-        # 1. Bring up (Handles secrets, db init, build)
-        # We assume local env or CI env. 
-        # In CI, we want to ensure we are testing the "make lab-up" path.
-        run_cmd("make lab-up")
+        print("=== Lab Smoke Test (Option B) ===")
+        print("Test Target: Proxy (http://127.0.0.1:8080)")
+
+        # 1. Bring up Stack (Proxy + Backend)
+        run_cmd("docker compose -f ops/docker-compose.lab.yml up -d --build")
         
-        # 2. Wait health
-        wait_for_health()
+        # 2. Wait for Proxy Health (Endpoint: /api/v1/health via Proxy)
+        # Note: Proxy listens on 8080 and forward /api/ to controller:5000/api/
+        wait_for_health_check("http://127.0.0.1:8080/api/v1/health")
         
-        # 3. Verify Data
-        # Since lab-up (via makefile) does NOT seed data automatically (only lab-reset does, or explicit seed),
-        # we need to trigger seed or rely on lab-up logic.
-        # Wait, the Makefile `lab-up` runs `init_lab_db.py`?
-        # In the Makefile implementation I just wrote:
-        # lab-up: gen_secrets -> init_lab_db -> up
-        # BUT init_lab_db.py runs ON HOST. 
-        # I identified in Makefile comments that this MIGHT fail if DB is internal-only.
-        # Let's check init_lab_db.py content.
+        # 3. Trigger Seed (One-Shot)
+        print("🌱 Seeding Data...")
+        run_cmd("docker compose -f ops/docker-compose.lab.yml run --rm seed")
         
-        # If init_lab_db.py fails on host, `make lab-up` will fail.
-        # I need to fix `init_lab_db.py` execution in Makefile `lab-up` too?
-        # Yes.
-        
-        # But for this file, let's assume `make lab-up` works or we fix it.
-        # Verification: We want to ensure at least some data exists.
-        # If `lab-up` doesn't seed, we should run `make lab-reset` instead?
-        # Or `make lab-reset` is the "Golden Path" for a fresh lab.
-        # Let's try `make lab-reset` as the smoke test action to ensure full coverage?
-        # Or just `make lab-up` then `ingest`.
-        
-        # User requirement: "lab-smoke: chạy 1 vòng health + ingest minimal".
-        # So we can try to ingest ourselves using the script, OR verify the mock sensor.
-        # The mock sensor is started by `lab-up`. It should send data.
-        verify_ingest()
+        # 4. Verify Data (via Proxy)
+        # Check Dashboard endpoint or API to see if data exists
+        verify_ingest_via_proxy("http://127.0.0.1:8080/api/v1/telemetry")
         
         print("\n✅ Smoke Test Passed!")
         
@@ -128,7 +111,35 @@ def main():
         sys.exit(1)
     finally:
         print("\n=== Teardown ===")
-        run_cmd("make lab-down")
+        run_cmd("docker compose -f ops/docker-compose.lab.yml down -v")
+
+def wait_for_health_check(url):
+    print(f"Waiting for {url}...")
+    for i in range(MAX_RETRIES):
+        try:
+            r = requests.get(url, timeout=2)
+            if r.status_code == 200:
+                print("✅ Healthy")
+                return
+        except requests.exceptions.RequestException:
+            pass
+        time.sleep(RETRY_DELAY)
+    raise Exception("Health check timed out")
+
+def verify_ingest_via_proxy(url):
+    print("Verifying via Proxy...")
+    # Admin token from seed
+    headers = {"X-API-Token": "admin-token-dev"}
+    for i in range(MAX_RETRIES):
+        try:
+            r = requests.get(url, headers=headers, params={"limit": 1})
+            if r.status_code == 200 and len(r.json()) > 0:
+                print(f"✅ Telemetry found: {len(r.json())} records")
+                return
+        except:
+            pass
+        time.sleep(RETRY_DELAY)
+    raise Exception("No data found after seed")
 
 if __name__ == "__main__":
     main()

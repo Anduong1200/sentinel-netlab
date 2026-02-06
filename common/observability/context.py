@@ -42,8 +42,8 @@ def get_context() -> dict[str, str | None]:
 def clear_context() -> None:
     """
     Reset context variables to None.
-    Note: In a framework like Flask/FastAPI, this often happens 
-    automatically at request end if the context is destroyed, 
+    Note: In a framework like Flask/FastAPI, this often happens
+    automatically at request end if the context is destroyed,
     but explicit clearing is good for pooled threads.
     """
     _request_id.set(None)

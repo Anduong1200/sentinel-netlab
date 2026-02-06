@@ -8,7 +8,8 @@ Ensures the dashboard has visible content immediately after reset.
 import json
 import logging
 import sys
-from datetime import UTC, datetime
+import random
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Add parent directory to path
@@ -121,7 +122,28 @@ def seed_data():
             session.merge(alert) # Merge to update if exists
             count += 1
 
-        logger.info(f"Seeded {count} alerts.")
+        logger.info(f"Seeded {count} alerts from file.")
+    else:
+        # Fallback: Deterministic Generation
+        logger.warning(f"Scenario file {alert_path} not found. Generating deterministic mock data.")
+        random.seed(42) # Ensure every student gets the same "random" data
+        
+        # specific "Evil Twin" alert for consistency with Quickstart
+        alert = Alert(
+            id="generated-evil-twin-001",
+            sensor_id=sensor_id,
+            created_at=datetime.now(UTC) - timedelta(minutes=5),
+            alert_type="evil_twin",
+            severity="high",
+            title="Evil Twin Access Point Detected",
+            description="A rogue Access Point is broadcasting a trusted SSID (Corporate-WiFi) with a mismatched BSSID.",
+            ssid="Corporate-WiFi",
+            bssid="AA:BB:CC:DD:EE:FF",
+            confidence=0.95,
+            status="open"
+        )
+        session.merge(alert)
+        logger.info("Seeded 1 generated alert.")
 
     session.commit()
     logger.info("Seeding complete.")

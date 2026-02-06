@@ -30,105 +30,73 @@ By following this guide (approx. 10 minutes), you will have:
 ## 1. Prerequisites
 
 *   **Docker Desktop** (with Docker Compose v2)
-*   **Make** (Optional, but recommended for ease of use)
 *   **Hardware**: 4GB RAM minimum allocated to Docker.
 
 ---
 
-## 2. Start the Lab ("Single Path")
+## 2. Start the Lab in 2 Steps
 
-We provide a unified command to generate secrets, initialize the database, and start the stack.
+This lab runs safely on your localhost.
 
-### Using Make (Recommended)
-
+### Step 1: Generate Secrets (Once)
 ```bash
-git clone https://github.com/anduong1200/sentinel-netlab.git
-cd sentinel-netlab
-
-# The ONE command to rule them all:
-make lab-up
-```
-
-*Wait about 30 seconds for containers to initialize.*
-
-### Manual Method (No Make)
-
-```bash
-# Generate secrets
 python ops/gen_lab_secrets.py
+```
 
-# Initialize database
-python ops/init_lab_db.py
+### Step 2: Start the Stack
+```bash
+docker compose -f ops/docker-compose.lab.yml up -d --build
+```
 
-# Start Docker Stack
-docker compose -f ops/docker-compose.lab.yml up --build -d
+*Wait about 30 seconds for the "Proxy" to become healthy.*
+
+### Step 3: Seed Scenario Data (Optional)
+To load the "Deauth Attack" scenario:
+```bash
+docker compose -f ops/docker-compose.lab.yml run --rm seed
 ```
 
 ---
 
-## 3. Verify Health
+## 3. Access the Lab
 
-1.  **Open the Dashboard**: [http://127.0.0.1:8050](http://127.0.0.1:8050)
-    *   *Expected*: Dash UI loads. You may see empty charts initially or mock data flowing.
-2.  **Check API Health**:
-    ```bash
-    curl http://127.0.0.1:5000/api/v1/health
-    ```
-    *   *Expected*: `{"ok": true, ...}`
+The entire lab is exposed on **ONE** localhost port:
 
----
+*   **Dashboard**: [http://127.0.0.1:8080](http://127.0.0.1:8080)
+*   **API Health**: [http://127.0.0.1:8080/api/v1/health](http://127.0.0.1:8080/api/v1/health)
 
-## 4. First Scenario: "Golden PCAP"
-
-The lab automatically starts a "Mock Sensor" (`sensor-mock-01`) that replays a standard attack scenario (`scenario_01`).
-
-**Look for these Alerts in the Dashboard:**
-*   **Evil Twin**: High Severity. A Rogue AP mimicking a known SSID.
-*   **Deauth Flood**: Critical Severity. A burst of deauthentication frames.
-
-*Trouble seeing data? Check the logs:*
-```bash
-make lab-logs
-```
+*(Note: Ports 5000 and 8050 are NOT exposed to your host anymore. Everything goes through the Proxy.)*
 
 ---
 
-## 5. Resetting the Lab
+## 4. Resetting the Lab
 
-Need a clean slate for a class or demo? **Reset everything** to the initial state.
+To wipe all data and start fresh:
 
 ```bash
-make lab-reset
-```
-
-**What this does:**
-1.  **Stops** all containers.
-2.  **Wipes** Database and Queue volumes (destroys all data!).
-3.  **Re-gens** new random secrets.
-4.  **Seeds** the database with default admin user and clean state.
-5.  **Restarts** the environment.
-
----
-
-## 6. Stop & Cleanup
-
-To stop the lab but **keep data**:
-```bash
-make lab-down
-```
-
-To stop and **remove volumes** (clean up disk space):
-```bash
+# 1. Stop and remove volumes
 docker compose -f ops/docker-compose.lab.yml down -v
+
+# 2. Restart
+docker compose -f ops/docker-compose.lab.yml up -d
+
+# 3. Re-seed (if desired)
+docker compose -f ops/docker-compose.lab.yml run --rm seed
+```
+
+---
+
+## 5. Stop (Keep Data)
+
+```bash
+docker compose -f ops/docker-compose.lab.yml down
 ```
 
 ---
 
 ## 🔗 Troubleshooting
 
-See **[Troubleshooting Guide](troubleshooting.md)** for common issues like port conflicts or Docker resource limits.
-
----
+See **[Troubleshooting Guide](troubleshooting.md)**.
 
 ### How this is tested
-*This quickstart is validated in CI by running `make lab-up`, checking health endpoints, and verifying seed data presence.*
+*CI runs exactly these commands: `up`, `run seed`, then checks `localhost:8080`.*

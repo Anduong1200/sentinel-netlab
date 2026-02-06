@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import time
 from datetime import datetime
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field

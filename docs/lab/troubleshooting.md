@@ -11,13 +11,12 @@ Before diving deep, check the basics:
 
 1.  **Is the stack actually running?**
     *   Run: `docker compose -f ops/docker-compose.lab.yml ps`
-    *   *Expected*: `sentinel-lab-controller`, `postgres`, `redis`, `dashboard` are all "Up" or "Healthy".
-2.  **Are you using the right URL?**
-    *   Dashboard: [http://localhost:8050](http://localhost:8050) (NOT `0.0.0.0` or LAN IP).
-    *   API: [http://localhost:5000](http://localhost:5000).
+    *   *Expected*: `sentinel-lab-proxy`, `controller`, `dashboard` are "Up" / "Healthy".
+2.  **Are you using the Proxy URL?**
+    *   Access: [http://localhost:8080](http://localhost:8080) (Everything goes through here).
+    *   Do NOT try to access ports 5000 or 8050 directly.
 3.  **Is Disk Space OK?**
     *   Run: `docker system df`
-    *   *Warning*: If Reclaimable space is low < 1GB.
 4.  **Is Docker Desktop Running?**
     *   Verify the whale icon is active.
 
@@ -32,7 +31,7 @@ Before diving deep, check the basics:
     *   Port 8050 is occupied by another app.
 *   **Fix**:
     1.  Check status: `docker compose -f ops/docker-compose.lab.yml ps`
-    2.  If Dash container is `Exited`: `docker logs sentinel-lab-dashboard`
+    2.  If Dash container is `Exited`: `docker compose -f ops/docker-compose.lab.yml logs dashboard`
     3.  If Port Conflict: Edit `.env.lab` to change `DASHBOARD_PORT=8051` or stop the conflicting app.
 *   **Verify**: [http://localhost:8050](http://localhost:8050) loads.
 
@@ -40,8 +39,8 @@ Before diving deep, check the basics:
 *   **Symptom**: UI loads but shows no data. API `/health` returns error.
 *   **Likely Cause**: Database initialization failed or containers are in a restart loop.
 *   **Fix**:
-    1.  Check logs: `docker logs sentinel-lab-controller`
-    2.  **Reset Lab**: `make lab-reset` (This fixes 90% of state drift issues).
+    1.  Check logs: `docker compose -f ops/docker-compose.lab.yml logs controller`
+    2.  **Reset Lab**: `make lab-reset` (or `docker compose -f ops/docker-compose.lab.yml down -v` then restart).
 *   **Verify**: `curl http://localhost:5000/api/v1/health` returns `{"ok": true}`.
 
 ### 3. "No Data / No Alerts" (Empty Dashboard)
@@ -50,8 +49,8 @@ Before diving deep, check the basics:
     *   Seed script didn't run.
     *   Time drift causing ingest rejection.
 *   **Fix**:
-    1.  Run Seed: `python ops/seed_lab_data.py`
-    2.  Check Ingest Logs: `docker logs sentinel-lab-controller | grep "Reject"`
+    1.  Run Seed: `docker compose -f ops/docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py`
+    2.  Check Ingest Logs: `docker compose -f ops/docker-compose.lab.yml logs controller | grep "Reject"`
 *   **Verify**: Dashboard shows > 50 packets/alerts.
 
 ### 4. Permission Error (Capture/Hardware Mode)
