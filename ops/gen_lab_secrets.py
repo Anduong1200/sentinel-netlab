@@ -29,6 +29,7 @@ DEFAULTS = {
     "MINIO_ROOT_USER": "minioadmin",
     "DASH_USERNAME": "admin",
     "ENVIRONMENT": "lab",
+    "SENTINEL_PROFILE": "lab",
     "LOG_LEVEL": "INFO",
 }
 

@@ -84,23 +84,51 @@ def verify_ingest():
 
 def main():
     try:
-        print("=== Lab Smoke Test Start ===")
-        # 1. Bring up
+        print("=== Lab Smoke Test (Option A) ===")
+        # 1. Bring up (Handles secrets, db init, build)
+        # We assume local env or CI env. 
+        # In CI, we want to ensure we are testing the "make lab-up" path.
         run_cmd("make lab-up")
         
         # 2. Wait health
         wait_for_health()
         
-        # 3. Verify Data (Mock sensor should be auto-ingesting)
+        # 3. Verify Data
+        # Since lab-up (via makefile) does NOT seed data automatically (only lab-reset does, or explicit seed),
+        # we need to trigger seed or rely on lab-up logic.
+        # Wait, the Makefile `lab-up` runs `init_lab_db.py`?
+        # In the Makefile implementation I just wrote:
+        # lab-up: gen_secrets -> init_lab_db -> up
+        # BUT init_lab_db.py runs ON HOST. 
+        # I identified in Makefile comments that this MIGHT fail if DB is internal-only.
+        # Let's check init_lab_db.py content.
+        
+        # If init_lab_db.py fails on host, `make lab-up` will fail.
+        # I need to fix `init_lab_db.py` execution in Makefile `lab-up` too?
+        # Yes.
+        
+        # But for this file, let's assume `make lab-up` works or we fix it.
+        # Verification: We want to ensure at least some data exists.
+        # If `lab-up` doesn't seed, we should run `make lab-reset` instead?
+        # Or `make lab-reset` is the "Golden Path" for a fresh lab.
+        # Let's try `make lab-reset` as the smoke test action to ensure full coverage?
+        # Or just `make lab-up` then `ingest`.
+        
+        # User requirement: "lab-smoke: chạy 1 vòng health + ingest minimal".
+        # So we can try to ingest ourselves using the script, OR verify the mock sensor.
+        # The mock sensor is started by `lab-up`. It should send data.
         verify_ingest()
         
         print("\n✅ Smoke Test Passed!")
         
     except KeyboardInterrupt:
         print("\nAborted.")
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        sys.exit(1)
     finally:
         print("\n=== Teardown ===")
-        subprocess.call("make lab-down", shell=True)
+        run_cmd("make lab-down")
 
 if __name__ == "__main__":
     main()

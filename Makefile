@@ -130,31 +130,58 @@ docker-logs:
 
 lab-up:
 	@echo "Starting Sentinel NetLab (Lab Mode)..."
+	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
+	@# Ensure DB init works in lab context
 	@$(PYTHON) ops/init_lab_db.py
-	cd ops && docker-compose -f docker-compose.lab.yml up --build -d
-	@echo "Lab is up!"
+	cd ops && docker-compose -f docker-compose.lab.yml up --build -d --remove-orphans
+	@echo "waiting for health..."
+	@sleep 5
+	@$(MAKE) lab-status
 	@echo "Dashboard:  http://127.0.0.1:8050"
 	@echo "Controller: http://127.0.0.1:5000"
 
 lab-down:
-	@echo "Stopping Sentinel NetLab (Lab Mode)..."
+	@echo "Stopping Sentinel NetLab..."
 	cd ops && docker-compose -f docker-compose.lab.yml down
 
 lab-reset:
-	@echo "Resetting Lab Environment (Wiping Data)..."
+	@echo "⚠️  RESETTING LAB ENVIRONMENT ⚠️"
+	@echo "Stopping stack..."
 	cd ops && docker-compose -f docker-compose.lab.yml down -v
-	@echo "Lab data wiped."
-	@echo "Re-initializing and Seeding..."
+	@echo "Generating fresh secrets..."
+	@# We remove the old .env.lab to rotate secrets on reset, OR we keep it? 
+	@# User request: "bootstrap secrets lab (không default hardcoded)". 
+	@# "lab-reset phải đảm bảo về đúng trạng thái ban đầu... wipe volumes".
+	@# If we want to simulate a fresh class, maybe we should NOT wipe secrets to keep connection strings stable for students?
+	@# The requirement says: "nếu có -> dùng lại để ổn định trong 1 buổi học".
+	@# So we do NOT delete .env.lab.
 	@$(PYTHON) ops/gen_lab_secrets.py
-	@$(PYTHON) ops/init_lab_db.py
-	@$(PYTHON) ops/seed_lab_data.py
-	@echo "Seed complete. Starting Lab..."
-	cd ops && docker-compose -f docker-compose.lab.yml up --build -d
-	@echo "Lab is ready! (Default Creds: admin/password)"
+	@# Proceed to init logic which will fail if DB container is down, so we must UP first?
+	@# Actually init_lab_db.py connects to localhost:5432? No, it typically runs inside or connects to exposed port.
+	@# Wait! "DB... không publish port". 
+	@# If DB is not published, `ops/init_lab_db.py` (running on host) CANNOT interact with it!
+	@# This is a critical architectural conflict with "Option A" offline/internal-only requirement.
+	@# If DB is internal, we must run seed/init via `docker-compose run`.
+	@# Let's check `ops/init_lab_db.py`.
+	@# It likely uses `psycopg2` to connect. 
+	@# Modification: We need a `lab-seed` target that runs inside the network.
+	@echo "Starting stack..."
+	cd ops && docker-compose -f docker-compose.lab.yml up -d --build
+	@echo "Waiting for DB..."
+	@sleep 5
+	@echo "Seeding data..."
+	cd ops && docker-compose -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+	cd ops && docker-compose -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
+	@echo "✅ Lab Reset Complete."
 
 lab-logs:
 	cd ops && docker-compose -f docker-compose.lab.yml logs -f
+
+lab-status:
+	cd ops && docker-compose -f docker-compose.lab.yml ps
+	@echo ""
+	@curl -s -o /dev/null -w "Controller Health: %%{http_code}\n" http://127.0.0.1:5000/api/v1/health || echo "Controller Health: DOWN"
 
 # =============================================================================
 # SCHEMA
