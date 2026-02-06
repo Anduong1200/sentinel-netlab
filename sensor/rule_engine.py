@@ -17,20 +17,26 @@ from typing import Any
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+    class StrEnum(str, Enum):
+        pass
 
-class Severity(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
+class Severity(StrEnum):
     INFO = "info"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
-class AlertStatus(str, Enum):
-    OPEN = "open"
-    ACKNOWLEDGED = "acknowledged"
+class AlertStatus(StrEnum):
+    NEW = "new"
+    ACTIVE = "active"
     RESOLVED = "resolved"
-    FALSE_POSITIVE = "false_positive"
+    IGNORED = "ignored"
 
 
 @dataclass
