@@ -70,7 +70,7 @@ def init_default_tokens():
     try:
         # Create tables if not exist (quick loose check)
         # In prod, use migrations.
-        db.create_all()
+        # db.create_all()
 
         for token_plain, name, role, sensor_id in tokens:
             token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
@@ -248,21 +248,9 @@ def require_signed():
             if not timestamp or not verify_timestamp(timestamp):
                 return jsonify({"error": "Invalid/expired timestamp"}), 400
 
+            # Verify HMAC on RAW WIRE BYTES (whether compressed or not)
+            # This prevents zip-bombs: we only decompress AFTER signature is verified.
             payload = request.get_data()
-            if request.headers.get("Content-Encoding") == "gzip":
-                import gzip
-                try:
-                    # Client signs the UNCOMPRESSED JSON
-                    payload = gzip.decompress(payload)
-                except Exception:
-                    return jsonify({"error": "Invalid GZIP body"}), 400
-
-            # Determine content encoding for signature verification
-            # Note: We already decompressed payload for body usage, but for signature verification
-            # we need to know what encoding was claimed.
-            # Wait! If we verified the *uncompressed* payload, we should treat it as such.
-            # But we added encoding to the signature to prevent stripping attacks.
-            
             content_encoding = request.headers.get("Content-Encoding", "identity")
 
             if not verify_hmac(

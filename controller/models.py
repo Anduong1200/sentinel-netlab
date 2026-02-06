@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    BigInteger,
     Float,
     String,
     Text,
@@ -44,10 +45,12 @@ class Telemetry(Base):
 
     __tablename__ = "telemetry"
 
+    # TimescaleDB requires timestamp to be part of the primary key for hypertables
+    timestamp = Column(DateTime(timezone=True), primary_key=True, index=True)
     id = Column(Integer, primary_key=True, autoincrement=True)
+    
     sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
     batch_id = Column(String(64), index=True)
-    timestamp = Column(DateTime(timezone=True), index=True)
     ingested_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     bssid = Column(String(17), index=True)
@@ -117,7 +120,7 @@ class APIToken(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     expires_at = Column(DateTime(timezone=True))
     last_used = Column(DateTime(timezone=True))
-    last_sequence = Column(Integer, default=0)
+    last_sequence = Column(BigInteger, default=0)
 
     is_active = Column(Boolean, default=True)
 
@@ -139,6 +142,29 @@ class AuditLog(Base):
 
     details = Column(JSON, default={})
     ip_address = Column(String(45))
+
+
+class IngestJob(Base):
+    """Ingestion queue jobs (DB-backed)"""
+
+    __tablename__ = "ingest_jobs"
+
+    job_id = Column(String(64), primary_key=True)
+    sensor_id = Column(String(64), nullable=False)
+    received_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
+
+    status = Column(String(20), default="queued", index=True)  # queued, processing, done, failed
+    payload = Column(JSON)
+
+    attempts = Column(Integer, default=0)
+    next_attempt_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    error_msg = Column(Text)
+
+    __table_args__ = (
+        Index("idx_jobs_status_next", "status", "next_attempt_at"),
+    )
 
 
 # =============================================================================

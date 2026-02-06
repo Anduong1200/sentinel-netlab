@@ -144,6 +144,12 @@ CREATE TABLE IF NOT EXISTS alerts (
     ssid VARCHAR(32),
     
     evidence JSONB DEFAULT '{}'::jsonb,
+    reason_codes JSONB DEFAULT '[]'::jsonb,
+    
+    confidence DOUBLE PRECISION,
+    impact DOUBLE PRECISION,
+    risk_score DOUBLE PRECISION,
+    
     mitre_attack VARCHAR(20),
     
     status VARCHAR(20) DEFAULT 'open',

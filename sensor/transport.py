@@ -189,15 +189,23 @@ class TransportClient:
         self._uploads_total += 1
 
         # Prepare payload
-        payload = json.dumps(batch)
+        payload_str = json.dumps(batch)
+        
+        # Compress first
+        if compress:
+            payload_bytes = gzip.compress(payload_str.encode())
+            headers["Content-Encoding"] = "gzip"
+            content_encoding = "gzip"
+        else:
+            payload_bytes = payload_str.encode()
+            content_encoding = "identity"
 
         # Sign if HMAC configured
-        # Headers
         # Headers
         import uuid
         request_id = str(uuid.uuid4())
         timestamp = self.get_server_time().isoformat()
-        headers = {
+        headers.update({
             "Authorization": f"Bearer {self.auth_token}",
             "Content-Type": "application/json",
             "User-Agent": "Sentinel-Sensor/1.0",
@@ -205,43 +213,21 @@ class TransportClient:
             "X-Timestamp": timestamp,
             "X-Request-ID": request_id,
             "X-Sensor-ID": batch.get("sensor_id", "unknown"),
-        }
+        })
 
         if self.hmac_secret:
-            # Sign payload using server time to prevent replay
-            # Canonical: timestamp + sequence + payload
-            # Note: We don't have a strict sequence counter per-request yet in this client logic except batch_id?
-            # Using 0 or batch_id might be risky for monotonic check but we must match server expectation.
-            # Controller verify_sequence checks against token.last_sequence.
-            # We need to persist a sequence counter.
-
-            # Simple fix: Use time-based monotonic (not perfect) or 0 if not tracking
-            # But the signature MUST include what we send in headers.
-            # Only X-Sequence header is optional in verify_hmac IF NOT sent.
-            # But we likely want to catch replay.
-
-            # Sign payload using server time to prevent replay
-            # Canonical: method + path + timestamp + [sequence] + payload + [content_encoding]
-            
-            content_encoding = "gzip" if compress else "identity"
             from urllib.parse import urlparse
-
             path = urlparse(self.upload_url).path
+            
+            # Sign the WIRE BYTES (compressed or not)
             signature = self._sign_payload(
                 "POST", 
                 path, 
-                payload, 
+                payload_bytes, 
                 timestamp, 
                 content_encoding=content_encoding
             )
             headers["X-Signature"] = signature
-
-        # Compress
-        if compress:
-            payload_bytes = gzip.compress(payload.encode())
-            headers["Content-Encoding"] = "gzip"
-        else:
-            payload_bytes = payload.encode()
 
         # Retry loop
         delay = self.initial_delay
@@ -309,7 +295,7 @@ class TransportClient:
         self,
         method: str,
         path: str,
-        payload: str,
+        payload: bytes | str,
         timestamp: str,
         sequence: str | None = None,
         content_encoding: str = "identity",
@@ -318,7 +304,12 @@ class TransportClient:
         data = method.encode() + path.encode() + timestamp.encode()
         if sequence:
             data += sequence.encode()
-        data += payload.encode()
+        
+        if isinstance(payload, str):
+            data += payload.encode()
+        else:
+            data += payload
+            
         data += content_encoding.encode()
 
         signature = hmac.new(self.hmac_secret.encode(), data, hashlib.sha256)

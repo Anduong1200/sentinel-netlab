@@ -64,6 +64,15 @@ jobs:
           pip install ".[dev]" || true
           pip-audit || true
 
+      - name: Repo Hygiene (Fail on prohibited files)
+        run: |
+          # Fail if these files exist in the repo (even if ignored locally, this catches tracked files)
+          if git ls-files | grep -E "(\.env|\.venv|auth\.json|.*_secret.*)"; then
+            echo "::error::Prohibited files found in repository!"
+            git ls-files | grep -E "(\.env|\.venv|auth\.json|.*_secret.*)"
+            exit 1
+          fi
+
   quality:
     name: Quality (Ruff + Mypy)
     runs-on: ubuntu-latest

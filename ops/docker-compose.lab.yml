@@ -1,0 +1,167 @@
+# =============================================================================
+# Sentinel NetLab - Lab Environment (Safe-by-Default)
+# Minimal stack for training and demos.
+# ONLY 127.0.0.1 ports exposed. NO database/redis exposure.
+# =============================================================================
+version: "3.9"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ===========================================================================
+  # CORE: Controller API
+  # ===========================================================================
+  controller:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: sentinel-controller:lab
+    container_name: sentinel-lab-controller
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      
+      # Database & Cache (Internal)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+
+      # Secrets (Loaded from .env.lab)
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+
+      # Security
+      REQUIRE_HMAC: "false" # Simplified for lab
+      REQUIRE_TLS: "false"
+      
+      # Rate limiting (Relaxed for lab)
+      RATE_LIMIT_DEFAULT: "1000 per minute"
+      
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/api/v1/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging: *default-logging
+    # Lab Mode: Only expose to localhost
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
+  # ===========================================================================
+  # DATABASE: PostgreSQL (Internal Only)
+  # ===========================================================================
+  postgres:
+    image: timescale/timescaledb:2.13.0-pg15
+    container_name: sentinel-lab-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+    volumes:
+      - sentinel-lab-postgres:/var/lib/postgresql/data
+      # Use same init as prod for now, PR-03 will unify schema
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
+  # ===========================================================================
+  # CACHE: Redis (Internal Only)
+  # ===========================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: sentinel-lab-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
+  # ===========================================================================
+  # WORKER: Background Tasks
+  # ===========================================================================
+  worker:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: sentinel-controller:lab
+    container_name: sentinel-lab-worker
+    restart: unless-stopped
+    command: python -m controller.ingest.worker
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
+  # ===========================================================================
+  # UI: Dashboard
+  # ===========================================================================
+  dashboard:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.dashboard
+    image: sentinel-dashboard:lab
+    container_name: sentinel-lab-dashboard
+    restart: unless-stopped
+    environment:
+      CONTROLLER_URL: http://controller:5000
+      DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN}
+      ENVIRONMENT: "lab"
+      # Lab Secrets
+      DASH_USERNAME: ${DASH_USERNAME:-admin}
+      DASH_PASSWORD: ${DASH_PASSWORD}
+      DASH_DEBUG: "true"
+    depends_on:
+      controller:
+        condition: service_healthy
+    # Lab Mode: Only expose to localhost
+    ports:
+      - "127.0.0.1:8050:8050"
+    networks:
+      - sentinel-lab-net
+    env_file:
+      - .env.lab
+
+volumes:
+  sentinel-lab-postgres:
+
+networks:
+  sentinel-lab-net:
+    driver: bridge

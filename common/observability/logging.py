@@ -108,15 +108,15 @@ def configure_logging(
     
     root_logger.addHandler(stream_handler)
 
-    # File Handler (Optional)
+    # File Handler (Optional) with Rotation
     if log_dir:
+        from logging.handlers import RotatingFileHandler
         os.makedirs(log_dir, exist_ok=True)
         log_file = os.path.join(log_dir, f"{component}.log")
-        file_handler = logging.FileHandler(log_file)
-        # Always use JSON for file logs if configured, or match mode?
-        # User said: "Bare-metal: log file JSON", so force JSON for file usually
-        # But let's stick to the json_mode arg for consistency unless specified.
-        # Ideally file log should always be structured for parsing.
+        # Rotate at 50MB, keep 5 backups (250MB total max per component)
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=50 * 1024 * 1024, backupCount=5
+        )
         file_formatter = JSONFormatter(service_name=component)
         file_handler.setFormatter(file_formatter)
         root_logger.addHandler(file_handler)

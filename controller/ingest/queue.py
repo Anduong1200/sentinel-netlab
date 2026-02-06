@@ -112,7 +112,6 @@ class IngestQueue:
                 next_attempt_at=next_time
             )
         )
-        )
         db.session.commit()
 
     @staticmethod

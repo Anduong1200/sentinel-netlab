@@ -117,3 +117,34 @@ class HTTPMetricsMiddleware:
             return start_response(status, headers, *args)
 
         return self.app(environ, status_start_response)
+
+
+# =============================================================================
+# SLO METRICS
+# =============================================================================
+
+INGEST_TOTAL = create_counter(
+    "ingest_total", "Total telemetry batches ingested", ["sensor_id"]
+)
+
+INGEST_SUCCESS = create_counter(
+    "ingest_success_total", "Successful telemetry ingests", ["sensor_id"]
+)
+
+INGEST_FAILURE = create_counter(
+    "ingest_failure_total", "Failed telemetry ingests", ["sensor_id", "reason"]
+)
+
+INGEST_LATENCY = create_histogram(
+    "ingest_latency_seconds",
+    "End-to-end ingest latency (sensor upload to controller ACK)",
+    ["sensor_id"],
+    buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+)
+
+
+class _DummyTimer:
+    """Dummy context manager for timer when prometheus is not available."""
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+

@@ -160,7 +160,14 @@ nano .env
 
 # Start stack
 docker compose -f ops/docker-compose.yml up -d
+# Start stack
+docker compose -f ops/docker-compose.yml up -d
 ```
+
+> [!CAUTION]
+> **NEVER COMMIT `.env` FILES**
+> This repository is configured to fail CI/CD if `.env` or `.venv` files are detected. 
+> Always use the provided `.env.example` as a template and keep your actual configuration local.
 
 ### 3. Safety & Lab Mode (Active Defense)
 

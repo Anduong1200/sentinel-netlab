@@ -13,7 +13,7 @@ from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
 from .deps import PYDANTIC_AVAILABLE, config, db, limiter, logger, validate_json
 from .models import Telemetry
 from controller.ingest.queue import IngestQueue
-from common.observability.metrics import create_counter
+from common.observability.metrics import create_counter, INGEST_TOTAL, INGEST_SUCCESS, INGEST_FAILURE
 
 bp = Blueprint("telemetry", __name__)
 
@@ -35,6 +35,8 @@ def ingest_telemetry():
     """Batch telemetry ingestion with full validation"""
     import gzip
 
+    sensor_id = "unknown"  # Default for metrics if parsing fails early
+    
     # 1. Parse Data
     if request.headers.get("Content-Encoding") == "gzip":
         try:
@@ -44,6 +46,7 @@ def ingest_telemetry():
         except Exception as e:
              logger.error(f"GZIP decompression failed: {e}")
              INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
+             INGEST_FAILURE.labels(sensor_id=sensor_id, reason="gzip_error").inc()
              return jsonify({"error": "Invalid GZIP data"}), 400
     elif PYDANTIC_AVAILABLE and hasattr(g, "validated_data"):
         if hasattr(g.validated_data, "model_dump"):
@@ -53,9 +56,12 @@ def ingest_telemetry():
     else:
         data = request.get_json()
 
-    sensor_id = data.get("sensor_id")
+    sensor_id = data.get("sensor_id", "unknown")
     items = data.get("items", [])
     batch_id = data.get("batch_id")
+    
+    # Track total ingest attempts
+    INGEST_TOTAL.labels(sensor_id=sensor_id).inc()
     
     # Fallback to header if empty in body
     if not batch_id:
@@ -63,6 +69,7 @@ def ingest_telemetry():
 
     if g.token.sensor_id and g.token.sensor_id != sensor_id:
         INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
+        INGEST_FAILURE.labels(sensor_id=sensor_id, reason="sensor_mismatch").inc()
         return jsonify({"error": "Sensor ID mismatch"}), 403
 
     # Backpressure Check
@@ -72,6 +79,7 @@ def ingest_telemetry():
         if stats.queue_depth > 1000: # Threshold should be in config
             logger.warning(f"Backpressure active: queue_depth={stats.queue_depth}")
             INGEST_REQUEST.labels(endpoint="telemetry", status="overloaded").inc()
+            INGEST_FAILURE.labels(sensor_id=sensor_id, reason="backpressure").inc()
             return jsonify({"error": "System overloaded, retry later"}), 503, {"Retry-After": "30"}
     except Exception as e:
         logger.error(f"Failed to check queue stats: {e}")
@@ -86,6 +94,7 @@ def ingest_telemetry():
     except Exception as e:
         logger.error(f"Failed to enqueue: {e}")
         INGEST_REQUEST.labels(endpoint="telemetry", status="internal_error").inc()
+        INGEST_FAILURE.labels(sensor_id=sensor_id, reason="queue_error").inc()
         return jsonify({"error": "Internal Queue Error"}), 500
 
     # Update Registry
@@ -96,6 +105,7 @@ def ingest_telemetry():
     }
 
     INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
+    INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()
     return jsonify({"success": True, "status": "queued", "ack_id": ack_id}), 202
 
 

@@ -125,6 +125,31 @@ docker-logs:
 	cd ops && docker-compose logs -f
 
 # =============================================================================
+# LAB (SAFE MODE)
+# =============================================================================
+
+lab-up:
+	@echo "Starting Sentinel NetLab (Lab Mode)..."
+	@$(PYTHON) ops/gen_lab_secrets.py
+	@$(PYTHON) ops/init_lab_db.py
+	cd ops && docker-compose -f docker-compose.lab.yml up --build -d
+	@echo "Lab is up!"
+	@echo "Dashboard:  http://127.0.0.1:8050"
+	@echo "Controller: http://127.0.0.1:5000"
+
+lab-down:
+	@echo "Stopping Sentinel NetLab (Lab Mode)..."
+	cd ops && docker-compose -f docker-compose.lab.yml down
+
+lab-reset:
+	@echo "Resetting Lab Environment (Wiping Data)..."
+	cd ops && docker-compose -f docker-compose.lab.yml down -v
+	@echo "Lab data wiped."
+
+lab-logs:
+	cd ops && docker-compose -f docker-compose.lab.yml logs -f
+
+# =============================================================================
 # SCHEMA
 # =============================================================================
 
