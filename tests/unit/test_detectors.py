@@ -1,4 +1,3 @@
-
 from unittest.mock import MagicMock
 
 from common.detection.reason_codes import ReasonCodes
@@ -29,24 +28,23 @@ def test_policy_detector():
     findings = detector.process(telemetry)
     assert len(findings) == 0
 
+
 def test_rogue_detector():
     """Verify baseline deviations."""
     mock_store = MagicMock()
     detector = RogueAPDetector(baseline_store=mock_store)
 
     # Setup Profile (Normal: Ch 6, Max RSSI -50)
-    profile = BaselineProfile(
-        features={
-            "channels": {"6": 10},
-            "rssi": {"max": -50}
-        }
-    )
+    profile = BaselineProfile(features={"channels": {"6": 10}, "rssi": {"max": -50}})
     mock_store.get_profile.return_value = profile
 
     # 1. Channel Mismatch (Ch 1 vs 6) -> Finding
     telemetry = {
-        "ssid": "CorpWiFi", "security": "WPA2", "bssid": "AA:AA",
-        "channel": 1, "rssi_dbm": -60
+        "ssid": "CorpWiFi",
+        "security": "WPA2",
+        "bssid": "AA:AA",
+        "channel": 1,
+        "rssi_dbm": -60,
     }
     findings = detector.process(telemetry, context={"site_id": "HQ"})
     assert len(findings) == 1
@@ -54,8 +52,11 @@ def test_rogue_detector():
 
     # 2. RSSI Spike (-30 vs Max -50) -> Finding
     telemetry = {
-        "ssid": "CorpWiFi", "security": "WPA2", "bssid": "AA:AA",
-        "channel": 6, "rssi_dbm": -30
+        "ssid": "CorpWiFi",
+        "security": "WPA2",
+        "bssid": "AA:AA",
+        "channel": 6,
+        "rssi_dbm": -30,
     }
     findings = detector.process(telemetry, context={"site_id": "HQ"})
     assert len(findings) == 1
@@ -63,8 +64,11 @@ def test_rogue_detector():
 
     # 3. Normal Behavior -> No Finding
     telemetry = {
-        "ssid": "CorpWiFi", "security": "WPA2", "bssid": "AA:AA",
-        "channel": 6, "rssi_dbm": -55
+        "ssid": "CorpWiFi",
+        "security": "WPA2",
+        "bssid": "AA:AA",
+        "channel": 6,
+        "rssi_dbm": -55,
     }
     findings = detector.process(telemetry, context={"site_id": "HQ"})
     assert len(findings) == 0

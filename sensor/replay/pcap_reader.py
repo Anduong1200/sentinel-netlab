@@ -1,10 +1,10 @@
-
 import logging
 from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
 
 class PcapStream:
     """
@@ -48,7 +48,7 @@ class PcapStream:
                         security = "Open"
                         cap = pkt.sprintf("{Dot11Beacon:%Dot11Beacon.cap%}")
                         if "privacy" in cap:
-                            security = "WPA2" # Generic enc assumption
+                            security = "WPA2"  # Generic enc assumption
 
                         # Channel
                         channel = 0
@@ -62,7 +62,7 @@ class PcapStream:
                             "security": security,
                             "rssi_dbm": int(rssi),
                             "channel": channel,
-                            "timestamp": pkt.time
+                            "timestamp": pkt.time,
                         }
                     except Exception as e:
                         logger.warning(f"Failed to parse packet: {e}")

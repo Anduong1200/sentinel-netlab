@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 SPOOL_BACKLOG = create_gauge("spool_backlog_batches", "Batches in spool", ["sensor_id"])
 SPOOL_BYTES = create_gauge("spool_backlog_bytes", "Bytes in spool", ["sensor_id"])
 SYSTEM_CPU = create_gauge("system_cpu_usage", "CPU Usage Percent", ["sensor_id"])
-SYSTEM_MEMORY = create_gauge("system_memory_usage", "Memory Usage Percent", ["sensor_id"])
+SYSTEM_MEMORY = create_gauge(
+    "system_memory_usage", "Memory Usage Percent", ["sensor_id"]
+)
 
 
 class SensorMonitor:
@@ -35,7 +37,9 @@ class SensorMonitor:
 
     def start(self):
         self._running = True
-        self._thread = threading.Thread(target=self._run, daemon=True, name="SensorMonitor")
+        self._thread = threading.Thread(
+            target=self._run, daemon=True, name="SensorMonitor"
+        )
         self._thread.start()
         logger.info("Sensor monitor started")
 
@@ -59,7 +63,7 @@ class SensorMonitor:
                 # stats returns {'total':..., 'queued':..., 'inflight':..., 'bytes':...}
                 # P0 wants "backlog size" -> 'queued' + 'inflight' (total items waiting)
                 # But typically 'backlog' means what is waiting to be sent. Inflight is also waiting for ACK.
-                backlog = q_stats.get("total", 0) # total in table
+                backlog = q_stats.get("total", 0)  # total in table
                 bytes_total = q_stats.get("bytes", 0)
 
                 SPOOL_BACKLOG.labels(sensor_id=self.sensor_id).set(backlog)

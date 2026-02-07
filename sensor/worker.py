@@ -163,13 +163,19 @@ class TransportWorker:
         self._uploads_failed += 1
         self._consecutive_failures += 1
 
-        # NACK - increment retry count and schedule next attempt
-        self.queue.nack(entry.batch_id, error)
-
-        logger.warning(
-            f"Upload failed for batch {entry.batch_id} "
-            f"(attempt {entry.attempts + 1}): {error}"
-        )
+        if error.startswith("Client error") or "400" in error or "401" in error or "403" in error:
+            # Fatal error - do not retry
+            self.queue.mark_dead(entry.batch_id, error)
+            logger.error(
+                f"Upload failed FATALLY for batch {entry.batch_id}: {error}"
+            )
+        else:
+            # NACK - increment retry count and schedule next attempt
+            self.queue.nack(entry.batch_id, error)
+            logger.warning(
+                f"Upload failed for batch {entry.batch_id} "
+                f"(attempt {entry.attempts + 1}): {error}"
+            )
 
         if self.on_failure:
             self.on_failure(entry.batch_id, error)
@@ -178,8 +184,7 @@ class TransportWorker:
         # if the network is down and many items are ready for initial attempt.
         # Max 1s just to be polite to CPU.
         if self._consecutive_failures > 5:
-             self._shutdown_event.wait(timeout=1.0)
-
+            self._shutdown_event.wait(timeout=1.0)
 
     def stats(self) -> dict[str, Any]:
         """Get worker statistics."""
@@ -223,9 +228,9 @@ class GracefulShutdown:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.stop_method:
-             self.stop_method()
+            self.stop_method()
         else:
-             self.worker.stop()
+            self.worker.stop()
 
         # Restore original handlers
         for sig, handler in self._original_handlers.items():
@@ -241,7 +246,6 @@ class GracefulShutdown:
         logger.info(f"Received signal {signum}, initiating graceful shutdown")
         self.running = False
         if self.stop_method:
-             self.stop_method()
+            self.stop_method()
         else:
-             self.worker.stop()
-
+            self.worker.stop()

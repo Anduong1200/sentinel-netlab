@@ -1,4 +1,3 @@
-
 from common.detection.reason_codes import ReasonCategory, ReasonCodes
 from common.scoring.types import Severity
 from controller.scoring.risk import RiskModel
@@ -29,6 +28,7 @@ def test_risk_calculation():
     score = RiskModel.calculate(confidence=0.61, impact=100.0)
     assert score.severity == Severity.HIGH
 
+
 def test_clamping():
     """Verify values are clamped."""
     # Over 1.0 confidence -> treated as 1.0
@@ -38,6 +38,7 @@ def test_clamping():
     # Negative impact -> treated as 0.0
     score = RiskModel.calculate(confidence=1.0, impact=-50.0)
     assert score.value == 0.0
+
 
 def test_reason_codes():
     """Verify Reason Code catalog and formatting."""
@@ -50,6 +51,7 @@ def test_reason_codes():
     msg = rc.format(ssid="CorpWiFi", bssid="AA:BB:CC:DD:EE:FF")
     assert "SSID 'CorpWiFi'" in msg
     assert "BSSID 'AA:BB:CC:DD:EE:FF'" in msg
+
 
 def test_severity_enum():
     """Verify Severity string representations exist."""

@@ -1,4 +1,3 @@
-
 import os
 import socket
 import subprocess
@@ -113,7 +112,12 @@ def sensor_auth_header(tokens: dict[str, str]) -> dict[str, str]:
     return {"Authorization": f"Bearer {tokens['sensor']}"}
 
 
-def make_telemetry_batch(sensor_id: str = "sensor-01", batch_id: str = "batch-1", n: int = 3, start_seq: int = 1):
+def make_telemetry_batch(
+    sensor_id: str = "sensor-01",
+    batch_id: str = "batch-1",
+    n: int = 3,
+    start_seq: int = 1,
+):
     """Generate a schema-valid TelemetryBatch."""
     import datetime as _dt
 

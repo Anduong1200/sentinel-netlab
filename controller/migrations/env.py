@@ -10,7 +10,8 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 # Add parent to path for models
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# .../controller/migrations/env.py -> .../controller/migrations -> .../controller -> .../
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 config = context.config
 

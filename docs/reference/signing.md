@@ -58,7 +58,7 @@ The request MUST include the following headers:
 | `X-Timestamp` | ISO 8601 UTC Timestamp | `2023-10-27T10:00:00...` |
 | `X-Sensor-ID` | ID of the sensor | `sensor-01` |
 | `X-Signature` | HMAC-SHA256 Hex Digest | `a1b2c3d4...` |
-| `X-Idempotency-Key`| Unique Batch ID | `batch-123-abc` |
+| `X-Idempotency-Key`| Unique Batch ID (REQUIRED) | `sensor-01:1700000000` |
 
 ## Verification Logic (Fail-Closed)
 
@@ -72,10 +72,14 @@ The request MUST include the following headers:
     *   Reject if mismatch (401 Unauthorized).
 5.  **Decompress**: Only AFTER verification, decompress body if `gzip`.
 
-## Metrics
-
-Failures are recorded in `sentinel_hmac_failures_total` with `reason`:
-*   `signature_mismatch`: Signature did not match.
-*   `missing_header`: Required header missing.
-*   `time_drift`: Timestamp outside window.
-*   `bad_encoding`: Unsupported content encoding.
+83. **Response Semantics**:
+84.
+85. *   **Success (Async)**: `202 Accepted`
+86.     *   JSON Body: `{"success": true, "status": "queued", "ack_id": "<batch_id>"}`
+87. *   **Success (Duplicate)**: `200 OK`
+88.     *   JSON Body: `{"success": true, "status": "duplicate", "ack_id": "<batch_id>"}`
+89. *   **Rate Limited**: `429 Too Many Requests`
+90.     *   Header: `Retry-After: <seconds>`
+91. *   **Backpressure**: `503 Service Unavailable`
+92.     *   Header: `Retry-After: <seconds>`
+93. *   **Client Error**: `400/401/403` (Do not retry)

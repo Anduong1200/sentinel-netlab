@@ -204,21 +204,25 @@ class TransportClient:
         # Sign if HMAC configured
         # Headers
         import uuid
+
         request_id = str(uuid.uuid4())
         timestamp = self.get_server_time().isoformat()
 
-        headers.update({
-            "Authorization": f"Bearer {self.auth_token}",
-            "Content-Type": "application/json",
-            "User-Agent": "Sentinel-Sensor/1.0",
-            "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
-            "X-Timestamp": timestamp,
-            "X-Request-ID": request_id,
-            "X-Sensor-ID": batch.get("sensor_id", "unknown"),
-        })
+        headers.update(
+            {
+                "Authorization": f"Bearer {self.auth_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "Sentinel-Sensor/1.0",
+                "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
+                "X-Timestamp": timestamp,
+                "X-Request-ID": request_id,
+                "X-Sensor-ID": batch.get("sensor_id", "unknown"),
+            }
+        )
 
         if self.hmac_secret:
             from urllib.parse import urlparse
+
             path = urlparse(self.upload_url).path
 
             # Sign the WIRE BYTES (compressed or not)
@@ -229,7 +233,7 @@ class TransportClient:
                 payload_bytes,
                 timestamp,
                 sensor_id=sensor_id,
-                content_encoding=content_encoding
+                content_encoding=content_encoding,
             )
             headers["X-Signature"] = signature
 
@@ -247,7 +251,7 @@ class TransportClient:
                     verify=self.verify_ssl,
                 )
 
-                if response.status_code == 200:
+                if response.status_code in (200, 202):
                     self._on_success()
                     result = response.json()
                     return {
@@ -258,6 +262,17 @@ class TransportClient:
                         ),  # Use items
                     }
 
+                elif response.status_code == 429:
+                    # Rate limit - retry
+                    retry_after = response.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            delay = float(retry_after)
+                        except (ValueError, TypeError):
+                            pass
+                    last_error = "HTTP 429 (Rate Limit)"
+                    logger.warning(f"Upload attempt {attempt + 1} rate limited. Retry after {delay}s")
+
                 elif response.status_code >= 400 and response.status_code < 500:
                     # Client error - don't retry
                     self._on_failure(f"HTTP {response.status_code}")
@@ -266,6 +281,17 @@ class TransportClient:
                         "error": f"Client error: {response.status_code}",
                         "response": response.text[:500],
                     }
+
+                elif response.status_code == 503:
+                    # Backpressure - retry
+                    retry_after = response.headers.get("Retry-After")
+                    if retry_after:
+                        try:
+                            delay = float(retry_after)
+                        except (ValueError, TypeError):
+                            pass
+                    last_error = "HTTP 503 (Backpressure)"
+                    logger.warning(f"Upload attempt {attempt + 1} backpressure. Retry after {delay}s")
 
                 else:
                     # Server error - retry
@@ -307,17 +333,11 @@ class TransportClient:
     ) -> str:
         """Sign payload with HMAC-SHA256 (Canonical: method\npath\ntimestamp\nsensor_id\nencoding\nbody)"""
         # V1 Canonical String Format (newline delimited)
-        parts = [
-            method,
-            path,
-            timestamp,
-            sensor_id,
-            content_encoding
-        ]
-        
-        # We process payload separately to avoid large string copies if possible, 
+        parts = [method, path, timestamp, sensor_id, content_encoding]
+
+        # We process payload separately to avoid large string copies if possible,
         # but hmac.update needs bytes.
-        
+
         # Build layout:
         # method\n
         # path\n
@@ -325,17 +345,17 @@ class TransportClient:
         # sensor_id\n
         # content_encoding\n
         # body_bytes
-        
+
         canonical_meta = "\n".join(parts) + "\n"
-        
+
         h = hmac.new(self.hmac_secret.encode(), digestmod=hashlib.sha256)
         h.update(canonical_meta.encode())
-        
+
         if isinstance(payload, str):
             h.update(payload.encode())
         else:
             h.update(payload)
-            
+
         return h.hexdigest()
 
     def _on_success(self) -> None:
@@ -391,14 +411,14 @@ class TransportClient:
             from urllib.parse import urlparse
 
             path = urlparse(alerts_url).path
-            # For alerts, sensor_id might be inside payload or context. 
+            # For alerts, sensor_id might be inside payload or context.
             # We should probably pass it if available.
             # Assuming alert_data has 'sensor_id' is risky if not ensured.
             # But the header X-Sensor-ID isn't set above in upload_alert?
             # Let's add X-Sensor-ID to headers first.
             s_id = alert_data.get("sensor_id", "unknown")
             headers["X-Sensor-ID"] = s_id
-            
+
             headers["X-Signature"] = self._sign_payload(
                 "POST", path, payload, timestamp, sensor_id=s_id
             )

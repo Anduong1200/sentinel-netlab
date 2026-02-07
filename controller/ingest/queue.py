@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -6,7 +5,7 @@ from sqlalchemy import and_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from controller.api.deps import db
-from controller.api.models import IngestJob
+from controller.models import IngestJob
 
 
 @dataclass
@@ -14,37 +13,41 @@ class QueueStats:
     queue_depth: int
     lag_seconds: float
 
+
 class IngestQueue:
     """DB-Backed Queue for Ingest Jobs"""
 
     @staticmethod
-    def enqueue(sensor_id: str, batch_id: str, payload: dict) -> str:
+    def enqueue(sensor_id: str, batch_id: str, payload: dict) -> tuple[str, bool]:
         """
         Enqueue a batch for processing.
-        Returns batch_id if successful (or if already exists).
+        Returns (job_id, is_duplicate).
         """
         # 1. Idempotency Check (Optimistic)
-        job = db.session.get(IngestJob, batch_id)
+        # Scope job_id by sensor_id to prevent collision
+        job_id = f"{sensor_id}:{batch_id}"
+
+        job = db.session.get(IngestJob, job_id)
         if job:
             return job.job_id, True
 
         # 2. Insert
         try:
             job = IngestJob(
-                job_id=batch_id,
+                job_id=job_id,
                 sensor_id=sensor_id,
                 status="queued",
                 payload=payload,
                 attempts=0,
-                next_attempt_at=datetime.now(UTC)
+                next_attempt_at=datetime.now(UTC),
             )
             db.session.add(job)
             db.session.commit()
-            return batch_id, False
+            return job.job_id, False
         except IntegrityError:
             db.session.rollback()
             # Race condition, it exists now
-            return batch_id, True
+            return job_id, True
         except Exception as e:
             db.session.rollback()
             raise e
@@ -62,14 +65,9 @@ class IngestQueue:
         # Find candidate jobs
         candidates = db.session.scalars(
             select(IngestJob)
-            .where(
-                and_(
-                    IngestJob.status == "queued",
-                    IngestJob.next_attempt_at <= now
-                )
-            )
+            .where(and_(IngestJob.status == "queued", IngestJob.next_attempt_at <= now))
             .limit(limit)
-            .with_for_update(skip_locked=True) # Postgres only feature usually
+            .with_for_update(skip_locked=True)  # Postgres only feature usually
         ).all()
 
         claimed = []
@@ -92,7 +90,9 @@ class IngestQueue:
         db.session.execute(
             update(IngestJob)
             .where(IngestJob.job_id == job_id)
-            .values(status="done", payload=None) # Clear payload to save space? Retention policy handles rows.
+            .values(
+                status="done", payload=None
+            )  # Clear payload to save space? Retention policy handles rows.
         )
         db.session.commit()
 
@@ -107,9 +107,9 @@ class IngestQueue:
             update(IngestJob)
             .where(IngestJob.job_id == job_id)
             .values(
-                status="queued", # Retry
+                status="queued",  # Retry
                 error_msg=error,
-                next_attempt_at=next_time
+                next_attempt_at=next_time,
             )
         )
         db.session.commit()
@@ -121,19 +121,21 @@ class IngestQueue:
         # But for backpressure < 1000 items, exact count is fast enough.
 
         count = db.session.scalar(
-            select(db.func.count()).select_from(IngestJob).where(IngestJob.status == "queued")
+            select(db.func.count())
+            .select_from(IngestJob)
+            .where(IngestJob.status == "queued")
         )
 
         # Lag: Difference between now and oldest queued item received_at
         oldest = db.session.scalar(
-             select(IngestJob.received_at)
-             .where(IngestJob.status == "queued")
-             .order_by(IngestJob.received_at.asc())
-             .limit(1)
+            select(IngestJob.received_at)
+            .where(IngestJob.status == "queued")
+            .order_by(IngestJob.received_at.asc())
+            .limit(1)
         )
 
         lag = 0.0
         if oldest:
-             lag = (datetime.now(UTC) - oldest).total_seconds()
+            lag = (datetime.now(UTC) - oldest).total_seconds()
 
         return QueueStats(queue_depth=count or 0, lag_seconds=lag)

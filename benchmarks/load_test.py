@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 import random
@@ -17,7 +16,7 @@ except ImportError:
 BASE_URL = os.getenv("CONTROLLER_URL", "http://localhost:5000")
 NUM_SENSORS = int(os.getenv("NUM_SENSORS", "50"))
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50"))
-DURATION = int(os.getenv("DURATION", "10")) # Seconds
+DURATION = int(os.getenv("DURATION", "10"))  # Seconds
 
 # Token (In a real test, we would generate/provision tokens, but for dev we might use a known one or mock)
 # For this script to work without auth bypass, we need valid tokens.
@@ -25,6 +24,7 @@ DURATION = int(os.getenv("DURATION", "10")) # Seconds
 # Or we can rely on the fact that we might have a global test token.
 AUTH_TOKEN = os.getenv("SENSOR_TOKEN", "mock-token")
 SENSOR_HMAC_SECRET = os.getenv("SENSOR_SECRET", "dev-secret")
+
 
 async def sensor_worker(sensor_id: str, results: list):
     """Simulates a single sensor sending batches."""
@@ -36,20 +36,18 @@ async def sensor_worker(sensor_id: str, results: list):
             batch_id = uuid.uuid4().hex
             items = []
             for _ in range(BATCH_SIZE):
-                items.append({
-                    "bssid": f"00:11:22:33:44:{random.randint(10, 99)}", # noqa: S311
-                    "ssid": f"TestNet-{random.randint(1,100)}", # noqa: S311
-                    "timestamp": datetime.now().isoformat(),
-                    "rssi_dbm": random.randint(-90, -30), # noqa: S311
-                    "channel": random.choice([1, 6, 11]), # noqa: S311
-                    "security": "WPA2"
-                })
+                items.append(
+                    {
+                        "bssid": f"00:11:22:33:44:{random.randint(10, 99)}",  # noqa: S311
+                        "ssid": f"TestNet-{random.randint(1, 100)}",  # noqa: S311
+                        "timestamp": datetime.now().isoformat(),
+                        "rssi_dbm": random.randint(-90, -30),  # noqa: S311
+                        "channel": random.choice([1, 6, 11]),  # noqa: S311
+                        "security": "WPA2",
+                    }
+                )
 
-            payload = {
-                "sensor_id": sensor_id,
-                "batch_id": batch_id,
-                "items": items
-            }
+            payload = {"sensor_id": sensor_id, "batch_id": batch_id, "items": items}
 
             # Send
             start_req = time.time()
@@ -62,26 +60,25 @@ async def sensor_worker(sensor_id: str, results: list):
                     f"{BASE_URL}/api/v1/telemetry",
                     json=payload,
                     headers=headers,
-                    timeout=5.0
+                    timeout=5.0,
                 )
-                latency = (time.time() - start_req) * 1000 # ms
+                latency = (time.time() - start_req) * 1000  # ms
 
-                results.append({
-                    "status": resp.status_code,
-                    "latency": latency,
-                    "items": BATCH_SIZE
-                })
+                results.append(
+                    {
+                        "status": resp.status_code,
+                        "latency": latency,
+                        "items": BATCH_SIZE,
+                    }
+                )
 
                 # Sleep briefly to avoid total DOS (simulate real interval?)
                 # await asyncio.sleep(0.1)
 
             except Exception:
-                results.append({
-                    "status": "error",
-                    "latency": 0,
-                    "items": 0
-                })
+                results.append({"status": "error", "latency": 0, "items": 0})
                 # print(f"Error: {e}")
+
 
 async def run_load_test():
     print("=== Sentinel NetLab Load Test ===")
@@ -104,12 +101,16 @@ async def run_load_test():
 
     # Analysis
     total_reqs = len(results)
-    success_reqs = len([r for r in results if r['status'] == 202])
-    error_reqs = len([r for r in results if r['status'] in ["error", 500, 503]])
-    backpressure_reqs = len([r for r in results if r['status'] == 503])
+    success_reqs = len([r for r in results if r["status"] == 202])
+    error_reqs = len([r for r in results if r["status"] in ["error", 500, 503]])
+    backpressure_reqs = len([r for r in results if r["status"] == 503])
 
-    total_items = sum([r['items'] for r in results if r['status'] == 202])
-    latencies = [r['latency'] for r in results if isinstance(r['status'], int) and r['status'] < 500]
+    total_items = sum([r["items"] for r in results if r["status"] == 202])
+    latencies = [
+        r["latency"]
+        for r in results
+        if isinstance(r["status"], int) and r["status"] < 500
+    ]
 
     print("\n=== Results ===")
     print(f"Total Requests: {total_reqs}")
@@ -122,9 +123,12 @@ async def run_load_test():
     if latencies:
         print(f"Latency P50:    {statistics.median(latencies):.2f} ms")
         try:
-            print(f"Latency P95:    {statistics.quantiles(latencies, n=20)[18]:.2f} ms") # approx P95
-        except Exception: # noqa: S110
-             pass # data might be too small
+            print(
+                f"Latency P95:    {statistics.quantiles(latencies, n=20)[18]:.2f} ms"
+            )  # approx P95
+        except Exception:  # noqa: S110
+            pass  # data might be too small
+
 
 if __name__ == "__main__":
     asyncio.run(run_load_test())

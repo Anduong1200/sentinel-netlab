@@ -64,23 +64,47 @@ class DummyMetric:
     def time(self):
         return _DummyTimer()
 
+
+# Metric Cache to allow safe re-import/re-definition (e.g. in tests)
+_METRIC_CACHE = {}
+
+
 def create_counter(name: str, desc: str, labels: list[str]) -> Counter:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
-    return Counter(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
+    full_name = f"{PREFIX}_{name}"
+    if full_name in _METRIC_CACHE:
+        return _METRIC_CACHE[full_name]
+    m = Counter(full_name, desc, labels, registry=REGISTRY)
+    _METRIC_CACHE[full_name] = m
+    return m
+
 
 def create_gauge(name: str, desc: str, labels: list[str]) -> Gauge:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
-    return Gauge(f"{PREFIX}_{name}", desc, labels, registry=REGISTRY)
+    full_name = f"{PREFIX}_{name}"
+    if full_name in _METRIC_CACHE:
+        return _METRIC_CACHE[full_name]
+    m = Gauge(full_name, desc, labels, registry=REGISTRY)
+    _METRIC_CACHE[full_name] = m
+    return m
 
-def create_histogram(name: str, desc: str, labels: list[str], buckets=None) -> Histogram:
+
+def create_histogram(
+    name: str, desc: str, labels: list[str], buckets=None
+) -> Histogram:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
+    full_name = f"{PREFIX}_{name}"
+    if full_name in _METRIC_CACHE:
+        return _METRIC_CACHE[full_name]
     kwargs = {"registry": REGISTRY}
     if buckets:
         kwargs["buckets"] = buckets
-    return Histogram(f"{PREFIX}_{name}", desc, labels, **kwargs)
+    m = Histogram(full_name, desc, labels, **kwargs)
+    _METRIC_CACHE[full_name] = m
+    return m
 
 
 # =============================================================================
@@ -154,8 +178,12 @@ INGEST_LATENCY = create_histogram(
 
 class _DummyTimer:
     """Dummy context manager for timer when prometheus is not available."""
-    def __enter__(self): return self
-    def __exit__(self, *args): pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
 
 
 # =============================================================================
@@ -167,7 +195,9 @@ QUEUE_LAG = create_gauge(
 )
 
 DROP_RATE = create_counter(
-    "drop_rate_total", "Dropped items due to full queue or validation error", ["sensor_id", "reason"]
+    "drop_rate_total",
+    "Dropped items due to full queue or validation error",
+    ["sensor_id", "reason"],
 )
 
 HEARTBEAT_AGE = create_gauge(
@@ -177,4 +207,3 @@ HEARTBEAT_AGE = create_gauge(
 ALERT_RATE = create_counter(
     "alert_rate_total", "Total alerts generated", ["sensor_id", "severity"]
 )
-

@@ -70,7 +70,7 @@ class JSONFormatter(logging.Formatter):
 
         # SSID
         if "ssid" in data and isinstance(data["ssid"], str):
-             data["ssid"] = anonymize_ssid(data["ssid"])
+            data["ssid"] = anonymize_ssid(data["ssid"])
 
         # Secrets - should be filtered before logging, but catch obvious ones
         for key in ["password", "token", "secret", "key"]:
@@ -111,6 +111,7 @@ def configure_logging(
     # File Handler (Optional) with Rotation
     if log_dir:
         from logging.handlers import RotatingFileHandler
+
         os.makedirs(log_dir, exist_ok=True)
         log_file = os.path.join(log_dir, f"{component}.log")
         # Rotate at 50MB, keep 5 backups (250MB total max per component)

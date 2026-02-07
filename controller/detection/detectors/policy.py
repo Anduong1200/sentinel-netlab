@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from common.detection.evidence import Evidence, Finding
@@ -12,7 +11,9 @@ class PolicyDetector(AbstractDetector):
     Example: Open networks, WEP encryption.
     """
 
-    def process(self, telemetry: dict[str, Any], context: dict[str, Any] | None = None) -> list[Finding]:
+    def process(
+        self, telemetry: dict[str, Any], context: dict[str, Any] | None = None
+    ) -> list[Finding]:
         findings = []
 
         ssid = telemetry.get("ssid", "")
@@ -24,16 +25,18 @@ class PolicyDetector(AbstractDetector):
             f = Finding(
                 detector_id="policy_open_net",
                 entity_key=f"policy|{ssid}|{bssid}",
-                confidence_raw=1.0 # Detection is certain
+                confidence_raw=1.0,  # Detection is certain
             )
             f.add_reason(ReasonCodes.SECURITY_DOWNGRADE)
-            f.evidence_list.append(Evidence(
-                type="configuration",
-                description=ReasonCodes.SECURITY_DOWNGRADE.format(
-                    ssid=ssid, security="Open", expected="Encrypted"
-                ),
-                data={"security": "Open"}
-            ))
+            f.evidence_list.append(
+                Evidence(
+                    type="configuration",
+                    description=ReasonCodes.SECURITY_DOWNGRADE.format(
+                        ssid=ssid, security="Open", expected="Encrypted"
+                    ),
+                    data={"security": "Open"},
+                )
+            )
             findings.append(f)
 
         # 2. Check for WEP
@@ -41,16 +44,18 @@ class PolicyDetector(AbstractDetector):
             f = Finding(
                 detector_id="policy_wep_net",
                 entity_key=f"policy|{ssid}|{bssid}",
-                confidence_raw=1.0
+                confidence_raw=1.0,
             )
             f.add_reason(ReasonCodes.SECURITY_DOWNGRADE)
-            f.evidence_list.append(Evidence(
-                type="configuration",
-                description=ReasonCodes.SECURITY_DOWNGRADE.format(
-                    ssid=ssid, security=security, expected="WPA2/3"
-                ),
-                data={"security": security}
-            ))
+            f.evidence_list.append(
+                Evidence(
+                    type="configuration",
+                    description=ReasonCodes.SECURITY_DOWNGRADE.format(
+                        ssid=ssid, security=security, expected="WPA2/3"
+                    ),
+                    data={"security": security},
+                )
+            )
             findings.append(f)
 
         return findings

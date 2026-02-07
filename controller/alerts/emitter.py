@@ -1,4 +1,3 @@
-
 import logging
 from datetime import UTC, datetime
 
@@ -11,6 +10,7 @@ from controller.models import Alert, get_session
 from controller.scoring.risk import RiskModel
 
 logger = logging.getLogger(__name__)
+
 
 class AlertEmitter:
     """
@@ -43,7 +43,7 @@ class AlertEmitter:
             # unless we have smarter logic.
             # Better: Get severity from ReasonCode (High/Crit) and map to Impact?
 
-            impact = 50.0 # Default Medium
+            impact = 50.0  # Default Medium
             if finding.reason_codes:
                 cat = finding.reason_codes[0].category
                 if "threat" in cat.lower():
@@ -60,39 +60,55 @@ class AlertEmitter:
             )
 
             # 4. Update State
-            self.store.update_state(fp, risk_score.severity, risk_score.value, emitted=should_emit)
+            self.store.update_state(
+                fp, risk_score.severity, risk_score.value, emitted=should_emit
+            )
 
             if should_emit:
                 self._persist_alert(session, finding, risk_score, sensor_id)
 
         session.close()
 
-    def _persist_alert(self, session, finding: Finding, risk: "RiskScore", sensor_id: str):
+    def _persist_alert(
+        self, session, finding: Finding, risk: "RiskScore", sensor_id: str
+    ):
         """Save Alert to DB."""
         try:
             # Generate Alert ID
             import uuid
+
             alert_id = str(uuid.uuid4().hex)[:32]
 
             # Map Reason Codes to JSON
-            reasons_json = [{"code": r.code, "msg": r.message_template} for r in finding.reason_codes]
+            reasons_json = [
+                {"code": r.code, "msg": r.message_template}
+                for r in finding.reason_codes
+            ]
 
             alert = Alert(
                 id=alert_id,
                 sensor_id=sensor_id,
                 alert_type=finding.detector_id,
                 severity=risk.severity.value,
-                title=f"Detection: {finding.reason_codes[0].code}" if finding.reason_codes else "Unknown Detection",
-                description=finding.evidence_list[0].description if finding.evidence_list else "",
-                bssid=finding.entity_key.split("|")[-1] if "|" in finding.entity_key else None, # Heuristic
+                title=f"Detection: {finding.reason_codes[0].code}"
+                if finding.reason_codes
+                else "Unknown Detection",
+                description=finding.evidence_list[0].description
+                if finding.evidence_list
+                else "",
+                bssid=finding.entity_key.split("|")[-1]
+                if "|" in finding.entity_key
+                else None,  # Heuristic
                 # ssid not easily extracted from entity key without parsing, assume evidence has it?
                 # skipping optional fields for matching minimal schema
                 evidence=[e.to_dict() for e in finding.evidence_list],
                 reason_codes=reasons_json,
                 confidence=finding.confidence_raw,
-                impact=float(risk.value / finding.confidence_raw) if finding.confidence_raw > 0 else 0, # Reverse calc impact?
+                impact=float(risk.value / finding.confidence_raw)
+                if finding.confidence_raw > 0
+                else 0,  # Reverse calc impact?
                 risk_score=risk.value,
-                created_at=datetime.now(UTC)
+                created_at=datetime.now(UTC),
             )
 
             session.add(alert)

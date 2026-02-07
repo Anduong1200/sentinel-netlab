@@ -1,4 +1,3 @@
-
 import os
 
 import dash
@@ -26,7 +25,10 @@ layout = html.Div(
                 dbc.Col(
                     html.Div(
                         [
-                            html.H4("Global Intelligence Map", className="fw-bold text-white mb-0"),
+                            html.H4(
+                                "Global Intelligence Map",
+                                className="fw-bold text-white mb-0",
+                            ),
                             html.Span(
                                 "Geospatial visualization of discovered networks",
                                 className="text-muted small",
@@ -74,9 +76,9 @@ layout = html.Div(
                 width=12,
             )
         ),
-         dcc.Interval(
+        dcc.Interval(
             id="map-interval",
-            interval=10000, # Update every 10s
+            interval=10000,  # Update every 10s
             n_intervals=0,
         ),
     ],
@@ -86,10 +88,7 @@ layout = html.Div(
 
 @callback(
     Output("advanced-map-graph", "figure"),
-    [
-        Input("map-interval", "n_intervals"),
-        Input("map-security-filter", "value")
-    ],
+    [Input("map-interval", "n_intervals"), Input("map-security-filter", "value")],
 )
 def update_map(n, filter_val):
     # Dark Map Style
@@ -114,13 +113,13 @@ def update_map(n, filter_val):
             )
             if resp_net.status_code == 200:
                 networks = resp_net.json().get("networks", [])
-        except Exception: # noqa: S110
+        except Exception:  # noqa: S110
             pass
 
         if not networks:
-             fig = go.Figure(go.Scattermapbox())
-             fig.update_layout(**layout_override)
-             return fig
+            fig = go.Figure(go.Scattermapbox())
+            fig.update_layout(**layout_override)
+            return fig
 
         # Filter Data
         filtered_nets = []
@@ -138,20 +137,20 @@ def update_map(n, filter_val):
                 continue
 
             # Compute Color
-            color = "#00dbde" # Cyan (Safe)
+            color = "#00dbde"  # Cyan (Safe)
             if "WEP" in sec:
-                color = "#f7b733" # Orange
+                color = "#f7b733"  # Orange
             if "OPEN" in sec:
-                color = "#ff0844" # Red
+                color = "#ff0844"  # Red
 
             net["color"] = color
             net["risk"] = net.get("risk_score", 0)
             filtered_nets.append(net)
 
         if not filtered_nets:
-             fig = go.Figure(go.Scattermapbox())
-             fig.update_layout(**layout_override)
-             return fig
+            fig = go.Figure(go.Scattermapbox())
+            fig.update_layout(**layout_override)
+            return fig
 
         df = pd.DataFrame(filtered_nets)
 
@@ -162,9 +161,11 @@ def update_map(n, filter_val):
             lon="lon",
             hover_name="ssid",
             hover_data=["bssid", "security", "channel", "risk"],
-            color_discrete_sequence=[df.iloc[0]["color"]] if len(df) == 1 else df["color"], # Simple hack, better to map
+            color_discrete_sequence=[df.iloc[0]["color"]]
+            if len(df) == 1
+            else df["color"],  # Simple hack, better to map
             zoom=12,
-            height=600
+            height=600,
         )
 
         # Manually set colors scatter for multiple traces?
@@ -177,18 +178,24 @@ def update_map(n, filter_val):
             df,
             lat="lat",
             lon="lon",
-            color="risk", # Color by Risk Score
+            color="risk",  # Color by Risk Score
             size="risk",  # Size by Risk Score
             size_max=15,
             hover_name="ssid",
-            hover_data={"lat": False, "lon": False, "bssid": True, "security": True, "risk": True},
-            color_continuous_scale=["#00dbde", "#ff0844"], # Cyan -> Red
+            hover_data={
+                "lat": False,
+                "lon": False,
+                "bssid": True,
+                "security": True,
+                "risk": True,
+            },
+            color_continuous_scale=["#00dbde", "#ff0844"],  # Cyan -> Red
             mapbox_style="carto-darkmatter",
-             zoom=12,
+            zoom=12,
         )
 
         fig.update_layout(**layout_override)
-        if hasattr(fig, 'update_coloraxes'):
+        if hasattr(fig, "update_coloraxes"):
             fig.update_coloraxes(showscale=False)
 
         return fig

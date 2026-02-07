@@ -6,9 +6,16 @@ logger = logging.getLogger(__name__)
 
 # Known weak/default passwords to reject in production
 WEAK_PASSWORDS = {
-    "admin", "password", "123456", "sentinel",
-    "admin123", "secret", "changeme", "sentinel-dev-2024"
+    "admin",
+    "password",
+    "123456",
+    "sentinel",
+    "admin123",
+    "secret",
+    "changeme",
+    "sentinel-dev-2024",
 }  # noqa: S105
+
 
 def require_secret(
     name: str,
@@ -16,7 +23,7 @@ def require_secret(
     *,
     min_len: int = 8,
     allow_dev_autogen: bool = False,
-    env: str = "production"
+    env: str = "production",
 ) -> str:
     """
     Retrieve a secret from environment variables with fail-fast enforcement.
@@ -46,7 +53,9 @@ def require_secret(
 
         if allow_dev_autogen:
             val = secrets.token_hex(min_len)
-            logger.warning(f"DEV MODE: Auto-generated ephemeral secret for '{env_var}'. Do not use in production.")
+            logger.warning(
+                f"DEV MODE: Auto-generated ephemeral secret for '{env_var}'. Do not use in production."
+            )
         else:
             # Even in dev, if allow_dev_autogen is False, we might want to fail or just warn and return empty?
             # Typically if it's required, we should fail or return a known dev default if provided.
@@ -67,9 +76,12 @@ def require_secret(
             logger.critical(safe_msg)
             raise RuntimeError(safe_msg)
         else:
-            logger.warning(f"Weak secret for '{env_var}': {validation_error} (Allowed in {env})")
+            logger.warning(
+                f"Weak secret for '{env_var}': {validation_error} (Allowed in {env})"
+            )
 
     return val
+
 
 def _validate_strength(val: str, min_len: int) -> str | None:
     if len(val) < min_len:
@@ -79,6 +91,7 @@ def _validate_strength(val: str, min_len: int) -> str | None:
         return "Value is in blacklist of common weak passwords"
 
     return None
+
 
 def redact(val: str) -> str:
     """Return redacted string for logging"""

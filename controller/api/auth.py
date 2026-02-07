@@ -13,7 +13,8 @@ from flask import g, jsonify, request
 from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
 
 from .deps import config, db, logger
-from .models import Token
+from controller.models import APIToken
+
 
 # =============================================================================
 # RBAC & AUTHENTICATION
@@ -76,10 +77,10 @@ def init_default_tokens():
             token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
 
             # Check exist
-            if Token.query.filter_by(token_hash=token_hash).first():
+            if APIToken.query.filter_by(token_hash=token_hash).first():
                 continue
 
-            new_token = Token(
+            new_token = APIToken(
                 token_id=secrets.token_hex(8),
                 token_hash=token_hash,
                 name=name,
@@ -108,10 +109,10 @@ def init_default_tokens():
 # For now, let's remove the auto-call at module level to prevent "working outside of application context" errors.
 
 
-def verify_token(token_plain: str) -> Token | None:
+def verify_token(token_plain: str) -> APIToken | None:
     token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
 
-    token_obj = Token.query.filter_by(token_hash=token_hash).first()
+    token_obj = APIToken.query.filter_by(token_hash=token_hash).first()
 
     if not token_obj or not token_obj.is_active:
         return None
@@ -150,25 +151,19 @@ def verify_hmac(
 ) -> bool:
     """Verify HMAC signature using V1 Canonical Format"""
     # V1 Canonical String Format (newline delimited)
-    parts = [
-        method,
-        path,
-        timestamp,
-        sensor_id,
-        content_encoding
-    ]
-    
+    parts = [method, path, timestamp, sensor_id, content_encoding]
+
     canonical_meta = "\n".join(parts) + "\n"
-    
+
     h = hmac.new(config.security.hmac_secret.encode(), digestmod=hashlib.sha256)
     h.update(canonical_meta.encode())
     h.update(payload)
-    
+
     expected = h.hexdigest()
     return hmac.compare_digest(expected, signature)
 
 
-def verify_sequence(token: Token, sequence: int) -> bool:
+def verify_sequence(token: APIToken, sequence: int) -> bool:
     """Verify monotonic sequence number for replay protection"""
     if sequence is None:
         return True  # Optional
@@ -192,9 +187,9 @@ def require_auth(permission: Permission = None):
             # TLS check
             # TLS check
             if config.security.require_tls and not request.is_secure:
-                 # With TrustedProxyMiddleware, request.is_secure is correctly determined 
-                 # based on X-Forwarded-Proto from TRUSTED sources only.
-                 return jsonify({"error": "HTTPS required"}), 403
+                # With TrustedProxyMiddleware, request.is_secure is correctly determined
+                # based on X-Forwarded-Proto from TRUSTED sources only.
+                return jsonify({"error": "HTTPS required"}), 403
 
             # Token auth
             auth_header = request.headers.get("Authorization", "")
@@ -257,7 +252,7 @@ def require_signed():
             # This prevents zip-bombs: we only decompress AFTER signature is verified.
             payload = request.get_data()
             content_encoding = request.headers.get("Content-Encoding", "identity")
-            
+
             # Fail-closed check for encoding
             if content_encoding not in ["gzip", "identity", ""]:
                 AUTH_FAILURES.labels(type="bad_encoding").inc()
@@ -275,7 +270,9 @@ def require_signed():
                 sequence,
                 content_encoding=content_encoding,
             ):
-                HMAC_FAILURES.labels(reason="signature_mismatch").inc() if hasattr(HMAC_FAILURES, 'labels') else HMAC_FAILURES.inc()
+                HMAC_FAILURES.labels(reason="signature_mismatch").inc() if hasattr(
+                    HMAC_FAILURES, "labels"
+                ) else HMAC_FAILURES.inc()
                 return jsonify({"error": "Invalid signature"}), 401
 
             # Sequence check (replay protection)

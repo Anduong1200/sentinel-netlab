@@ -1,4 +1,3 @@
-
 import os
 import sys
 import time
@@ -10,6 +9,7 @@ from sensor.config import get_config
 from sensor.queue import SqliteQueue
 
 TEST_SPOOL_PATH = "data/test_spool.db"
+
 
 def cleanup():
     if os.path.exists(TEST_SPOOL_PATH):
@@ -23,10 +23,12 @@ def cleanup():
         except:
             pass
 
+
 def mock_server():
     """Simple mock server logic simulation"""
     # In real test, we might use http.server, but here we just check queue state
     pass
+
 
 def test_reliability():
     print("=== P0 Reliability Acceptance Test ===")
@@ -35,8 +37,8 @@ def test_reliability():
     # Override Config
     os.environ["SENSOR_ID"] = "test-sensor"
     config = get_config()
-    config.storage.pcap_dir = "data" # Spool will go to data/spool.db
-    config.capture.interface = "mock0" # Use mock
+    config.storage.pcap_dir = "data"  # Spool will go to data/spool.db
+    config.capture.interface = "mock0"  # Use mock
     config.mock_mode = True
 
     # 1. Setup Persistent Queue manually to verify logic first
@@ -61,8 +63,8 @@ def test_reliability():
 
     entry_db = q._get_by_id(batch_id)
     print(f"   -> Backoff applied. Next attempt: {entry_db['next_attempt_at']}")
-    assert entry_db['state'] == 'queued'
-    assert entry_db['attempts'] == 1
+    assert entry_db["state"] == "queued"
+    assert entry_db["attempts"] == 1
 
     q.close()
 
@@ -80,10 +82,10 @@ def test_reliability():
             "queue": {"count": 50},
             "upload_worker": {
                 "running": True,
-                "last_upload_time": time.time() - 30, # 30s ago
-                "consecutive_failures": 0
+                "last_upload_time": time.time() - 30,  # 30s ago
+                "consecutive_failures": 0,
             },
-            "threads": {"capture": True, "upload": True, "worker": True}
+            "threads": {"capture": True, "upload": True, "worker": True},
         }
 
     # Manually invoke logic (don't start real HTTP server to avoid port bind issues in test)
@@ -100,11 +102,11 @@ def test_reliability():
         "capture_alive": threads["capture"],
         "sender_alive": threads["worker"],
         "sensor_id": "test",
-        "uptime": 100
+        "uptime": 100,
     }
 
-    assert response['backlog'] == 50
-    assert response['last_send_success_age_sec'] == 30.0
+    assert response["backlog"] == 50
+    assert response["last_send_success_age_sec"] == 30.0
     print("   -> Health JSON structure valid")
 
     # 3. Simulate Stuck Inflight Recovery
@@ -112,7 +114,10 @@ def test_reliability():
     q = SqliteQueue(db_path=TEST_SPOOL_PATH)
     # Force state to inflight (simulation of crash during send)
     with q._get_conn() as conn:
-        conn.execute("UPDATE spool SET state='inflight', next_attempt_at=0 WHERE batch_id=?", (batch_id,))
+        conn.execute(
+            "UPDATE spool SET state='inflight', next_attempt_at=0 WHERE batch_id=?",
+            (batch_id,),
+        )
 
     print("   -> Simulating Crash (Queue closed without ACK)...")
     q.close()
@@ -130,6 +135,7 @@ def test_reliability():
 
     print("=== P0 Reliability Success ===")
     cleanup()
+
 
 if __name__ == "__main__":
     test_reliability()

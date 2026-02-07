@@ -6,6 +6,7 @@ Checks for existence of .env.lab.
 If missing, generates one with strong random keys.
 This ensures "Zero Config" start while maintaining security best practices (no hardcoded secrets in repo).
 """
+
 import secrets
 import sys
 from pathlib import Path
@@ -20,7 +21,7 @@ KEYS = {
     "DASHBOARD_API_TOKEN": 32,
     "LAB_API_KEY": 32,
     "SENSOR_AUTH_TOKEN": 32,
-    "DASH_PASSWORD": 16, # Default admin password
+    "DASH_PASSWORD": 16,  # Default admin password
 }
 
 DEFAULTS = {
@@ -33,8 +34,10 @@ DEFAULTS = {
     "LOG_LEVEL": "INFO",
 }
 
+
 def generate_secret(length: int) -> str:
-    return secrets.token_hex(length // 2) # token_hex returns 2 chars per byte
+    return secrets.token_hex(length // 2)  # token_hex returns 2 chars per byte
+
 
 def main():
     script_dir = Path(__file__).parent.resolve()
@@ -52,7 +55,7 @@ def main():
 
         # Write Defaults
         for key, value in DEFAULTS.items():
-             f.write(f"{key}={value}\n")
+            f.write(f"{key}={value}\n")
 
         f.write("\n# Auto-generated Secrets\n")
         for key, length in KEYS.items():
@@ -61,6 +64,7 @@ def main():
 
     print(f"[{sys.argv[0]}] Secrets generated at {env_path}")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

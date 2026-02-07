@@ -274,6 +274,7 @@ class SensorController:
 
         # Helper Managers
         from sensor.health import HealthServer
+
         self.health_server = HealthServer(port=8000, get_status_callback=self.status)
         self.alert_manager = AlertManager(dedup_window=600)
         self.monitor = SensorMonitor(self.sensor_id, self.queue)
@@ -404,13 +405,17 @@ class SensorController:
             "queue": self.queue.stats(),
             "upload_worker": self.upload_worker.stats(),
             "threads": {
-                "capture": self._capture_thread.is_alive() if self._capture_thread else False,
-                "upload": self._upload_thread.is_alive() if self._upload_thread else False,
+                "capture": self._capture_thread.is_alive()
+                if self._capture_thread
+                else False,
+                "upload": self._upload_thread.is_alive()
+                if self._upload_thread
+                else False,
                 "worker": self.upload_worker.is_healthy(),
             },
             "baseline": {
                 "learning_mode": self.baseline.learning_mode,
-            }
+            },
         }
 
     def _capture_loop(self) -> None:
@@ -510,26 +515,34 @@ class SensorController:
 
                     # 2. Risk Calculation (Integrated Probability x Impact)
                     dev_score = deviation["score"] if deviation else 0.0
-                    risk_result = self.risk_engine.calculate_risk(net_dict, deviation_score=dev_score)
+                    risk_result = self.risk_engine.calculate_risk(
+                        net_dict, deviation_score=dev_score
+                    )
                     current_score = risk_result.get("risk_score", 0)
 
                     # 3. Handle Deviation Alert (Specific)
                     if deviation:
-                        logger.warning(f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})")
+                        logger.warning(
+                            f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})"
+                        )
 
                         # Send specific Baseline Alert with reasons
-                        self._handle_alert({
-                            "alert_type": "baseline_deviation",
-                            "severity": "high" if current_score > 70 else "medium",
-                            "title": f"Baseline Deviation: {telemetry.ssid}",
-                            "description": "; ".join(deviation["reasons"]),
-                            "evidence": deviation.get("baseline"),
-                            "risk_score": current_score,
-                            "bssid": telemetry.bssid,
-                            "ssid": telemetry.ssid,
-                            "impact": risk_result.get("impact", 0.5), # Assuming risk engine provides this or implicit
-                            "confidence": risk_result.get("confidence", 0.5)
-                        })
+                        self._handle_alert(
+                            {
+                                "alert_type": "baseline_deviation",
+                                "severity": "high" if current_score > 70 else "medium",
+                                "title": f"Baseline Deviation: {telemetry.ssid}",
+                                "description": "; ".join(deviation["reasons"]),
+                                "evidence": deviation.get("baseline"),
+                                "risk_score": current_score,
+                                "bssid": telemetry.bssid,
+                                "ssid": telemetry.ssid,
+                                "impact": risk_result.get(
+                                    "impact", 0.5
+                                ),  # Assuming risk engine provides this or implicit
+                                "confidence": risk_result.get("confidence", 0.5),
+                            }
+                        )
 
                     # 4. Handle General Risk Alert
                     if current_score > 70 and not deviation:
@@ -542,9 +555,7 @@ class SensorController:
                             f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
                         )
 
-                    self.metrics.set_risk_score(
-                        telemetry.bssid, current_score
-                    )
+                    self.metrics.set_risk_score(telemetry.bssid, current_score)
 
                 # Record activity for adaptive hopping
                 self.hopper.record_activity(parsed.channel, 1)
@@ -681,7 +692,9 @@ Examples:
     parser.add_argument("--iface", help="Capture interface")
     parser.add_argument("--channels", help="Comma-separated channels")
     parser.add_argument("--mock-mode", action="store_true", help="Enable mock mode")
-    parser.add_argument("--learning-mode", action="store_true", help="Enable Baseline Learning Mode")
+    parser.add_argument(
+        "--learning-mode", action="store_true", help="Enable Baseline Learning Mode"
+    )
 
     args = parser.parse_args()
 

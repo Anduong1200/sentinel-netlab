@@ -1,4 +1,3 @@
-
 import os
 
 import dash
@@ -23,7 +22,9 @@ layout = html.Div(
                 dbc.Col(
                     html.Div(
                         [
-                            html.H4("Threat Matrix", className="fw-bold text-white mb-0"),
+                            html.H4(
+                                "Threat Matrix", className="fw-bold text-white mb-0"
+                            ),
                             html.Span(
                                 "Live feed of detected security incidents",
                                 className="text-muted small",
@@ -51,7 +52,6 @@ layout = html.Div(
             ],
             className="mb-4 align-items-center",
         ),
-
         # Threat Table
         dbc.Row(
             dbc.Col(
@@ -65,9 +65,9 @@ layout = html.Div(
                 width=12,
             )
         ),
-         dcc.Interval(
+        dcc.Interval(
             id="threats-interval",
-            interval=10000, # Update every 10s
+            interval=10000,  # Update every 10s
             n_intervals=0,
         ),
     ],
@@ -79,7 +79,7 @@ layout = html.Div(
     Output("threats-grid", "children"),
     [
         Input("threats-interval", "n_intervals"),
-        Input("threat-severity-filter", "value")
+        Input("threat-severity-filter", "value"),
     ],
 )
 def update_threats(n, filter_val):
@@ -92,8 +92,8 @@ def update_threats(n, filter_val):
             )
             if resp_alerts.status_code == 200:
                 alerts = resp_alerts.json().get("alerts", [])
-        except Exception: # noqa: S110
-             pass
+        except Exception:  # noqa: S110
+            pass
 
         filtered_alerts = []
         for a in alerts:
@@ -102,14 +102,14 @@ def update_threats(n, filter_val):
                 continue
 
             # Enrich/Format
-            a['time_str'] = a.get("timestamp", "")[11:19]
+            a["time_str"] = a.get("timestamp", "")[11:19]
             filtered_alerts.append(a)
 
         if not filtered_alerts:
-             return html.Div(
+            return html.Div(
                 "No active threats match current filter.",
-                className="text-center text-muted p-5"
-             )
+                className="text-center text-muted p-5",
+            )
 
         # Build Table
         # Using simple HTML table loop for maximum customizability over formatting
@@ -127,16 +127,27 @@ def update_threats(n, filter_val):
                 html.Tr(
                     [
                         html.Td(
-                             html.Div(
+                            html.Div(
                                 severity.upper(),
                                 className="badge",
-                                style={"backgroundColor": color, "color": "#111", "minWidth": "80px"}
-                             )
+                                style={
+                                    "backgroundColor": color,
+                                    "color": "#111",
+                                    "minWidth": "80px",
+                                },
+                            )
                         ),
-                        html.Td(a.get("title", "Unknown"), className="fw-bold text-white"),
+                        html.Td(
+                            a.get("title", "Unknown"), className="fw-bold text-white"
+                        ),
                         html.Td(a.get("message", "-"), className="text-muted"),
-                        html.Td(html.Code(a.get("bssid", "N/A"), className="text-primary")),
-                        html.Td(a.get("time_str"), className="text-end text-white font-monospace"),
+                        html.Td(
+                            html.Code(a.get("bssid", "N/A"), className="text-primary")
+                        ),
+                        html.Td(
+                            a.get("time_str"),
+                            className="text-end text-white font-monospace",
+                        ),
                     ]
                 )
             )
@@ -158,7 +169,7 @@ def update_threats(n, filter_val):
             ],
             hover=True,
             borderless=True,
-            className="table-custom"
+            className="table-custom",
         )
 
         return table

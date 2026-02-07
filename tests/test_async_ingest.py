@@ -1,4 +1,3 @@
-
 from unittest.mock import patch
 
 import pytest
@@ -16,15 +15,13 @@ def test_ingest_telemetry_async_contract(app_client, sensor_auth_headers):
     payload = {
         "sensor_id": "sensor-01",
         "batch_id": "test-batch-async-01",
-        "items": [{"temp": 50}]
+        "items": [{"temp": 50}],
     }
 
     # Mock the Celery task
     with patch("controller.api.telemetry.process_telemetry_batch") as mock_task:
         response = app_client.post(
-            "/api/v1/telemetry",
-            json=payload,
-            headers=sensor_auth_headers
+            "/api/v1/telemetry", json=payload, headers=sensor_auth_headers
         )
 
         assert response.status_code == 202
@@ -37,6 +34,7 @@ def test_ingest_telemetry_async_contract(app_client, sensor_auth_headers):
         assert args[0] == "test-batch-async-01"
         assert args[1] == "sensor-01"
         assert len(args[2]) == 1
+
 
 def test_worker_task_logic():
     """Verify the worker task actually writes to DB"""

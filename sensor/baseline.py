@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BaselineEntry:
     """Represents a baseline profile for a BSSID."""
+
     bssid: str
     ssid: str | None
     vendor: str | None
@@ -38,10 +39,11 @@ class BaselineEntry:
     def is_vendor_match(self, observed_vendor: str | None) -> bool:
         """Check if observed vendor matches baseline."""
         if not self.vendor or not observed_vendor:
-            return True # Not enough info
+            return True  # Not enough info
         # Simple string match, could be improved with normalization
-        return self.vendor.lower().startswith(observed_vendor.lower()) or \
-               observed_vendor.lower().startswith(self.vendor.lower())
+        return self.vendor.lower().startswith(
+            observed_vendor.lower()
+        ) or observed_vendor.lower().startswith(self.vendor.lower())
 
     def check_signal_deviation(self, rssi: int, threshold_sigma: float = 3.0) -> float:
         """
@@ -49,16 +51,16 @@ class BaselineEntry:
         Returns deviation magnitude (0.0 to 1.0+).
         """
         if self.rssi_samples < 10:
-            return 0.0 # Not enough samples
+            return 0.0  # Not enough samples
 
         diff = rssi - self.rssi_avg
         if diff <= 0:
-            return 0.0 # Weaker signal is usually fine (moving away)
+            return 0.0  # Weaker signal is usually fine (moving away)
 
         # If signal is significantly stronger than average + sigma
         # It implies the source is much closer than expected -> Potential Evil Twin
 
-        sigma = max(self.rssi_std, 5.0) # Min sigma 5dB to avoid noise sensitivity
+        sigma = max(self.rssi_std, 5.0)  # Min sigma 5dB to avoid noise sensitivity
         z_score = diff / sigma
 
         if z_score > threshold_sigma:
@@ -138,7 +140,7 @@ class BaselineManager:
             rssi = frame_data.get("rssi_dbm", -100)
             channel = frame_data.get("channel")
             ssid = frame_data.get("ssid")
-            vendor = frame_data.get("vendor_oui") # Assumes normalizer provides this
+            vendor = frame_data.get("vendor_oui")  # Assumes normalizer provides this
 
             if row:
                 # Update Stats (Welford's/Running sums)
@@ -156,29 +158,50 @@ class BaselineManager:
                 curr_ssid = row["ssid"] or ssid
                 curr_vendor = row["vendor"] or vendor
 
-                conn.execute("""
+                conn.execute(
+                    """
                     UPDATE baselines SET
                         rssi_sum = ?, rssi_sq_sum = ?, rssi_samples = ?,
                         channel_history = ?,
                         last_seen = ?,
                         ssid = ?, vendor = ?
                     WHERE bssid = ?
-                """, (new_sum, new_sq_sum, new_samples, json.dumps(channels), now_iso, curr_ssid, curr_vendor, bssid))
+                """,
+                    (
+                        new_sum,
+                        new_sq_sum,
+                        new_samples,
+                        json.dumps(channels),
+                        now_iso,
+                        curr_ssid,
+                        curr_vendor,
+                        bssid,
+                    ),
+                )
 
             else:
                 # New Entry
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT INTO baselines (
                         bssid, ssid, vendor, channel_history,
                         rssi_sum, rssi_sq_sum, rssi_samples,
                         first_seen, last_seen, capabilities
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    bssid, ssid, vendor,
-                    json.dumps([channel] if channel else []),
-                    rssi, rssi * rssi, 1,
-                    now_iso, now_iso, "{}"
-                ))
+                """,
+                    (
+                        bssid,
+                        ssid,
+                        vendor,
+                        json.dumps([channel] if channel else []),
+                        rssi,
+                        rssi * rssi,
+                        1,
+                        now_iso,
+                        now_iso,
+                        "{}",
+                    ),
+                )
 
             conn.commit()
 
@@ -189,7 +212,7 @@ class BaselineManager:
         """
         if self.learning_mode:
             self.learn(frame_data)
-            return None # Suppress alerts in learning mode
+            return None  # Suppress alerts in learning mode
 
         bssid = frame_data.get("bssid")
         if not bssid:
@@ -210,8 +233,8 @@ class BaselineManager:
         # Parse Baseline
         rssi_samples = row["rssi_samples"]
         if rssi_samples < 5:
-             self.learn(frame_data) # Keep learning
-             return None
+            self.learn(frame_data)  # Keep learning
+            return None
 
         avg = row["rssi_sum"] / rssi_samples
         variance = (row["rssi_sq_sum"] / rssi_samples) - (avg * avg)
@@ -227,7 +250,7 @@ class BaselineManager:
             rssi_samples=rssi_samples,
             capabilities={},
             first_seen=datetime.fromisoformat(row["first_seen"]),
-            last_seen=None # Not needed here
+            last_seen=None,  # Not needed here
         )
 
         deviations = []
@@ -237,22 +260,26 @@ class BaselineManager:
         observed_vendor = frame_data.get("vendor_oui")
         if baseline.vendor and observed_vendor:
             if not baseline.is_vendor_match(observed_vendor):
-                deviations.append(f"Vendor Mismatch: Expected {baseline.vendor}, Got {observed_vendor}")
-                score += 1.0 # Critical
+                deviations.append(
+                    f"Vendor Mismatch: Expected {baseline.vendor}, Got {observed_vendor}"
+                )
+                score += 1.0  # Critical
 
         # 2. Signal Check
         sig_score = baseline.check_signal_deviation(frame_data.get("rssi_dbm", -100))
         if sig_score > 0:
-            deviations.append(f"Signal Anomaly: RSSI {frame_data.get('rssi_dbm')} vs Avg {avg:.1f} (Z={sig_score:.1f})")
+            deviations.append(
+                f"Signal Anomaly: RSSI {frame_data.get('rssi_dbm')} vs Avg {avg:.1f} (Z={sig_score:.1f})"
+            )
             score += sig_score
 
         # 3. Channel Check
         # Optional: Evil Twin on different channel?
         curr_channel = frame_data.get("channel")
         if curr_channel and curr_channel not in baseline.channel_history:
-             # Weak evidence, APs can switch. But if fixed infra...
-             # deviations.append(f"New Channel: {curr_channel}")
-             pass
+            # Weak evidence, APs can switch. But if fixed infra...
+            # deviations.append(f"New Channel: {curr_channel}")
+            pass
 
         # Always passive learn to update stats slowly
         self.learn(frame_data)
@@ -261,10 +288,7 @@ class BaselineManager:
             return {
                 "score": min(1.0, score),
                 "reasons": deviations,
-                "baseline": {
-                    "vendor": baseline.vendor,
-                    "avg_rssi": round(avg, 1)
-                }
+                "baseline": {"vendor": baseline.vendor, "avg_rssi": round(avg, 1)},
             }
 
         return None

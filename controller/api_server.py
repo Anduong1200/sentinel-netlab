@@ -30,7 +30,11 @@ app.wsgi_app = HTTPMetricsMiddleware(app.wsgi_app)
 app.wsgi_app = TrustedProxyMiddleware(
     app.wsgi_app,
     trusted_cidrs=config.security.trusted_proxies,
-    x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
+    x_for=1,
+    x_proto=1,
+    x_host=1,
+    x_port=1,
+    x_prefix=1,
 )
 
 # Register Blueprints
@@ -91,6 +95,7 @@ def openapi_spec():
 @app.route("/metrics")
 def metrics():
     from common.observability.metrics import metrics_endpoint
+
     data, content_type = metrics_endpoint()
     return data, 200, {"Content-Type": content_type}
 

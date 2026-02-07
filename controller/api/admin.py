@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request
 
 from .auth import Permission, Role, require_auth
 from .deps import config, db
-from .models import Token as APIToken  # Use DB model alias
+from controller.models import APIToken
 
 bp = Blueprint("admin", __name__)
 

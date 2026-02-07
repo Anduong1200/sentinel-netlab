@@ -4,18 +4,14 @@ from werkzeug.wrappers import Response
 
 logger = logging.getLogger(__name__)
 
+
 class TrustedProxyMiddleware:
     """
     WSGI Middleware to enforce Trusted Proxy logic.
     Only allows X-Forwarded-* headers from trusted IPs.
     """
 
-    def __init__(
-        self,
-        app,
-        trusted_cidrs: list[str] = None,
-        require_tls: bool = False
-    ):
+    def __init__(self, app, trusted_cidrs: list[str] = None, require_tls: bool = False):
         self.app = app
         self.trusted_cidrs = trusted_cidrs or []
         self.require_tls = require_tls
@@ -35,9 +31,13 @@ class TrustedProxyMiddleware:
         for cidr in self.trusted_cidrs:
             # Very naive string match for now to avoid 'ipaddress' overhead if not needed yet
             # Ideally: ipaddress.ip_address(remote_addr) in ipaddress.ip_network(cidr)
-            if remote_addr == cidr or (cidr.endswith(".0/0") and True) or remote_addr.startswith(cidr.replace(".0/0", "").replace("/","")):
-                 is_trusted = True
-                 break
+            if (
+                remote_addr == cidr
+                or (cidr.endswith(".0/0") and True)
+                or remote_addr.startswith(cidr.replace(".0/0", "").replace("/", ""))
+            ):
+                is_trusted = True
+                break
             # Support exact match
             if remote_addr == cidr:
                 is_trusted = True
@@ -57,7 +57,7 @@ class TrustedProxyMiddleware:
                 "HTTP_X_FORWARDED_FOR",
                 "HTTP_X_FORWARDED_PROTO",
                 "HTTP_X_FORWARDED_HOST",
-                "HTTP_X_FORWARDED_PORT"
+                "HTTP_X_FORWARDED_PORT",
             ]
             for key in keys_to_remove:
                 if key in environ:
@@ -67,17 +67,17 @@ class TrustedProxyMiddleware:
         if self.require_tls:
             # Relies on correct X-Forwarded-Proto from Trusted Proxy
             # OR direct HTTPS (unlikely for WSGI behind Nginx)
-            scheme = environ.get("HTTP_X_FORWARDED_PROTO", environ.get("wsgi.url_scheme", "http"))
+            scheme = environ.get(
+                "HTTP_X_FORWARDED_PROTO", environ.get("wsgi.url_scheme", "http")
+            )
 
             if scheme != "https":
                 # Check for Healthcheck exemption (often internal LB checks are HTTP)
                 path = environ.get("PATH_INFO", "")
-                if not path.startswith("/api/v1/health") and not path.startswith("/healthz"):
-                    res = Response(
-                        "HTTPS Required",
-                        mimetype="text/plain",
-                        status=403
-                    )
+                if not path.startswith("/api/v1/health") and not path.startswith(
+                    "/healthz"
+                ):
+                    res = Response("HTTPS Required", mimetype="text/plain", status=403)
                     return res(environ, start_response)
 
         return self.app(environ, start_response)

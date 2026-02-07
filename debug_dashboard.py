@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import sys
@@ -10,15 +9,17 @@ def debug_dashboard():
     port = "8051"
 
     env = os.environ.copy()
-    env.update({
-        "CONTROLLER_URL": "http://127.0.0.1:5000",
-        "DASHBOARD_API_TOKEN": "analyst-token",
-        "DASHBOARD_HOST": "127.0.0.1",
-        "DASHBOARD_PORT": port,
-        "DASH_USERNAME": "admin",
-        "DASH_PASSWORD": "change-me",
-        "PYTHONPATH": os.getcwd()
-    })
+    env.update(
+        {
+            "CONTROLLER_URL": "http://127.0.0.1:5000",
+            "DASHBOARD_API_TOKEN": "analyst-token",
+            "DASHBOARD_HOST": "127.0.0.1",
+            "DASHBOARD_PORT": port,
+            "DASH_USERNAME": "admin",
+            "DASH_PASSWORD": "change-me",
+            "PYTHONPATH": os.getcwd(),
+        }
+    )
 
     print(f"Starting dashboard on port {port}...")
     proc = subprocess.Popen(
@@ -26,7 +27,7 @@ def debug_dashboard():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         env=env,
-        text=True
+        text=True,
     )
 
     time.sleep(10)
@@ -39,17 +40,19 @@ def debug_dashboard():
         print("Dashboard is running!")
         # Try to curl it?
         import requests
+
         try:
-             r = requests.get(f"http://127.0.0.1:{port}/dashboard/", timeout=2)
-             print(f"Health check: {r.status_code}")
+            r = requests.get(f"http://127.0.0.1:{port}/dashboard/", timeout=2)
+            print(f"Health check: {r.status_code}")
         except Exception as e:
-             print(f"Health check failed: {e}")
+            print(f"Health check failed: {e}")
 
         proc.terminate()
         try:
             print("Cleanup: \n" + proc.stdout.read())
-        except Exception: # noqa: S110
+        except Exception:  # noqa: S110
             pass
+
 
 if __name__ == "__main__":
     debug_dashboard()

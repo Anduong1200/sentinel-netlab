@@ -1,13 +1,14 @@
-
 import logging
-from typing import Any
-from common.observability.context import set_context, clear_context
+
+from common.observability.context import clear_context, set_context
+
 
 class IngestLogger:
     """
     Context-aware logger for Ingest pipeline.
     Ensures sensor_id and batch_id are always present in logs.
     """
+
     def __init__(self, logger: logging.Logger):
         self.logger = logger
 
@@ -24,19 +25,16 @@ class IngestLogger:
         # Set context for this log operation
         # (This updates the ContextVar which JSONFormatter reads)
         set_context(sensor_id=sensor_id, batch_id=batch_id)
-        
+
         try:
             # Pass extra fields
             extra = kwargs.get("extra", {})
             if "data" not in extra:
                 extra["data"] = {}
-            
+
             # Add implicit data
-            extra["data"].update({
-                "sensor_id": sensor_id,
-                "batch_id": batch_id
-            })
-            
+            extra["data"].update({"sensor_id": sensor_id, "batch_id": batch_id})
+
             self.logger.log(level, msg, extra=extra)
         finally:
             # Clear context to avoid leaking IDs to subsequent requests in same thread

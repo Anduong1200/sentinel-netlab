@@ -392,14 +392,12 @@ class ReportEngine:
 
         # Build findings HTML
         findings_html = [
-            SafeRenderer.render_finding(finding)
-            for finding in data.findings[:10]
+            SafeRenderer.render_finding(finding) for finding in data.findings[:10]
         ]
 
         # Build recommendations HTML
         recommendations_html = "\n".join(
-            SafeRenderer.render_list_item(rec)
-            for rec in data.recommendations
+            SafeRenderer.render_list_item(rec) for rec in data.recommendations
         )
 
         # Fill content template

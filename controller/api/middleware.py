@@ -9,6 +9,9 @@ Handles:
 import logging
 import time
 import uuid
+from ipaddress import ip_address, ip_network
+
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from common.observability import context
 
@@ -38,13 +41,11 @@ class ObservabilityMiddleware:
 
         # 4. Set Context (Thread-local / Async-local)
         context.set_context(
-            request_id=request_id,
-            sensor_id=sensor_id,
-            batch_id=batch_id
+            request_id=request_id, sensor_id=sensor_id, batch_id=batch_id
         )
 
         # 5. Capture Response Status for Logging
-        status_info = {"code": "500"} # Default if app crashes
+        status_info = {"code": "500"}  # Default if app crashes
 
         def custom_start_response(status, headers, exc_info=None):
             status_info["code"] = status.split()[0]
@@ -88,8 +89,8 @@ class ObservabilityMiddleware:
             context.clear_context()
 
 
-from ipaddress import ip_address, ip_network
-from werkzeug.middleware.proxy_fix import ProxyFix
+
+
 
 class TrustedProxyMiddleware:
     """
@@ -98,16 +99,34 @@ class TrustedProxyMiddleware:
     correct IP/Proto resolution from Nginx/LoadBalancer.
     """
 
-    def __init__(self, app, trusted_cidrs: list[str], x_for: int = 1, x_proto: int = 1, x_host: int = 1, x_port: int = 1, x_prefix: int = 1):
+    def __init__(
+        self,
+        app,
+        trusted_cidrs: list[str],
+        x_for: int = 1,
+        x_proto: int = 1,
+        x_host: int = 1,
+        x_port: int = 1,
+        x_prefix: int = 1,
+    ):
         self.app = app
-        self.trusted_cidrs = [ip_network(cidr, strict=False) for cidr in trusted_cidrs if cidr.strip()]
+        self.trusted_cidrs = [
+            ip_network(cidr, strict=False) for cidr in trusted_cidrs if cidr.strip()
+        ]
         # Configure ProxyFix to trust the specified number of proxies
-        self.proxy_fix = ProxyFix(app, x_for=x_for, x_proto=x_proto, x_host=x_host, x_port=x_port, x_prefix=x_prefix)
+        self.proxy_fix = ProxyFix(
+            app,
+            x_for=x_for,
+            x_proto=x_proto,
+            x_host=x_host,
+            x_port=x_port,
+            x_prefix=x_prefix,
+        )
 
     def __call__(self, environ, start_response):
         remote_addr = environ.get("REMOTE_ADDR")
         is_trusted = False
-        
+
         if remote_addr:
             try:
                 ip = ip_address(remote_addr)
@@ -118,7 +137,7 @@ class TrustedProxyMiddleware:
             except ValueError:
                 # Invalid IP in REMOTE_ADDR? Treat as untrusted.
                 pass
-        
+
         if is_trusted:
             # Apply ProxyFix (trust headers)
             return self.proxy_fix(environ, start_response)

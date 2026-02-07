@@ -1,4 +1,3 @@
-
 import os
 from datetime import datetime
 
@@ -239,7 +238,7 @@ def update_metrics(n):
             if resp_sensors.status_code == 200:
                 sensors = resp_sensors.json().get("sensors", {})
 
-        except Exception: # noqa: S110
+        except Exception:  # noqa: S110
             # print(f"Dashboard data fetch failed (graceful): {e}")
             pass
 

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -20,7 +19,7 @@ def test_safe_renderer_escaping():
     finding = {
         "title": "Bad <script> Title",
         "description": "Desc with <b>bold</b> injection",
-        "severity": "high"
+        "severity": "high",
     }
     rendered = SafeRenderer.render_finding(finding)
     assert "Bad &lt;script&gt; Title" in rendered
@@ -30,6 +29,7 @@ def test_safe_renderer_escaping():
     # 4. List rendering
     item = "List <item>"
     assert "<li>List &lt;item&gt;</li>" == SafeRenderer.render_list_item(item)
+
 
 def test_report_engine_xss_integration():
     """Verify ReportEngine generates XSS-safe HTML."""
@@ -47,19 +47,17 @@ def test_report_engine_xss_integration():
                     "ssid": "<img src=x onerror=alert(1)>",
                     "channel": 1,
                     "security": "Open",
-                    "risk_level": "critical"
+                    "risk_level": "critical",
                 }
             ],
             findings=[
                 {
                     "title": "XSS <Finding>",
                     "description": "Bad <br> tag",
-                    "severity": "medium"
+                    "severity": "medium",
                 }
             ],
-            recommendations=[
-                "Rec <1>"
-            ]
+            recommendations=["Rec <1>"],
         )
 
         # Generate HTML

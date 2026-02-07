@@ -5,12 +5,13 @@ from controller.config import init_config
 # Initialize Config
 config = init_config(strict_production=False)
 
+
 def make_celery():
     app = Celery(
         "sentinel",
         broker=config.redis_url,
         backend=config.redis_url,
-        include=["controller.tasks"]
+        include=["controller.tasks"],
     )
 
     app.conf.update(
@@ -22,6 +23,7 @@ def make_celery():
     )
 
     return app
+
 
 celery = make_celery()
 

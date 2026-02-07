@@ -1,4 +1,3 @@
-
 import hashlib
 
 from common.detection.evidence import Finding

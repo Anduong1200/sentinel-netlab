@@ -1,4 +1,3 @@
-
 import os
 import random
 from datetime import datetime, timedelta
@@ -37,7 +36,6 @@ layout = html.Div(
             ),
             className="mb-4",
         ),
-
         # Charts Row 1
         dbc.Row(
             [
@@ -55,7 +53,10 @@ layout = html.Div(
                 dbc.Col(
                     html.Div(
                         [
-                            html.H5("Signal Strength Distribution", className="text-white mb-3"),
+                            html.H5(
+                                "Signal Strength Distribution",
+                                className="text-white mb-3",
+                            ),
                             dcc.Graph(id="rssi-graph", style={"height": "300px"}),
                         ],
                         style=GLASS_STYLE,
@@ -65,14 +66,15 @@ layout = html.Div(
                 ),
             ]
         ),
-
         # Charts Row 2 (Time Series)
         dbc.Row(
             dbc.Col(
                 html.Div(
                     [
-                        html.H5("Network Discovery Rate (24h)", className="text-white mb-3"),
-                         dcc.Graph(id="discovery-graph", style={"height": "350px"}),
+                        html.H5(
+                            "Network Discovery Rate (24h)", className="text-white mb-3"
+                        ),
+                        dcc.Graph(id="discovery-graph", style={"height": "350px"}),
                     ],
                     style=GLASS_STYLE,
                     className="p-3",
@@ -80,10 +82,9 @@ layout = html.Div(
                 width=12,
             )
         ),
-
-         dcc.Interval(
+        dcc.Interval(
             id="signals-interval",
-            interval=15000, # Update every 15s
+            interval=15000,  # Update every 15s
             n_intervals=0,
         ),
     ],
@@ -119,18 +120,15 @@ def update_signals(n):
             )
             if resp_net.status_code == 200:
                 networks = resp_net.json().get("networks", [])
-        except Exception: # noqa: S110
-             pass
+        except Exception:  # noqa: S110
+            pass
 
         # === 1. Channel Graph ===
         if networks:
             channels = [n.get("channel") for n in networks if n.get("channel")]
             df_ch = pd.DataFrame(channels, columns=["channel"])
             fig_ch = px.histogram(
-                df_ch,
-                x="channel",
-                nbins=14,
-                color_discrete_sequence=[COLOR_PRIMARY]
+                df_ch, x="channel", nbins=14, color_discrete_sequence=[COLOR_PRIMARY]
             )
             fig_ch.update_layout(**layout_override)
             fig_ch.update_layout(bargap=0.2)
@@ -145,14 +143,16 @@ def update_signals(n):
             rssi = [r for r in rssi if -100 <= r <= 0]
 
             fig_rssi = go.Figure()
-            fig_rssi.add_trace(go.Violin(
-                y=rssi,
-                box_visible=True,
-                line_color=COLOR_PRIMARY,
-                meanline_visible=True,
-                fillcolor="rgba(0, 242, 254, 0.2)",
-                name="RSSI (dBm)"
-            ))
+            fig_rssi.add_trace(
+                go.Violin(
+                    y=rssi,
+                    box_visible=True,
+                    line_color=COLOR_PRIMARY,
+                    meanline_visible=True,
+                    fillcolor="rgba(0, 242, 254, 0.2)",
+                    name="RSSI (dBm)",
+                )
+            )
             fig_rssi.update_layout(**layout_override)
         else:
             fig_rssi = go.Figure()
@@ -170,19 +170,20 @@ def update_signals(n):
         counts = [max(0, base_count + random.randint(-2, 5)) for _ in times]  # noqa: S311
 
         fig_disc = go.Figure()
-        fig_disc.add_trace(go.Scatter(
-            x=times,
-            y=counts,
-            mode='lines+markers',
-            fill='tozeroy',
-            line={"color": "#f7b733", "width": 3}, # Orange/Gold
-            name="New Networks"
-        ))
+        fig_disc.add_trace(
+            go.Scatter(
+                x=times,
+                y=counts,
+                mode="lines+markers",
+                fill="tozeroy",
+                line={"color": "#f7b733", "width": 3},  # Orange/Gold
+                name="New Networks",
+            )
+        )
 
         fig_disc.update_layout(**layout_override)
         fig_disc.update_layout(
-             xaxis_title="Time (Last 24h)",
-             yaxis_title="Networks Detected"
+            xaxis_title="Time (Last 24h)", yaxis_title="Networks Detected"
         )
 
         return fig_ch, fig_rssi, fig_disc

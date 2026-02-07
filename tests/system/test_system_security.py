@@ -1,4 +1,3 @@
-
 import json
 import os
 import subprocess
@@ -71,7 +70,7 @@ def test_tls_gating_when_enabled(tmp_path: Path, tokens):
             f"{base}/api/v1/telemetry",
             json={},
             headers={"X-Forwarded-Proto": "https"},
-            timeout=3
+            timeout=3,
         )
         # Should be 401 (Missing auth) NOT 403, proving TLS check passed
         assert r2.status_code == 401
@@ -134,11 +133,15 @@ def test_hmac_required_allows_signed_requests(tmp_path: Path, tokens):
 
         # With signature -> 200
         signer = MessageSigner("test-hmac-secret")
-        payload = json.dumps(batch, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        payload = json.dumps(batch, separators=(",", ":"), sort_keys=True).encode(
+            "utf-8"
+        )
         sig_headers = signer.sign_request("POST", "/api/v1/telemetry", payload)
 
         headers = {"Authorization": f"Bearer {tokens['sensor']}", **sig_headers}
-        r1 = requests.post(f"{base}/api/v1/telemetry", headers=headers, data=payload, timeout=3)
+        r1 = requests.post(
+            f"{base}/api/v1/telemetry", headers=headers, data=payload, timeout=3
+        )
         assert r1.status_code == 200
         j = r1.json()
         assert j["success"] is True
@@ -198,7 +201,9 @@ def test_rate_limit_telemetry(tmp_path: Path, tokens):
         assert r1.status_code == 200
         assert r2.status_code in (200, 429)  # depending on limiter window start
         assert r3.status_code in (429, 200)
-        assert any(code == 429 for code in (r1.status_code, r2.status_code, r3.status_code))
+        assert any(
+            code == 429 for code in (r1.status_code, r2.status_code, r3.status_code)
+        )
     finally:
         proc.terminate()
         try:

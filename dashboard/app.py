@@ -1,4 +1,3 @@
-
 import os
 
 import dash
@@ -16,7 +15,7 @@ server = Flask(__name__)
 app = dash.Dash(
     __name__,
     server=server,
-    use_pages=True, # Enable Multi-Page App
+    use_pages=True,  # Enable Multi-Page App
     url_base_pathname="/dashboard/",
     external_stylesheets=[
         dbc.themes.DARKLY,
@@ -36,19 +35,11 @@ from common.security.secrets import require_secret  # noqa: E402
 env = os.getenv("ENVIRONMENT", "production").lower()
 
 _username = require_secret(
-    "Dashboard Username",
-    "DASH_USERNAME",
-    min_len=4,
-    allow_dev_autogen=False,
-    env=env
+    "Dashboard Username", "DASH_USERNAME", min_len=4, allow_dev_autogen=False, env=env
 )
 
 _password = require_secret(
-    "Dashboard Password",
-    "DASH_PASSWORD",
-    min_len=8,
-    allow_dev_autogen=False,
-    env=env
+    "Dashboard Password", "DASH_PASSWORD", min_len=8, allow_dev_autogen=False, env=env
 )
 
 VALID_USERNAME_PASSWORD_PAIRS = {_username: _password}
@@ -60,7 +51,7 @@ app.layout = html.Div(
     [
         dcc.Location(id="url"),
         sidebar,
-        dash.page_container, # Pages are rendered here
+        dash.page_container,  # Pages are rendered here
     ]
 )
 

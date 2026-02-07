@@ -54,7 +54,9 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
 
                 response = {
                     "ok": is_healthy,
-                    "backlog": queue_stats.get("queued", 0), # Correct key 'queued' from queue.stats()
+                    "backlog": queue_stats.get(
+                        "queued", 0
+                    ),  # Correct key 'queued' from queue.stats()
                     "last_send_success_age_sec": age_sec,
                     "capture_alive": threads.get("capture", False),
                     "sender_alive": threads.get("worker", False),
@@ -73,6 +75,7 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
 
         elif self.path == "/metrics":
             from common.observability.metrics import metrics_endpoint
+
             data, content_type = metrics_endpoint()
             self.send_response(200)
             self.send_header("Content-Type", content_type)
@@ -102,11 +105,15 @@ class HealthServer:
         """Start the server in a background thread."""
         try:
             # Bind to localhost only for security
-            self._httpd = http.server.HTTPServer(("127.0.0.1", self.port), HealthHandler)
+            self._httpd = http.server.HTTPServer(
+                ("127.0.0.1", self.port), HealthHandler
+            )
             # Attach callback to server instance so handler can access it
-            self._httpd.get_status_callback = self.get_status_callback # type: ignore
+            self._httpd.get_status_callback = self.get_status_callback  # type: ignore
 
-            self._thread = threading.Thread(target=self._run, daemon=True, name="HealthServer")
+            self._thread = threading.Thread(
+                target=self._run, daemon=True, name="HealthServer"
+            )
             self._thread.start()
             logger.info(f"Health server started on 127.0.0.1:{self.port}")
         except Exception as e:

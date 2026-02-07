@@ -7,6 +7,7 @@ Uses manifests to compare detector output against ground truth labels.
 
 Run with: pytest tests/detectors/test_pcap_regression.py -v
 """
+
 import json
 import sys
 from pathlib import Path
@@ -120,9 +121,7 @@ class TestEvilTwinRegression:
         assert "DUPLICATE_SSID" in alert.reason_codes
         assert alert.severity in ["MEDIUM", "HIGH", "CRITICAL"]
 
-    def test_no_false_positives_on_benign(
-        self, evil_twin_detector, benign_manifest
-    ):
+    def test_no_false_positives_on_benign(self, evil_twin_detector, benign_manifest):
         """
         Replay benign manifest and verify NO alerts fire.
         Expected: Zero alerts.
@@ -145,7 +144,9 @@ class TestEvilTwinRegression:
                 alerts.extend(result)
 
         # Assertion: No false positives
-        assert len(alerts) == 0, f"Expected zero alerts on benign data, got {len(alerts)}"
+        assert len(alerts) == 0, (
+            f"Expected zero alerts on benign data, got {len(alerts)}"
+        )
 
 
 # =============================================================================
@@ -156,9 +157,7 @@ class TestEvilTwinRegression:
 class TestDeauthFloodRegression:
     """Regression tests for Deauth Flood detector using golden PCAPs."""
 
-    def test_detects_deauth_flood_from_manifest(
-        self, dos_detector, deauth_manifest
-    ):
+    def test_detects_deauth_flood_from_manifest(self, dos_detector, deauth_manifest):
         """
         Replay deauth manifest and verify detector fires.
         Expected: At least one alert.

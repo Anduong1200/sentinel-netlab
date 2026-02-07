@@ -1,4 +1,3 @@
-
 import dash_bootstrap_components as dbc
 from dash import html
 
@@ -40,8 +39,11 @@ sidebar = html.Div(
                     href="/dashboard/threats",
                     active="exact",
                 ),
-                 dbc.NavLink(
-                    [html.I(className="fas fa-wave-square nav-icon"), "Signal Analysis"],
+                dbc.NavLink(
+                    [
+                        html.I(className="fas fa-wave-square nav-icon"),
+                        "Signal Analysis",
+                    ],
                     href="/dashboard/signals",
                     active="exact",
                 ),

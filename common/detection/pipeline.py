@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from common.detection.evidence import Finding
@@ -16,7 +15,9 @@ class DetectionPipeline:
     def register(self, detector: AbstractDetector):
         self.detectors.append(detector)
 
-    def run(self, telemetry_stream: list[dict[str, Any]], context: dict[str, Any] = None) -> list[Finding]:
+    def run(
+        self, telemetry_stream: list[dict[str, Any]], context: dict[str, Any] = None
+    ) -> list[Finding]:
         """
         Run all detectors against the stream.
         aggregated_findings: Flat list of all findings.

@@ -38,7 +38,7 @@ class AlertManager:
             str(alert.get("alert_type", "unknown")),
             str(alert.get("severity", "unknown")),
             str(alert.get("bssid", "global")),
-            str(alert.get("title", ""))
+            str(alert.get("title", "")),
         ]
         key = "|".join(key_parts)
 
@@ -61,6 +61,8 @@ class AlertManager:
 
     def _cleanup(self, now: float):
         """Remove expired entries."""
-        expired = [k for k, v in self._dedup_cache.items() if now - v > self.dedup_window]
+        expired = [
+            k for k, v in self._dedup_cache.items() if now - v > self.dedup_window
+        ]
         for k in expired:
             del self._dedup_cache[k]

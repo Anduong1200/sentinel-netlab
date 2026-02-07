@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -11,6 +10,7 @@ Impact = float
 
 # Risk: 0.0 to 100.0 derived from Confidence * Impact
 Risk = float
+
 
 class Severity(StrEnum):
     LOW = "low"
@@ -27,6 +27,7 @@ class Severity(StrEnum):
         elif score > 30:
             return cls.MEDIUM
         return cls.LOW
+
 
 @dataclass(frozen=True)
 class RiskScore:

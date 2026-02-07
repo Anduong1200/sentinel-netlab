@@ -11,7 +11,7 @@ from controller.tasks import process_alert
 
 from .auth import Permission, require_auth, require_signed
 from .deps import PYDANTIC_AVAILABLE, config, limiter, logger, validate_json
-from .models import DBAlert
+from controller.models import Alert
 
 bp = Blueprint("alerts", __name__)
 
@@ -55,7 +55,9 @@ def create_alert():
         # But ALERTS_EMITTED is "emitted" so maybe keeping it here is misleading if it fails processing.
         # Let's rely on worker metric.
 
-        return jsonify({"success": True, "alert_id": alert_id, "status": "accepted"}), 202
+        return jsonify(
+            {"success": True, "alert_id": alert_id, "status": "accepted"}
+        ), 202
 
     except Exception as e:
         logger.error(f"Failed to enqueue alert: {e}")
@@ -68,7 +70,7 @@ def get_alerts():
     limit = min(int(request.args.get("limit", 50)), 500)
     severity = request.args.get("severity")
 
-    query = DBAlert.query.order_by(DBAlert.created_at.desc())
+    query = Alert.query.order_by(Alert.created_at.desc())
     if severity:
         query = query.filter_by(severity=severity)
 

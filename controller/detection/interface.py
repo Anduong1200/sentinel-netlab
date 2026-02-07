@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -14,7 +13,9 @@ class AbstractDetector(ABC):
         self.config = config or {}
 
     @abstractmethod
-    def process(self, telemetry: dict[str, Any], context: dict[str, Any] | None = None) -> list[Finding]:
+    def process(
+        self, telemetry: dict[str, Any], context: dict[str, Any] | None = None
+    ) -> list[Finding]:
         """
         Analyze telemetry data and return a list of Findings.
 

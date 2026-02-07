@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime, timedelta
 
 from common.detection.evidence import Finding
@@ -15,7 +14,13 @@ class TriagePolicy:
     def __init__(self, suppression_window_seconds: int = 3600):
         self.suppression_window = timedelta(seconds=suppression_window_seconds)
 
-    def should_emit(self, finding: Finding, state: EventState | None, current_severity: Severity, current_risk: float) -> bool:
+    def should_emit(
+        self,
+        finding: Finding,
+        state: EventState | None,
+        current_severity: Severity,
+        current_risk: float,
+    ) -> bool:
         """
         Decision Logic:
         1. New Event (No state) -> EMIT
@@ -25,15 +30,15 @@ class TriagePolicy:
         """
 
         if not state:
-            return True # New event
+            return True  # New event
 
         # Check Escalation
         if current_risk > state.max_risk_score:
-            return True # Severity increased (e.g. Medium -> Critical)
+            return True  # Severity increased (e.g. Medium -> Critical)
 
         # Check Suppression Window
         time_since_emit = datetime.now(UTC) - state.last_emitted
         if time_since_emit < self.suppression_window:
-            return False # Suppressed
+            return False  # Suppressed
 
-        return True # Window expired
+        return True  # Window expired

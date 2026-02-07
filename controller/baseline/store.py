@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -17,10 +16,11 @@ class BaselineStore:
 
     def get_profile(self, site_id: str, network_key: str) -> BaselineProfile | None:
         """Fetch existing profile or None."""
-        return self.session.query(BaselineProfile).filter_by(
-            site_id=site_id,
-            network_key=network_key
-        ).first()
+        return (
+            self.session.query(BaselineProfile)
+            .filter_by(site_id=site_id, network_key=network_key)
+            .first()
+        )
 
     def get_or_create_profile(self, site_id: str, network_key: str) -> BaselineProfile:
         """Fetch or create a new profile."""
@@ -30,7 +30,10 @@ class BaselineStore:
             # Here using simplistic string concat format for ID, or just UUID
             # Let's use site_id + network_key as ID implies 1:1
             import hashlib
-            profile_id = hashlib.sha256(f"{site_id}:{network_key}".encode()).hexdigest()[:32]
+
+            profile_id = hashlib.sha256(
+                f"{site_id}:{network_key}".encode()
+            ).hexdigest()[:32]
 
             profile = BaselineProfile(
                 id=profile_id,
@@ -41,8 +44,8 @@ class BaselineStore:
                     "channels": {},
                     "rssi": {"min": 999, "max": -999, "sum": 0, "count": 0},
                     "security_modes": {},
-                    "vendors": {}
-                }
+                    "vendors": {},
+                },
             )
             self.session.add(profile)
             self.session.commit()

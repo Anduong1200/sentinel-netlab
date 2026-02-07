@@ -33,8 +33,8 @@ API_KEY = require_secret(
     "Lab API Key",
     "LAB_API_KEY",
     min_len=16,
-    allow_dev_autogen=False, # Enforce explicit key configured by user
-    env=env
+    allow_dev_autogen=False,  # Enforce explicit key configured by user
+    env=env,
 )
 INTERFACE = os.environ.get("WIFI_INTERFACE", "wlan0")
 LAB_MODE = os.environ.get("SENTINEL_LAB_MODE", "false").lower() == "true"

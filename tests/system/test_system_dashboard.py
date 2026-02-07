@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import sys
@@ -23,7 +22,7 @@ def test_dashboard_smoke_with_basic_auth(tmp_path: Path, controller_handle, toke
     env.update(
         {
             "CONTROLLER_URL": controller_handle.base_url,  # dashboard calls controller
-            "DASHBOARD_API_TOKEN": tokens["analyst"],      # dashboard fetch token
+            "DASHBOARD_API_TOKEN": tokens["analyst"],  # dashboard fetch token
             "DASH_USERNAME": "admin",
             "DASH_PASSWORD": "change-me",
             "DASHBOARD_PORT": str(port),

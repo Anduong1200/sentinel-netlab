@@ -2,6 +2,7 @@
 """
 Generate OpenAPI schema from Pydantic models and Flask routes.
 """
+
 import yaml
 from pydantic.schema import schema
 
@@ -15,12 +16,10 @@ def generate_openapi():
         "info": {
             "title": "Sentinel NetLab API",
             "version": "1.0.0",
-            "description": "API for Sentinel NetLab Controller"
+            "description": "API for Sentinel NetLab Controller",
         },
-        "components": {
-            "schemas": {}
-        },
-        "paths": {}
+        "components": {"schemas": {}},
+        "paths": {},
     }
 
     # 2. Extract Pydantic Schemas
@@ -29,7 +28,11 @@ def generate_openapi():
     try:
         # Pydantic V2
         # from pydantic.json_schema import models_json_schema # Unused
-        top_models = [(TelemetryBatch, "TelemetryBatch"), (NormalizedFrame, "NormalizedFrame"), (Alert, "Alert")]
+        top_models = [
+            (TelemetryBatch, "TelemetryBatch"),
+            (NormalizedFrame, "NormalizedFrame"),
+            (Alert, "Alert"),
+        ]
         # This is complex in V2, simplified approach:
         for model, name in top_models:
             openapi["components"]["schemas"][name] = model.model_json_schema()
@@ -44,6 +47,7 @@ def generate_openapi():
     # as the "Source of Truth" for the payload structure.
 
     print(yaml.dump(openapi, sort_keys=False))
+
 
 if __name__ == "__main__":
     generate_openapi()

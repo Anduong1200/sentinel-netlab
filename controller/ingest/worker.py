@@ -1,16 +1,18 @@
-
 import logging
 import signal
 import time
 from datetime import UTC, datetime
 
 from controller.api.deps import create_app, db
-from controller.api.models import Telemetry
+from controller.models import Telemetry
 from controller.ingest.queue import IngestQueue
 
 # Setup Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 class IngestWorker:
     def __init__(self, worker_id: str = "worker-1", poll_interval: float = 1.0):
@@ -32,7 +34,7 @@ class IngestWorker:
                     self._loop()
                 except Exception as e:
                     logger.error(f"Worker loop crashed: {e}", exc_info=True)
-                    time.sleep(5) # Backoff if DB dead
+                    time.sleep(5)  # Backoff if DB dead
 
     def _handle_exit(self, signum, frame):
         logger.info("Shutdown signal received. Stopping...")
@@ -61,7 +63,7 @@ class IngestWorker:
             # Bulk Insert Logic (P1 Scale: bulk_insert_mappings)
             telemetry_mappings = []
             for item in items:
-                 # Standardize timestamp
+                # Standardize timestamp
                 ts_str = item.get("timestamp")
                 ts = datetime.fromisoformat(ts_str) if ts_str else datetime.now(UTC)
 
@@ -71,15 +73,13 @@ class IngestWorker:
                     "batch_id": job.job_id,
                     "timestamp": ts,
                     "ingested_at": datetime.now(UTC),
-
                     "bssid": item.get("bssid"),
                     "ssid": item.get("ssid"),
                     "channel": item.get("channel"),
                     "rssi_dbm": item.get("rssi_dbm"),
                     "frequency_mhz": item.get("frequency_mhz"),
                     "security": item.get("security"),
-
-                    "raw_data": item
+                    "raw_data": item,
                     # capabilities optional if needed
                 }
                 telemetry_mappings.append(t)
@@ -88,7 +88,9 @@ class IngestWorker:
                 db.session.bulk_insert_mappings(Telemetry, telemetry_mappings)
 
             # Commit processing
-            IngestQueue.ack_job(job.job_id) # This commits the transaction (ack modifies job status)
+            IngestQueue.ack_job(
+                job.job_id
+            )  # This commits the transaction (ack modifies job status)
 
             # Separate commit for telemetry if ack logic didn't commit everything?
             # IngestQueue.ack_job uses db.session.commit() which commits EVERYTHING in session.
@@ -100,6 +102,7 @@ class IngestWorker:
             logger.error(f"Job {job.job_id} Failed: {e}")
             db.session.rollback()
             IngestQueue.fail_job(job.job_id, str(e))
+
 
 if __name__ == "__main__":
     worker = IngestWorker()

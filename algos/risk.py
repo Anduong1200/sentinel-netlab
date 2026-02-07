@@ -102,7 +102,7 @@ class EnhancedRiskScorer:
         self,
         network: dict,
         ground_truth_label: str | None = None,
-        deviation_score: float = 0.0
+        deviation_score: float = 0.0,
     ) -> dict:
         """
         Calculate risk score using modular features and configurable weights.
@@ -161,7 +161,6 @@ class EnhancedRiskScorer:
 
         # 4. Final Risk Score
         raw_score = total_prob * impact * 100
-
 
         # ML Anomaly Boost
         if self.ml_model:

@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -11,12 +10,19 @@ class BaselineBuilder:
     Logic to aggregate telemetry into baseline profiles.
     """
 
-    def __init__(self, store: BaselineStore, min_duration: timedelta = timedelta(days=3), min_samples: int = 100):
+    def __init__(
+        self,
+        store: BaselineStore,
+        min_duration: timedelta = timedelta(days=3),
+        min_samples: int = 100,
+    ):
         self.store = store
         self.min_duration = min_duration
         self.min_samples = min_samples
 
-    def update_from_telemetry(self, site_id: str, telemetry_batch: list[dict[str, Any]]):
+    def update_from_telemetry(
+        self, site_id: str, telemetry_batch: list[dict[str, Any]]
+    ):
         """
         Process a batch of telemetry and update relevant baselines.
         """
@@ -30,7 +36,7 @@ class BaselineBuilder:
             # bssid = item.get("bssid") # Unused
 
             if not ssid:
-                continue # Skip hidden/probe requests without SSID for logical baseline
+                continue  # Skip hidden/probe requests without SSID for logical baseline
 
             network_key = f"{ssid}|{security}"
 
@@ -40,7 +46,7 @@ class BaselineBuilder:
 
     def _update_profile_stats(self, profile: BaselineProfile, item: dict[str, Any]):
         """In-place update of profile features."""
-        features = dict(profile.features) # Copy for mutability if needed
+        features = dict(profile.features)  # Copy for mutability if needed
 
         # 1. Channels
         channel = str(item.get("channel", "unknown"))
@@ -51,7 +57,9 @@ class BaselineBuilder:
         # 2. RSSI
         rssi = item.get("rssi_dbm")
         if rssi is not None:
-            r_stats = features.get("rssi", {"min": 999, "max": -999, "sum": 0, "count": 0})
+            r_stats = features.get(
+                "rssi", {"min": 999, "max": -999, "sum": 0, "count": 0}
+            )
             r_stats["min"] = min(r_stats["min"], rssi)
             r_stats["max"] = max(r_stats["max"], rssi)
             r_stats["sum"] += rssi

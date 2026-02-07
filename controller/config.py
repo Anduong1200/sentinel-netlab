@@ -87,7 +87,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         "CONTROLLER_SECRET_KEY",
         min_len=16,
         allow_dev_autogen=True,
-        env=env
+        env=env,
     )
 
     hmac_secret = require_secret(
@@ -95,7 +95,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         "CONTROLLER_HMAC_SECRET",
         min_len=32,
         allow_dev_autogen=True,
-        env=env
+        env=env,
     )
 
     db_url = os.getenv("CONTROLLER_DATABASE_URL") or os.getenv("DATABASE_URL")
@@ -108,12 +108,12 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
 
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
-       # Redis is critical for Celery now
-       if is_prod:
-           raise RuntimeError("CRITICAL: Missing REDIS_URL in production.")
-       else:
-           redis_url = "redis://localhost:6379/0"
-           logger.info("Using default Redis URL (Dev Mode)")
+        # Redis is critical for Celery now
+        if is_prod:
+            raise RuntimeError("CRITICAL: Missing REDIS_URL in production.")
+        else:
+            redis_url = "redis://localhost:6379/0"
+            logger.info("Using default Redis URL (Dev Mode)")
 
     # Security Config
     security = SecurityConfig(
@@ -131,7 +131,10 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         ),
         rate_limit_telemetry=os.getenv("RATE_LIMIT_TELEMETRY", "200 per minute"),
         rate_limit_alerts=os.getenv("RATE_LIMIT_ALERTS", "50 per minute"),
-        trusted_proxies=os.getenv("TRUSTED_PROXIES", "127.0.0.1,172.16.0.0/12,172.17.0.0/12,172.18.0.0/12,172.19.0.0/12,172.20.0.0/12,172.21.0.0/12,172.22.0.0/12,172.23.0.0/12,172.24.0.0/12,172.25.0.0/12,172.26.0.0/12,172.27.0.0/12,172.28.0.0/12,172.29.0.0/12,172.30.0.0/12,172.31.0.0/12").split(","),
+        trusted_proxies=os.getenv(
+            "TRUSTED_PROXIES",
+            "127.0.0.1,172.16.0.0/12,172.17.0.0/12,172.18.0.0/12,172.19.0.0/12,172.20.0.0/12,172.21.0.0/12,172.22.0.0/12,172.23.0.0/12,172.24.0.0/12,172.25.0.0/12,172.26.0.0/12,172.27.0.0/12,172.28.0.0/12,172.29.0.0/12,172.30.0.0/12,172.31.0.0/12",
+        ).split(","),
     )
 
     # Database Config

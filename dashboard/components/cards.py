@@ -1,4 +1,3 @@
-
 from dash import html
 
 # --- Styling Constants ---
@@ -11,6 +10,7 @@ GLASS_STYLE = {
     "borderRadius": "16px",
     "boxShadow": "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
 }
+
 
 def build_stat_card(title, id_name, icon_class, color_class="text-white"):
     return html.Div(

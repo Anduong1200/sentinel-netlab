@@ -1,4 +1,3 @@
-
 from common.scoring.types import Confidence, Impact, RiskScore, Severity
 
 

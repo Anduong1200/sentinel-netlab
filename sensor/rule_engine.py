@@ -21,8 +21,10 @@ try:
     from enum import StrEnum
 except ImportError:
     from enum import Enum
+
     class StrEnum(str, Enum):  # noqa: UP042
         pass
+
 
 class Severity(StrEnum):
     INFO = "info"

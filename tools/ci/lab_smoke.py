@@ -8,6 +8,7 @@ Smoke test for the Lab Environment.
 4. verify data
 5. make lab-down
 """
+
 import subprocess
 import sys
 import time
@@ -25,7 +26,7 @@ def run_cmd(cmd):
     print(f"Running: {cmd}")
     # Fix S602: Use list if possible, or suppress if complex.
     # For CI scripts, we trust the input.
-    ret = subprocess.call(cmd, shell=True) # noqa: S602
+    ret = subprocess.call(cmd, shell=True)  # noqa: S602
     if ret != 0:
         print(f"❌ Command failed: {cmd}")
         sys.exit(1)
@@ -35,16 +36,17 @@ def wait_for_health():
     print("Waiting for Controller Health...")
     for i in range(MAX_RETRIES):
         try:
-            r = requests.get(HEALTH_URL, timeout=5) # Fix S113
+            r = requests.get(HEALTH_URL, timeout=5)  # Fix S113
             if r.status_code == 200:
                 print("✅ Controller is Healthy")
                 return
         except requests.exceptions.RequestException:
             pass
-        print(f"  Retry {i+1}/{MAX_RETRIES}...")
+        print(f"  Retry {i + 1}/{MAX_RETRIES}...")
         time.sleep(RETRY_DELAY)
     print("❌ Health check timed out")
     sys.exit(1)
+
 
 def ingest_data():
     print("Simulating Ingest...")
@@ -61,6 +63,7 @@ def ingest_data():
     # Simplification: We will just check if the Mock Sensor (started by lab-up) has sent data.
     pass
 
+
 def verify_ingest():
     print("Verifying Data Ingest...")
     # Admin token is seeded by init_lab_db.py
@@ -70,7 +73,9 @@ def verify_ingest():
 
     for _ in range(MAX_RETRIES):
         try:
-            r = requests.get(INGEST_URL, headers=headers, params={"limit": 1}, timeout=5)
+            r = requests.get(
+                INGEST_URL, headers=headers, params={"limit": 1}, timeout=5
+            )
             if r.status_code == 200:
                 data = r.json()
                 if len(data) > 0:
@@ -84,6 +89,7 @@ def verify_ingest():
 
     print("❌ No telemetry found after wait")
     sys.exit(1)
+
 
 def main():
     try:
@@ -116,6 +122,7 @@ def main():
         print("\n=== Teardown ===")
         run_cmd("docker compose -f ops/docker-compose.lab.yml down -v")
 
+
 def wait_for_health_check(url):
     print(f"Waiting for {url}...")
     for _ in range(MAX_RETRIES):
@@ -129,6 +136,7 @@ def wait_for_health_check(url):
         time.sleep(RETRY_DELAY)
     raise Exception("Health check timed out")
 
+
 def verify_ingest_via_proxy(url):
     print("Verifying via Proxy...")
     # Admin token from seed
@@ -140,10 +148,11 @@ def verify_ingest_via_proxy(url):
             if r.status_code == 200 and len(r.json()) > 0:
                 print(f"✅ Telemetry found: {len(r.json())} records")
                 return
-        except Exception: # noqa: S110
+        except Exception:  # noqa: S110
             pass
         time.sleep(RETRY_DELAY)
     raise Exception("No data found after seed")
+
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@
 doc_policy_check.py
 Enforce security policies in documentation.
 """
+
 import os
 import re
 import sys
@@ -14,24 +15,22 @@ PROHIBITED_PATTERNS = [
     # General Safety
     {
         "pattern": r"change_me_in_prod",
-        "msg": "Do not use placeholder secrets that might be copy-pasted."
+        "msg": "Do not use placeholder secrets that might be copy-pasted.",
     },
-    {
-        "pattern": r"admin/sentinel",
-        "msg": "Do not document default credentials."
-    },
+    {"pattern": r"admin/sentinel", "msg": "Do not document default credentials."},
     # Network Safety (Prod)
     {
         "pattern": r"5432:",
         "paths": ["docs/prod"],
-        "msg": "Do not expose Database port (5432) in production docs."
+        "msg": "Do not expose Database port (5432) in production docs.",
     },
     {
         "pattern": r"6379:",
         "paths": ["docs/prod"],
-        "msg": "Do not expose Redis port (6379) in production docs."
-    }
+        "msg": "Do not expose Redis port (6379) in production docs.",
+    },
 ]
+
 
 def check_policies():
     errors = []
@@ -56,7 +55,9 @@ def check_policies():
                         continue
 
                 if re.search(rule["pattern"], content):
-                    errors.append(f"[{path}] Policy Violation: {rule['msg']} (Pattern: '{rule['pattern']}')")
+                    errors.append(
+                        f"[{path}] Policy Violation: {rule['msg']} (Pattern: '{rule['pattern']}')"
+                    )
 
     if errors:
         print("\n❌ Documentation Policy Check Failed:")
@@ -65,6 +66,7 @@ def check_policies():
         sys.exit(1)
     else:
         print("\n✅ Documentation policies passed.")
+
 
 if __name__ == "__main__":
     check_policies()

@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
@@ -14,21 +13,21 @@ from controller.baseline.store import BaselineStore
 def mock_session():
     return MagicMock()
 
+
 @pytest.fixture
 def store(mock_session):
     return BaselineStore(session=mock_session)
+
 
 @pytest.fixture
 def builder(store):
     return BaselineBuilder(store)
 
+
 def test_warmup_logic(builder):
     """Verify is_warmed_up logic."""
     # 1. New Profile -> False
-    profile = BaselineProfile(
-        first_seen=datetime.now(UTC),
-        sample_count=50
-    )
+    profile = BaselineProfile(first_seen=datetime.now(UTC), sample_count=50)
     assert builder.is_warmed_up(profile) is False
 
     # 2. Old enough but low samples -> False
@@ -40,12 +39,16 @@ def test_warmup_logic(builder):
     profile.sample_count = 150
     assert builder.is_warmed_up(profile) is True
 
+
 def test_stats_update(builder, store):
     """Verify feature statistics update correctly."""
     # Setup Mock
     profile = BaselineProfile(
         id="test_id",
-        features={"channels": {}, "rssi": {"min": 999, "max": -999, "sum": 0, "count": 0}}
+        features={
+            "channels": {},
+            "rssi": {"min": 999, "max": -999, "sum": 0, "count": 0},
+        },
     )
     store.get_or_create_profile = MagicMock(return_value=profile)
 
@@ -53,7 +56,7 @@ def test_stats_update(builder, store):
     telemetry = [
         {"ssid": "TestNet", "security": "WPA2", "channel": 6, "rssi_dbm": -60},
         {"ssid": "TestNet", "security": "WPA2", "channel": 6, "rssi_dbm": -55},
-        {"ssid": "TestNet", "security": "WPA2", "channel": 1, "rssi_dbm": -70}
+        {"ssid": "TestNet", "security": "WPA2", "channel": 1, "rssi_dbm": -70},
     ]
 
     builder.update_from_telemetry("site_1", telemetry)

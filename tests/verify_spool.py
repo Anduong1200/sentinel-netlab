@@ -1,4 +1,3 @@
-
 import os
 import time
 
@@ -9,13 +8,14 @@ if os.path.exists("data"):
     # Clean up previous test
     if os.path.exists(DB_PATH):
         try:
-             os.remove(DB_PATH)
-             os.remove(DB_PATH + "-wal")
-             os.remove(DB_PATH + "-shm")
+            os.remove(DB_PATH)
+            os.remove(DB_PATH + "-wal")
+            os.remove(DB_PATH + "-shm")
         except:
-             pass
+            pass
 else:
     os.makedirs("data")
+
 
 def test_spool():
     print("Initializing Queue...")
@@ -81,6 +81,7 @@ def test_spool():
 
     q.close()
     print("Test Passed!")
+
 
 if __name__ == "__main__":
     test_spool()

@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Index, Integer, String
@@ -11,10 +10,13 @@ class BaselineProfile(Base):
     Statistical baseline for a specific network entity (Site + Network Key).
     Used to detect anomalies based on historical behavior.
     """
+
     __tablename__ = "baseline_profiles"
 
     # Composite PK might be complex, using ID for simplicity and unique constraint
-    id = Column(String(64), primary_key=True)  # hash(site_id + network_key) ?? Or just UUID.
+    id = Column(
+        String(64), primary_key=True
+    )  # hash(site_id + network_key) ?? Or just UUID.
     # Let's use string composite key representation or just separate fields.
     # To avoid complex composite PKs in SQLAlchemy for now, let's use a synthetic ID or string ID.
 

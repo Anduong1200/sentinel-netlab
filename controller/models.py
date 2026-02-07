@@ -94,7 +94,7 @@ class Alert(Base):
 
     # Scoring
     confidence = Column(Float)  # 0.0 - 1.0
-    impact = Column(Float)      # 0.0 - 100.0
+    impact = Column(Float)  # 0.0 - 100.0
     risk_score = Column(Float)  # 0.0 - 100.0
 
     mitre_attack = Column(String(20))
@@ -111,10 +111,10 @@ class APIToken(Base):
 
     __tablename__ = "api_tokens"
 
-    id = Column(String(32), primary_key=True)
-    token_hash = Column(String(64), unique=True, index=True)
+    token_id = Column(String(32), primary_key=True)
+    token_hash = Column(String(64), unique=True, index=True, nullable=False)
     name = Column(String(128))
-    role = Column(String(20))
+    role = Column(String(20), nullable=False)
     sensor_id = Column(String(64), nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -135,7 +135,7 @@ class AuditLog(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
 
-    event_type = Column(String(50), index=True)
+    event_type = Column(String(50), index=True, nullable=False)
     actor = Column(String(64))
     resource = Column(String(128))
     action = Column(String(50))
@@ -155,16 +155,16 @@ class IngestJob(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
 
-    status = Column(String(20), default="queued", index=True)  # queued, processing, done, failed
+    status = Column(
+        String(20), default="queued", index=True
+    )  # queued, processing, done, failed
     payload = Column(JSON)
 
     attempts = Column(Integer, default=0)
     next_attempt_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     error_msg = Column(Text)
 
-    __table_args__ = (
-        Index("idx_jobs_status_next", "status", "next_attempt_at"),
-    )
+    __table_args__ = (Index("idx_jobs_status_next", "status", "next_attempt_at"),)
 
 
 # =============================================================================

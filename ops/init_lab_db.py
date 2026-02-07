@@ -5,6 +5,7 @@ Initialize Lab Database (SQLite)
 Creates tables and seeds initial data for the Lab environment.
 Uses SQLAlchemy models directly, ensuring compatibility with SQLite.
 """
+
 import logging
 import sys
 from datetime import UTC, datetime, timedelta
@@ -17,8 +18,11 @@ from controller.config import init_config
 from controller.models import APIToken, Base, get_engine, get_session
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger("init_lab_db")
+
 
 def main():
     logger.info("Initializing Lab Database (SQLite)...")
@@ -28,7 +32,9 @@ def main():
 
     # Ensure we are using SQLite
     if "sqlite" not in config.database.url:
-         logger.warning(f"Warning: Database URL is {config.database.url}, expected sqlite://...")
+        logger.warning(
+            f"Warning: Database URL is {config.database.url}, expected sqlite://..."
+        )
 
     engine = get_engine()
     session = get_session(engine)
@@ -50,7 +56,7 @@ def main():
             name="Lab Admin Token",
             role="admin",
             created_at=datetime.now(UTC),
-            expires_at=datetime.now(UTC) + timedelta(days=365)
+            expires_at=datetime.now(UTC) + timedelta(days=365),
         )
         session.add(admin_token)
         session.commit()
@@ -59,6 +65,7 @@ def main():
 
     logger.info("Database initialization complete.")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

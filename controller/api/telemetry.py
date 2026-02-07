@@ -13,8 +13,8 @@ from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 from controller.ingest.queue import IngestQueue
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
-from .deps import PYDANTIC_AVAILABLE, config, limiter, logger, validate_json
-from .models import Telemetry
+from .deps import config, limiter, logger, validate_json
+from controller.models import Telemetry
 
 bp = Blueprint("telemetry", __name__)
 
@@ -34,14 +34,13 @@ INGEST_ITEMS = create_counter(
 @validate_json(TelemetryBatch)
 def ingest_telemetry():
     """Batch telemetry ingestion with full validation"""
-    import gzip
 
     sensor_id = "unknown"  # Default for metrics if parsing fails early
 
     # 1. Parse Data
     # Handled by @validate_json decorator (including gzip)
     if not hasattr(g, "validated_data"):
-         return jsonify({"error": "Validation failed internally"}), 500
+        return jsonify({"error": "Validation failed internally"}), 500
 
     if hasattr(g.validated_data, "model_dump"):
         data = g.validated_data.model_dump(mode="json")
@@ -68,11 +67,15 @@ def ingest_telemetry():
     # Stop enqueueing if system is overloaded
     try:
         stats = IngestQueue.get_stats()
-        if stats.queue_depth > 1000: # Threshold should be in config
+        if stats.queue_depth > 1000:  # Threshold should be in config
             logger.warning(f"Backpressure active: queue_depth={stats.queue_depth}")
             INGEST_REQUEST.labels(endpoint="telemetry", status="overloaded").inc()
             INGEST_FAILURE.labels(sensor_id=sensor_id, reason="backpressure").inc()
-            return jsonify({"error": "System overloaded, retry later"}), 503, {"Retry-After": "30"}
+            return (
+                jsonify({"error": "System overloaded, retry later"}),
+                503,
+                {"Retry-After": "30"},
+            )
     except Exception as e:
         logger.error(f"Failed to check queue stats: {e}")
         # Proceed with caution or fail open/closed? Fail open (try to enqueue)
@@ -90,7 +93,7 @@ def ingest_telemetry():
         return jsonify({"error": "Internal Queue Error"}), 500
 
     # ... (registry update omitted for brevity, logic remains same)
-    
+
     # Update Registry (Last Seen)
     SENSOR_REGISTRY[sensor_id] = {
         "last_seen": datetime.now(UTC).isoformat(),
@@ -100,15 +103,12 @@ def ingest_telemetry():
 
     if is_duplicate:
         INGEST_REQUEST.labels(endpoint="telemetry", status="duplicate").inc()
-        return jsonify({"success": True, "status": "duplicate", "ack_id": ack_id}), 200
+        # Return batch_id as ack_id (protocol contract), not the internal scoped ID
+        return jsonify({"success": True, "status": "duplicate", "ack_id": batch_id}), 200
 
     INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
     INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()
-    return jsonify({"success": True, "status": "queued", "ack_id": ack_id}), 202
-
-
-
-
+    return jsonify({"success": True, "status": "queued", "ack_id": batch_id}), 202
 
 
 @bp.route("/telemetry", methods=["GET"])

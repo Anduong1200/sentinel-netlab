@@ -60,7 +60,7 @@ class APIConfig:
     host: str = "0.0.0.0"  # nosec B104
     port: int = 5000
     debug: bool = False
-    api_key: str = "" # Enforced via require_secret in ConfigManager
+    api_key: str = ""  # Enforced via require_secret in ConfigManager
     rate_limit: str = "60/minute"
     cors_enabled: bool = True
     ssl_enabled: bool = False
@@ -233,7 +233,7 @@ class ConfigManager:
                         env_var,
                         min_len=16,
                         allow_dev_autogen=True,
-                        env=env
+                        env=env,
                     )
                 except RuntimeError as e:
                     # ConfigManager usually shouldn't crash the app on init unless critical,
