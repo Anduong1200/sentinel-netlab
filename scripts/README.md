@@ -72,4 +72,4 @@ python3 calibrate_weights.py labeled_data.json -o weights.json
 
 ---
 
-*See [install_guide.md](../docs/install_guide.md) for complete setup instructions.*
+*See [installation.md](../docs/getting-started/installation.md) for complete setup instructions.*

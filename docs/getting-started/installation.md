@@ -45,6 +45,46 @@ sudo usermod -aG docker $USER
 
 ---
 
+## Part 1B: Arch Linux + VMware (Sensor on VM)
+
+If you are on **Windows 11** and want to run the **Sensor** inside a **VMware** Linux VM,
+use an **Arch Linux** guest with USB passthrough for your WiFi adapter (e.g., TL-WN722N v1).
+
+### A. VMware setup (host side)
+1. Install VMware Workstation/Player.
+2. Create an Arch Linux VM (2+ cores, 4GB+ RAM).
+3. **Enable USB passthrough** and attach your WiFi adapter to the VM:
+   - VM settings → USB Controller → Enable USB 2.0/3.0.
+   - Run the VM, then attach the adapter: **VM > Removable Devices > Your WiFi Adapter > Connect (Disconnect from Host)**.
+
+> Tip: If the adapter keeps reconnecting to Windows, disable Windows auto-driver handling or unplug/replug after VM is running.
+
+### B. Arch Linux dependencies (guest side)
+```bash
+sudo pacman -Syu --needed \
+  python python-pip python-virtualenv \
+  libpcap \
+  git base-devel \
+  wireless_tools iw tcpdump \
+  aircrack-ng \
+  gpsd
+```
+
+### C. Verify adapter + monitor mode
+```bash
+lsusb
+ip link
+sudo ip link set wlan0 down
+sudo iw wlan0 set type monitor
+sudo ip link set wlan0 up
+iw wlan0 info
+```
+
+### D. Continue with Part 2–4 below
+Once monitor mode is working, follow **Part 2–4** to install dependencies and run the sensor.
+
+---
+
 ## Part 2: Repository Setup
 
 Clone the repository and set up the Python environment.

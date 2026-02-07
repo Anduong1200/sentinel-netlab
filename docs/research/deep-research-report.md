@@ -52,11 +52,11 @@ These themes set the bar for Sentinel NetLab’s scientific contribution: datase
 
 ### Competitive landscape and feature overlap visuals
 
-![Competitive landscape map](sandbox:/mnt/data/sentinel_netlab_competitive_landscape.png)
+*Figure omitted: Competitive landscape map (source image not stored in repo).*
 
 The map above is a qualitative positioning (not a market-share chart) showing how integrated enterprise WLAN vendors cluster toward “integrated + strong containment,” while open-source/research stacks cluster toward “overlay + detect/alert.” This bifurcation is grounded in vendor architectures that embed dedicated scanning radios and wired correlation inside AP infrastructure[8]. 
 
-![Feature overlap matrix](sandbox:/mnt/data/sentinel_netlab_feature_overlap.png)
+*Figure omitted: Feature overlap matrix (source image not stored in repo).*
 
 The matrix summarizes what is publicly documented as present/claimed (1) vs not publicly described (0). For vendors, the “absence” of ML often reflects lack of explicit public documentation rather than proof they do not use ML internally; conversely Sentinel explicitly claims an autoencoder anomaly component in the README[1]. 
 
