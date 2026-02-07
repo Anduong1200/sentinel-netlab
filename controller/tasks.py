@@ -4,8 +4,16 @@ from datetime import UTC, datetime
 from sqlalchemy.exc import IntegrityError
 
 from controller.api.deps import create_app, db
-from controller.api.models import IngestBatch, Telemetry
+from controller.api.models import IngestJob, Telemetry
 from controller.celery_app import celery
+from common.observability.ingest_logger import IngestLogger
+from common.observability.metrics import (
+    INGEST_TOTAL,
+    INGEST_SUCCESS,
+    INGEST_FAILURE,
+    INGEST_LATENCY,
+    create_counter
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,19 +25,25 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
     """
     Process a telemetry batch asynchronously.
     """
+    start_time = datetime.now(UTC)
+    
+    # Context-aware logger
+    ingest_logger = IngestLogger(logger)
+    
     with app.app_context():
-        logger.info(f"Processing batch {batch_id} for {sensor_id} ({len(items)} items)")
+        ingest_logger.info(f"Processing batch {batch_id} ({len(items)} items)", sensor_id, batch_id)
+        INGEST_TOTAL.labels(sensor_id=sensor_id).inc()
 
         # 1. Idempotency Check (Persistent)
-        existing_batch = db.session.get(IngestBatch, batch_id)
+        existing_batch = db.session.get(IngestJob, batch_id)
         if existing_batch:
-            logger.info(f"Idempotency hit (Worker): {batch_id}")
+            ingest_logger.info(f"Idempotency hit (Worker): {batch_id}", sensor_id, batch_id, extra={"event": "ingest.duplicate"})
             return {"status": "duplicate", "accepted": existing_batch.item_count}
 
         # 2. Register Batch (Lock)
         try:
-            new_batch = IngestBatch(
-                batch_id=batch_id,
+            new_batch = IngestJob(
+                job_id=batch_id,
                 sensor_id=sensor_id,
                 item_count=len(items),
                 status="processing"
@@ -38,12 +52,13 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            logger.info(f"Idempotency hit (race/worker): {batch_id}")
+            ingest_logger.info(f"Idempotency hit (race/worker): {batch_id}", sensor_id, batch_id)
             # If it exists now, it's a duplicate
             return {"status": "duplicate", "accepted": len(items)}
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Failed to register batch: {e}")
+            ingest_logger.error(f"Failed to register batch: {e}", sensor_id, batch_id)
+            INGEST_FAILURE.labels(sensor_id=sensor_id, reason="db_error_register").inc()
             raise self.retry(exc=e, countdown=5) from e
 
         # 3. Process Items
@@ -68,7 +83,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
                     frequency_mhz=item.get("frequency_mhz"), # Optional if exists
                     security=item.get("security"),
 
-                    raw_data=item # Store full payload
+                    data=item # Store full payload
                 )
                 db.session.add(db_item)
                 accepted += 1
@@ -76,13 +91,19 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
             # Update batch status
             new_batch.status = "processed"
             db.session.commit()
+            
+            # Record Metrics
+            INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()
+            duration = (datetime.now(UTC) - start_time).total_seconds()
+            INGEST_LATENCY.labels(sensor_id=sensor_id).observe(duration)
 
-            logger.info(f"Batch {batch_id} processed successfully ({accepted} items)")
+            ingest_logger.info(f"Batch processed successfully ({accepted} items)", sensor_id, batch_id, extra={"event": "ingest.success", "duration_s": duration})
             return {"status": "success", "accepted": accepted}
 
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Failed to process items for {batch_id}: {e}")
+            ingest_logger.error(f"Failed to process items: {e}", sensor_id, batch_id)
+            INGEST_FAILURE.labels(sensor_id=sensor_id, reason="db_error_process").inc()
             # Mark batch as failed? Or just retry?
             # If we retry, we need to handle partial insertions?
             # Telemetry inserts are atomic with the transaction above.

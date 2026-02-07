@@ -39,23 +39,14 @@ def ingest_telemetry():
     sensor_id = "unknown"  # Default for metrics if parsing fails early
 
     # 1. Parse Data
-    if request.headers.get("Content-Encoding") == "gzip":
-        try:
-            content = gzip.decompress(request.get_data())
-            import json
-            data = json.loads(content)
-        except Exception as e:
-             logger.error(f"GZIP decompression failed: {e}")
-             INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
-             INGEST_FAILURE.labels(sensor_id=sensor_id, reason="gzip_error").inc()
-             return jsonify({"error": "Invalid GZIP data"}), 400
-    elif PYDANTIC_AVAILABLE and hasattr(g, "validated_data"):
-        if hasattr(g.validated_data, "model_dump"):
-            data = g.validated_data.model_dump(mode="json")
-        else:
-            data = g.validated_data.dict()
+    # Handled by @validate_json decorator (including gzip)
+    if not hasattr(g, "validated_data"):
+         return jsonify({"error": "Validation failed internally"}), 500
+
+    if hasattr(g.validated_data, "model_dump"):
+        data = g.validated_data.model_dump(mode="json")
     else:
-        data = request.get_json()
+        data = g.validated_data.dict()
 
     sensor_id = data.get("sensor_id", "unknown")
     # items = data.get("items", []) # Unused
@@ -91,19 +82,25 @@ def ingest_telemetry():
     # The queue handles idempotency internally via PK check
 
     try:
-        ack_id = IngestQueue.enqueue(sensor_id, batch_id, data)
+        ack_id, is_duplicate = IngestQueue.enqueue(sensor_id, batch_id, data)
     except Exception as e:
         logger.error(f"Failed to enqueue: {e}")
         INGEST_REQUEST.labels(endpoint="telemetry", status="internal_error").inc()
         INGEST_FAILURE.labels(sensor_id=sensor_id, reason="queue_error").inc()
         return jsonify({"error": "Internal Queue Error"}), 500
 
-    # Update Registry
+    # ... (registry update omitted for brevity, logic remains same)
+    
+    # Update Registry (Last Seen)
     SENSOR_REGISTRY[sensor_id] = {
         "last_seen": datetime.now(UTC).isoformat(),
         "status": "online",
         "last_batch": batch_id,
     }
+
+    if is_duplicate:
+        INGEST_REQUEST.labels(endpoint="telemetry", status="duplicate").inc()
+        return jsonify({"success": True, "status": "duplicate", "ack_id": ack_id}), 200
 
     INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
     INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()

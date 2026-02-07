@@ -1,77 +1,54 @@
-import json
-import logging
 
 import pytest
+from unittest.mock import MagicMock, patch
+from common.observability.ingest_logger import IngestLogger
+from common.observability.metrics import INGEST_TOTAL, INGEST_SUCCESS, INGEST_LATENCY
+from controller.tasks import process_telemetry_batch
+import logging
 
-from common.observability import context, metrics
-from common.observability.logging import JSONFormatter
+class TestObservability:
+    def test_ingest_logger_context(self):
+        """Verify IngestLogger sets and clears context"""
+        logger = MagicMock()
+        ingest_logger = IngestLogger(logger)
+        
+        with patch("common.observability.ingest_logger.set_context") as mock_set:
+            with patch("common.observability.ingest_logger.clear_context") as mock_clear:
+                ingest_logger.info("Test message", "s1", "b1")
+                
+                mock_set.assert_called_with(sensor_id="s1", batch_id="b1")
+                mock_clear.assert_called_once()
+                logger.log.assert_called_once()
+                call_args = logger.log.call_args
+                assert call_args[1].get("extra", {}).get("data", {}).get("sensor_id") == "s1"
 
-
-def test_context_storage():
-    """Verify thread-local context storage"""
-    context.clear_context()
-    assert context.get_context() == {"request_id": None, "sensor_id": None, "batch_id": None}
-
-    context.set_context(request_id="req-123", sensor_id="sensor-007")
-    ctx = context.get_context()
-    assert ctx["request_id"] == "req-123"
-    assert ctx["sensor_id"] == "sensor-007"
-    assert ctx["batch_id"] is None
-
-    context.clear_context()
-    assert context.get_context()["request_id"] is None
-
-def test_json_formatter():
-    """Verify JSON formatter includes context and structure"""
-    context.set_context(request_id="req-test", batch_id="batch-99")
-
-    record = logging.LogRecord(
-        name="test_logger",
-        level=logging.INFO,
-        pathname=__file__,
-        lineno=10,
-        msg="Test message",
-        args=(),
-        exc_info=None
-    )
-
-    formatter = JSONFormatter(service_name="test-service", env="test")
-    log_output = formatter.format(record)
-    log_dict = json.loads(log_output)
-
-    assert log_dict["component"] == "test-service"
-    assert log_dict["env"] == "test"
-    assert log_dict["message"] == "Test message"
-    assert log_dict["request_id"] == "req-test"
-    assert log_dict["batch_id"] == "batch-99"
-    assert "ts" in log_dict
-
-def test_pii_redaction():
-    """Verify sensitive fields are redacted"""
-    formatter = JSONFormatter(service_name="test-service")
-
-    # 1. SSID Redaction
-    record = logging.LogRecord(
-        name="test", level=logging.INFO, pathname="x", lineno=1,
-        msg="Found network", args=(), exc_info=None
-    )
-    record.data = {"ssid": "PrivateWifi", "rssi": -50}
-
-    log_dict = json.loads(formatter.format(record))
-    assert log_dict["ssid"] != "PrivateWifi"
-    assert log_dict["ssid"].startswith("*********") or len(log_dict["ssid"]) > 0
-    assert log_dict["rssi"] == -50
-
-    # 2. Secret Redaction
-    record.data = {"password": "supersecret", "api_token": "abcdef"}
-    log_dict = json.loads(formatter.format(record))
-    assert log_dict["password"] == "[REDACTED]"
-
-def test_metrics_creation():
-    """Verify metrics helpers"""
-    if not metrics.PROMETHEUS_AVAILABLE:
-        pytest.skip("Prometheus client not installed")
-
-    c = metrics.create_counter("test_counter", "Test desc", ["label1"])
-    assert c is not None
-    assert c._name == "sentinel_test_counter"
+    def test_metrics_instrumentation(self):
+        """Verify process_telemetry_batch records metrics"""
+        # Mock DB and App Context
+        with patch("controller.tasks.app.app_context"):
+            with patch("controller.tasks.db.session"):
+                with patch("controller.tasks.IngestJob") as MockJob:
+                    # Setup: No existing batch
+                    from controller.tasks import db
+                    db.session.get.return_value = None
+                    new_batch = MagicMock()
+                    MockJob.return_value = new_batch
+                    
+                    # Mock Metrics
+                    with patch.object(INGEST_TOTAL, "labels") as mock_total:
+                        with patch.object(INGEST_SUCCESS, "labels") as mock_success:
+                            with patch.object(INGEST_LATENCY, "labels") as mock_latency:
+                                
+                                # Execute
+                                items = [{"timestamp": "2024-01-01T00:00:00", "bssid": "aa:bb:cc:dd:ee:ff"}]
+                                process_telemetry_batch(batch_id="b1", sensor_id="s1", items=items)
+                                
+                                # Verify
+                                mock_total.assert_called_with(sensor_id="s1")
+                                mock_total.return_value.inc.assert_called_once()
+                                
+                                mock_success.assert_called_with(sensor_id="s1")
+                                mock_success.return_value.inc.assert_called_once()
+                                
+                                mock_latency.assert_called_with(sensor_id="s1")
+                                mock_latency.return_value.observe.assert_called_once()

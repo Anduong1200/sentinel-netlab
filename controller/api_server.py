@@ -21,17 +21,16 @@ from controller.api.admin import bp as admin_bp  # noqa: E402
 # Initialize App
 app = create_app()
 
-# Observability Middleware (Request ID, Logs, Context)
-from controller.api.middleware import ObservabilityMiddleware  # noqa: E402
+# Observability & Security Middleware
+from controller.api.middleware import ObservabilityMiddleware, TrustedProxyMiddleware  # noqa: E402
 from common.observability.metrics import HTTPMetricsMiddleware  # noqa: E402
-from controller.security.proxy import TrustedProxyMiddleware  # noqa: E402
 
 app.wsgi_app = ObservabilityMiddleware(app.wsgi_app)
 app.wsgi_app = HTTPMetricsMiddleware(app.wsgi_app)
 app.wsgi_app = TrustedProxyMiddleware(
     app.wsgi_app,
     trusted_cidrs=config.security.trusted_proxies,
-    require_tls=config.security.require_tls
+    x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
 )
 
 # Register Blueprints

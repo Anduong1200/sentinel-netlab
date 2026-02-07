@@ -49,22 +49,28 @@ Production will **crash immediately** if default secrets or insecure configs are
 
 ## 3. Deployment Profile
 
-Use the canonical production compose file: `ops/docker-compose.prod.yml`.
+### Production (Canonical)
+*   **File**: `ops/docker-compose.prod.yml`
+*   **Ports**: Exposes **only** 80/443 (via Nginx).
+*   **Security**: Internal services (DB, Redis, MinIO, Controller) are isolated in the `sentinel-net` network with NO host port bindings.
+*   **Secrets**: Requires `.env` with strong keys (fails fast if missing).
 
-### Key Differences from Lab
-*   **Restarts**: `unless-stopped` (vs `no`).
-*   **Logging**: JSON driver with rotation enabled.
-*   **Volumes**: Named volumes for persistence.
-*   **Ports**: Only expose Proxy ports (80/443).
+### Development / Debug (NOT for Production)
+*   **File**: `ops/docker-compose.dev.yml`
+*   **Ports**: Exposes DB (5432), Redis (6379), Controller (5000) for debugging.
+*   **Security**: Relaxed. **DO NOT deploy this to the public internet.**
 
 ### Step-by-Step Deploy
 
 1.  **Prepare Secrets**:
     ```bash
-    # Generate strong keys
+    # Copy strict template
+    cp ops/.env.prod.example .env
+    
+    # Generate strong keys and fill .env
     openssl rand -hex 32
+    nano .env
     ```
-    Populate `.env.prod`.
 
 2.  **Pull Images**:
     ```bash

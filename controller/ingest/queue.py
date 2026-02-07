@@ -26,7 +26,7 @@ class IngestQueue:
         # 1. Idempotency Check (Optimistic)
         job = db.session.get(IngestJob, batch_id)
         if job:
-            return job.job_id
+            return job.job_id, True
 
         # 2. Insert
         try:
@@ -40,11 +40,11 @@ class IngestQueue:
             )
             db.session.add(job)
             db.session.commit()
-            return batch_id
+            return batch_id, False
         except IntegrityError:
             db.session.rollback()
             # Race condition, it exists now
-            return batch_id
+            return batch_id, True
         except Exception as e:
             db.session.rollback()
             raise e

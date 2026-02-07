@@ -51,7 +51,21 @@ def validate_json(model_class):
         def decorated_function(*args, **kwargs):
 
             try:
-                data = request.get_json()
+                # Handle GZIP if present
+                if request.headers.get("Content-Encoding") == "gzip":
+                    import gzip
+                    import json
+                    try:
+                        content = gzip.decompress(request.get_data())
+                        data = json.loads(content)
+                    except Exception:
+                         return jsonify({"error": "Invalid GZIP data"}), 400
+                else:
+                    data = request.get_json()
+                
+                if data is None:
+                    return jsonify({"error": "Invalid or missing JSON body"}), 400
+
                 validated = model_class(**data)
                 g.validated_data = validated
             except ValidationError as e:

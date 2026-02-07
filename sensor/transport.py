@@ -222,11 +222,13 @@ class TransportClient:
             path = urlparse(self.upload_url).path
 
             # Sign the WIRE BYTES (compressed or not)
+            sensor_id = batch.get("sensor_id", "unknown")
             signature = self._sign_payload(
                 "POST",
                 path,
                 payload_bytes,
                 timestamp,
+                sensor_id=sensor_id,
                 content_encoding=content_encoding
             )
             headers["X-Signature"] = signature
@@ -299,23 +301,42 @@ class TransportClient:
         path: str,
         payload: bytes | str,
         timestamp: str,
+        sensor_id: str,
         sequence: str | None = None,
         content_encoding: str = "identity",
     ) -> str:
-        """Sign payload with HMAC-SHA256 (Canonical: method + path + ts + seq + payload + encoding)"""
-        data = method.encode() + path.encode() + timestamp.encode()
-        if sequence:
-            data += sequence.encode()
-
+        """Sign payload with HMAC-SHA256 (Canonical: method\npath\ntimestamp\nsensor_id\nencoding\nbody)"""
+        # V1 Canonical String Format (newline delimited)
+        parts = [
+            method,
+            path,
+            timestamp,
+            sensor_id,
+            content_encoding
+        ]
+        
+        # We process payload separately to avoid large string copies if possible, 
+        # but hmac.update needs bytes.
+        
+        # Build layout:
+        # method\n
+        # path\n
+        # timestamp\n
+        # sensor_id\n
+        # content_encoding\n
+        # body_bytes
+        
+        canonical_meta = "\n".join(parts) + "\n"
+        
+        h = hmac.new(self.hmac_secret.encode(), digestmod=hashlib.sha256)
+        h.update(canonical_meta.encode())
+        
         if isinstance(payload, str):
-            data += payload.encode()
+            h.update(payload.encode())
         else:
-            data += payload
-
-        data += content_encoding.encode()
-
-        signature = hmac.new(self.hmac_secret.encode(), data, hashlib.sha256)
-        return signature.hexdigest()
+            h.update(payload)
+            
+        return h.hexdigest()
 
     def _on_success(self) -> None:
         """Called on successful upload"""
@@ -370,8 +391,16 @@ class TransportClient:
             from urllib.parse import urlparse
 
             path = urlparse(alerts_url).path
+            # For alerts, sensor_id might be inside payload or context. 
+            # We should probably pass it if available.
+            # Assuming alert_data has 'sensor_id' is risky if not ensured.
+            # But the header X-Sensor-ID isn't set above in upload_alert?
+            # Let's add X-Sensor-ID to headers first.
+            s_id = alert_data.get("sensor_id", "unknown")
+            headers["X-Sensor-ID"] = s_id
+            
             headers["X-Signature"] = self._sign_payload(
-                "POST", path, payload, timestamp
+                "POST", path, payload, timestamp, sensor_id=s_id
             )
 
         try:

@@ -194,6 +194,26 @@ jobs:
           pip install ".[dev,controller,sensor,dashboard]"
           pip install pytest pytest-cov
 
+      - name: "[Security] Audit Prod Compose (Guardrails)"
+        run: |
+          echo "Checking ops/docker-compose.prod.yml for forbidden patterns..."
+
+          # 1. Check for exposed sensitive ports (5432, 6379, 9000-9001, 5000, 8050)
+          # We only allow Nginx ports (80, 443) in prod canonical
+          if grep -E "5432:5432|6379:6379|9000:9000|5000:5000|8050:8050" ops/docker-compose.prod.yml; then
+            echo "::error::Prod compose exposes sensitive ports! Only 80/443 allowed."
+            exit 1
+          fi
+
+          # 2. Check for default secrets (e.g. :-default)
+          # We require :?error_message syntax
+          if grep -E ":-admin123|:-minioadmin|:-postgres|:-redis|:-analyst-token" ops/docker-compose.prod.yml; then
+             echo "::error::Prod compose uses unsafe default secrets! Use :?error_message syntax."
+             exit 1
+          fi
+
+          echo "Prod Compose passed guardrails."
+
       - name: Run tests (unit + integration) with coverage
         run: |
           pytest tests/unit tests/integration \
@@ -238,14 +258,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lowercase image name
+        id: lower
         run: |
-          echo "IMAGE_LOWER=$(echo ${{ matrix.image }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "image=$(echo ${{ matrix.image }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_LOWER }}
+          images: ${{ steps.lower.outputs.image }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -272,7 +293,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ env.IMAGE_LOWER }}:pr
+          image-ref: ${{ steps.lower.outputs.image }}:pr
           format: table
           exit-code: "1"
           ignore-unfixed: true
@@ -297,7 +318,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: ${{ env.IMAGE_LOWER }}:sha-${{ github.sha }}
+          image-ref: ${{ steps.lower.outputs.image }}:sha-${{ github.sha }}
           format: table
           exit-code: "1"
           ignore-unfixed: true

@@ -157,3 +157,24 @@ class _DummyTimer:
     def __enter__(self): return self
     def __exit__(self, *args): pass
 
+
+# =============================================================================
+# OPERATIONAL METRICS (P0-06)
+# =============================================================================
+
+QUEUE_LAG = create_gauge(
+    "queue_lag", "Current number of items in the sensor spool", ["sensor_id"]
+)
+
+DROP_RATE = create_counter(
+    "drop_rate_total", "Dropped items due to full queue or validation error", ["sensor_id", "reason"]
+)
+
+HEARTBEAT_AGE = create_gauge(
+    "heartbeat_age_seconds", "Seconds since last heartbeat from sensor", ["sensor_id"]
+)
+
+ALERT_RATE = create_counter(
+    "alert_rate_total", "Total alerts generated", ["sensor_id", "severity"]
+)
+

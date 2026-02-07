@@ -33,6 +33,7 @@ class IngestJob(db.Model):
     job_id = db.Column(db.String(64), primary_key=True) # batch_id
     sensor_id = db.Column(db.String(64), nullable=False)
     received_at = db.Column(db.DateTime(timezone=True), default=datetime.now(UTC))
+    item_count = db.Column(db.Integer, default=0)
 
     status = db.Column(db.String(20), default="queued") # queued, processing, done, failed
     payload = db.Column(JSONB if "postgresql" in config.database.url else db.JSON)

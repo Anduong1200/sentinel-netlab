@@ -144,20 +144,27 @@ def verify_hmac(
     payload: bytes,
     signature: str,
     timestamp: str,
+    sensor_id: str,
     sequence: str | None = None,
     content_encoding: str = "identity",
 ) -> bool:
-    """Verify HMAC signature of method + path + timestamp + sequence + payload + encoding"""
-    # Canonical string: method + path + timestamp + sequence + payload + encoding
-    data_to_sign = method.encode() + path.encode() + timestamp.encode()
-    if sequence:
-        data_to_sign += sequence.encode()
-    data_to_sign += payload
-    data_to_sign += content_encoding.encode()
-
-    expected = hmac.new(
-        config.security.hmac_secret.encode(), data_to_sign, hashlib.sha256
-    ).hexdigest()
+    """Verify HMAC signature using V1 Canonical Format"""
+    # V1 Canonical String Format (newline delimited)
+    parts = [
+        method,
+        path,
+        timestamp,
+        sensor_id,
+        content_encoding
+    ]
+    
+    canonical_meta = "\n".join(parts) + "\n"
+    
+    h = hmac.new(config.security.hmac_secret.encode(), digestmod=hashlib.sha256)
+    h.update(canonical_meta.encode())
+    h.update(payload)
+    
+    expected = h.hexdigest()
     return hmac.compare_digest(expected, signature)
 
 
@@ -182,14 +189,12 @@ def require_auth(permission: Permission = None):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             # TLS check
+            # TLS check
+            # TLS check
             if config.security.require_tls and not request.is_secure:
-                # Only trust X-Forwarded-Proto if allowed (TODO: Implement full trusted proxy CIDR check)
-                # For now, we assume if the header is present and we are behind a proxy that sets it, it's valid
-                # BUT this is risky without an allowlist.
-                # Adding a simple check if we are in production.
-                forwarded = request.headers.get("X-Forwarded-Proto")
-                if not forwarded or forwarded != "https":
-                     return jsonify({"error": "HTTPS required"}), 403
+                 # With TrustedProxyMiddleware, request.is_secure is correctly determined 
+                 # based on X-Forwarded-Proto from TRUSTED sources only.
+                 return jsonify({"error": "HTTPS required"}), 403
 
             # Token auth
             auth_header = request.headers.get("Authorization", "")
@@ -252,6 +257,13 @@ def require_signed():
             # This prevents zip-bombs: we only decompress AFTER signature is verified.
             payload = request.get_data()
             content_encoding = request.headers.get("Content-Encoding", "identity")
+            
+            # Fail-closed check for encoding
+            if content_encoding not in ["gzip", "identity", ""]:
+                AUTH_FAILURES.labels(type="bad_encoding").inc()
+                return jsonify({"error": "Unsupported Content-Encoding"}), 415
+
+            sensor_id = request.headers.get("X-Sensor-ID", "unknown")
 
             if not verify_hmac(
                 request.method,
@@ -259,10 +271,11 @@ def require_signed():
                 payload,
                 signature,
                 timestamp,
+                sensor_id,
                 sequence,
                 content_encoding=content_encoding,
             ):
-                HMAC_FAILURES.inc()
+                HMAC_FAILURES.labels(reason="signature_mismatch").inc() if hasattr(HMAC_FAILURES, 'labels') else HMAC_FAILURES.inc()
                 return jsonify({"error": "Invalid signature"}), 401
 
             # Sequence check (replay protection)

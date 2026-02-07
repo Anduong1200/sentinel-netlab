@@ -236,8 +236,9 @@ python sensor/sensor_cli.py --sensor-id sensor-01 --iface wlan0mon --config conf
 ```
 
 **2. Deploy Controller (Production)**
-Start the central management backend with hardened configs.
+Start the central management backend with hardened configs (Ports 80/443 only).
 ```bash
+cp ops/.env.prod.example .env  # Configure secrets first!
 docker compose -f ops/docker-compose.prod.yml up -d
 ```
 

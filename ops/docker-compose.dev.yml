@@ -21,6 +21,14 @@
 
 version: "3.9"
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# WARNING: DEVELOPMENT / DEBUGGING ONLY
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# This file exposes internal ports (5432, 6379, 5000, 9000) to the host.
+# DO NOT USE IN PRODUCTION or on public-facing servers.
+# Use ops/docker-compose.prod.yml for production deployments.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 x-common-env: &common-env
   TZ: UTC
 
@@ -50,28 +58,28 @@ services:
 
 
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-sentinel}
 
       # Redis
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379/0
 
-      # Secrets (from .env - NO DEFAULTS)
-      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
-      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+      # Secrets (Dev defaults allowed)
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY:-dev-secret-key}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET:-dev-hmac-secret}
 
       # Security
-      REQUIRE_HMAC: ${REQUIRE_HMAC:-true}
+      REQUIRE_HMAC: ${REQUIRE_HMAC:-false}
       REQUIRE_TLS: ${REQUIRE_TLS:-false}
       MAX_TIME_DRIFT_SECONDS: ${MAX_TIME_DRIFT_SECONDS:-300}
 
       # Rate limiting
-      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-100 per minute}
-      RATE_LIMIT_SENSOR: ${RATE_LIMIT_SENSOR:-200 per minute}
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-1000 per minute}
+      RATE_LIMIT_SENSOR: ${RATE_LIMIT_SENSOR:-2000 per minute}
 
       # S3/MinIO
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       S3_BUCKET: ${S3_BUCKET:-sentinel-artifacts}
     volumes:
       - controller-data:/app/data
@@ -80,6 +88,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    ports:
+      - "5000:5000" # Expose Controller for dev
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/api/v1/health" ]
       interval: 30s
@@ -117,14 +127,14 @@ services:
       LOG_FORMAT: json
       
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
       
       # Redis
-      REDIS_URL: redis://redis:6379/0
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}@redis:6379/0
 
       # Secrets
-      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY}
-      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY:?CONTROLLER_SECRET_KEY_REQUIRED}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET:?CONTROLLER_HMAC_SECRET_REQUIRED}
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,6 +175,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "5432:5432" # Expose for DB tools
     networks:
       - sentinel-net
 
@@ -180,10 +192,12 @@ services:
       - redis-data:/data
     logging: *default-logging
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "6379:6379" # Expose Redis
     networks:
       - sentinel-net
 
@@ -205,6 +219,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     networks:
       - sentinel-net
 
@@ -257,7 +274,7 @@ services:
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_PASSWORD_REQUIRED}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
     volumes:
@@ -300,7 +317,7 @@ services:
     environment:
       CONTROLLER_URL: http://controller:5000
       SENSOR_ID: mock-sensor-01
-      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:-mock-token}
+      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:?MOCK_TOKEN_REQUIRED}
       SENSOR_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
 
     depends_on:
@@ -321,7 +338,10 @@ services:
     restart: unless-stopped
     environment:
       CONTROLLER_URL: http://controller:5000
-      DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:-analyst-token}
+      DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:-dev-dashboard-token}
+      DASH_DEBUG: "true"
+    ports:
+      - "8050:8050"
     logging: *default-logging
 
     depends_on:
@@ -346,7 +366,7 @@ services:
     environment:
       SENTINEL_LAB_MODE: "true"
       WIFI_INTERFACE: ${WIFI_INTERFACE:-wlan0}
-      LAB_API_KEY: ${LAB_API_KEY}
+      LAB_API_KEY: ${LAB_API_KEY:?LAB_API_KEY_REQUIRED}
 
 # =============================================================================
 # VOLUMES

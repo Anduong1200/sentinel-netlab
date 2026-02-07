@@ -86,3 +86,42 @@ class ObservabilityMiddleware:
             logger.info("Access Log", extra={"data": log_data})
 
             context.clear_context()
+
+
+from ipaddress import ip_address, ip_network
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+class TrustedProxyMiddleware:
+    """
+    Conditionally apply ProxyFix only if the request comes from a trusted proxy.
+    This prevents header spoofing from untrusted sources while allowing
+    correct IP/Proto resolution from Nginx/LoadBalancer.
+    """
+
+    def __init__(self, app, trusted_cidrs: list[str], x_for: int = 1, x_proto: int = 1, x_host: int = 1, x_port: int = 1, x_prefix: int = 1):
+        self.app = app
+        self.trusted_cidrs = [ip_network(cidr, strict=False) for cidr in trusted_cidrs if cidr.strip()]
+        # Configure ProxyFix to trust the specified number of proxies
+        self.proxy_fix = ProxyFix(app, x_for=x_for, x_proto=x_proto, x_host=x_host, x_port=x_port, x_prefix=x_prefix)
+
+    def __call__(self, environ, start_response):
+        remote_addr = environ.get("REMOTE_ADDR")
+        is_trusted = False
+        
+        if remote_addr:
+            try:
+                ip = ip_address(remote_addr)
+                for net in self.trusted_cidrs:
+                    if ip in net:
+                        is_trusted = True
+                        break
+            except ValueError:
+                # Invalid IP in REMOTE_ADDR? Treat as untrusted.
+                pass
+        
+        if is_trusted:
+            # Apply ProxyFix (trust headers)
+            return self.proxy_fix(environ, start_response)
+        else:
+            # Untrusted: Do NOT apply ProxyFix (ignore headers)
+            return self.app(environ, start_response)

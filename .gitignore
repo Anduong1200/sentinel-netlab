@@ -42,3 +42,13 @@ bluetooth_log.json
 file_list.txt
 .dos_state.json
 *.db
+
+# Test artifacts
+.pytest_cache/
+*.log
+junit.xml
+coverage.xml
+
+# Spool data (sensor)
+data/spool.db
+data/baseline.db

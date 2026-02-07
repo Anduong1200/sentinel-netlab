@@ -1,71 +1,372 @@
-services:
-  controller:
-    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}/controller:${CONTROLLER_TAG:-latest}
-    restart: unless-stopped
-    env_file:
-      - /opt/sentinel/.env.prod
-    environment:
-      # Fail-fast: bắt buộc set secrets thật trong .env.prod
-      - SENTINEL_ENV=prod
-      - CONTROLLER_BIND=0.0.0.0
-      - CONTROLLER_PORT=5000
-      # Ví dụ các biến bạn nên có trong .env.prod:
-      # - CONTROLLER_SECRET_KEY=...
-      # - CONTROLLER_HMAC_SECRET=...
-      # - DATABASE_URL=...
-      # - REDIS_URL=... (nếu dùng)
-    ports:
-      # Nếu đặt sau reverse proxy thì có thể chỉ expose nội bộ
-      - "5000:5000"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:5000/api/v1/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-    # Hardening nhẹ (đừng làm quá tay nếu app cần ghi file)
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    networks:
-      - sentinel_net
+# =============================================================================
+# Sentinel NetLab - Production Docker Compose
+# Complete stack: Controller, Database, Cache, Storage, Proxy, Monitoring
+# =============================================================================
+#
+# Usage:
+#   cp .env.example .env  # Configure secrets (REQUIRED)
+#   docker compose up -d
+#
+# Services:
+#   - controller: API server (Flask/Gunicorn)
+#   - postgres: Primary database (with TimescaleDB extension)
+#   - redis: Cache and rate limiting
+#   - minio: Object storage (S3-compatible) for PCAPs/artifacts
+#   - nginx: Reverse proxy with TLS termination
+#   - prometheus: Metrics collection
+#   - grafana: Dashboards
+#   - alertmanager: Alert routing
+#
+# =============================================================================
 
-  dashboard:
-    image: ghcr.io/${GHCR_OWNER}/${GHCR_REPO}/dashboard:${DASHBOARD_TAG:-latest}
+version: "3.9"
+
+x-common-env: &common-env
+  TZ: UTC
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ===========================================================================
+  # CORE: Controller API
+  # ===========================================================================
+  controller:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-controller
     restart: unless-stopped
+
+    environment:
+      <<: *common-env
+      FLASK_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
+
+      # Redis
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}@redis:6379/0
+
+      # Secrets (from .env - NO DEFAULTS)
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY:?CONTROLLER_SECRET_KEY_REQUIRED}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET:?CONTROLLER_HMAC_SECRET_REQUIRED}
+
+      # Security
+      REQUIRE_HMAC: ${REQUIRE_HMAC:-true}
+      REQUIRE_TLS: ${REQUIRE_TLS:-true}
+      MAX_TIME_DRIFT_SECONDS: ${MAX_TIME_DRIFT_SECONDS:-300}
+
+      # Rate limiting
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-100 per minute}
+      RATE_LIMIT_SENSOR: ${RATE_LIMIT_SENSOR:-200 per minute}
+
+      # S3/MinIO
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_PASSWORD_REQUIRED}
+      S3_BUCKET: ${S3_BUCKET:-sentinel-artifacts}
+    volumes:
+      - controller-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/api/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # WORKER: Celery Background Tasks
+  # ===========================================================================
+  worker:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-worker
+    restart: unless-stopped
+    # command: celery -A controller.celery_app worker --loglevel=info
+    # P1 Scale: Run DB-Backed Ingest Worker
+    command: python -m controller.ingest.worker
+    environment:
+      <<: *common-env
+      FLASK_ENV: production
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
+      
+      # Redis
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}@redis:6379/0
+
+      # Secrets
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY:?CONTROLLER_SECRET_KEY_REQUIRED}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET:?CONTROLLER_HMAC_SECRET_REQUIRED}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # DATABASE: PostgreSQL with TimescaleDB
+  # ===========================================================================
+  postgres:
+    image: timescale/timescaledb:2.13.0-pg15
+    container_name: sentinel-postgres
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel} -d ${POSTGRES_DB:-sentinel}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # CACHE: Redis
+  # ===========================================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: sentinel-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}
+    volumes:
+      - redis-data:/data
+    logging: *default-logging
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # OBJECT STORAGE: MinIO (S3-compatible)
+  # ===========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: sentinel-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_PASSWORD_REQUIRED}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # REVERSE PROXY: Nginx with TLS
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: sentinel-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certs:/etc/nginx/certs:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - controller
+      - grafana
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # MONITORING: Prometheus
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sentinel-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # DASHBOARDS: Grafana
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinel-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_PASSWORD_REQUIRED}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # ALERTING: Alertmanager
+  # ===========================================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: sentinel-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # TESTING: Mock Sensor (optional, for CI/dev)
+  # ===========================================================================
+  mock-sensor:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.sensor
+    image: ghcr.io/anduong1200/sentinel-sensor:${VERSION:-latest}
+    container_name: sentinel-mock-sensor
+    restart: "no"
+    profiles: [ "testing" ] # Only start with: docker compose --profile testing up
+    environment:
+      CONTROLLER_URL: http://controller:5000
+      SENSOR_ID: mock-sensor-01
+      SENSOR_AUTH_TOKEN: ${MOCK_SENSOR_TOKEN:?MOCK_TOKEN_REQUIRED}
+      SENSOR_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
+
     depends_on:
       controller:
         condition: service_healthy
-    env_file:
-      - /opt/sentinel/.env.prod
-    environment:
-      - SENTINEL_ENV=prod
-      # Dashboard trỏ về controller nội bộ
-      - CONTROLLER_BASE_URL=http://controller:5000
-      # Tuyệt đối không debug trong prod
-      - DASH_DEBUG=false
-    ports:
-      - "8050:8050"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8050/ || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
     networks:
-      - sentinel_net
+      - sentinel-net
 
+  # ===========================================================================
+  # UI: Dash Dashboard
+  # ===========================================================================
+  dashboard:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.dashboard
+    image: ghcr.io/anduong1200/sentinel-dashboard:${VERSION:-latest}
+    container_name: sentinel-dashboard
+    restart: unless-stopped
+    environment:
+      CONTROLLER_URL: http://controller:5000
+      DASHBOARD_API_TOKEN: ${DASHBOARD_API_TOKEN:?DASHBOARD_TOKEN_REQUIRED}
+    logging: *default-logging
+
+    depends_on:
+      controller:
+        condition: service_healthy
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # LAB: Attack Service (Isolated)
+  # ===========================================================================
+  lab-service:
+    build:
+      context: ..
+      dockerfile: lab_attack_service/Dockerfile
+    image: sentinel-lab-service:latest
+    container_name: sentinel-lab-service
+    profiles: [ "lab" ]
+    restart: "no"
+    privileged: true # Required for interface access
+    network_mode: "host" # Often required for WiFi injection
+    environment:
+      SENTINEL_LAB_MODE: "true"
+      WIFI_INTERFACE: ${WIFI_INTERFACE:-wlan0}
+      LAB_API_KEY: ${LAB_API_KEY:?LAB_API_KEY_REQUIRED}
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  controller-data:
+  postgres-data:
+  redis-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+  alertmanager-data:
+  nginx-logs:
+
+    # =============================================================================
+    # NETWORKS
+    # =============================================================================
 networks:
-  sentinel_net:
+  sentinel-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
