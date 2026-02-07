@@ -43,6 +43,10 @@ Use the lab compose file (local-only, mock sensors).
 docker compose -f ops/docker-compose.lab.yml up -d --build
 ```
 
+> **Troubleshooting**: If you see `unknown shorthand flag: 'f' in -f`, your Docker CLI
+> doesn't have the Compose v2 plugin. Use `docker-compose -f ops/docker-compose.lab.yml up -d --build`
+> or install the compose plugin for your OS.
+
 ### Step 4: Verify Deployment
 The lab stack uses a single proxy entry point.
 
