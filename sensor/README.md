@@ -144,5 +144,5 @@ Telemetry output conforms to:
 ## Systemd Service
 
 Production deployment uses systemd. See:
-- [ops/systemd/sentinel-sensor@.service](../ops/systemd/sentinel-sensor@.service)
-- [Deployment Guide](../docs/operations/deployment.md)
+- [ops/systemd/sentinel-sensor.service](../ops/systemd/sentinel-sensor.service)
+- [Production Deployment Guide](../docs/prod/deployment.md)
