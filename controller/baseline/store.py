@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from controller.baseline.models import BaselineProfile
-from controller.models import get_session
+from controller.db.extensions import db
 
 
 class BaselineStore:
@@ -12,7 +12,7 @@ class BaselineStore:
     """
 
     def __init__(self, session: Session = None):
-        self.session = session or get_session()
+        self.session = session or db.session
 
     def get_profile(self, site_id: str, network_key: str) -> BaselineProfile | None:
         """Fetch existing profile or None."""

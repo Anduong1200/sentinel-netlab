@@ -2,10 +2,10 @@ from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Index, Integer, String
 
-from controller.models import Base
+from controller.db.extensions import db
 
 
-class BaselineProfile(Base):
+class BaselineProfile(db.Model):
     """
     Statistical baseline for a specific network entity (Site + Network Key).
     Used to detect anomalies based on historical behavior.

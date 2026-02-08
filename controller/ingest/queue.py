@@ -5,7 +5,7 @@ from sqlalchemy import and_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from controller.api.deps import db
-from controller.models import IngestJob
+from controller.db.models import IngestJob
 
 
 @dataclass

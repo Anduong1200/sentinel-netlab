@@ -29,7 +29,7 @@ logger = configure_logging("controller", level=log_level, json_mode=True)
 logger = logging.getLogger(__name__)
 
 # DB
-db = SQLAlchemy()
+from controller.db.extensions import db
 
 # Limiter
 from flask_limiter import Limiter  # noqa: E402

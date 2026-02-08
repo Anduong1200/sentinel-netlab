@@ -6,7 +6,8 @@ from common.scoring.types import RiskScore
 from controller.dedup.fingerprint import generate_fingerprint
 from controller.dedup.policy import TriagePolicy
 from controller.dedup.store import EventStore
-from controller.models import Alert, get_session
+from controller.api.deps import create_app, db
+from controller.db.models import Alert
 from controller.scoring.risk import RiskModel
 
 logger = logging.getLogger(__name__)
@@ -90,31 +91,30 @@ class AlertEmitter:
                 sensor_id=sensor_id,
                 alert_type=finding.detector_id,
                 severity=risk.severity.value,
-                title=f"Detection: {finding.reason_codes[0].code}"
-                if finding.reason_codes
-                else "Unknown Detection",
-                description=finding.evidence_list[0].description
-                if finding.evidence_list
-                else "",
-                bssid=finding.entity_key.split("|")[-1]
-                if "|" in finding.entity_key
-                else None,  # Heuristic
-                # ssid not easily extracted from entity key without parsing, assume evidence has it?
-                # skipping optional fields for matching minimal schema
-                evidence=[e.to_dict() for e in finding.evidence_list],
-                reason_codes=reasons_json,
-                confidence=finding.confidence_raw,
-                impact=float(risk.value / finding.confidence_raw)
-                if finding.confidence_raw > 0
-                else 0,  # Reverse calc impact?
-                risk_score=risk.value,
-                created_at=datetime.now(UTC),
+                id=alert_data["id"],
+                sensor_id=alert_data["sensor_id"],
+                alert_type=alert_data["alert_type"],
+                severity=alert_data["severity"],
+                title=alert_data["title"],
+                description=alert_data["description"],
+                bssid=alert_data.get("bssid"),
+                ssid=alert_data.get("ssid"), # Assuming ssid might be in alert_data
+                evidence=alert_data.get("evidence"),
+                reason_codes=alert_data.get("reason_codes"),
+                confidence=alert_data.get("confidence"),
+                impact=alert_data.get("impact"),
+                risk_score=alert_data.get("risk_score"),
+                mitre_attack=alert_data.get("mitre_attack"), # Assuming mitre_attack might be in alert_data
+                status=alert_data.get("status", "open"), # Use provided status or default to "open"
+                created_at=alert_data.get("created_at", datetime.now(UTC)), # Use provided created_at or default
             )
-
             session.add(alert)
             session.commit()
-            logger.info(f"Emitted Alert {alert_id} (Risk: {risk.value})")
+            logger.info(f"Emitted Alert {alert.id} (Risk: {alert.get('risk_score')})")
 
         except Exception as e:
             logger.error(f"Failed to persist alert: {e}")
             session.rollback()
+
+# Import uuid for alert ID generation
+import uuid

@@ -20,9 +20,10 @@ if config.config_file_name is not None:
 
 # Import models for autogenerate
 try:
-    from controller.models import Base
+    from controller.db.extensions import db
+    from controller.db.models import *  # noqa: F401, F403
 
-    target_metadata = Base.metadata
+    target_metadata = db.Model.metadata
 except ImportError:
     target_metadata = None
 

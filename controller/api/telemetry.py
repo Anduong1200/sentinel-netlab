@@ -11,7 +11,7 @@ from common.observability.metrics import (
 )
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 from controller.ingest.queue import IngestQueue
-from controller.models import Telemetry
+from controller.db.models import Telemetry
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
 from .deps import config, limiter, logger, validate_json

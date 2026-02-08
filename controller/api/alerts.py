@@ -7,7 +7,7 @@ from flask import Blueprint, g, jsonify, request, send_file
 from common.observability.metrics import create_counter
 from common.schemas.alerts import AlertCreate  # noqa: E402
 from controller.export_engine import ReportData, ReportEngine, ReportFormat, ReportType
-from controller.models import Alert
+from controller.db.models import Alert
 from controller.tasks import process_alert
 
 from .auth import Permission, require_auth, require_signed

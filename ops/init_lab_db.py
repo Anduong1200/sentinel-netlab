@@ -6,16 +6,17 @@ Creates tables and seeds initial data for the Lab environment.
 Uses SQLAlchemy models directly, ensuring compatibility with SQLite.
 """
 
+import hashlib
 import logging
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Add parent directory to path so we can import controller
 sys.path.append(str(Path(__file__).parent.parent))
 
-from controller.config import init_config
-from controller.models import APIToken, Base, get_engine, get_session
+from controller.api.deps import create_app, db
+from controller.db.models import APIToken
 
 # Configure logging
 logging.basicConfig(
@@ -27,43 +28,56 @@ logger = logging.getLogger("init_lab_db")
 def main():
     logger.info("Initializing Lab Database (SQLite)...")
 
-    # Force loading of lab config (will read .env.lab if present)
-    config = init_config()
+    print("Initializing Lab Database...")
 
-    # Ensure we are using SQLite
-    if "sqlite" not in config.database.url:
-        logger.warning(
-            f"Warning: Database URL is {config.database.url}, expected sqlite://..."
-        )
+    app = create_app()
+    with app.app_context():
+        # Create Tables
+        db.create_all()
+        print("Tables created.")
 
-    engine = get_engine()
-    session = get_session(engine)
+        session = db.session
+        try:
+            # Check/Create Admin Token
+            admin_token_hash = hashlib.sha256(b"admin-token-dev").hexdigest()
+            if not session.query(APIToken).filter_by(token_hash=admin_token_hash).first():
+                admin_token = APIToken(
+                    token_id="admin-dev",
+                    token_hash=admin_token_hash,
+                    name="Lab Admin",
+                    role="admin",
+                    is_active=True,
+                    created_at=datetime.now(UTC),
+                    # expires_at=None # indefinite
+                )
+                session.add(admin_token)
+                print("Created admin-token-dev")
 
-    # 1. Create Tables
-    logger.info("Creating tables...")
-    Base.metadata.create_all(engine)
+            # Check/Create Sensor Token
+            sensor_token_hash = hashlib.sha256(b"sensor-01-token").hexdigest()
+            if (
+                not session.query(APIToken)
+                .filter_by(token_hash=sensor_token_hash)
+                .first()
+            ):
+                sensor_token = APIToken(
+                    token_id="sensor-01",
+                    token_hash=sensor_token_hash,
+                    name="Lab Sensor 01",
+                    role="sensor",
+                    sensor_id="lab-sensor-01",
+                    is_active=True,
+                    created_at=datetime.now(UTC),
+                )
+                session.add(sensor_token)
+                print("Created sensor-01-token")
 
-    # 2. Seed Admin Token
-    # 2. Seed Admin Token
-    token_hash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"  # sha256('admin') # noqa: S105 # gitleaks:allow
+            session.commit()
+            print("Lab DB Initialization Complete.")
 
-    existing = session.query(APIToken).filter_by(token_id="admin-01").first()  # noqa: S106
-    if not existing:
-        logger.info("Seeding default admin token...")
-        admin_token = APIToken(
-            id="admin-01",
-            token_hash=token_hash,
-            name="Lab Admin Token",
-            role="admin",
-            created_at=datetime.now(UTC),
-            expires_at=datetime.now(UTC) + timedelta(days=365),
-        )
-        session.add(admin_token)
-        session.commit()
-    else:
-        logger.info("Admin token already exists.")
-
-    logger.info("Database initialization complete.")
+        except Exception as e:
+            print(f"Error initializing DB: {e}")
+            session.rollback()
     return 0
 
 

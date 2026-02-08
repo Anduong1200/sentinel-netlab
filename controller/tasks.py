@@ -13,7 +13,7 @@ from common.observability.metrics import (
 )
 from controller.api.deps import create_app, db
 from controller.celery_app import celery
-from controller.models import IngestJob, Telemetry
+from controller.db.models import IngestJob, Telemetry
 
 ALERTS_EMITTED_WORKER = create_counter(
     "alerts_emitted_total", "Alerts emissions", ["severity", "detector"]
@@ -134,7 +134,7 @@ def process_alert(self, alert_data: dict, sensor_id: str):
     """
     Process an alert asynchronously.
     """
-    from controller.models import Alert
+    from controller.db.models import Alert
 
     with app.app_context():
         alert_id = alert_data.get("id")
