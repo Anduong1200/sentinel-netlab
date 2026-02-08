@@ -170,6 +170,7 @@ class IngestJob(db.Model):
 
     job_id = Column(String(64), primary_key=True)
     sensor_id = Column(String(64), nullable=False)
+    batch_id = Column(String(64), nullable=True)
     received_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

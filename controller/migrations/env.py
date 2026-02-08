@@ -30,7 +30,10 @@ except ImportError:
 
 def get_url():
     """Get database URL from environment or config"""
-    return os.environ.get("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+    return os.environ.get(
+        "CONTROLLER_DATABASE_URL",
+        os.environ.get("DATABASE_URL", config.get_main_option("sqlalchemy.url")),
+    )
 
 
 def run_migrations_offline():

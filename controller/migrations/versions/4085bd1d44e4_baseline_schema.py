@@ -60,6 +60,7 @@ def upgrade() -> None:
         "ingest_jobs",
         sa.Column("job_id", sa.String(length=64), nullable=False),
         sa.Column("sensor_id", sa.String(length=64), nullable=False),
+        sa.Column("batch_id", sa.String(length=64), nullable=True),
         sa.Column("received_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("status", sa.String(length=20), nullable=True),
         sa.Column("payload", sa.JSON(), nullable=True),
@@ -67,6 +68,7 @@ def upgrade() -> None:
         sa.Column("next_attempt_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("error_msg", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("job_id"),
+        sa.UniqueConstraint("sensor_id", "batch_id", name="uq_ingest_sensor_batch"),
     )
     op.create_index(
         "idx_jobs_status_next",
@@ -74,6 +76,7 @@ def upgrade() -> None:
         ["status", "next_attempt_at"],
         unique=False,
     )
+
     op.create_index(
         op.f("ix_ingest_jobs_received_at"), "ingest_jobs", ["received_at"], unique=False
     )
@@ -125,6 +128,9 @@ def upgrade() -> None:
     op.create_index(op.f("ix_alerts_sensor_id"), "alerts", ["sensor_id"], unique=False)
     op.create_index(op.f("ix_alerts_severity"), "alerts", ["severity"], unique=False)
     op.create_index(op.f("ix_alerts_status"), "alerts", ["status"], unique=False)
+    op.create_index(
+        "ix_alerts_status_created_at", "alerts", ["status", "created_at"], unique=False
+    )
     op.create_table(
         "telemetry",
         sa.Column("timestamp", sa.DateTime(timezone=True), nullable=True),
@@ -165,38 +171,14 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_telemetry_timestamp"), "telemetry", ["timestamp"], unique=False
     )
+    op.create_index(
+        "ix_telemetry_sensor_timestamp",
+        "telemetry",
+        ["sensor_id", "timestamp"],
+        unique=False,
+    )
 
-    # TimescaleDB Extensions and Hypertable (Postgres only)
-    conn = op.get_bind()
-    if conn.dialect.name == "postgresql":
-        op.execute("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE")
-        op.execute("CREATE EXTENSION IF NOT EXISTS pg_stat_statements")
 
-        # Convert to hypertable
-        op.execute("""
-            SELECT create_hypertable('telemetry', 'timestamp', 
-                partitioning_column => 'sensor_id', 
-                number_partitions => 4,
-                if_not_exists => TRUE
-            );
-        """)
-
-        # Compression Policy
-        op.execute("""
-            ALTER TABLE telemetry SET (
-                timescaledb.compress,
-                timescaledb.compress_segmentby = 'sensor_id',
-                timescaledb.compress_orderby = 'timestamp DESC'
-            );
-        """)
-        op.execute(
-            "SELECT add_compression_policy('telemetry', INTERVAL '7 days', if_not_exists => TRUE);"
-        )
-
-        # Retention Policy
-        op.execute(
-            "SELECT add_retention_policy('telemetry', INTERVAL '30 days', if_not_exists => TRUE);"
-        )
 
     # ### end Alembic commands ###
 
