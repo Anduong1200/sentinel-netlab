@@ -41,9 +41,8 @@ services:
     image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
     container_name: sentinel-controller
     restart: unless-stopped
-    # Run migrations before starting
-    command: sh -c "python -m alembic -c controller/alembic.ini upgrade head && python sentinel.py controller"
-
+    command: python sentinel.py controller
+    
     environment:
       <<: *common-env
       FLASK_ENV: production
@@ -82,6 +81,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/api/v1/health" ]
       interval: 30s
@@ -132,12 +133,36 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migration:
+        condition: service_completed_successfully
     logging: *default-logging
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: "0.5"
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # OPS: Database Migration (One-off)
+  # ===========================================================================
+  migration:
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-migration
+    command: python -m alembic -c controller/alembic.ini upgrade head
+    environment:
+      <<: *common-env
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
+      # Minimal env for Alembic
+      CONTROLLER_DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
     networks:
       - sentinel-net
 

@@ -46,7 +46,7 @@ app.register_blueprint(admin_bp, url_prefix="/api/v1")
 # Create tables
 with app.app_context():
     # In production, we assume DB is initialized via ops/init-db.sql or Alembic
-    # db.create_all()
+    # Schema must be present before app starts (enforced by /readyz)
     init_default_tokens()
 
 

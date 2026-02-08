@@ -68,9 +68,8 @@ def init_default_tokens():
 
     # Check if we can connect to DB (might be during build/init)
     try:
-        # Create tables if not exist (quick loose check)
-        # In prod, use migrations.
-        # db.create_all()
+        # Schema creation is handled exclusively by Alembic migrations.
+        # We assume tables exist. If not, this will fail fast (desired).
 
         for token_plain, name, role, sensor_id in tokens:
             token_hash = hashlib.sha256(token_plain.encode()).hexdigest()
