@@ -3,7 +3,7 @@
 # Minimal stack for training and demos.
 # ONLY 127.0.0.1 ports exposed. NO database/redis exposure.
 # =============================================================================
-version: "3.9"
+# Compose V2 - no version required
 
 x-logging: &default-logging
   driver: "json-file"
@@ -215,7 +215,6 @@ services:
     restart: unless-stopped
     # Safe Mode: No privileged access, no host network
     privileged: false
-    network_mode: "bridge"
     environment:
       SENSOR_ID: "lab-sensor-01"
       SENSOR_MOCK_MODE: "true" # Simulates WiFi traffic
