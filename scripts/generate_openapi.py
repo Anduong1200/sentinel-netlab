@@ -3,7 +3,7 @@
 Generate OpenAPI schema from Pydantic models and Flask routes.
 """
 
-import yaml
+import yaml  # type: ignore
 from pydantic.schema import schema
 
 from common.contracts import Alert, NormalizedFrame, TelemetryBatch

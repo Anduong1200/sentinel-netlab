@@ -77,7 +77,7 @@ def time_sync():
 @app.route("/api/v1/openapi.json")
 def openapi_spec():
     """Serve OpenAPI specification"""
-    import yaml  # type: ignore
+    import yaml
     import os
 
     spec_path = os.path.join(os.path.dirname(__file__), "openapi.yaml")

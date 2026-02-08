@@ -36,7 +36,7 @@ class TelemetryRecord(BaseModel):
     bssid: str = Field(pattern=r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
     ssid: str | None = None
     rssi_dbm: int = Field(ge=-120, le=0)
-    rssi_dbm: int = Field(ge=-120, le=0)
+
     channel: int = Field(ge=0, le=173)
     frequency_mhz: int | None = Field(None, ge=2400, le=6000)
     security: SecurityType | str | None = None

@@ -88,7 +88,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
                 db_item = Telemetry(
                     sensor_id=sensor_id,
                     batch_id=batch_id,
-                    timestamp=datetime.fromisoformat(item.get("timestamp"))
+                    timestamp=datetime.fromisoformat(str(item.get("timestamp")))
                     if item.get("timestamp")
                     else datetime.now(UTC),
                     bssid=item.get("bssid"),

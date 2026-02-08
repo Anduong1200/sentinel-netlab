@@ -3,6 +3,7 @@ import os
 import random
 import statistics
 import time
+from typing import Any
 import uuid
 from datetime import datetime
 
@@ -86,7 +87,7 @@ async def run_load_test():
     print(f"Sensors: {NUM_SENSORS}")
     print(f"Duration: {DURATION}s")
 
-    results = []
+    results: list[dict[str, Any]] = []
     tasks = []
 
     start_time = time.time()

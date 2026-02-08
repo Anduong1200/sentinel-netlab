@@ -16,7 +16,7 @@ class DetectionPipeline:
         self.detectors.append(detector)
 
     def run(
-        self, telemetry_stream: list[dict[str, Any]], context: dict[str, Any] = None
+        self, telemetry_stream: list[dict[str, Any]], context: dict[str, Any] | None = None
     ) -> list[Finding]:
         """
         Run all detectors against the stream.

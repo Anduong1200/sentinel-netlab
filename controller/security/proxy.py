@@ -11,7 +11,7 @@ class TrustedProxyMiddleware:
     Only allows X-Forwarded-* headers from trusted IPs.
     """
 
-    def __init__(self, app, trusted_cidrs: list[str] = None, require_tls: bool = False):
+    def __init__(self, app, trusted_cidrs: list[str] | None = None, require_tls: bool = False):
         self.app = app
         self.trusted_cidrs = trusted_cidrs or []
         self.require_tls = require_tls

@@ -47,11 +47,11 @@ class JSONFormatter(logging.Formatter):
 
         # Add event if present in extra args (e.g., logger.info(..., extra={"event": "ingest.success"}))
         if hasattr(record, "event"):
-            log_obj["event"] = record.event  # type: ignore
+            log_obj["event"] = record.event
 
         # Merge other extra fields
         if hasattr(record, "data"):
-            data = record.data  # type: ignore
+            data = record.data
             if isinstance(data, dict):
                 # Redact known PII keys in data dict
                 self._redact_pii(data)
@@ -97,7 +97,7 @@ def configure_logging(
     # Stream Handler (Stdout)
     stream_handler = logging.StreamHandler(sys.stdout)
     if json_mode:
-        formatter = JSONFormatter(service_name=component)
+        formatter: logging.Formatter = JSONFormatter(service_name=component)
         stream_handler.setFormatter(formatter)
     else:
         # Dev-friendly plain text

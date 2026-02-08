@@ -22,7 +22,7 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
             try:
                 # specific health check logic
                 # The server instance has the callback attached
-                status = self.server.get_status_callback()
+                status = self.server.get_status_callback()  # type: ignore
 
                 # Determine overall health
                 # Basic rules: capturing? uploading not stuck?
@@ -40,7 +40,7 @@ class HealthHandler(http.server.BaseHTTPRequestHandler):
 
                 # Calculate offsets
                 last_upload = worker_stats.get("last_upload_time")
-                age_sec = -1
+                age_sec = -1.0
                 if last_upload:
                     if isinstance(last_upload, str):
                         # Parse if string (ISO)

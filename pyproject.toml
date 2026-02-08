@@ -234,7 +234,16 @@ module = [
     "sensor.transport",
     "sensor.normalizer",
     "sensor.models.ml_classifier",
-    "sensor.cli"
+    "sensor.cli",
+    "controller.db.models",
+    "controller.baseline.models",
+    "controller.migrations.env",
+    "scripts.generate_openapi",
+    "controller.ingest.queue",
+    "controller.ingest.worker",
+    "controller.tasks",
+    "controller.baseline.store",
+    "controller.baseline.builder"
 ]
 ignore_errors = true
 

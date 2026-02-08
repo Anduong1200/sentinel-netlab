@@ -10,8 +10,10 @@ import sys
 
 # from pathlib import Path # F401
 
+from typing import Any
+
 # Config
-PROHIBITED_PATTERNS = [
+PROHIBITED_PATTERNS: list[dict[str, Any]] = [
     # General Safety
     {
         "pattern": r"change_me_in_prod",

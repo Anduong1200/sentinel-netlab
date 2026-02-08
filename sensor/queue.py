@@ -126,7 +126,7 @@ class SqliteQueue:
             )
             val = cursor.fetchone()[0]
             conn.commit()
-            return val
+            return int(val)
 
     def push(self, payload: dict[str, Any], batch_id: str) -> bool:
         """Enqueue a batch."""
@@ -275,7 +275,7 @@ class SqliteQueue:
     def _calculate_backoff(self, attempts: int, base=1.0, cap=60.0) -> float:
         # 1, 2, 4, 8... capped + jitter 0.5-1.5x
         raw = min(cap, base * (2 ** max(0, attempts - 1)))
-        return raw * random.uniform(0.5, 1.5)  # noqa: S311
+        return float(raw * random.uniform(0.5, 1.5))  # noqa: S311
 
     def recover_stuck_inflight(self, age_seconds=60) -> None:
         """Reset stuck inflight items to queued on startup."""

@@ -4,6 +4,7 @@ Standardizes metric naming and registration.
 """
 
 import time
+from typing import Any
 
 try:
     from prometheus_client import (
@@ -18,8 +19,8 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    generate_latest = None
-    REGISTRY = None
+    generate_latest = None  # type: ignore
+    REGISTRY = None  # type: ignore
     CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
 
 
@@ -66,10 +67,10 @@ class DummyMetric:
 
 
 # Metric Cache to allow safe re-import/re-definition (e.g. in tests)
-_METRIC_CACHE = {}
+_METRIC_CACHE: dict[str, Any] = {}
 
 
-def create_counter(name: str, desc: str, labels: list[str]) -> Counter:
+def create_counter(name: str, desc: str, labels: list[str]) -> Any:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
     full_name = f"{PREFIX}_{name}"
@@ -80,7 +81,7 @@ def create_counter(name: str, desc: str, labels: list[str]) -> Counter:
     return m
 
 
-def create_gauge(name: str, desc: str, labels: list[str]) -> Gauge:
+def create_gauge(name: str, desc: str, labels: list[str]) -> Any:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
     full_name = f"{PREFIX}_{name}"
@@ -93,16 +94,16 @@ def create_gauge(name: str, desc: str, labels: list[str]) -> Gauge:
 
 def create_histogram(
     name: str, desc: str, labels: list[str], buckets=None
-) -> Histogram:
+) -> Any:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
     full_name = f"{PREFIX}_{name}"
     if full_name in _METRIC_CACHE:
         return _METRIC_CACHE[full_name]
-    kwargs = {"registry": REGISTRY}
     if buckets:
-        kwargs["buckets"] = buckets
-    m = Histogram(full_name, desc, labels, **kwargs)
+        m = Histogram(full_name, desc, labels, buckets=buckets, registry=REGISTRY)
+    else:
+        m = Histogram(full_name, desc, labels, registry=REGISTRY)
     _METRIC_CACHE[full_name] = m
     return m
 
@@ -125,7 +126,7 @@ class HTTPMetricsMiddleware:
     Measures latency and counts requests.
     """
 
-    def __init__(self, app, exclude_paths: list[str] = None):
+    def __init__(self, app, exclude_paths: list[str] | None = None):
         self.app = app
         self.exclude_paths = exclude_paths or ["/metrics", "/health", "/healthz"]
 

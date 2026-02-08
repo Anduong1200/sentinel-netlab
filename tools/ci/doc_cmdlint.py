@@ -17,7 +17,7 @@ MAKEFILE = "Makefile"
 
 
 def get_make_targets(makefile_path):
-    targets = set()
+    targets: set[str] = set()
     if not os.path.exists(makefile_path):
         return targets
 
