@@ -37,6 +37,7 @@ class TestConfigSecurity:
                 "CONTROLLER_SECRET_KEY": "super_secret_key_long_enough_1234",
                 "CONTROLLER_HMAC_SECRET": "super_hmac_secret_long_enough_12345678",
                 "CONTROLLER_DATABASE_URL": "postgresql://user:pass@localhost/db",
+                "REDIS_URL": "redis://localhost:6379/0",
             },
             clear=True,
         ):
@@ -63,6 +64,7 @@ class TestConfigSecurity:
                 "CONTROLLER_HMAC_SECRET": "my_hmac_secret_long_enough_12345678",
                 "CONTROLLER_DATABASE_URL": "sqlite:///prod.db",
                 "CONTROLLER_PORT": "9000",
+                "REDIS_URL": "redis://localhost:6379/0",
             },
             clear=True,
         ):
