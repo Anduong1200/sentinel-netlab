@@ -19,8 +19,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # CRITICAL: Install packages AND upgrade security packages in same layer
 # to prevent Trivy from detecting old versions in intermediate layers
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install ".[dashboard]" && \
-    pip install --no-cache-dir --upgrade --force-reinstall "wheel>=0.46.2" "jaraco-context>=6.1.0"
+    pip install "wheel>=0.46.2" "jaraco-context>=6.1.0" && \
+    pip install ".[dashboard]"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
