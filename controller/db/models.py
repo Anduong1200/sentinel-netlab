@@ -18,6 +18,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -78,7 +79,10 @@ class Telemetry(db.Model):
 
     sensor = relationship("Sensor", back_populates="telemetry")
 
-    __table_args__ = (Index("ix_telemetry_bssid_timestamp", "bssid", "timestamp"),)
+    __table_args__ = (
+        Index("ix_telemetry_bssid_timestamp", "bssid", "timestamp"),
+        Index("ix_telemetry_sensor_timestamp", "sensor_id", "timestamp"),
+    )
 
 
 class Alert(db.Model):
@@ -115,6 +119,10 @@ class Alert(db.Model):
     resolved_by = Column(String(64))
 
     sensor = relationship("Sensor", back_populates="alerts")
+
+    __table_args__ = (
+        Index("ix_alerts_status_created_at", "status", "created_at"),
+    )
 
 
 class APIToken(db.Model):
@@ -175,4 +183,7 @@ class IngestJob(db.Model):
     next_attempt_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     error_msg = Column(Text)
 
-    __table_args__ = (Index("idx_jobs_status_next", "status", "next_attempt_at"),)
+    __table_args__ = (
+        Index("idx_jobs_status_next", "status", "next_attempt_at"),
+        UniqueConstraint("sensor_id", "batch_id", name="uq_ingest_sensor_batch"),
+    )

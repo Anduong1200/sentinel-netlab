@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from controller.models import IngestJob, Telemetry
+from controller.db.models import IngestJob, Telemetry
 
 
 # Use fixtures from conftest.py

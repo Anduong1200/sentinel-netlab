@@ -4,8 +4,8 @@ import time
 from datetime import UTC, datetime
 
 from controller.api.deps import create_app, db
-from controller.ingest.queue import IngestQueue
 from controller.db.models import Telemetry
+from controller.ingest.queue import IngestQueue
 
 # Setup Logging
 logging.basicConfig(

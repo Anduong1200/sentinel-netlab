@@ -167,7 +167,7 @@ def app_client():
         from controller.api.auth import Role
         from controller.api.deps import config, db
         from controller.api_server import app
-        from controller.models import APIToken as Token
+        from controller.db.models import APIToken, Sensor, Telemetry
 
         # Force strict security OFF for tests
         config.security.require_tls = False
@@ -315,7 +315,9 @@ def deauth_detector():
 @pytest.fixture
 def env_vars(monkeypatch):
     """Set common environment variables for tests"""
-    monkeypatch.setenv("CONTROLLER_SECRET_KEY", "test-secret-key")
+    monkeypatch.setenv("CONTROLLER_SECRET_KEY", "test-secret-key-123")
+    monkeypatch.setenv("DASH_USERNAME", "admin")
+    monkeypatch.setenv("DASH_PASSWORD", "password123")
     monkeypatch.setenv("CONTROLLER_HMAC_SECRET", "test-hmac-secret")
     monkeypatch.setenv("REQUIRE_HMAC", "false")
     monkeypatch.setenv("REQUIRE_TLS", "false")

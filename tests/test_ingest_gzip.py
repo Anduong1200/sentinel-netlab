@@ -28,7 +28,7 @@ with (
     # Import app factory
     from controller.api.auth import Role
     from controller.api_server import app
-    from controller.models import APIToken as Token
+    from controller.db.models import APIToken as Token
 
 
 class TestIngestGzip(unittest.TestCase):

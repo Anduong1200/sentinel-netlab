@@ -4,7 +4,6 @@ from functools import wraps
 
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 
 from controller.config import init_config
 
@@ -29,11 +28,11 @@ logger = configure_logging("controller", level=log_level, json_mode=True)
 logger = logging.getLogger(__name__)
 
 # DB
-from controller.db.extensions import db
-
 # Limiter
 from flask_limiter import Limiter  # noqa: E402
 from flask_limiter.util import get_remote_address  # noqa: E402
+
+from controller.db.extensions import db
 
 # Create global limiter instance
 # key_func is required.

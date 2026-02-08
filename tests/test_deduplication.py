@@ -12,7 +12,7 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from controller.api.auth import Role
 from controller.api_server import app
-from controller.models import APIToken as Token
+from controller.db.models import Alert, IngestJob, Telemetry
 
 
 class TestDeduplication(unittest.TestCase):

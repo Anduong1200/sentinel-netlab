@@ -10,8 +10,8 @@ from functools import wraps
 
 from flask import g, jsonify, request
 
-from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
 from controller.db.models import APIToken
+from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
 
 from .deps import config, db, logger
 

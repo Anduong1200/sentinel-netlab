@@ -3,11 +3,10 @@ from datetime import UTC, datetime
 
 from common.detection.evidence import Finding
 from common.scoring.types import RiskScore
+from controller.db.models import Alert
 from controller.dedup.fingerprint import generate_fingerprint
 from controller.dedup.policy import TriagePolicy
 from controller.dedup.store import EventStore
-from controller.api.deps import create_app, db
-from controller.db.models import Alert
 from controller.scoring.risk import RiskModel
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,10 @@ class AlertEmitter:
         """
         Process findings -> Triage -> Persist Alert if needed.
         """
-        session = get_session()
+        """
+        Process findings -> Triage -> Persist Alert if needed.
+        """
+        session = db.session
 
         for finding in findings:
             # 1. Fingerprint
@@ -68,7 +70,7 @@ class AlertEmitter:
             if should_emit:
                 self._persist_alert(session, finding, risk_score, sensor_id)
 
-        session.close()
+
 
     def _persist_alert(
         self, session, finding: Finding, risk: "RiskScore", sensor_id: str
@@ -91,18 +93,6 @@ class AlertEmitter:
                 sensor_id=sensor_id,
                 alert_type=finding.detector_id,
                 severity=risk.severity.value,
-                id=alert_data["id"],
-                sensor_id=alert_data["sensor_id"],
-                alert_type=alert_data["alert_type"],
-                severity=alert_data["severity"],
-                title=alert_data["title"],
-                description=alert_data["description"],
-                bssid=alert_data.get("bssid"),
-                ssid=alert_data.get("ssid"), # Assuming ssid might be in alert_data
-                evidence=alert_data.get("evidence"),
-                reason_codes=alert_data.get("reason_codes"),
-                confidence=alert_data.get("confidence"),
-                impact=alert_data.get("impact"),
                 risk_score=alert_data.get("risk_score"),
                 mitre_attack=alert_data.get("mitre_attack"), # Assuming mitre_attack might be in alert_data
                 status=alert_data.get("status", "open"), # Use provided status or default to "open"
@@ -117,4 +107,3 @@ class AlertEmitter:
             session.rollback()
 
 # Import uuid for alert ID generation
-import uuid

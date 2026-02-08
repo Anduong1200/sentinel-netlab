@@ -6,7 +6,6 @@ Populates the Lab database with sample data from `examples/`.
 Ensures the dashboard has visible content immediately after reset.
 """
 
-import json
 import logging
 import random
 import sys
@@ -16,8 +15,8 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from controller.config import init_config
-from controller.db.models import Alert, Sensor
+from controller.api.deps import create_app, db
+from controller.db.models import Alert, Sensor, Telemetry
 
 # Configure logging
 logging.basicConfig(
@@ -29,9 +28,10 @@ logger = logging.getLogger("seed_lab_data")
 def seed_data():
     logger.info("Seeding Lab Data...")
 
-    # Initialize session
-    init_config()
-    session = get_session()
+    # Initialize app context
+    app = create_app()
+    with app.app_context():
+        session = db.session
 
     # Paths
     root_dir = Path(__file__).parent.parent
@@ -54,16 +54,37 @@ def seed_data():
         session.add(sensor)
 
     # 2. Seed Telemetry
-    if telemetry_path.exists():
-        logger.info(f"Loading telemetry from {telemetry_path}...")
-        with open(telemetry_path) as f:
-            data = json.load(f)
-    else:
+    # 2. Seed Telemetry (Deterministic)
+    if True:  # Always use deterministic for now to simplify
         # Fallback: Deterministic Generation
         logger.warning(
-            f"Scenario file {alert_path} not found. Generating deterministic mock data."
+           "Generating deterministic mock data."
         )
         random.seed(42)  # Ensure every student gets the same "random" data
+
+        # 1. Deterministic Telemetry
+        logger.info("Generating deterministic telemetry...")
+        telemetry_batch = []
+        start_time = datetime.now(UTC) - timedelta(hours=1)
+        for i in range(100):  # Generate 100 frames
+            t = start_time + timedelta(seconds=i * 2)
+            telemetry_batch.append(
+                Telemetry(
+                    timestamp=t,
+                    sensor_id=sensor_id,
+                    batch_id=f"seed-batch-{i//20}",
+                    ingested_at=datetime.now(UTC),
+                    bssid="AA:BB:CC:DD:EE:FF",
+                    ssid="LabNet_Guest",
+                    channel=6,
+                    rssi_dbm=-50 - (i % 20),
+                    frequency_mhz=2437,
+                    security="WPA2",
+                    raw_data={"seq": i, "simulated": True},
+                )
+            )
+        session.add_all(telemetry_batch)
+        logger.info(f"Seeded {len(telemetry_batch)} telemetry records.")
 
         # specific "Evil Twin" alert for consistency with Quickstart
         alert = Alert(
