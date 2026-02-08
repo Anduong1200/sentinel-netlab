@@ -6,11 +6,16 @@ This directory contains deployment and monitoring configurations.
 
 ```
 ops/
-├── docker-compose.yml      # Main deployment
-├── Dockerfile.sensor       # Sensor container
-├── Dockerfile.controller   # Controller container
+├── docker-compose.lab.yml      # Local lab stack (mock sensors)
+├── docker-compose.prod.yml     # Production stack
+├── docker-compose.dev.yml      # Development stack
+├── docker-compose.sensor.yml   # Sensor-only stack
+├── docker-compose.light.yml    # Lightweight stack
+├── Dockerfile.sensor           # Sensor container
+├── Dockerfile.controller       # Controller container
+├── Dockerfile.dashboard        # Dashboard container
 ├── systemd/
-│   └── wifi-scanner.service    # Linux systemd service
+│   └── sentinel-sensor.service # Linux systemd service
 ├── prometheus/
 │   └── prometheus.yml          # Prometheus scrape config
 └── filebeat/
@@ -21,14 +26,14 @@ ops/
 The recommended way to deploy Sentinel NetLab.
 
 ```bash
-# Build and start all services
-docker-compose -f ops/docker-compose.yml up -d --build
+# Build and start lab stack
+docker compose -f ops/docker-compose.lab.yml up -d --build
 
 # View logs
-docker-compose -f ops/docker-compose.yml logs -f
+docker compose -f ops/docker-compose.lab.yml logs -f
 
 # Stop
-docker-compose -f ops/docker-compose.yml down
+docker compose -f ops/docker-compose.lab.yml down
 ```
 
 ### Build Variants
@@ -42,18 +47,18 @@ Install and start the sensor as a system service:
 
 ```bash
 # Copy service file
-sudo cp ops/systemd/wifi-scanner.service /etc/systemd/system/
+sudo cp ops/systemd/sentinel-sensor.service /etc/systemd/system/
 
 # Reload systemd
 sudo systemctl daemon-reload
 
 # Enable and start
-sudo systemctl enable wifi-scanner
-sudo systemctl start wifi-scanner
+sudo systemctl enable sentinel-sensor
+sudo systemctl start sentinel-sensor
 
 # Check status
-sudo systemctl status wifi-scanner
-journalctl -u wifi-scanner -f
+sudo systemctl status sentinel-sensor
+journalctl -u sentinel-sensor -f
 ```
 
 ## 📊 Prometheus Monitoring
@@ -91,4 +96,4 @@ sudo systemctl restart filebeat
 
 ---
 
-*See [metrics_guide.md](../docs/metrics_guide.md) for detailed metrics documentation.*
+*See [resilience_and_performance.md](../docs/operations/resilience_and_performance.md) for metrics guidance and operational best practices.*

@@ -1,8 +1,9 @@
 # Quickstart Guide
 
 > [!IMPORTANT]
-> This is the **Canonical Guide** for starting Sentinel NetLab in Production/Lab mode.
-> For specific Lab features, see [docs/lab](../lab/README.md).
+> This quickstart focuses on **local lab/demo** usage. For production deployments, see
+> the [Production Guide](../prod/deployment.md). For lab-specific details, see the
+> [Lab Quickstart](../lab/quickstart.md).
 
 ---
 
@@ -32,23 +33,27 @@ openssl rand -hex 32 # Use for CONTROLLER_HMAC_SECRET
 ```
 
 > [!WARNING]
-> Edit `.env` and set distinct passwords for `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_PASSWORD`, and `GRAFANA_ADMIN_PASSWORD`.
+> Edit `.env` and set required secrets such as `CONTROLLER_SECRET_KEY`, `CONTROLLER_HMAC_SECRET`,
+> `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`,
+> `DASHBOARD_API_TOKEN`, `LAB_API_KEY`, and `MOCK_SENSOR_TOKEN`.
 > **The system will not start if these are missing.**
 
-### Step 3: Start the Stack
-Use the main hardened compose file.
+### Step 3: Start the Lab Stack
+Use the lab compose file (local-only, mock sensors).
 
 ```bash
-docker compose -f ops/docker-compose.yml up -d
+docker compose -f ops/docker-compose.lab.yml up -d --build
 ```
 
-### Step 4: Verify Deployment
-The stack uses Nginx as the single entry point.
+> **Troubleshooting**: If you see `unknown shorthand flag: 'f' in -f`, your Docker CLI
+> doesn't have the Compose v2 plugin. Use `docker-compose -f ops/docker-compose.lab.yml up -d --build`
+> or install the compose plugin for your OS.
 
-- **URL**: `https://localhost` (Self-signed certs)
-- **Grafana**: `https://localhost/grafana/` (Login with credentials from `.env`)
-- **Controller API**: `https://localhost/api/v1/health`
-- **Dashboard**: `https://localhost/dashboard/`
+### Step 4: Verify Deployment
+The lab stack uses a single proxy entry point.
+
+- **Dashboard**: `http://127.0.0.1:8080`
+- **API Health**: `http://127.0.0.1:8080/api/v1/health`
 
 ## 3. Sensor Connection
 
@@ -62,10 +67,10 @@ To connect a physical sensor (Raspberry Pi):
    ```yaml
    # config.yaml
    api:
-     host: "CONTROLLER_IP" # Nginx IP
-     port: 443
-     ssl_enabled: true
-     api_key: "YOUR_SENSOR_TOKEN" # Create via Admin API
+     host: "CONTROLLER_IP"
+     port: 5000
+     ssl_enabled: false
+     api_key: "YOUR_SENSOR_TOKEN"
    ```
 3. **Run**:
    ```bash
@@ -74,6 +79,6 @@ To connect a physical sensor (Raspberry Pi):
 
 ## 4. Next Steps
 
-- [Lab Guide](../lab/README.md) - For isolated attack simulations.
-- [Sensor Guide](../reference/sensor_config.md) - Detailed hardware setup.
+- [Lab Guide](../lab/quickstart.md) - For isolated attack simulations.
+- [Configuration Reference](../reference/configuration.md) - Detailed sensor/controller options.
 - [Troubleshooting](../lab/troubleshooting.md) - Common issues.
