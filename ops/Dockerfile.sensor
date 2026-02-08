@@ -21,7 +21,7 @@ COPY algos/ algos/
 COPY ml/ ml/
 
 # Build wheels only
-RUN pip wheel --wheel-dir /wheels ".[sensor]"
+RUN pip wheel --wheel-dir /wheels "wheel>=0.46.2" "jaraco.context>=6.1.0" ".[sensor]"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app

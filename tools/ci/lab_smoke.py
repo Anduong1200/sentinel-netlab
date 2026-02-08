@@ -132,7 +132,7 @@ def main():
 
         # 1. Bring up Stack (Proxy + Backend)
         run_cmd(
-            "docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d --build"
+            "docker-compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d --build"
         )
 
         # 2. Wait for Proxy Health (Endpoint: /api/v1/health via Proxy)
@@ -142,7 +142,7 @@ def main():
         # 3. Trigger Seed (One-Shot)
         print("🌱 Seeding Data...")
         run_cmd(
-            "docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm seed"
+            "docker-compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm seed"
         )
 
         # 4. Verify Data (via Proxy)
@@ -159,7 +159,7 @@ def main():
     finally:
         print("\n=== Teardown ===")
         run_cmd(
-            "docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v"
+            "docker-compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v"
         )
 
 
