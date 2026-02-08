@@ -5,7 +5,7 @@ import pytest
 # Skip entire module if dashboard credentials are not configured
 pytestmark = pytest.mark.skipif(
     not os.environ.get("DASH_USERNAME"),
-    reason="Dashboard secrets (DASH_USERNAME) not configured - skipping dashboard integration tests"
+    reason="Dashboard secrets (DASH_USERNAME) not configured - skipping dashboard integration tests",
 )
 
 # Only import dashboard.app if we're actually going to run the tests
