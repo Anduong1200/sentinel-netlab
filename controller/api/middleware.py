@@ -30,7 +30,7 @@ class ObservabilityMiddleware:
         # 1. Start Timing
         start_time = time.time()
 
-        # 2. Extract/Generate Request ID
+        # 2. Extract/Generate Request ID (Propagate or Create)
         request_id = environ.get("HTTP_X_REQUEST_ID")
         if not request_id:
             request_id = str(uuid.uuid4())
@@ -50,7 +50,7 @@ class ObservabilityMiddleware:
         def custom_start_response(status, headers, exc_info=None):
             status_info["code"] = status.split()[0]
 
-            # Echo X-Request-ID
+            # Echo X-Request-ID for client tracing
             headers.append(("X-Request-ID", request_id))
 
             return start_response(status, headers, exc_info)
@@ -70,21 +70,20 @@ class ObservabilityMiddleware:
             if query:
                 path = f"{path}?{query}"
 
-            # Log event if not health check (optional noise reduction)
-            # User didn't request filtering, but usually /health is noisy.
-            # Keeping it for now as per "Access Log" requirement.
+            # Effective Client IP (from TrustedProxyMiddleware or direct)
+            # TrustedProxyMiddleware updates REMOTE_ADDR if trusted.
+            client_ip = environ.get("REMOTE_ADDR")
 
             log_data = {
-                "event": "http.request",
                 "method": method,
                 "path": path,
                 "status": status_info["code"],
                 "duration_ms": round(duration_ms, 2),
-                "ip": environ.get("REMOTE_ADDR"),
+                "client_ip": client_ip,
                 "user_agent": environ.get("HTTP_USER_AGENT"),
             }
 
-            logger.info("Access Log", extra={"data": log_data})
+            logger.info("Access Log", extra={"event": "http.request", "data": log_data})
 
             context.clear_context()
 

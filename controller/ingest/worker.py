@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from controller.api.deps import create_app, db
 from controller.db.models import Telemetry
 from controller.ingest.queue import IngestQueue
+from controller.metrics import WORKER_PROCESSED
 
 # Setup Logging
 logging.basicConfig(
@@ -97,11 +98,13 @@ class IngestWorker:
             # So the add_all above is committed there. Correct.
 
             logger.info(f"Job {job.job_id} Done. ({len(items)} items)")
+            WORKER_PROCESSED.labels(result="success").inc()
 
         except Exception as e:
             logger.error(f"Job {job.job_id} Failed: {e}")
             db.session.rollback()
             IngestQueue.fail_job(job.job_id, str(e))
+            WORKER_PROCESSED.labels(result="retry").inc()
 
 
 if __name__ == "__main__":

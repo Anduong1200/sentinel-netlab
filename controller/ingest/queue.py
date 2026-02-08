@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from controller.api.deps import db
 from controller.db.models import IngestJob
+from controller.metrics import QUEUE_AGE, QUEUE_BACKLOG
 
 
 @dataclass
@@ -137,5 +138,9 @@ class IngestQueue:
         lag = 0.0
         if oldest:
             lag = (datetime.now(UTC) - oldest).total_seconds()
+
+        # Update Metrics
+        QUEUE_BACKLOG.labels(queue_name="ingest_default").set(count or 0)
+        QUEUE_AGE.labels(queue_name="ingest_default").set(lag)
 
         return QueueStats(queue_depth=count or 0, lag_seconds=lag)

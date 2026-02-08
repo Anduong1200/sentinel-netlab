@@ -3,11 +3,12 @@ from datetime import UTC, datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from common.observability.metrics import (
-    INGEST_FAILURE,
+from controller.metrics import (
+    BACKPRESSURE,
+    INGEST_FAILURES,
+    INGEST_LATENCY,
+    INGEST_REQUESTS,
     INGEST_SUCCESS,
-    INGEST_TOTAL,
-    create_counter,
 )
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 from controller.db.models import Telemetry
@@ -18,20 +19,13 @@ from .deps import config, limiter, logger, validate_json
 
 bp = Blueprint("telemetry", __name__)
 
-# Business Metrics
-INGEST_REQUEST = create_counter(
-    "ingest_requests_total", "Ingestion requests", ["endpoint", "status"]
-)
-INGEST_ITEMS = create_counter(
-    "ingest_items_total", "Ingestion item outcomes", ["endpoint", "outcome"]
-)
-
 
 @bp.route("/telemetry", methods=["POST"])
 @require_auth(Permission.WRITE_TELEMETRY)
 @require_signed()
 @limiter.limit(config.security.rate_limit_telemetry)
 @validate_json(TelemetryBatch)
+@INGEST_LATENCY.time()
 def ingest_telemetry():
     """Batch telemetry ingestion with full validation"""
 
@@ -51,16 +45,13 @@ def ingest_telemetry():
     # items = data.get("items", []) # Unused
     batch_id = data.get("batch_id")
 
-    # Track total ingest attempts
-    INGEST_TOTAL.labels(sensor_id=sensor_id).inc()
-
     # Fallback to header if empty in body
     if not batch_id:
         batch_id = request.headers.get("X-Idempotency-Key") or secrets.token_hex(8)
 
     if g.token.sensor_id and g.token.sensor_id != sensor_id:
-        INGEST_REQUEST.labels(endpoint="telemetry", status="rejected").inc()
-        INGEST_FAILURE.labels(sensor_id=sensor_id, reason="sensor_mismatch").inc()
+        INGEST_REQUESTS.labels(status="403").inc()
+        INGEST_FAILURES.labels(reason="sensor_mismatch").inc()
         return jsonify({"error": "Sensor ID mismatch"}), 403
 
     # Backpressure Check
@@ -69,8 +60,9 @@ def ingest_telemetry():
         stats = IngestQueue.get_stats()
         if stats.queue_depth > 1000:  # Threshold should be in config
             logger.warning(f"Backpressure active: queue_depth={stats.queue_depth}")
-            INGEST_REQUEST.labels(endpoint="telemetry", status="overloaded").inc()
-            INGEST_FAILURE.labels(sensor_id=sensor_id, reason="backpressure").inc()
+            INGEST_REQUESTS.labels(status="503").inc()
+            INGEST_FAILURES.labels(reason="backpressure").inc()
+            BACKPRESSURE.inc()
             return (
                 jsonify({"error": "System overloaded, retry later"}),
                 503,
@@ -88,8 +80,8 @@ def ingest_telemetry():
         ack_id, is_duplicate = IngestQueue.enqueue(sensor_id, batch_id, data)
     except Exception as e:
         logger.error(f"Failed to enqueue: {e}")
-        INGEST_REQUEST.labels(endpoint="telemetry", status="internal_error").inc()
-        INGEST_FAILURE.labels(sensor_id=sensor_id, reason="queue_error").inc()
+        INGEST_REQUESTS.labels(status="500").inc()
+        INGEST_FAILURES.labels(reason="queue_error").inc()
         return jsonify({"error": "Internal Queue Error"}), 500
 
     # ... (registry update omitted for brevity, logic remains same)
@@ -102,14 +94,14 @@ def ingest_telemetry():
     }
 
     if is_duplicate:
-        INGEST_REQUEST.labels(endpoint="telemetry", status="duplicate").inc()
+        INGEST_REQUESTS.labels(status="200").inc()
         # Return batch_id as ack_id (protocol contract), not the internal scoped ID
         return jsonify(
             {"success": True, "status": "duplicate", "ack_id": batch_id}
         ), 200
 
-    INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
-    INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()
+    INGEST_REQUESTS.labels(status="202").inc()
+    INGEST_SUCCESS.inc()
     return jsonify({"success": True, "status": "queued", "ack_id": batch_id}), 202
 
 
