@@ -1,6 +1,20 @@
-from unittest.mock import MagicMock, patch
+import os
 
-from dashboard.app import update_metrics
+import pytest
+
+# Skip entire module if dashboard credentials are not configured
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("DASH_USERNAME"),
+    reason="Dashboard secrets (DASH_USERNAME) not configured - skipping dashboard integration tests"
+)
+
+# Only import dashboard.app if we're actually going to run the tests
+if os.environ.get("DASH_USERNAME"):
+    from dashboard.app import update_metrics
+else:
+    update_metrics = None  # Placeholder
+
+from unittest.mock import MagicMock, patch
 
 
 def test_dashboard_metrics_update():
