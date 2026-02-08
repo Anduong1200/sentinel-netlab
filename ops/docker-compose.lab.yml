@@ -23,6 +23,7 @@ services:
     container_name: sentinel-lab-controller
     restart: unless-stopped
     environment:
+      ENVIRONMENT: ${ENVIRONMENT:-lab}
       FLASK_ENV: ${FLASK_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FORMAT: json
@@ -138,6 +139,7 @@ services:
     restart: unless-stopped
     command: python -m controller.ingest.worker
     environment:
+      ENVIRONMENT: ${ENVIRONMENT:-lab}
       FLASK_ENV: ${FLASK_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinel}

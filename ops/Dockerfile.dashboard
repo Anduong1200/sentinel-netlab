@@ -19,6 +19,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip setuptools wheel && \
     pip install ".[dashboard]"
 
+# CRITICAL: Upgrade security-sensitive packages AFTER main install
+# to ensure fixed versions override any transitively installed older versions
+RUN pip install --no-cache-dir --upgrade "wheel>=0.46.2" "jaraco-context>=6.1.0"
+
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
 
