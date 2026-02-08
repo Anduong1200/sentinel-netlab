@@ -45,6 +45,7 @@ def test_stats_update(builder, store):
     # Setup Mock
     profile = BaselineProfile(
         id="test_id",
+        sample_count=0,  # Initialize to avoid None
         features={
             "channels": {},
             "rssi": {"min": 999, "max": -999, "sum": 0, "count": 0},

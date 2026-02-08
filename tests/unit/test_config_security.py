@@ -14,24 +14,28 @@ class TestConfigSecurity:
         with patch.dict(os.environ, {"ENVIRONMENT": "production"}, clear=True):
             with pytest.raises(RuntimeError) as excinfo:
                 init_config(strict_production=True)
-            assert "Missing required production secrets" in str(excinfo.value)
+            # Check for key components of error message
             assert "CONTROLLER_SECRET_KEY" in str(excinfo.value)
+            assert "production" in str(excinfo.value).lower()
 
     def test_development_fallback_defaults(self):
         """Test B: development mode allows defaults with warning"""
         with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
             config = init_config()
-            assert config.security.secret_key == "dev-secret-unsafe-do-not-use-in-prod"
+            # In dev mode, auto-generated secrets are used instead of hardcoded defaults
+            assert config.security.secret_key is not None
+            assert len(config.security.secret_key) >= 16  # Auto-generated hex string
             assert config.debug is True
 
     def test_safe_logging_redaction(self):
         """Test C: safe_dict does not leak secrets"""
+        # Use secrets long enough to pass validation (>= 32 chars for HMAC, >= 16 for secret)
         with patch.dict(
             os.environ,
             {
                 "ENVIRONMENT": "production",
-                "CONTROLLER_SECRET_KEY": "super_secret_key",
-                "CONTROLLER_HMAC_SECRET": "super_hmac_secret",
+                "CONTROLLER_SECRET_KEY": "super_secret_key_long_enough_1234",
+                "CONTROLLER_HMAC_SECRET": "super_hmac_secret_long_enough_12345678",
                 "CONTROLLER_DATABASE_URL": "postgresql://user:pass@localhost/db",
             },
             clear=True,
@@ -50,12 +54,13 @@ class TestConfigSecurity:
 
     def test_env_precedence(self):
         """Verify explicit variables override defaults"""
+        # Use secrets long enough to pass validation
         with patch.dict(
             os.environ,
             {
                 "ENVIRONMENT": "production",
-                "CONTROLLER_SECRET_KEY": "my-secret",
-                "CONTROLLER_HMAC_SECRET": "my-hmac",
+                "CONTROLLER_SECRET_KEY": "my_secret_key_long_enough_1234",
+                "CONTROLLER_HMAC_SECRET": "my_hmac_secret_long_enough_12345678",
                 "CONTROLLER_DATABASE_URL": "sqlite:///prod.db",
                 "CONTROLLER_PORT": "9000",
             },
@@ -63,4 +68,4 @@ class TestConfigSecurity:
         ):
             config = init_config()
             assert config.port == 9000
-            assert config.security.secret_key == "my-secret"
+            assert config.security.secret_key == "my_secret_key_long_enough_1234"

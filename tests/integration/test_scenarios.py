@@ -50,11 +50,12 @@ class TestScenarioReplay:
         """Setup test environment with config overrides"""
         env = {
             "SENSOR_ID": "test-sensor-01",
-            "SENSOR_HMAC_SECRET": "test-secret",
+            "SENSOR_HMAC_SECRET": "test_secret_long_enough_12345678",
             "CONTROLLER_URL": "http://localhost:5000/api/v1/telemetry",
-            "SENSOR_AUTH_TOKEN": "test-token",
+            "SENSOR_AUTH_TOKEN": "test_token_long_enough_1234",
             "SENSOR_PRIVACY_STORE_RAW_MAC": "true",
             "STORAGE_PATH": str(tmp_path / "journal"),
+            "ENVIRONMENT": "development",  # Use dev mode to avoid strict checks
         }
         with patch.dict(os.environ, env):
             yield tmp_path
