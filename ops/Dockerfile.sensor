@@ -25,7 +25,8 @@ COPY ml/ ml/
 # Explicitly build security updates first to ensure they are correct version
 RUN pip wheel --wheel-dir /wheels --no-cache-dir "wheel>=0.46.2" "jaraco-context>=6.1.0"
 # Build application wheels (this will skip jaraco-context if already satisfied in /wheels or rebuild if needed)
-RUN pip wheel --wheel-dir /wheels --no-cache-dir --find-links=/wheels ".[sensor]"
+RUN pip wheel --wheel-dir /wheels --no-cache-dir --find-links=/wheels ".[sensor]" && \
+    rm -f /wheels/jaraco.context-5* /wheels/jaraco_context-5* /wheels/wheel-0.45*
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
