@@ -250,7 +250,9 @@ class BaselineManager:
             rssi_samples=rssi_samples,
             capabilities={},
             first_seen=datetime.fromisoformat(row["first_seen"]),
-            last_seen=datetime.fromisoformat(row["first_seen"]),  # Not retrieved, use first_seen or now
+            last_seen=datetime.fromisoformat(
+                row["first_seen"]
+            ),  # Not retrieved, use first_seen or now
         )
 
         deviations = []

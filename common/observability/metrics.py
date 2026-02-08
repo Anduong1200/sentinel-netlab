@@ -92,9 +92,7 @@ def create_gauge(name: str, desc: str, labels: list[str]) -> Any:
     return m
 
 
-def create_histogram(
-    name: str, desc: str, labels: list[str], buckets=None
-) -> Any:
+def create_histogram(name: str, desc: str, labels: list[str], buckets=None) -> Any:
     if not PROMETHEUS_AVAILABLE:
         return DummyMetric()
     full_name = f"{PREFIX}_{name}"
