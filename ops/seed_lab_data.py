@@ -34,9 +34,6 @@ def seed_data():
         session = db.session
 
     # Paths
-    root_dir = Path(__file__).parent.parent
-    telemetry_path = root_dir / "examples" / "sample_telemetry_output.json"
-    alert_path = root_dir / "examples" / "sample_alert_output.json"
 
     # 1. Ensure Sensor Exists
     sensor_id = "sensor-01"
@@ -57,9 +54,7 @@ def seed_data():
     # 2. Seed Telemetry (Deterministic)
     if True:  # Always use deterministic for now to simplify
         # Fallback: Deterministic Generation
-        logger.warning(
-           "Generating deterministic mock data."
-        )
+        logger.warning("Generating deterministic mock data.")
         random.seed(42)  # Ensure every student gets the same "random" data
 
         # 1. Deterministic Telemetry
@@ -72,7 +67,7 @@ def seed_data():
                 Telemetry(
                     timestamp=t,
                     sensor_id=sensor_id,
-                    batch_id=f"seed-batch-{i//20}",
+                    batch_id=f"seed-batch-{i // 20}",
                     ingested_at=datetime.now(UTC),
                     bssid="AA:BB:CC:DD:EE:FF",
                     ssid="LabNet_Guest",

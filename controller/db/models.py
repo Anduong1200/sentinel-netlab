@@ -120,9 +120,7 @@ class Alert(db.Model):
 
     sensor = relationship("Sensor", back_populates="alerts")
 
-    __table_args__ = (
-        Index("ix_alerts_status_created_at", "status", "created_at"),
-    )
+    __table_args__ = (Index("ix_alerts_status_created_at", "status", "created_at"),)
 
 
 class APIToken(db.Model):

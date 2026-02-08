@@ -1,54 +1,82 @@
 # Hygiene / Artifacts
-bandit_output*.txt
-integration_output*.txt
-unit_test_output*.txt
-bluetooth_log.json
-file_list.txt
-.dos_state.json
-test_sentinel.db
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
 .env
-.env.lab
-ops/.env.lab
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDES
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs and Databases
+*.log
+*.sqlite
+*.db
+test_sentinel.db
+data/*.db
+!data/README.md
+
+# Testing
+.tox/
+.nox/
 .coverage
-htmlcov/
-site/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-*.egg-info/
-dist/
-build/
-.venv/
-env/
-venv/
-__pycache__/
-*.py[cod]
-*.so
-.vscode/
-.idea/
-*.swp
-.DS_Store
 
-# User-specific configuration
-config.yaml
+# Sentinel NetLab Specific
+# Secrets (NEVER COMMIT)
+.env*
+!.env.example
+!.env.lab.example
+!.env.prod.example
+ops/.env
+ops/.env.*
+!ops/.env.example
 
-# Research and temporary files
-research/pcaps/
-research/*.pcap
-*.pcap
-# Hygiene
+# Temporary/Generated
 *_output*.txt
 bluetooth_log.json
 file_list.txt
 .dos_state.json
-*.db
-
-# Test artifacts
-.pytest_cache/
-*.log
-junit.xml
-coverage.xml
-
-# Spool data (sensor)
-data/spool.db
-data/baseline.db
+scan_results/
+uploads/
+sentinel.log
+celerybeat-schedule

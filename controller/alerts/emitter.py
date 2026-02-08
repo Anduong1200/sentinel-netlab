@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 
 from common.detection.evidence import Finding
 from common.scoring.types import RiskScore
+from controller.api.deps import db
 from controller.db.models import Alert
 from controller.dedup.fingerprint import generate_fingerprint
 from controller.dedup.policy import TriagePolicy
@@ -70,8 +71,6 @@ class AlertEmitter:
             if should_emit:
                 self._persist_alert(session, finding, risk_score, sensor_id)
 
-
-
     def _persist_alert(
         self, session, finding: Finding, risk: "RiskScore", sensor_id: str
     ):
@@ -93,17 +92,21 @@ class AlertEmitter:
                 sensor_id=sensor_id,
                 alert_type=finding.detector_id,
                 severity=risk.severity.value,
-                risk_score=alert_data.get("risk_score"),
-                mitre_attack=alert_data.get("mitre_attack"), # Assuming mitre_attack might be in alert_data
-                status=alert_data.get("status", "open"), # Use provided status or default to "open"
-                created_at=alert_data.get("created_at", datetime.now(UTC)), # Use provided created_at or default
+                risk_score=risk.value,
+                mitre_attack=None,  # finding.mitre_attack if available
+                status="open",
+                created_at=datetime.now(UTC),
+                description=str(
+                    reasons_json
+                ),  # Storing reasons as description/metadata for now
             )
             session.add(alert)
             session.commit()
-            logger.info(f"Emitted Alert {alert.id} (Risk: {alert.get('risk_score')})")
+            logger.info(f"Emitted Alert {alert.id} (Risk: {alert.risk_score})")
 
         except Exception as e:
             logger.error(f"Failed to persist alert: {e}")
             session.rollback()
+
 
 # Import uuid for alert ID generation

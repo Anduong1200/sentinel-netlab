@@ -178,8 +178,6 @@ def upgrade() -> None:
         unique=False,
     )
 
-
-
     # ### end Alembic commands ###
 
 

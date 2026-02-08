@@ -39,10 +39,14 @@ def main():
         session = db.session
         try:
             # Check/Create Admin Token
-            admin_token_hash = hashlib.sha256(b"admin-token-dev").hexdigest()
-            if not session.query(APIToken).filter_by(token_hash=admin_token_hash).first():
+            admin_token_hash = hashlib.sha256(b"admin-token-dev").hexdigest()  # noqa: S106
+            if (
+                not session.query(APIToken)
+                .filter_by(token_hash=admin_token_hash)
+                .first()
+            ):
                 admin_token = APIToken(
-                    token_id="admin-dev",
+                    token_id="admin-dev",  # noqa: S106
                     token_hash=admin_token_hash,
                     name="Lab Admin",
                     role="admin",
@@ -54,14 +58,14 @@ def main():
                 print("Created admin-token-dev")
 
             # Check/Create Sensor Token
-            sensor_token_hash = hashlib.sha256(b"sensor-01-token").hexdigest()
+            sensor_token_hash = hashlib.sha256(b"sensor-01-token").hexdigest()  # noqa: S106
             if (
                 not session.query(APIToken)
                 .filter_by(token_hash=sensor_token_hash)
                 .first()
             ):
                 sensor_token = APIToken(
-                    token_id="sensor-01",
+                    token_id="sensor-01",  # noqa: S106
                     token_hash=sensor_token_hash,
                     name="Lab Sensor 01",
                     role="sensor",

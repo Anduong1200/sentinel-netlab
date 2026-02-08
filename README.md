@@ -300,36 +300,23 @@ sequenceDiagram
 
 ## 📚 Documentation
 
-Detailed documentation is available in the [docs/](docs/README.md) directory.
+### Core Guides
+*   **[Lab Quick Start](docs/lab/quickstart.md)**: Set up a local test environment.
+*   **[Production Deployment](docs/prod/deployment.md)**: Deploy via Docker Compose with security hardening.
+*   **[Operations Runbook](docs/prod/ops-runbook.md)**: Monitoring, Troubleshooting, and Recovery.
+*   **[Troubleshooting](docs/lab/troubleshooting.md)**: Common Lab/Dev issues.
 
-### 1. Architecture
-- [System Overview](docs/architecture/overview.md)
-- [Trust Model](docs/architecture/trust_model.md)
-- [Threat Model](docs/architecture/threat_model.md)
+### Reference
+*   **[Configuration](docs/reference/config.md)**: Environment Variables & Secrets.
+*   **[Observability](docs/reference/observability.md)**: Metrics, Logs, and Dashboards.
+*   **[Trust Model](docs/reference/proxy-trust.md)**: Security architecture.
+*   **[Architecture](docs/reference/architecture.md)**: System design.
+*   **[Database Schema](docs/reference/schema.md)**: Data models.
+*   **[API Spec](docs/reference/api.md)**: REST Endpoints.
 
-### 2. Detection Logic
-- [Hybrid Detection Overview](docs/detection/overview.md)
-- [Rule-Based Engines](docs/detection/rule_based.md)
-- [Risk Scoring Algorithm](docs/detection/risk_scoring.md)
-
-### 3. Security
-- [Telemetry Integrity](docs/security/telemetry_integrity.md)
-- [Sensor Hardening](docs/security/sensor_hardening.md)
-- [Controller Security](docs/security/controller_security.md)
-
-### 4. Operations & Research
-- [Lab Mode Overview](docs/lab_mode/mode_b_overview.md) (Active Capabilities)
-- [Reproducibility Guide](docs/reproducibility/experiment_steps.md)
-- [Evaluation Metrics](docs/evaluation/metrics.md)
-- [Troubleshooting Guide](docs/operations/runbooks/troubleshooting.md)
-
-### 5. Testing & Validation
-- [PCAP Replay Guide](docs/testing/pcap_replay.md)
-
-### 6. Reference
-- [API Documentation](docs/reference/api_overview.md)
-- [Configuration Reference](docs/appendix/config_reference.md)
-
+### Research
+*   [Lab Mode Overview](docs/lab_mode/mode_b_overview.md)
+*   [Threat Model](docs/architecture/threat_model.md)
 ---
 
 ## 🧪 Development

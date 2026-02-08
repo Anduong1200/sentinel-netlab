@@ -1,0 +1,111 @@
+E402 Module level import not at top of file
+  --> controller\api\deps.py:33:1
+   |
+31 | # Limiter
+32 | from flask_limiter import Limiter  # noqa: E402
+33 | from flask_limiter.util import get_remote_address
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |
+35 | from controller.db.extensions import db
+   |
+
+E402 Module level import not at top of file
+  --> controller\api\deps.py:35:1
+   |
+33 | from flask_limiter.util import get_remote_address
+34 |
+35 | from controller.db.extensions import db
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 |
+37 | # Create global limiter instance
+   |
+
+W291 Trailing whitespace
+  --> controller\migrations\versions\5096ce2e55f5_timescale_init.py:34:59
+   |
+32 |     # time_column: timestamp
+33 |     op.execute("""
+34 |         SELECT create_hypertable('telemetry', 'timestamp', 
+   |                                                           ^
+35 |             partitioning_column => 'sensor_id', 
+36 |             number_partitions => 4,
+   |
+help: Remove trailing whitespace
+
+W291 Trailing whitespace
+  --> controller\migrations\versions\5096ce2e55f5_timescale_init.py:35:48
+   |
+33 |     op.execute("""
+34 |         SELECT create_hypertable('telemetry', 'timestamp', 
+35 |             partitioning_column => 'sensor_id', 
+   |                                                ^
+36 |             number_partitions => 4,
+37 |             if_not_exists => TRUE,
+   |
+help: Remove trailing whitespace
+
+S106 Possible hardcoded password assigned to argument: "token_id"
+  --> ops\init_lab_db.py:49:21
+   |
+47 |             ):
+48 |                 admin_token = APIToken(
+49 |                     token_id="admin-dev",
+   |                     ^^^^^^^^^^^^^^^^^^^^
+50 |                     token_hash=admin_token_hash,  # noqa: S106
+51 |                     name="Lab Admin",
+   |
+
+S106 Possible hardcoded password assigned to argument: "token_id"
+  --> ops\init_lab_db.py:68:21
+   |
+66 |             ):
+67 |                 sensor_token = APIToken(
+68 |                     token_id="sensor-01",
+   |                     ^^^^^^^^^^^^^^^^^^^^
+69 |                     token_hash=sensor_token_hash,
+70 |                     name="Lab Sensor 01",
+   |
+
+F841 Local variable `root_dir` is assigned to but never used
+  --> ops\seed_lab_data.py:37:5
+   |
+36 |     # Paths
+37 |     root_dir = Path(__file__).parent.parent
+   |     ^^^^^^^^
+38 |
+39 |     # 1. Ensure Sensor Exists
+   |
+help: Remove assignment to unused variable `root_dir`
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> tests\conftest.py:167:9
+    |
+165 |       """Flask test client for Controller API"""
+166 |       try:
+167 | /         from controller.api.auth import Role
+168 | |         from controller.api.deps import config, db
+169 | |         from controller.api_server import app
+170 | |         from controller.db.models import APIToken as Token
+171 | |         from controller.db.models import APIToken as Token
+    | |__________________________________________________________^
+172 |
+173 |           # Force strict security OFF for tests
+    |
+help: Organize imports
+
+F811 [*] Redefinition of unused `Token` from line 170
+   --> tests\conftest.py:170:54
+    |
+168 |         from controller.api.deps import config, db
+169 |         from controller.api_server import app
+170 |         from controller.db.models import APIToken as Token
+    |                                                      ----- previous definition of `Token` here
+171 |         from controller.db.models import APIToken as Token
+    |                                                      ^^^^^ `Token` redefined here
+172 |
+173 |         # Force strict security OFF for tests
+    |
+help: Remove definition: `Token`
+
+Found 9 errors.
+[*] 2 fixable with the `--fix` option (3 hidden fixes can be enabled with the `--unsafe-fixes` option).

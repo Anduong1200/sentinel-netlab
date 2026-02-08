@@ -4,8 +4,12 @@ from functools import wraps
 
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
+from common.observability.logging import configure_logging
 from controller.config import init_config
+from controller.db.extensions import db
 
 # Validation
 try:
@@ -18,21 +22,11 @@ PYDANTIC_AVAILABLE = True
 # Initialize Config
 config = init_config()
 
-# Logging
-from common.observability.logging import configure_logging  # noqa: E402
-
 # Configure Logging (JSON + Correlation)
 debug_mode = config.debug
 log_level = "DEBUG" if debug_mode else "INFO"
-logger = configure_logging("controller", level=log_level, json_mode=True)
+configure_logging("controller", level=log_level, json_mode=True)
 logger = logging.getLogger(__name__)
-
-# DB
-# Limiter
-from flask_limiter import Limiter  # noqa: E402
-from flask_limiter.util import get_remote_address  # noqa: E402
-
-from controller.db.extensions import db
 
 # Create global limiter instance
 # key_func is required.

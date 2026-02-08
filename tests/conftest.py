@@ -167,7 +167,7 @@ def app_client():
         from controller.api.auth import Role
         from controller.api.deps import config, db
         from controller.api_server import app
-        from controller.db.models import APIToken, Sensor, Telemetry
+        from controller.db.models import APIToken as Token
 
         # Force strict security OFF for tests
         config.security.require_tls = False

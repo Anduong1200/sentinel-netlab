@@ -3,6 +3,9 @@ from datetime import UTC, datetime
 
 from flask import Blueprint, g, jsonify, request
 
+from common.schemas.telemetry import TelemetryBatch  # noqa: E402
+from controller.db.models import Telemetry
+from controller.ingest.queue import IngestQueue
 from controller.metrics import (
     BACKPRESSURE,
     INGEST_FAILURES,
@@ -10,9 +13,6 @@ from controller.metrics import (
     INGEST_REQUESTS,
     INGEST_SUCCESS,
 )
-from common.schemas.telemetry import TelemetryBatch  # noqa: E402
-from controller.db.models import Telemetry
-from controller.ingest.queue import IngestQueue
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
 from .deps import config, limiter, logger, validate_json
