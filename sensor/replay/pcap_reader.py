@@ -18,7 +18,13 @@ class PcapStream:
     def stream(self) -> Generator[dict[str, Any], None, None]:
         """Yields telemetry dicts."""
         try:
-            from scapy.all import Dot11, Dot11Beacon, Dot11Elt, PcapReader, RadioTap  # type: ignore
+            from scapy.all import (  # type: ignore
+                Dot11,
+                Dot11Beacon,
+                Dot11Elt,
+                PcapReader,
+                RadioTap,
+            )
         except ImportError:
             logger.error("Scapy not installed. Cannot replay PCAP.")
             return

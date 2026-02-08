@@ -3,9 +3,9 @@ import os
 import random
 import statistics
 import time
-from typing import Any
 import uuid
 from datetime import datetime
+from typing import Any
 
 try:
     import httpx

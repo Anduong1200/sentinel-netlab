@@ -9,7 +9,6 @@ import re
 import sys
 
 # from pathlib import Path # F401
-
 from typing import Any
 
 # Config
