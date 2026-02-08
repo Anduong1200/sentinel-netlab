@@ -46,8 +46,19 @@ class Telemetry(Base):
     __tablename__ = "telemetry"
 
     # TimescaleDB requires timestamp to be part of the primary key for hypertables
-    timestamp = Column(DateTime(timezone=True), primary_key=True, index=True)
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    # But SQLite doesn't support AUTOINCREMENT on composite PKs easily.
+    import os
+
+    _is_sqlite = "sqlite" in (
+        os.getenv("CONTROLLER_DATABASE_URL") or os.getenv("DATABASE_URL") or "sqlite"
+    )
+
+    if _is_sqlite:
+        timestamp = Column(DateTime(timezone=True), index=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
+    else:
+        timestamp = Column(DateTime(timezone=True), primary_key=True, index=True)
+        id = Column(Integer, primary_key=True, autoincrement=True)
 
     sensor_id = Column(String(64), ForeignKey("sensors.id"), index=True)
     batch_id = Column(String(64), index=True)

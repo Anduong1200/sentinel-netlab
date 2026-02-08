@@ -107,6 +107,13 @@ jobs:
         run: |
           mypy .
 
+      - name: Schema drift check (Alembic)
+        run: |
+          # Initialize SQLite DB and check for drift
+          cd controller
+          python -m alembic upgrade head
+          python -m alembic check
+
   docs:
     name: Docs validation (links)
     runs-on: ubuntu-latest

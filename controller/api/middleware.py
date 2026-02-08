@@ -89,9 +89,6 @@ class ObservabilityMiddleware:
             context.clear_context()
 
 
-
-
-
 class TrustedProxyMiddleware:
     """
     Conditionally apply ProxyFix only if the request comes from a trusted proxy.

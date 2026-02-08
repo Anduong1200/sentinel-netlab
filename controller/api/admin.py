@@ -4,9 +4,10 @@ from datetime import UTC, datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 
+from controller.models import APIToken
+
 from .auth import Permission, Role, require_auth
 from .deps import config, db
-from controller.models import APIToken
 
 bp = Blueprint("admin", __name__)
 

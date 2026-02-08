@@ -164,9 +164,10 @@ def mock_alert():
 def app_client():
     """Flask test client for Controller API"""
     try:
+        from controller.api.auth import Role
         from controller.api.deps import config, db
-        from controller.api.models import Role, Token
         from controller.api_server import app
+        from controller.models import APIToken as Token
 
         # Force strict security OFF for tests
         config.security.require_tls = False

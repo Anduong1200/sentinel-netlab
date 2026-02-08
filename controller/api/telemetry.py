@@ -11,10 +11,10 @@ from common.observability.metrics import (
 )
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 from controller.ingest.queue import IngestQueue
+from controller.models import Telemetry
 
 from .auth import SENSOR_REGISTRY, Permission, require_auth, require_signed
 from .deps import config, limiter, logger, validate_json
-from controller.models import Telemetry
 
 bp = Blueprint("telemetry", __name__)
 
@@ -104,7 +104,9 @@ def ingest_telemetry():
     if is_duplicate:
         INGEST_REQUEST.labels(endpoint="telemetry", status="duplicate").inc()
         # Return batch_id as ack_id (protocol contract), not the internal scoped ID
-        return jsonify({"success": True, "status": "duplicate", "ack_id": batch_id}), 200
+        return jsonify(
+            {"success": True, "status": "duplicate", "ack_id": batch_id}
+        ), 200
 
     INGEST_REQUEST.labels(endpoint="telemetry", status="accepted").inc()
     INGEST_SUCCESS.labels(sensor_id=sensor_id).inc()

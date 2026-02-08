@@ -210,7 +210,6 @@ module = [
     "common.utils.oui_db",
     "controller.integrations.siem_connector",
     "controller.export_engine",
-    "controller.api.models",
     "controller.models",
     "algos.features",
     "algos.risk",

@@ -271,7 +271,9 @@ class TransportClient:
                         except (ValueError, TypeError):
                             pass
                     last_error = "HTTP 429 (Rate Limit)"
-                    logger.warning(f"Upload attempt {attempt + 1} rate limited. Retry after {delay}s")
+                    logger.warning(
+                        f"Upload attempt {attempt + 1} rate limited. Retry after {delay}s"
+                    )
 
                 elif response.status_code >= 400 and response.status_code < 500:
                     # Client error - don't retry
@@ -291,7 +293,9 @@ class TransportClient:
                         except (ValueError, TypeError):
                             pass
                     last_error = "HTTP 503 (Backpressure)"
-                    logger.warning(f"Upload attempt {attempt + 1} backpressure. Retry after {delay}s")
+                    logger.warning(
+                        f"Upload attempt {attempt + 1} backpressure. Retry after {delay}s"
+                    )
 
                 else:
                     # Server error - retry

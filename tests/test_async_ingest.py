@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from controller.api.models import IngestBatch, Telemetry
+from controller.models import IngestJob, Telemetry
 
 
 # Use fixtures from conftest.py
@@ -68,7 +68,7 @@ def test_worker_task_logic():
             assert result["accepted"] == 2
 
             # Verify DB (using our session)
-            batch = db.session.get(IngestBatch, batch_id)
+            batch = db.session.get(IngestJob, batch_id)
             assert batch is not None
             assert batch.status == "processed"
             assert batch.item_count == 2

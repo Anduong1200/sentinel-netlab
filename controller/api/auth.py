@@ -11,10 +11,9 @@ from functools import wraps
 from flask import g, jsonify, request
 
 from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
-
-from .deps import config, db, logger
 from controller.models import APIToken
 
+from .deps import config, db, logger
 
 # =============================================================================
 # RBAC & AUTHENTICATION

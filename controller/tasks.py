@@ -12,8 +12,8 @@ from common.observability.metrics import (
     create_counter,
 )
 from controller.api.deps import create_app, db
-from controller.models import IngestJob, Telemetry
 from controller.celery_app import celery
+from controller.models import IngestJob, Telemetry
 
 ALERTS_EMITTED_WORKER = create_counter(
     "alerts_emitted_total", "Alerts emissions", ["severity", "detector"]

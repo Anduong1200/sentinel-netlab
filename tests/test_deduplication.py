@@ -11,8 +11,8 @@ os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 from controller.api.auth import Role
-from controller.api.models import Token
 from controller.api_server import app
+from controller.models import APIToken as Token
 
 
 class TestDeduplication(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestDeduplication(unittest.TestCase):
         self.db_patcher.start()
 
         # Mock Token Query
-        self.token_patcher = patch("controller.api.auth.Token.query")
+        self.token_patcher = patch("controller.api.auth.APIToken.query")
         self.mock_token_query = self.token_patcher.start()
 
         # Setup Valid Token

@@ -27,8 +27,8 @@ with (
 ):
     # Import app factory
     from controller.api.auth import Role
-    from controller.api.models import Token
     from controller.api_server import app
+    from controller.models import APIToken as Token
 
 
 class TestIngestGzip(unittest.TestCase):
@@ -59,7 +59,7 @@ class TestIngestGzip(unittest.TestCase):
         self.db_patcher.stop()
         self.ctx.pop()
 
-    @patch("controller.api.auth.Token.query")
+    @patch("controller.api.auth.APIToken.query")
     @patch("controller.api.telemetry.IngestQueue.enqueue")
     def test_gzip_hmac_ingest(self, mock_enqueue, mock_token_query):
         """Test that GZIP + HMAC ingestion works end-to-end through the API decorators"""

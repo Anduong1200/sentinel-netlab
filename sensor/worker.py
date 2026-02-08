@@ -163,12 +163,15 @@ class TransportWorker:
         self._uploads_failed += 1
         self._consecutive_failures += 1
 
-        if error.startswith("Client error") or "400" in error or "401" in error or "403" in error:
+        if (
+            error.startswith("Client error")
+            or "400" in error
+            or "401" in error
+            or "403" in error
+        ):
             # Fatal error - do not retry
             self.queue.mark_dead(entry.batch_id, error)
-            logger.error(
-                f"Upload failed FATALLY for batch {entry.batch_id}: {error}"
-            )
+            logger.error(f"Upload failed FATALLY for batch {entry.batch_id}: {error}")
         else:
             # NACK - increment retry count and schedule next attempt
             self.queue.nack(entry.batch_id, error)
