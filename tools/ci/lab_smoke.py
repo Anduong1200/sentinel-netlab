@@ -34,8 +34,8 @@ def run_cmd(cmd):
 
 def generate_env_lab():
     """Generate .env.lab with minimal secrets for CI if it doesn't exist."""
-    import secrets
     import os
+    import secrets
 
     env_path = "ops/.env.lab"
     if os.path.exists(env_path):

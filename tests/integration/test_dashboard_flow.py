@@ -14,7 +14,7 @@ if os.environ.get("DASH_USERNAME"):
 else:
     update_metrics = None  # Placeholder
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch  # noqa: E402
 
 
 def test_dashboard_metrics_update():
