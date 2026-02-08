@@ -310,7 +310,7 @@ sequenceDiagram
 *   **[Configuration](docs/reference/config.md)**: Environment Variables & Secrets.
 *   **[Observability](docs/reference/observability.md)**: Metrics, Logs, and Dashboards.
 *   **[Trust Model](docs/reference/proxy-trust.md)**: Security architecture.
-*   **[Architecture](docs/reference/architecture.md)**: System design.
+*   **[Architecture](docs/architecture/system-design.md)**: System design.
 *   **[Database Schema](docs/reference/schema.md)**: Data models.
 *   **[API Spec](docs/reference/api.md)**: REST Endpoints.
 
