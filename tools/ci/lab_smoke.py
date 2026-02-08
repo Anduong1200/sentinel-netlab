@@ -155,6 +155,13 @@ def main():
         print("\nAborted.")
     except Exception as e:
         print(f"\n❌ Error: {e}")
+        # Try to print logs of the failed container for debugging
+        try:
+            print("\n=== Controller Logs ===")
+            run_cmd("docker logs sentinel-lab-controller")
+            print("=== End Logs ===\n")
+        except:
+            pass
         sys.exit(1)
     finally:
         print("\n=== Teardown ===")
