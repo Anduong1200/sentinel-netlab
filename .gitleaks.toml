@@ -1,0 +1,44 @@
+# Gitleaks Configuration for Sentinel NetLab
+# This config allowlists test secrets that are intentionally used in test files.
+# See: https://github.com/gitleaks/gitleaks#configuration
+
+title = "gitleaks config"
+
+# Allow test files with intentional test secrets
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(?:key|api|token|secret|client|passwd|password|auth|access)(?:[0-9a-z\-_\t .]{0,20})=['\"][0-9a-z\-_.=]{10,150}['\"]'''
+secretGroup = 0
+
+# Allowlist patterns for test secrets
+[rules.allowlist]
+paths = [
+    '''tests/.*\.py$''',  # All test files
+]
+regexes = [
+    '''test_secret_long_enough''',
+    '''test_token_long_enough''',
+    '''super_secret_key_long_enough''',
+    '''super_hmac_secret_long_enough''',
+    '''my_secret_key_long_enough''',
+    '''my_hmac_secret_long_enough''',
+]
+
+# Global allowlist for test directories and patterns
+[allowlist]
+description = "Allowlist for test secrets and development fixtures"
+paths = [
+    '''\.gitleaks\.toml$''',  # This config file
+]
+regexes = [
+    # Test-only prefixed secrets (clearly fake)
+    '''test_.*_long_enough''',
+    '''super_.*_long_enough''',
+    '''my_.*_long_enough''',
+    # Environment variable assignments in test fixtures
+    '''SENSOR_HMAC_SECRET.*test_secret''',
+    '''SENSOR_AUTH_TOKEN.*test_token''',
+    '''CONTROLLER_SECRET_KEY.*super_secret''',
+    '''CONTROLLER_HMAC_SECRET.*super_hmac''',
+]
