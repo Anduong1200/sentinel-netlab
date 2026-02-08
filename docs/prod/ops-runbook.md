@@ -7,13 +7,13 @@
 
 ## 1. Health Baseline ("What Good Looks Like")
 
-Before fixing issues, know your baseline metrics:
+More details in [Observability Contract](../reference/observability.md).
 
 | Metric | Healthy Range | Critical Threshold |
 | :--- | :--- | :--- |
-| **Ingest Success** | > 99.5% | < 95% (Drop Rate Spike) |
-| **Queue Lag** | < 500 msgs | > 5,000 msgs |
-| **Heartbeat Age** | < 2 mins | > 5 mins (Stale Sensor) |
+| **Ingest Success** (`ingest_success_rate`) | > 99.5% | < 95% (Drop Rate Spike) |
+| **Queue Lag** (`queue_oldest_age_seconds`) | < 60s | > 300s (5 mins) |
+| **Heartbeat Age** (`sensor_heartbeat_age_seconds`) | < 2 mins | > 5 mins (Stale Sensor) |
 | **Disk Usage** | < 70% | > 90% (Risk of Crash) |
 | **DB Connections** | < 50 | > 90 (Saturation) |
 

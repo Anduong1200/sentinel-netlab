@@ -4,11 +4,17 @@
 Sentinel NetLab follows a **Safe-by-Default** deployment architecture.
 - **Fail-Fast**: Missing secrets or invalid configurations stop startup immediately.
 - **Migration-First**: Database schemas must be fully migrated before the API accepts traffic.
-- **Least Privilege**: Services run as non-root where possible, and unnecessary ports are closed.
+- **Trusted Proxy**: `X-Forwarded-*` headers are only respected from explicitly configured IPs (`TRUSTED_PROXY_CIDRS`).
 
 ## Core Concepts
 
-### 1. Database Migrations (The "Migration Job")
+### 1. Trust Model & TLS
+We enforce TLS via `X-Forwarded-Proto: https`. To prevent spoofing, this header is **only** accepted if the request originates from a trusted proxy (e.g., your Load Balancer or Nginx).
+- **Configure**: Set `TRUSTED_PROXY_CIDRS` in `ops/.env`.
+- **Verify**: The Controller logs `Access Log` with `ip` matching the real client IP.
+- **See**: [Trusted Proxy Reference](../reference/proxy-trust.md)
+
+### 2. Database Migrations (The "Migration Job")
 We utilize a dedicated `migration` service (init container pattern) to handle schema changes.
 - The `controller` and `worker` services will **wait** for the `migration` service to complete checks/upgrades.
 - **Locking**: Alembic handles locking, ensuring multiple replicas do not race.
