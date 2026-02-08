@@ -9,7 +9,7 @@
 
 By following this guide (approx. 10 minutes), you will have:
 1.  **Web UI (Dashboard)** running at `http://localhost:8050`.
-2.  **Controller API** receiveing telemetry at `http://localhost:5000`.
+2.  **Controller API** receiving telemetry at `http://localhost:5000`.
 3.  **Demo Data**: A pre-loaded scenario with simulated threats.
 4.  **No Hardware Required**: The lab runs entirely in Docker with mock sensors.
 
@@ -45,7 +45,7 @@ python ops/gen_lab_secrets.py
 
 ### Step 2: Start the Stack
 ```bash
-docker compose -f ops/docker-compose.lab.yml up -d --build
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d --build
 ```
 
 *Wait about 30 seconds for the "Proxy" to become healthy.*
@@ -53,7 +53,7 @@ docker compose -f ops/docker-compose.lab.yml up -d --build
 ### Step 3: Seed Scenario Data (Optional)
 To load the "Deauth Attack" scenario:
 ```bash
-docker compose -f ops/docker-compose.lab.yml run --rm seed
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm seed
 ```
 
 ---
@@ -75,13 +75,13 @@ To wipe all data and start fresh:
 
 ```bash
 # 1. Stop and remove volumes
-docker compose -f ops/docker-compose.lab.yml down -v
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v
 
 # 2. Restart
-docker compose -f ops/docker-compose.lab.yml up -d
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d
 
 # 3. Re-seed (if desired)
-docker compose -f ops/docker-compose.lab.yml run --rm seed
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm seed
 ```
 
 ---
@@ -89,7 +89,7 @@ docker compose -f ops/docker-compose.lab.yml run --rm seed
 ## 5. Stop (Keep Data)
 
 ```bash
-docker compose -f ops/docker-compose.lab.yml down
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down
 ```
 
 ---

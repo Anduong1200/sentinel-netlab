@@ -10,7 +10,7 @@
 Before diving deep, check the basics:
 
 1.  **Is the stack actually running?**
-    *   Run: `docker compose -f ops/docker-compose.lab.yml ps`
+    *   Run: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml ps`
     *   *Expected*: `sentinel-lab-proxy`, `controller`, `dashboard` are "Up" / "Healthy".
 2.  **Are you using the Proxy URL?**
     *   Access: [http://localhost:8080](http://localhost:8080) (Everything goes through here).
@@ -30,8 +30,8 @@ Before diving deep, check the basics:
     *   Docker container exited immediately.
     *   Port 8050 is occupied by another app.
 *   **Fix**:
-    1.  Check status: `docker compose -f ops/docker-compose.lab.yml ps`
-    2.  If Dash container is `Exited`: `docker compose -f ops/docker-compose.lab.yml logs dashboard`
+    1.  Check status: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml ps`
+    2.  If Dash container is `Exited`: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml logs dashboard`
     3.  If Port Conflict: Edit `.env.lab` to change `DASHBOARD_PORT=8051` or stop the conflicting app.
 *   **Verify**: [http://localhost:8050](http://localhost:8050) loads.
 
@@ -39,8 +39,8 @@ Before diving deep, check the basics:
 *   **Symptom**: UI loads but shows no data. API `/health` returns error.
 *   **Likely Cause**: Database initialization failed or containers are in a restart loop.
 *   **Fix**:
-    1.  Check logs: `docker compose -f ops/docker-compose.lab.yml logs controller`
-    2.  **Reset Lab**: `make lab-reset` (or `docker compose -f ops/docker-compose.lab.yml down -v` then restart).
+    1.  Check logs: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml logs controller`
+    2.  **Reset Lab**: `make lab-reset` (or `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v` then restart).
 *   **Verify**: `curl http://localhost:5000/api/v1/health` returns `{"ok": true}`.
 
 ### 3. "No Data / No Alerts" (Empty Dashboard)
@@ -49,8 +49,8 @@ Before diving deep, check the basics:
     *   Seed script didn't run.
     *   Time drift causing ingest rejection.
 *   **Fix**:
-    1.  Run Seed: `docker compose -f ops/docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py`
-    2.  Check Ingest Logs: `docker compose -f ops/docker-compose.lab.yml logs controller | grep "Reject"`
+    1.  Run Seed: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py`
+    2.  Check Ingest Logs: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml logs controller | grep "Reject"`
 *   **Verify**: Dashboard shows > 50 packets/alerts.
 
 ### 4. Permission Error (Capture/Hardware Mode)
@@ -74,7 +74,7 @@ Before diving deep, check the basics:
 *   **Likely Cause**: Browser Cache or multiple Docker projects running (e.g., prod vs lab).
 *   **Fix**:
     1.  Hard Refresh Browser (`Ctrl+F5`).
-    2.  Ensure strict cleanup: `docker compose -f ops/docker-compose.lab.yml down -v`
+    2.  Ensure strict cleanup: `docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v`
 *   **Verify**: Dashboard is clean after reset.
 
 ### 7. Port Conflict (Bind Failed)

@@ -130,7 +130,7 @@ def main():
         generate_env_lab()
 
         # 1. Bring up Stack (Proxy + Backend)
-        run_cmd("docker compose -f ops/docker-compose.lab.yml up -d --build")
+        run_cmd("docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d --build")
 
         # 2. Wait for Proxy Health (Endpoint: /api/v1/health via Proxy)
         # Note: Proxy listens on 8080 and forward /api/ to controller:5000/api/
@@ -138,7 +138,7 @@ def main():
 
         # 3. Trigger Seed (One-Shot)
         print("🌱 Seeding Data...")
-        run_cmd("docker compose -f ops/docker-compose.lab.yml run --rm seed")
+        run_cmd("docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm seed")
 
         # 4. Verify Data (via Proxy)
         # Check Dashboard endpoint or API to see if data exists
@@ -153,7 +153,7 @@ def main():
         sys.exit(1)
     finally:
         print("\n=== Teardown ===")
-        run_cmd("docker compose -f ops/docker-compose.lab.yml down -v")
+        run_cmd("docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down -v")
 
 
 def wait_for_health_check(url):
