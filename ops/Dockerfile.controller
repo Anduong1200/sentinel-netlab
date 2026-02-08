@@ -43,11 +43,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -U pip
 
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
-
-# CRITICAL: Upgrade security-sensitive packages AFTER wheel install
-# to ensure fixed versions override any transitively installed older versions
-RUN pip install --no-cache-dir --upgrade "wheel>=0.46.2" "jaraco-context>=6.1.0"
+# CRITICAL: Install wheels AND upgrade security packages in same layer
+# to prevent Trivy from detecting old versions in intermediate layers
+RUN pip install --no-cache-dir /wheels/*.whl && \
+    pip install --no-cache-dir --upgrade --force-reinstall "wheel>=0.46.2" "jaraco-context>=6.1.0" && \
+    rm -rf /wheels
 
 # Change ownership of venv to sentinel user
 RUN chown -R sentinel:sentinel /opt/venv
