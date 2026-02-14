@@ -149,6 +149,13 @@ def process_alert(self, alert_data: dict, sensor_id: str):
                 title=alert_data.get("title"),
                 description=alert_data.get("description"),
                 evidence=alert_data.get("evidence"),
+                bssid=alert_data.get("bssid"),
+                ssid=alert_data.get("ssid"),
+                risk_score=alert_data.get("risk_score"),
+                confidence=alert_data.get("confidence"),
+                impact=alert_data.get("impact"),
+                reason_codes=alert_data.get("reason_codes"),
+                mitre_attack=alert_data.get("mitre_attack"),
             )
 
             db.session.add(alert)

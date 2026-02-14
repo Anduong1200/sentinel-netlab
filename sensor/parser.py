@@ -5,7 +5,7 @@ Parses Beacon and Probe Response frames to extract network information
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 try:
@@ -29,7 +29,6 @@ except (ImportError, OSError):
     Dot11ProbeResp = Any
     RadioTap = Any
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -66,7 +65,7 @@ class WiFiParser:
         # Deauth, Evil Twin events
         self.security_events: list[dict[str, Any]] = []
         self.packet_count = 0
-        self.last_update = datetime.now()
+        self.last_update = datetime.now(UTC)
 
     def get_vendor(self, mac: str) -> str:
         """
@@ -204,7 +203,7 @@ class WiFiParser:
                 "target": target,
                 "bssid": bssid,
                 "reason_code": reason,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "severity": "HIGH" if is_suspicious else "INFO",
             }
             return event
@@ -295,7 +294,7 @@ class WiFiParser:
             encryption = self.parse_encryption(packet)
             vendor = self.get_vendor(bssid)
 
-            now = datetime.now()
+            now = datetime.now(UTC)
 
             # Update or create network entry
             if bssid in self.networks:

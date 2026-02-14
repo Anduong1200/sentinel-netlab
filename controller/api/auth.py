@@ -115,7 +115,9 @@ def verify_token(token_plain: str) -> APIToken | None:
     if not token_obj or not token_obj.is_active:
         return None
 
-    if datetime.now(UTC) > token_obj.expires_at.replace(tzinfo=UTC):
+    if token_obj.expires_at and datetime.now(UTC) > token_obj.expires_at.replace(
+        tzinfo=UTC
+    ):
         return None
 
     token_obj.last_used = datetime.now(UTC)

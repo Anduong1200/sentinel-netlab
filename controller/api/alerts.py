@@ -1,5 +1,5 @@
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from flask import Blueprint, g, jsonify, request, send_file
@@ -43,7 +43,14 @@ def create_alert():
         "severity": data.get("severity"),
         "title": data.get("title"),
         "description": data.get("description"),
-        "evidence": data.get("evidence"),
+        "evidence": data.get("evidence") or data.get("details"),
+        "bssid": data.get("bssid"),
+        "ssid": data.get("ssid"),
+        "risk_score": data.get("risk_score"),
+        "confidence": data.get("confidence"),
+        "impact": data.get("impact"),
+        "reason_codes": data.get("reason_codes"),
+        "mitre_attack": data.get("mitre_attack"),
     }
 
     try:
@@ -120,7 +127,7 @@ def generate_remote_report():
         report_data = ReportData(
             report_type=ReportType.AUDIT,
             title=report_info.get("title", "Security Scan"),
-            generated_at=report_info.get("date", datetime.now().isoformat()),
+            generated_at=report_info.get("date", datetime.now(UTC).isoformat()),
             total_networks=summary.get("networks_scanned", 0),
             critical_risks=summary.get("counts", {}).get("critical", 0),
             high_risks=summary.get("counts", {}).get("high", 0),
@@ -133,13 +140,15 @@ def generate_remote_report():
 
         engine = ReportEngine(output_dir=Path("./generated_reports"))
         # Prefer PDF if available
-        format = ReportFormat.PDF
+        report_format = ReportFormat.PDF
 
-        output_path = engine.generate(report_data, format)
+        output_path = engine.generate(report_data, report_format)
 
         return send_file(
             output_path,
-            mimetype="application/pdf" if format == ReportFormat.PDF else "text/html",
+            mimetype="application/pdf"
+            if report_format == ReportFormat.PDF
+            else "text/html",
             as_attachment=True,
             download_name=output_path.name,
         )

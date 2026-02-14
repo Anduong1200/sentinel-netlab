@@ -511,7 +511,7 @@ class SensorController:
 
                     if self.baseline.learning_mode:
                         # Skip all alerting in learning mode
-                        return
+                        continue
 
                     # 2. Risk Calculation (Integrated Probability x Impact)
                     dev_score = deviation["score"] if deviation else 0.0
