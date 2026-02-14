@@ -97,7 +97,7 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
                     rssi_dbm=item.get("rssi_dbm"),
                     frequency_mhz=item.get("frequency_mhz"),  # Optional if exists
                     security=item.get("security"),
-                    data=item,  # Store full payload
+                    raw_data=item,  # Store full payload
                 )
                 db.session.add(db_item)
                 accepted += 1

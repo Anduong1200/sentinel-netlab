@@ -180,13 +180,13 @@ class EnhancedRiskScorer:
                 ]
                 is_anomaly, loss = self.detect_anomaly_fn(self.ml_model, [vec])
                 if is_anomaly:
-                    raw_score += 0.2  # 20% boost for anomalies
+                    raw_score = min(100, raw_score + 20)  # +20 points for anomalies
                     features["ml_anomaly"] = 1.0
             except Exception as e:
                 logger.debug(f"ML Scoring failed: {e}")
 
-        # Normalize to 0-100
-        risk_score = min(100, int(raw_score * 100))
+        # Clamp to 0-100 (raw_score is already on a 0-100 scale)
+        risk_score = max(0, min(100, int(raw_score)))
 
         # 3. Determine Risk Level
         thresholds = self.config.get("thresholds", {"low": 40, "medium": 70})

@@ -69,4 +69,6 @@ COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fsS http://127.0.0.1:5000/api/v1/health || exit 1
 
-CMD ["python", "sentinel.py", "controller"]
+CMD ["python", "-m", "gunicorn", \
+    "-c", "controller/gunicorn_conf.py", \
+    "controller.api_server:app"]

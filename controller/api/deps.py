@@ -48,8 +48,19 @@ def validate_json(model_class):
                     import gzip
                     import json
 
+                    MAX_DECOMPRESSED = 16 * 1024 * 1024  # 16 MB
+                    raw = request.get_data()
+                    if len(raw) > MAX_DECOMPRESSED:
+                        return jsonify({"error": "Compressed payload too large"}), 413
                     try:
-                        content = gzip.decompress(request.get_data())
+                        content = gzip.decompress(raw)
+                        if len(content) > MAX_DECOMPRESSED:
+                            return (
+                                jsonify(
+                                    {"error": "Decompressed payload exceeds size limit"}
+                                ),
+                                413,
+                            )
                         data = json.loads(content)
                     except Exception:
                         return jsonify({"error": "Invalid GZIP data"}), 400

@@ -23,7 +23,9 @@ class SecurityConfig:
     time_drift_max: int = 300
     token_expiry_hours: int = 720
     mtls_enabled: bool = False
-    cors_origins: str | list[str] = "*"
+    cors_origins: str | list[str] = (
+        "http://localhost:8050"  # Dashboard default; set CORS_ORIGINS in prod
+    )
     rate_limit_telemetry: str = "200 per minute"
     rate_limit_alerts: str = "50 per minute"
     trusted_proxies: list = field(default_factory=list)
@@ -133,7 +135,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         rate_limit_alerts=os.getenv("RATE_LIMIT_ALERTS", "50 per minute"),
         trusted_proxies=os.getenv(
             "TRUSTED_PROXIES",
-            "127.0.0.1,172.16.0.0/12,172.17.0.0/12,172.18.0.0/12,172.19.0.0/12,172.20.0.0/12,172.21.0.0/12,172.22.0.0/12,172.23.0.0/12,172.24.0.0/12,172.25.0.0/12,172.26.0.0/12,172.27.0.0/12,172.28.0.0/12,172.29.0.0/12,172.30.0.0/12,172.31.0.0/12",
+            "127.0.0.1,172.28.0.0/16",  # Compose sentinel-net only; set explicitly in prod
         ).split(","),
     )
 

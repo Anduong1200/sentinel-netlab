@@ -101,17 +101,15 @@ services:
       - sentinel-net
 
   # ===========================================================================
-  # WORKER: Celery Background Tasks
+  # WORKER: DB-Backed Ingest (Telemetry)
   # ===========================================================================
-  worker:
+  worker-ingest:
     build:
       context: ..
       dockerfile: ops/Dockerfile.controller
     image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
-    container_name: sentinel-worker
+    container_name: sentinel-worker-ingest
     restart: unless-stopped
-    # command: celery -A controller.celery_app worker --loglevel=info
-    # P1 Scale: Run DB-Backed Ingest Worker
     command: python -m controller.ingest.worker
     environment:
       <<: *common-env
@@ -135,6 +133,55 @@ services:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - sentinel-net
+
+  # ===========================================================================
+  # WORKER: Celery (Alerts Processing)
+  # ===========================================================================
+  worker-celery:
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile.controller
+    image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
+    container_name: sentinel-worker-celery
+    restart: unless-stopped
+    command: celery -A controller.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      <<: *common-env
+      FLASK_ENV: production
+      ENVIRONMENT: production
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+      
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD_REQUIRED}@postgres:5432/${POSTGRES_DB:-sentinel}
+      
+      # Redis (Celery broker)
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD_REQUIRED}@redis:6379/0
+
+      # Secrets
+      CONTROLLER_SECRET_KEY: ${CONTROLLER_SECRET_KEY:?CONTROLLER_SECRET_KEY_REQUIRED}
+      CONTROLLER_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET:?CONTROLLER_HMAC_SECRET_REQUIRED}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A controller.celery_app inspect ping --timeout 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging: *default-logging
     deploy:
       resources:

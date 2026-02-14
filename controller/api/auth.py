@@ -137,6 +137,24 @@ def verify_timestamp(timestamp_str: str) -> bool:
         return False
 
 
+def derive_sensor_key(master_secret: str, sensor_id: str) -> bytes:
+    """Derive a per-sensor HMAC key from master secret using HKDF-SHA256.
+
+    This isolates blast radius: compromising one sensor's key does not
+    allow forging requests for other sensors.
+    """
+    import hashlib
+
+    # HKDF-Extract: PRK = HMAC(salt, IKM)
+    salt = b"sentinel-netlab-hmac-v1"  # Fixed salt for reproducibility
+    prk = hmac.new(salt, master_secret.encode(), hashlib.sha256).digest()
+
+    # HKDF-Expand: OKM = HMAC(PRK, info || 0x01)
+    info = f"sensor-hmac|{sensor_id}".encode()
+    okm = hmac.new(prk, info + b"\x01", hashlib.sha256).digest()
+    return okm
+
+
 def verify_hmac(
     method: str,
     path: str,
@@ -147,13 +165,16 @@ def verify_hmac(
     sequence: str | None = None,
     content_encoding: str = "identity",
 ) -> bool:
-    """Verify HMAC signature using V1 Canonical Format"""
+    """Verify HMAC signature using V1 Canonical Format with per-sensor derived key"""
     # V1 Canonical String Format (newline delimited)
     parts = [method, path, timestamp, sensor_id, content_encoding]
 
     canonical_meta = "\n".join(parts) + "\n"
 
-    h = hmac.new(config.security.hmac_secret.encode(), digestmod=hashlib.sha256)
+    # Derive per-sensor key from master secret
+    sensor_key = derive_sensor_key(config.security.hmac_secret, sensor_id)
+
+    h = hmac.new(sensor_key, digestmod=hashlib.sha256)
     h.update(canonical_meta.encode())
     h.update(payload)
 

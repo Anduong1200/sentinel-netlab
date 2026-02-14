@@ -35,7 +35,7 @@ class Sensor(db.Model):
     status = Column(String(20), default="offline")
     last_heartbeat = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    config = Column(JSON, default={})
+    config = Column(JSON, default=dict)
 
     telemetry = relationship("Telemetry", back_populates="sensor")
     alerts = relationship("Alert", back_populates="sensor")
@@ -72,10 +72,19 @@ class Telemetry(db.Model):
     frequency_mhz = Column(Integer)
 
     security = Column(String(20))
-    capabilities = Column(JSON, default={})
-    rsn_info = Column(JSON, default={})
+    capabilities = Column(JSON, default=dict)
+    rsn_info = Column(JSON, default=dict)
 
-    raw_data = Column(JSON, default={})
+    raw_data = Column(JSON, default=dict)
+
+    @property
+    def data(self):
+        """Alias for raw_data — backward compat for API consumers."""
+        return self.raw_data
+
+    @data.setter
+    def data(self, value):
+        self.raw_data = value
 
     sensor = relationship("Sensor", back_populates="telemetry")
 
@@ -104,8 +113,8 @@ class Alert(db.Model):
     bssid = Column(String(17))
     ssid = Column(String(32))
 
-    evidence = Column(JSON, default={})
-    reason_codes = Column(JSON, default=[])  # List[str] codes
+    evidence = Column(JSON, default=dict)
+    reason_codes = Column(JSON, default=list)  # List[str] codes
 
     # Scoring
     confidence = Column(Float)  # 0.0 - 1.0
@@ -157,7 +166,7 @@ class AuditLog(db.Model):
     resource = Column(String(128))
     action = Column(String(50))
 
-    details = Column(JSON, default={})
+    details = Column(JSON, default=dict)
     ip_address = Column(String(45))
 
 

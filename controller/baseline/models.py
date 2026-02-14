@@ -36,7 +36,7 @@ class BaselineProfile(db.Model):
     #   "security_modes": {"WPA2": 100},
     #   "vendors": {"Intel": 50, "Unknown": 50}
     # }
-    features = Column(JSON, default={})
+    features = Column(JSON, default=dict)
 
     __table_args__ = (
         Index("ix_baseline_site_network", "site_id", "network_key", unique=True),

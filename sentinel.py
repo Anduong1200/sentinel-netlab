@@ -5,6 +5,7 @@ Routes commands to appropriate sub-modules.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -34,18 +35,45 @@ def main():
         sys.exit(sensor_main())
 
     elif command == "controller":
-        # Simplified controller launch
-        from controller.api_server import app
-
         parser = argparse.ArgumentParser(prog="sentinel controller")
         parser.add_argument("--host", default="0.0.0.0", help="Binding host")
         parser.add_argument("--port", type=int, default=5000, help="Binding port")
-        parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+        parser.add_argument(
+            "--debug", action="store_true", help="Enable debug mode (Flask dev server)"
+        )
+        parser.add_argument(
+            "--workers", type=int, default=0, help="Gunicorn workers (0=auto)"
+        )
 
         args = parser.parse_args(remainder)
 
-        print(f"Starting Sentinel Controller on {args.host}:{args.port}")
-        app.run(host=args.host, port=args.port, debug=args.debug)
+        if args.debug:
+            # Dev mode: Flask built-in server with reloader
+            from controller.api_server import app
+
+            print(f"Starting Sentinel Controller (DEBUG) on {args.host}:{args.port}")
+            app.run(host=args.host, port=args.port, debug=True)
+        else:
+            # Production: Gunicorn
+            import subprocess
+
+            workers = args.workers or min((os.cpu_count() or 1) * 2 + 1, 9)
+            cmd = [
+                sys.executable,
+                "-m",
+                "gunicorn",
+                "-c",
+                "controller/gunicorn_conf.py",
+                "-b",
+                f"{args.host}:{args.port}",
+                "-w",
+                str(workers),
+                "controller.api_server:app",
+            ]
+            print(
+                f"Starting Sentinel Controller (gunicorn) on {args.host}:{args.port} workers={workers}"
+            )
+            sys.exit(subprocess.call(cmd))
 
     else:
         print(f"Unknown command: {command}")

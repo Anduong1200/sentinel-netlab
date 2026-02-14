@@ -335,24 +335,15 @@ class TransportClient:
         sequence: str | None = None,
         content_encoding: str = "identity",
     ) -> str:
-        """Sign payload with HMAC-SHA256 (Canonical: method\npath\ntimestamp\nsensor_id\nencoding\nbody)"""
+        """Sign payload with HMAC-SHA256 using per-sensor derived key."""
         # V1 Canonical String Format (newline delimited)
         parts = [method, path, timestamp, sensor_id, content_encoding]
-
-        # We process payload separately to avoid large string copies if possible,
-        # but hmac.update needs bytes.
-
-        # Build layout:
-        # method\n
-        # path\n
-        # timestamp\n
-        # sensor_id\n
-        # content_encoding\n
-        # body_bytes
-
         canonical_meta = "\n".join(parts) + "\n"
 
-        h = hmac.new(self.hmac_secret.encode(), digestmod=hashlib.sha256)
+        # Derive per-sensor key from master secret (matches controller's derive_sensor_key)
+        sensor_key = self._derive_sensor_key(sensor_id)
+
+        h = hmac.new(sensor_key, digestmod=hashlib.sha256)
         h.update(canonical_meta.encode())
 
         if isinstance(payload, str):
@@ -361,6 +352,18 @@ class TransportClient:
             h.update(payload)
 
         return h.hexdigest()
+
+    @staticmethod
+    def _derive_sensor_key_from(master_secret: str, sensor_id: str) -> bytes:
+        """HKDF-SHA256 key derivation matching controller's derive_sensor_key."""
+        salt = b"sentinel-netlab-hmac-v1"
+        prk = hmac.new(salt, master_secret.encode(), hashlib.sha256).digest()
+        info = f"sensor-hmac|{sensor_id}".encode()
+        return hmac.new(prk, info + b"\x01", hashlib.sha256).digest()
+
+    def _derive_sensor_key(self, sensor_id: str) -> bytes:
+        """Derive per-sensor HMAC key from self.hmac_secret."""
+        return self._derive_sensor_key_from(self.hmac_secret, sensor_id)
 
     def _on_success(self) -> None:
         """Called on successful upload"""
