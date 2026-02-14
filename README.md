@@ -9,7 +9,7 @@
   <a href="https://github.com/anduong1200/sentinel-netlab/actions"><img src="https://img.shields.io/github/actions/workflow/status/anduong1200/sentinel-netlab/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg?style=flat-square" alt="Python"></a>
-  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square" alt="Code Style"></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/code%20style-ruff-261230.svg?style=flat-square" alt="Code Style"></a>
 </p>
 </p>
 
@@ -65,56 +65,71 @@ sentinel-netlab/
 │   ├── sensor_cli.py          # Unified entry point & CLI
 │   ├── sensor_controller.py   # Main orchestrator
 │   ├── capture_driver.py      # Monitor mode driver
+│   ├── capture_tshark.py      # High-performance tshark engine
+│   ├── capture_queue.py       # Producer-consumer capture
 │   ├── frame_parser.py        # 802.11 frame decoder
 │   ├── normalizer.py          # Telemetry normalization
-│   ├── transport.py           # Upload with retry logic
-│   ├── detection.py           # Threat detection logic
-│   ├── risk.py                # Risk scoring hooks
+│   ├── transport.py           # Upload with retry & circuit breaker
 │   ├── rule_engine.py         # Pattern matching engine
+│   ├── forensics.py           # Offline PCAP analysis
+│   ├── geo_mapping.py         # Trilateration & heatmaps
+│   ├── wardrive.py            # GPS-correlated wardriving CLI
+│   ├── audit.py               # Security audit CLI
 │   └── schema/                # JSON schemas
-│
-├── benchmarks/                 # 📈 Performance & Accuracy tests
-│   ├── benchmark_suite.py     # Comprehensive metrics
-│   └── compare_recall.py      # Ground truth comparison
-│
-├── dashboard/                  # 📊 Web UI (Dash/Plotly)
-│   └── app.py                 # Dashboard Entry Point
-│
-├── ml/                         # 🧠 Machine Learning
-│   └── anomaly_model.py       # PyTorch Autoencoder
-│
-├── data/                       # 💾 Datasets & PCAPs
-│   ├── datasets/              # CSV/JSON exports
-│   └── pcap_annotated/        # Training data
 │
 ├── algos/                      # 🧠 Detection Algorithms
 │   ├── evil_twin.py           # Evil Twin V2
-│   ├── dos.py                 # DoS Detector
+│   ├── dos.py                 # DoS / Deauth Flood Detector
 │   ├── karma_detector.py      # Karma/Pineapple Detector
 │   ├── jamming_detector.py    # RF Jamming Detector
 │   ├── wardrive_detector.py   # Wardriving Detector
 │   ├── wep_iv_detector.py     # WEP IV Attack Detector
 │   ├── exploit_chain_analyzer.py # Multi-stage Attack Correlator
-│   ├── risk.py                # Risk Engine
-│   └── baseline.py            # Behavioral Baseline
+│   ├── risk.py                # Risk Scoring Engine
+│   ├── baseline.py            # Behavioral Baseline
+│   └── detection.py           # Utilities (Levenshtein, BloomFilter)
 │
 ├── controller/                 # 🖥️ Central Server
 │   ├── api_server.py          # Flask REST API
-│   ├── models.py              # SQLAlchemy models
-│   └── migrations/            # Alembic migrations
+│   ├── api/                   # Route handlers (alerts, auth, telemetry)
+│   ├── db/                    # SQLAlchemy models & migrations
+│   ├── alerts/                # Alert emission pipeline
+│   ├── dedup/                 # Event deduplication
+│   ├── scoring/               # Risk scoring
+│   ├── ingest/                # Telemetry ingestion queue & worker
+│   ├── integrations/          # SIEM connectors (Elasticsearch, Splunk)
+│   └── export_engine.py       # Report generation (HTML/JSON/CSV)
 │
 ├── common/                     # 🔗 Shared Code
 │   ├── contracts.py           # Pydantic data models
 │   ├── frame_constants.py     # 802.11 constants
 │   ├── privacy.py             # MAC anonymization
-│   └── metrics.py             # Prometheus metrics
+│   ├── observability/         # Logging, metrics, tracing
+│   ├── detection/             # Evidence & findings models
+│   └── schemas/               # Shared Pydantic schemas
+│
+├── dashboard/                  # 📊 Web UI (Dash Multi-Page App)
+│   ├── app.py                 # Entry point
+│   ├── pages/                 # overview, map, threats, signals
+│   └── components/            # sidebar, cards
+│
+├── ml/                         # 🧠 Machine Learning
+│   └── anomaly_model.py       # PyTorch Autoencoder
+│
+├── benchmarks/                 # 📈 Performance & Accuracy tests
+│   ├── benchmark_suite.py     # Comprehensive metrics
+│   └── compare_recall.py      # Ground truth comparison
+│
+├── data/                       # 💾 Datasets & PCAPs
+│   ├── datasets/              # CSV/JSON exports
+│   └── pcap_annotated/        # Training data
 │
 ├── docs/                       # 📚 Documentation
-│   ├── quickstart.md          # Getting started
-│   ├── architecture.md        # System design
-│   ├── api_ingest.md          # API contract
-│   ├── data_schema.md         # Data models
-│   └── adr/                   # Architecture decisions
+│   ├── lab/                   # Lab quickstart & safety
+│   ├── prod/                  # Production deployment & ops
+│   ├── reference/             # API, config, schema, observability
+│   ├── architecture/          # System design & threat model
+│   └── adr/                   # Architecture decision records
 │
 ├── ops/                        # ⚙️ Operations & Docker
 │   ├── docker-compose.prod.yml # Hardened production stack
@@ -327,7 +342,6 @@ sequenceDiagram
 ### Run Tests
 
 ```bash
-cd sensor
 pytest tests/unit/ -v --cov=. --cov-report=html
 ```
 
@@ -339,13 +353,6 @@ ruff check .
 
 # Type checking
 mypy algos/ controller/ sensor/ common/ --ignore-missing-imports
-```
-
-### Build Package
-
-```bash
-cd sensor
-python -m build
 ```
 
 ---

@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-14
+
+### Fixed — Release Audit (5 Passes, 45 bugs)
+
+**Pass 1–2 (14 fixes)**
+- Fix `AlertStatus.OPEN` crash in `rule_engine.py` (enum member did not exist)
+- Fix naive `datetime.now()` → `datetime.now(UTC)` across 5 modules
+- Remove `logging.basicConfig` from 3 library modules (`dos.py`, `baseline.py`, `rule_engine.py`)
+- Add cooldown to `KarmaDetector` and `WardriveDetector` (prevented re-alerting every frame)
+- Fix `BaselineTracker.channels_seen` — `set()` → `list` for JSON serializability
+- Fix CORS wildcard `*` regression in controller `config.py`
+- Remove leftover `print("DEBUG")` in `evil_twin.py`
+
+**Pass 3 — Critical Operational (11 fixes)**
+- 🔴 Fix capture thread death: `return` → `continue` in `sensor_controller.py` baseline learning loop
+- 🔴 Fix alert data loss: forward all 12 fields through pipeline (`alerts.py`, `tasks.py`)
+- 🔴 Fix `AlertCreate` schema: `extra="forbid"` rejected every sensor alert; severity regex rejected UPPER case
+- Fix nullable `expires_at` crash in `auth.py`
+- Fix `format` builtin shadowing in `alerts.py`
+- Remove `logging.basicConfig` and fix naive datetimes in `parser.py`
+
+**Pass 4 (5 fixes)**
+- Remove `logging.basicConfig` from `export_engine.py` and `storage_buffered.py`
+- Fix `format` builtin shadowing in `export_engine.py`
+- Fix 2× naive `datetime.now()` in `export_engine.py`
+
+**Pass 5 — Final Library Hygiene (15 fixes)**
+- Fix deprecated `datetime.utcfromtimestamp()` in `contracts.py`
+- Remove `logging.basicConfig` from 7 library modules (`config.py`, `geo_mapping.py`, `forensics.py`, `capture_tshark.py`, `capture_queue.py`, `audit.py`, `wardrive.py`)
+- Fix 7× naive `datetime.now()`/`fromtimestamp()` in `forensics.py`, `capture_tshark.py`, `audit.py`
+
+### Changed — Dashboard
+- Refactored monolithic `dashboard/app.py` into multi-page architecture:
+  - Pages: `overview.py`, `map.py`, `threats.py`, `signals.py`
+  - Components: `sidebar.py`, `cards.py`
+
+### Changed — Scalability
+- Added database indexing and partitioning strategies
+- Implemented bulk ingest endpoint
+- Prepared background worker queue infrastructure
+
+### Security
+- Fixed Trivy-detected vulnerabilities in Docker image layers
+- Combined package install and security upgrades in Dockerfiles
+- Updated `jaraco.context` and `wheel` to secure versions
+
 ## [0.3.0] - 2026-02-06
 
 ### Documentation Overhaul (Phase 3)
@@ -108,6 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR**: New features, significant improvements
 - **PATCH**: Bug fixes, documentation updates
 
-[Unreleased]: https://github.com/anduong1200/sentinel-netlab/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/anduong1200/sentinel-netlab/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/anduong1200/sentinel-netlab/releases/tag/v0.1.0

@@ -52,4 +52,4 @@ Please check **[docs/deprecated/README.md](deprecated/README.md)** for a list of
 
 *   **Issues**: Please file bug reports on GitHub.
 *   **Security**: Report security vulnerabilities via our private disclosure program.
-*   **Status**: Profile support: `lab` (Stable), `prod` (Beta).
+*   **Status**: Profile support: `lab` (Stable), `prod` (Stable).
