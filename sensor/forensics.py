@@ -6,11 +6,9 @@ Analyzes captured PCAP files to detect Deauth floods, Evil Twins, etc.
 
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Lazy-load scapy to prevent crashes in CI/Docker
@@ -116,7 +114,9 @@ class ForensicAnalyzer:
                     {
                         "type": "deauth_flood",
                         "severity": "CRITICAL",
-                        "timestamp": datetime.fromtimestamp(d["time"]).isoformat(),
+                        "timestamp": datetime.fromtimestamp(
+                            d["time"], tz=UTC
+                        ).isoformat(),
                         "count_in_window": window_count,
                         "threshold": threshold,
                         "sample_sender": d["sender"],
@@ -209,7 +209,7 @@ class ForensicAnalyzer:
                             clients[client_mac] = {
                                 "mac": client_mac.upper(),
                                 "first_seen": datetime.fromtimestamp(
-                                    float(pkt.time)
+                                    float(pkt.time), tz=UTC
                                 ).isoformat(),
                                 "probed_ssids": [],
                             }
@@ -245,7 +245,7 @@ class ForensicAnalyzer:
         """
         report = {
             "pcap_file": self.pcap_path,
-            "analysis_time": datetime.now().isoformat(),
+            "analysis_time": datetime.now(UTC).isoformat(),
             "alerts": [],
             "clients": [],
             "summary": {},

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -221,7 +221,7 @@ class NormalizedFrame(BaseModel):
         import uuid
 
         frame_id = str(uuid.uuid4())[:8]
-        timestamp_iso = datetime.utcfromtimestamp(raw.timestamp).isoformat() + "Z"
+        timestamp_iso = datetime.fromtimestamp(raw.timestamp, tz=UTC).isoformat()
 
         # Hash MACs if privacy mode enabled
         mac_src_hash = None

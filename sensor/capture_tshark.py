@@ -12,10 +12,9 @@ import tempfile
 import threading
 import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -287,7 +286,7 @@ def parse_tshark_packet(tshark_json: dict) -> dict[str, Any] | None:
             "rssi": rssi,
             "channel": channel,
             "handshake_captured": handshake,
-            "last_seen": datetime.now().isoformat(),
+            "last_seen": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:

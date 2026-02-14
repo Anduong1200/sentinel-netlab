@@ -17,10 +17,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 # Add parent to path for imports

@@ -19,9 +19,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 
@@ -313,9 +310,9 @@ class SecurityAuditor:
 
         return {
             "report": {
-                "title": f"Sentinel NetLab Wi-Fi Audit: {self.profile.upper()} — {datetime.now().strftime('%Y-%m-%d')}",
-                "id": f"SN-{datetime.now().strftime('%Y%m%d')}-{len(self.findings):03d}",
-                "date": datetime.now().strftime("%Y-%m-%d"),
+                "title": f"Sentinel NetLab Wi-Fi Audit: {self.profile.upper()} — {datetime.now(UTC).strftime('%Y-%m-%d')}",
+                "id": f"SN-{datetime.now(UTC).strftime('%Y%m%d')}-{len(self.findings):03d}",
+                "date": datetime.now(UTC).strftime("%Y-%m-%d"),
                 "sensor_id": self.sensor_id,
                 "author": "Sentinel NetLab",
                 "exec_summary": self._generate_exec_summary(counts),
@@ -360,7 +357,7 @@ class SecurityAuditor:
 
             due = "TBD"
             if f.timeline == "Immediate":
-                due = datetime.now().strftime("%Y-%m-%d")
+                due = datetime.now(UTC).strftime("%Y-%m-%d")
             elif f.timeline == "24-72h":
                 due = "Within 3 days"
             elif f.timeline == "1-4 weeks":
