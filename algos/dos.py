@@ -11,7 +11,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -140,7 +139,7 @@ class DeauthFloodDetector:
             reason_codes.append("TARGETED_CLIENT")
 
         return DeauthFloodAlert(
-            alert_id=f"DF-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}",
+            alert_id=f"DF-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}",
             timestamp=datetime.now(UTC).isoformat(),
             severity=severity,
             target_bssid=bssid,

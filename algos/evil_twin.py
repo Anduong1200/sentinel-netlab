@@ -250,10 +250,7 @@ class AdvancedEvilTwinDetector:
                 if score >= self.config.threshold_medium:
                     alert = self._handle_detection(original, suspect, score, evidence)
                     if alert:
-                        print(f"DEBUG: Alert Validated! {alert.alert_id}")
                         alerts.append(alert)
-                    else:
-                        print("DEBUG: Alert pending/confirmation...")
 
         # Periodic cleanup
         self._cleanup()
@@ -521,7 +518,7 @@ class AdvancedEvilTwinDetector:
             reason_codes.append("IE_FINGERPRINT_DIFF")
 
         return EvilTwinAlert(
-            alert_id=f"ET-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alerts_generated:04d}",
+            alert_id=f"ET-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{self.alerts_generated:04d}",
             timestamp=datetime.now(UTC).isoformat(),
             severity=severity,
             score=score,

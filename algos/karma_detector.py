@@ -47,6 +47,7 @@ class KarmaDetector:
     def __init__(self, config: KarmaConfig | None = None):
         self.config = config or KarmaConfig()
         self.responders: dict[str, APResponderStats] = {}  # BSSID -> Stats
+        self.alerted_bssids: set[str] = set()  # BSSIDs that already fired
         self.last_cleanup = time.time()
 
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
@@ -80,7 +81,9 @@ class KarmaDetector:
 
             # Evaluate for Karma
             if len(st.responded_ssids) >= self.config.ssid_threshold:
-                return self._create_alert(bssid, st)
+                if bssid not in self.alerted_bssids:
+                    self.alerted_bssids.add(bssid)
+                    return self._create_alert(bssid, st)
 
         return None
 
@@ -117,6 +120,7 @@ class KarmaDetector:
         ]
         for bssid in expired:
             del self.responders[bssid]
+            self.alerted_bssids.discard(bssid)
 
 
 if __name__ == "__main__":

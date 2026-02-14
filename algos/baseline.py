@@ -6,7 +6,6 @@ Sentinel NetLab - Time-Series Baseline
 import logging
 from datetime import UTC, datetime
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +64,7 @@ class TimeSeriesBaseline:
             "rssi_min": None,
             "rssi_max": None,
             # Channel tracking
-            "channels_seen": set(),
+            "channels_seen": [],
             # Beacon interval
             "beacon_sum": 0,
             "beacon_count": 0,
@@ -91,8 +90,8 @@ class TimeSeriesBaseline:
 
         # Channel
         channel = data.get("channel")
-        if channel is not None:
-            baseline["channels_seen"].add(channel)
+        if channel is not None and channel not in baseline["channels_seen"]:
+            baseline["channels_seen"].append(channel)
 
         # Beacon interval
         beacon = data.get("beacon_interval_ms")

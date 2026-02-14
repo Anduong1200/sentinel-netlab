@@ -9,9 +9,6 @@ from controller.ingest.queue import IngestQueue
 from controller.metrics import WORKER_PROCESSED
 
 # Setup Logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 

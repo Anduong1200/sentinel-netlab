@@ -52,6 +52,7 @@ class WardriveDetector:
     def __init__(self, config: WardriveConfig | None = None):
         self.config = config or WardriveConfig()
         self.sources: dict[str, SourceStats] = {}  # MAC -> Stats
+        self.alerted_macs: set[str] = set()  # MACs that already fired
         self.last_cleanup = time.time()
 
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
@@ -89,7 +90,9 @@ class WardriveDetector:
 
         # Evaluate for alert
         if len(st.unique_ssids) >= self.config.unique_ssid_threshold:
-            return self._create_alert(src, st)
+            if src not in self.alerted_macs:
+                self.alerted_macs.add(src)
+                return self._create_alert(src, st)
 
         return None
 
@@ -134,6 +137,7 @@ class WardriveDetector:
         expired = [mac for mac, st in self.sources.items() if st.last_seen < cutoff]
         for mac in expired:
             del self.sources[mac]
+            self.alerted_macs.discard(mac)
 
 
 if __name__ == "__main__":

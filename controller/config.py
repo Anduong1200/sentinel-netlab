@@ -127,9 +127,9 @@ def init_config(strict_production: bool = True) -> ControllerConfig:
         token_expiry_hours=int(os.getenv("TOKEN_EXPIRY_HOURS", "720")),
         mtls_enabled=os.getenv("MTLS_ENABLED", "false").lower() == "true",
         cors_origins=(
-            os.getenv("CORS_ORIGINS", "*").split(",")
-            if "," in os.getenv("CORS_ORIGINS", "*")
-            else os.getenv("CORS_ORIGINS", "*")
+            os.getenv("CORS_ORIGINS", "http://localhost:8050").split(",")
+            if "," in os.getenv("CORS_ORIGINS", "http://localhost:8050")
+            else os.getenv("CORS_ORIGINS", "http://localhost:8050")
         ),
         rate_limit_telemetry=os.getenv("RATE_LIMIT_TELEMETRY", "200 per minute"),
         rate_limit_alerts=os.getenv("RATE_LIMIT_ALERTS", "50 per minute"),

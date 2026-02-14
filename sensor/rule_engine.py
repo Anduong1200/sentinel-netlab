@@ -14,7 +14,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 try:
@@ -267,7 +266,7 @@ class RuleEngine:
         """Create alert from triggered rule"""
         self.alert_count += 1
         alert_id = (
-            f"ALT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}"
+            f"ALT-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{self.alert_count:04d}"
         )
 
         # Build evidence
@@ -295,7 +294,7 @@ class RuleEngine:
             rule_id=rule.rule_id,
             rule_name=rule.name,
             severity=rule.severity,
-            status=AlertStatus.OPEN,
+            status=AlertStatus.NEW,
             bssid=data.get("bssid"),
             ssid=data.get("ssid"),
             sensor_id=sensor_id,

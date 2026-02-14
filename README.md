@@ -90,6 +90,11 @@ sentinel-netlab/
 ├── algos/                      # 🧠 Detection Algorithms
 │   ├── evil_twin.py           # Evil Twin V2
 │   ├── dos.py                 # DoS Detector
+│   ├── karma_detector.py      # Karma/Pineapple Detector
+│   ├── jamming_detector.py    # RF Jamming Detector
+│   ├── wardrive_detector.py   # Wardriving Detector
+│   ├── wep_iv_detector.py     # WEP IV Attack Detector
+│   ├── exploit_chain_analyzer.py # Multi-stage Attack Correlator
 │   ├── risk.py                # Risk Engine
 │   └── baseline.py            # Behavioral Baseline
 │
@@ -179,8 +184,6 @@ pip install ".[dev]"         # For Development (Tests, Linting)
 cp .env.example .env
 nano .env
 
-# Start stack
-docker compose -f ops/docker-compose.yml up -d
 # Start stack
 docker compose -f ops/docker-compose.yml up -d
 ```
@@ -332,11 +335,10 @@ pytest tests/unit/ -v --cov=. --cov-report=html
 
 ```bash
 # Linting
-ruff check sensor/
-flake8 sensor/ --max-line-length=120
+ruff check .
 
 # Type checking
-mypy sensor/ --ignore-missing-imports
+mypy algos/ controller/ sensor/ common/ --ignore-missing-imports
 ```
 
 ### Build Package

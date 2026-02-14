@@ -160,7 +160,7 @@ def main():
             print("\n=== Controller Logs ===")
             run_cmd("docker logs sentinel-lab-controller")
             print("=== End Logs ===\n")
-        except:
+        except Exception:  # noqa: S110
             pass
         sys.exit(1)
     finally:
