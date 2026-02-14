@@ -20,7 +20,6 @@ from string import Template
 
 from controller.reporting.renderer import SafeRenderer
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -355,16 +354,16 @@ class ReportEngine:
         self.output_dir = output_dir or Path("./reports")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, data: ReportData, format: ReportFormat) -> Path:
+    def generate(self, data: ReportData, report_format: ReportFormat) -> Path:
         """Generate report in specified format"""
-        if format == ReportFormat.HTML:
+        if report_format == ReportFormat.HTML:
             return self._generate_html(data)
-        elif format == ReportFormat.PDF:
+        elif report_format == ReportFormat.PDF:
             return self._generate_pdf(data)
-        elif format == ReportFormat.JSON:
+        elif report_format == ReportFormat.JSON:
             return self._generate_json(data)
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            raise ValueError(f"Unsupported format: {report_format}")
 
     def _generate_html(self, data: ReportData) -> Path:
         """Generate HTML report"""
@@ -424,7 +423,7 @@ class ReportEngine:
         )
 
         # Write file
-        filename = f"report_{data.report_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+        filename = f"report_{data.report_type.value}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.html"
         output_path = self.output_dir / filename
         output_path.write_text(html, encoding="utf-8")
 
@@ -480,7 +479,7 @@ class ReportEngine:
             },
         }
 
-        filename = f"report_{data.report_type.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"report_{data.report_type.value}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.json"
         output_path = self.output_dir / filename
         output_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
 
