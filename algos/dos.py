@@ -28,6 +28,7 @@ class DeauthFloodAlert:
     rate_per_sec: float
     evidence: dict
     reason_codes: list[str]  # Human-readable codes
+    mitre_attack: str = "T1499.001"
 
 
 class DeauthFloodDetector:

@@ -15,11 +15,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 # Import Advanced Logic
+from algos.beacon_flood_detector import BeaconFloodDetector
+from algos.disassoc_detector import DisassocFloodDetector
 from algos.dos import DeauthFloodDetector
 from algos.evil_twin import AdvancedEvilTwinDetector
 from algos.exploit_chain_analyzer import ExploitChainAnalyzer
 from algos.jamming_detector import JammingDetector
 from algos.karma_detector import KarmaDetector
+from algos.krack_detector import KRACKDetector
 from algos.pmkid_detector import PMKIDAttackDetector
 from algos.risk import RiskScorer
 from algos.wardrive_detector import WardriveDetector
@@ -265,6 +268,9 @@ class SensorController:
         # Advanced Detection Engines
         self.et_detector = AdvancedEvilTwinDetector()
         self.dos_detector = DeauthFloodDetector()
+        self.disassoc_detector = DisassocFloodDetector()
+        self.beacon_flood_detector = BeaconFloodDetector()
+        self.krack_detector = KRACKDetector()
         self.pmkid_detector = PMKIDAttackDetector()
         self.jamming_detector = JammingDetector()
         self.wardrive_detector = WardriveDetector()
@@ -506,6 +512,21 @@ class SensorController:
                                 "sensor_id": self.sensor_id,
                             }
                         )
+
+                # Disassociation Flood
+                disassoc_alert = self.disassoc_detector.ingest(net_dict)
+                if disassoc_alert:
+                    self._handle_alert(disassoc_alert)
+
+                # Beacon Flood
+                beacon_flood_alert = self.beacon_flood_detector.ingest(net_dict)
+                if beacon_flood_alert:
+                    self._handle_alert(beacon_flood_alert)
+
+                # KRACK (Key Reinstallation)
+                krack_alert = self.krack_detector.ingest(net_dict)
+                if krack_alert:
+                    self._handle_alert(krack_alert)
 
                 # Rule Engine
                 re_alerts = self.rule_engine.evaluate(
