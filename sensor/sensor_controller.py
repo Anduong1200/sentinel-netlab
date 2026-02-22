@@ -15,10 +15,12 @@ from datetime import UTC, datetime
 from typing import Any
 
 # Import Advanced Logic
+from algos.dos import DeauthFloodDetector
 from algos.evil_twin import AdvancedEvilTwinDetector
 from algos.exploit_chain_analyzer import ExploitChainAnalyzer
 from algos.jamming_detector import JammingDetector
 from algos.karma_detector import KarmaDetector
+from algos.pmkid_detector import PMKIDAttackDetector
 from algos.risk import RiskScorer
 from algos.wardrive_detector import WardriveDetector
 from algos.wep_iv_detector import WEPIVDetector
@@ -262,6 +264,8 @@ class SensorController:
 
         # Advanced Detection Engines
         self.et_detector = AdvancedEvilTwinDetector()
+        self.dos_detector = DeauthFloodDetector()
+        self.pmkid_detector = PMKIDAttackDetector()
         self.jamming_detector = JammingDetector()
         self.wardrive_detector = WardriveDetector()
         self.wep_detector = WEPIVDetector()
@@ -477,6 +481,31 @@ class SensorController:
                 karma_alert = self.karma_detector.ingest(net_dict)
                 if karma_alert:
                     self._handle_alert(karma_alert)
+
+                # PMKID Harvesting
+                pmkid_alert = self.pmkid_detector.ingest(net_dict)
+                if pmkid_alert:
+                    self._handle_alert(pmkid_alert)
+
+                # Deauth Flood
+                if net_dict.get("frame_subtype") == "deauth":
+                    dos_alert = self.dos_detector.record_deauth(
+                        bssid=net_dict.get("bssid", ""),
+                        client_mac=net_dict.get("mac_dst", "ff:ff:ff:ff:ff:ff"),
+                        sensor_id=self.sensor_id,
+                    )
+                    if dos_alert:
+                        self._handle_alert(
+                            {
+                                "alert_type": "deauth_flood",
+                                "severity": dos_alert.severity,
+                                "title": f"Deauth Flood: {dos_alert.target_bssid}",
+                                "description": f"Deauth flood detected: {dos_alert.rate_per_sec:.1f} frames/sec",
+                                "bssid": dos_alert.target_bssid,
+                                "evidence": dos_alert.evidence,
+                                "sensor_id": self.sensor_id,
+                            }
+                        )
 
                 # Rule Engine
                 re_alerts = self.rule_engine.evaluate(

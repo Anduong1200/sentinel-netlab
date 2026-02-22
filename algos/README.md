@@ -9,6 +9,7 @@ It provides modular, reusable components for the Sensor and Controller.
 |--------|-------------|
 | `evil_twin.py` | Advanced Evil Twin detection using weighted risk scoring (RSSI, Vendor, Security, Jitter) |
 | `dos.py` | Deauthentication Flood detection using sliding window analysis |
+| `pmkid_detector.py` | PMKID Harvesting detection — dual-layer Auth flood + orphaned EAPOL M1 (hcxdumptool) |
 | `karma_detector.py` | Karma/WiFi Pineapple detection — rogue APs responding to multiple SSIDs |
 | `jamming_detector.py` | RF Jamming detection — monitors packet loss, RTS/CTS floods, anomalous RSSI |
 | `wardrive_detector.py` | Wardriving detection — identifies mobile scanning patterns |
@@ -27,16 +28,15 @@ It provides modular, reusable components for the Sensor and Controller.
 ## Usage
 
 ```python
-from algos.evil_twin import AdvancedEvilTwinDetector
-from algos.dos import DeauthFloodDetector
-from algos.karma_detector import KarmaDetector
+from algos import PMKIDAttackDetector, DeauthFloodDetector, KarmaDetector
 
 # Initialize
-et_detector = AdvancedEvilTwinDetector()
-dos_detector = DeauthFloodDetector()
-karma_detector = KarmaDetector()
+pmkid = PMKIDAttackDetector()
+dos = DeauthFloodDetector()
+karma = KarmaDetector()
 
-# Process
-alerts = et_detector.ingest(telemetry_data)
-flood_alert = dos_detector.record_deauth(bssid, client_mac)
+# Process frames from sensor pipeline
+pmkid_alert = pmkid.ingest(telemetry_data)
+flood_alert = dos.record_deauth(bssid, client_mac)
+karma_alert = karma.ingest(telemetry_data)
 ```

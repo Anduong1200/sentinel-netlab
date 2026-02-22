@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **PMKID Harvesting Detector** (`algos/pmkid_detector.py`): Dual-layer detection combining Auth flood tracking from random MACs and orphaned EAPOL M1 analysis. MITRE ATT&CK T1110.002.
+- Unit tests for PMKID detector (14 tests) covering threshold, cooldown, combined severity, and multi-AP tracking.
+- Unit tests for KarmaDetector, JammingDetector, WardriveDetector, WEPIVDetector, ExploitChainAnalyzer, and DeauthFloodDetector.
+- `algos/__init__.py` now exports all detector classes for convenient importing.
+
+### Fixed
+- **DeauthFloodDetector** (`dos.py`): Was never wired into `sensor_controller.py` capture loop — now connected.
+- **PMKIDAttackDetector**: Now integrated into the sensor capture pipeline alongside all other detectors.
+- Removed junk file `algos/__ini`.
+
+### Documentation
+- Updated `docs/detection/overview.md` to reflect all 8 active detectors.
+- Updated `algos/README.md` with PMKID detector entry.
+- Updated `ROADMAP.md` with PMKID and detector pipeline milestones.
+
+
 ## [0.4.0] - 2026-02-14
 
 ### Fixed — Release Audit (5 Passes, 45 bugs)

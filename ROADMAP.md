@@ -22,6 +22,8 @@ This document outlines the strategic plan for the Sentinel NetLab project.
 *   [x] **Sensor Integration**: `wardrive.py` and `audit.py` use `TransportClient`
 *   [x] **Dashboard Refactor**: Multi-page architecture (overview, map, threats, signals)
 *   [x] **Observability**: Structured JSON logging, Prometheus metrics, correlation IDs
+*   [x] **PMKID Detector**: Dual-layer harvesting detection (Auth flood + EAPOL M1 orphan tracking)
+*   [x] **Detector Pipeline**: All 8 detectors wired into `sensor_controller.py` capture loop
 
 ### Quality & Reliability
 *   [x] **Release Audit**: 5 passes, 45 bugs fixed (5 critical operational bugs)
