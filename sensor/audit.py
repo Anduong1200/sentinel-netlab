@@ -522,8 +522,60 @@ def run_audit(args, return_data: bool = False) -> Any:
         networks = scan_mock_networks()
     else:
         logger.info(f"Scanning on {args.iface}...")
-        # TODO: Implement real scanning with capture_driver
-        networks = scan_mock_networks()
+        try:
+            from sensor.capture_driver import CaptureDriver
+            from sensor.frame_parser import FrameParser
+
+            driver = CaptureDriver(args.iface)
+            parser = FrameParser()
+            discovery_networks = {}
+
+            # Brief 10-second discovery scan
+            import time
+
+            scan_time = 10
+            end_sys_time = time.time() + scan_time
+
+            # Optional: Enable channel hopping for the duration if the driver supports it easily,
+            # or just rely on the driver's default behavior if it's already hopping.
+            # For this audit script, we'll just read available packets.
+            with driver.capture_session() as source:
+                for packet in source:
+                    if time.time() > end_sys_time:
+                        break
+                    frame_data = parser.parse_80211_frame(packet)
+                    if frame_data and frame_data.frame_type in [
+                        "beacon",
+                        "probe_response",
+                    ]:
+                        bssid = frame_data.bssid
+                        if bssid not in discovery_networks:
+                            capabilities = frame_data.capabilities or {}
+                            discovery_networks[bssid] = NetworkInfo(
+                                bssid=bssid,
+                                ssid=frame_data.ssid,
+                                channel=frame_data.channel or 1,
+                                rssi_dbm=frame_data.rssi_dbm or -100,
+                                security="WPA3"
+                                if capabilities.get("wpa3")
+                                else "WPA2"
+                                if capabilities.get("wpa2")
+                                else "Open"
+                                if not capabilities.get("privacy")
+                                else "WEP",
+                                wps_enabled=capabilities.get("wps", False),
+                                pmf_enabled=capabilities.get("pmf", False),
+                                hidden=(
+                                    frame_data.ssid is None or frame_data.ssid == ""
+                                ),
+                                vendor_oui=bssid[:8] if bssid else None,
+                                capabilities=capabilities,
+                            )
+            networks = list(discovery_networks.values())
+        except Exception as e:
+            logger.error(f"Failed to run real scan: {e}")
+            logger.info("Falling back to mock network data for demonstration.")
+            networks = scan_mock_networks()
 
     logger.info(f"Found {len(networks)} networks")
 

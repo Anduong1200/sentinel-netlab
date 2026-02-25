@@ -43,13 +43,6 @@ Sentinel NetLab is a specialized platform for WiFi security research and intrusi
 
 ---
 
-## ⚠️ Deprecated Documentation
-
-We are reorganizing our documentation. Older guides have been moved or marked as deprecated.
-Please check **[docs/deprecated/README.md](deprecated/README.md)** for a list of legacy files.
-
----
-
 ### Support
 
 *   **Issues**: Please file bug reports on GitHub.

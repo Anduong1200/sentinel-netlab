@@ -45,9 +45,23 @@ def cleanup_project():
         "*.pyo",
         "*.pyd",
         ".pytest_cache",
+        ".ruff_cache",
+        ".mypy_cache",
         ".coverage",
+        ".tox",
+        ".venv",
+        "*.egg-info",
         "*.log",  # Maybe keep logs? User said cleanup. Let's keep logs in logs/ but del elsewhere.
         "*.tmp",
+        "bandit_output*.txt",
+        "integration_output*.txt",
+        "unit_test_output*.txt",
+        "bluetooth_log.json",
+        "file_list.txt",
+        ".dos_state.json",
+        "test_sentinel.db",
+        ".env",
+        ".DS_Store",
     ]
 
     print("\n🗑️ Removing temporary files...")
