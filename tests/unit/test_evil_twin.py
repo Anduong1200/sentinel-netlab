@@ -5,9 +5,7 @@ The detector is 700+ lines but previously had no dedicated unit tests
 (only regression tests via annotated PCAP manifests).
 """
 
-import time
 
-import pytest
 
 from algos.evil_twin import AdvancedEvilTwinDetector, EvilTwinConfig
 

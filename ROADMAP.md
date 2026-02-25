@@ -23,12 +23,16 @@ This document outlines the strategic plan for the Sentinel NetLab project.
 *   [x] **Dashboard Refactor**: Multi-page architecture (overview, map, threats, signals)
 *   [x] **Observability**: Structured JSON logging, Prometheus metrics, correlation IDs
 *   [x] **PMKID Detector**: Dual-layer harvesting detection (Auth flood + EAPOL M1 orphan tracking)
-*   [x] **Detector Pipeline**: All 8 detectors wired into `sensor_controller.py` capture loop
+*   [x] **Disassoc Flood Detector**: Sliding-window disassociation frame rate analysis with multi-client severity
+*   [x] **Beacon Flood Detector**: Fake AP detection via SSID/BSSID diversity counting (mdk3/mdk4)
+*   [x] **KRACK Detector**: Key Reinstallation Attack — EAPOL M3 replay detection (CVE-2017-13077)
+*   [x] **Detector Pipeline**: All 11 detectors wired into `sensor_controller.py` capture loop
 
 ### Quality & Reliability
 *   [x] **Release Audit**: 5 passes, 45 bugs fixed (5 critical operational bugs)
 *   [x] **Scalability**: Bulk ingest, DB indexing/partitioning
 *   [x] **CI Vulnerability Fixes**: Trivy-detected issues in Docker images resolved
+*   [x] **159 Unit Tests**: Comprehensive coverage across all detectors and components
 
 ---
 

@@ -80,6 +80,10 @@ sentinel-netlab/
 ├── algos/                      # 🧠 Detection Algorithms
 │   ├── evil_twin.py           # Evil Twin V2
 │   ├── dos.py                 # DoS / Deauth Flood Detector
+│   ├── disassoc_detector.py   # Disassociation Flood Detector
+│   ├── beacon_flood_detector.py # Beacon Flood / Fake AP Detector
+│   ├── krack_detector.py      # KRACK (Key Reinstallation) Detector
+│   ├── pmkid_detector.py      # PMKID Harvesting Detector
 │   ├── karma_detector.py      # Karma/Pineapple Detector
 │   ├── jamming_detector.py    # RF Jamming Detector
 │   ├── wardrive_detector.py   # Wardriving Detector

@@ -3,9 +3,7 @@
 Tests for DisassocFloodDetector.
 """
 
-import time
 
-import pytest
 
 from algos.disassoc_detector import DisassocConfig, DisassocFloodDetector
 

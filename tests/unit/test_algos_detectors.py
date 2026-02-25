@@ -15,7 +15,6 @@ from algos.karma_detector import KarmaDetector
 from algos.wardrive_detector import WardriveDetector
 from algos.wep_iv_detector import WEPIVDetector
 
-
 # ═══════════════════════════════════════════════════════════════════════════
 # KarmaDetector
 # ═══════════════════════════════════════════════════════════════════════════

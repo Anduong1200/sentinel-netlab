@@ -10,6 +10,9 @@ Sentinel NetLab utilizes a **hybrid detection strategy** combining signature-bas
 |----------|--------|-------------|
 | **Evil Twin** | `algos.evil_twin` | Weighted risk scoring (RSSI, vendor, security, jitter) to detect rogue APs |
 | **Deauth Flood** | `algos.dos` | Sliding-window deauthentication frame rate analysis |
+| **Disassoc Flood** | `algos.disassoc_detector` | Sliding-window disassociation frame rate analysis with multi-client severity |
+| **Beacon Flood** | `algos.beacon_flood_detector` | Fake AP detection via unique SSID/BSSID counting (mdk3/mdk4) |
+| **KRACK** | `algos.krack_detector` | Key Reinstallation Attack via EAPOL M3 replay detection (CVE-2017-13077) |
 | **Karma/Pineapple** | `algos.karma_detector` | Detects APs responding to many unique SSIDs |
 | **PMKID Harvesting** | `algos.pmkid_detector` | Dual-layer: Auth flood from random MACs + orphaned EAPOL M1 (hcxdumptool) |
 | **WEP IV Attack** | `algos.wep_iv_detector` | IV collision and packet injection detection |
@@ -33,16 +36,23 @@ Sentinel NetLab utilizes a **hybrid detection strategy** combining signature-bas
 ```mermaid
 graph LR
     Frame[Raw Frame] --> Filter{Pre-Filter}
-    Filter -->|Mgmt Frame| Sig[Signature Engine]
+    Filter -->|Deauth| Deauth[Deauth Flood]
+    Filter -->|Disassoc| Disassoc[Disassoc Flood]
+    Filter -->|Beacon| Beacon[Beacon Flood]
     Filter -->|EAPOL| PMKID[PMKID Detector]
+    Filter -->|EAPOL| KRACK[KRACK Detector]
+    Filter -->|Mgmt Frame| Sig[Signature Engine]
     Filter -->|Metadata| Risk[Risk Engine]
-    Filter -->|All| Corr[Chain Analyzer]
 
-    Sig -->|Match| Alert[Alert Generation]
+    Deauth -->|Threshold| Alert[Alert Generation]
+    Disassoc -->|Threshold| Alert
+    Beacon -->|Threshold| Alert
     PMKID -->|Threshold| Alert
+    KRACK -->|Replay| Alert
+    Sig -->|Match| Alert
     Risk -->|Score > Threshold| Alert
 
-    Alert --> Corr
+    Alert --> Corr[Chain Analyzer]
     Corr -->|Chain Detected| ChainAlert[Chain Alert]
     Alert --> Dedupe{Deduplication}
     ChainAlert --> Dedupe

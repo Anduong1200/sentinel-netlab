@@ -3,9 +3,7 @@
 Tests for BeaconFloodDetector.
 """
 
-import time
 
-import pytest
 
 from algos.beacon_flood_detector import BeaconFloodConfig, BeaconFloodDetector
 

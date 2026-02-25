@@ -1,45 +1,91 @@
 
 # Developer Guide: Adding Detectors
 
-## Interface
-All detectors must implement `AbstractDetector` (`controller/detection/interface.py`).
+## Detector Interface
+
+All sensor-side detectors follow the `ingest()` pattern. Each detector tracks its own state and returns alerts when thresholds are exceeded.
 
 ```python
-class MyDetector(AbstractDetector):
-    def process(self, telemetry: Dict, context: Dict) -> List[Finding]:
-        # Logic
-        return [Finding(...)]
+class MyDetector:
+    """Stateful detector with sliding-window analysis."""
+
+    def __init__(self, config: MyConfig | None = None):
+        self.config = config or MyConfig()
+        # Internal state
+
+    def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
+        """Process a single frame. Returns alert dict or None."""
+        # 1. Filter: Only process relevant frame types
+        # 2. Track: Update internal state
+        # 3. Evaluate: Check thresholds, apply cooldown
+        # 4. Return alert dict or None
+
+    def get_stats(self) -> dict:
+        """Return current detection statistics."""
+
+    def reset(self):
+        """Clear all state."""
 ```
 
-## Creating a Finding
-Findings are the intermediate unit of detection.
+## Creating an Alert
+
+Alerts are plain dicts returned by `ingest()`:
 
 ```python
-f = Finding(
-    detector_id="my_detector",
-    entity_key="my_target_entity",
-    confidence_raw=0.8
-)
-f.add_reason(ReasonCodes.SOME_REASON)
-f.evidence_list.append(Evidence(type="raw", description="...", data={}))
+return {
+    "alert_type": "my_attack",
+    "severity": "HIGH",  # MEDIUM, HIGH, CRITICAL
+    "title": "Attack Detected: <details>",
+    "description": "Human-readable description",
+    "timestamp": datetime.now(UTC).isoformat(),
+    "evidence": {
+        "key_metric": value,
+        "window_seconds": self.config.time_window,
+    },
+    "mitre_attack": "T1234.001",  # MITRE ATT&CK ID
+}
 ```
 
-## Adding Reason Codes
-If your detector needs a new reason, add it to `common/detection/reason_codes.py`.
-Ensure you select the correct `ReasonCategory` (THREAT, BEHAVIOR, etc.).
+## Integration Steps
 
-## Regression Testing (Golden PCAPs)
-We require regression tests for all detectors to prevent false positives.
+1. Create `algos/my_detector.py` with your detector class
+2. Add export to `algos/__init__.py`
+3. In `sensor/sensor_controller.py`:
+   - Import the detector
+   - Instantiate in `__init__`
+   - Call `ingest()` in the capture loop
+   - Pass non-None results to `_handle_alert()`
 
-1. Create a test file in `tests/detectors/test_my_detector.py`.
-2. Use `sensor/replay/pcap_reader.py` and `common/detection/pipeline.py`.
-3. If possible, use `scapy` to generate a lightweight synthetic PCAP in the test setup.
+## Unit Testing
+
+Create `tests/unit/test_my_detector.py` with tests covering:
 
 ```python
-def test_my_detector_logic(tmp_path):
-    pcap = generate_synthetic_pcap(tmp_path / "test.pcap")
-    pipeline = DetectionPipeline()
-    pipeline.register(MyDetector())
-    findings = pipeline.run(PcapStream(pcap).stream())
-    assert len(findings) > 0
+class TestMyDetector:
+    def test_no_alert_below_threshold(self): ...
+    def test_alert_on_attack(self): ...
+    def test_cooldown_prevents_duplicates(self): ...
+    def test_ignores_irrelevant_frames(self): ...
+    def test_severity_escalation(self): ...
+    def test_alert_evidence_fields(self): ...
+    def test_stats(self): ...
+    def test_reset(self): ...
 ```
+
+Run: `pytest tests/unit/test_my_detector.py -v`
+
+## Existing Detectors (11 Total)
+
+| Detector | Module | MITRE |
+|----------|--------|-------|
+| Evil Twin | `evil_twin.py` | T1557.002 |
+| Deauth Flood | `dos.py` | T1499.001 |
+| Disassoc Flood | `disassoc_detector.py` | T1499.001 |
+| Beacon Flood | `beacon_flood_detector.py` | T1498.001 |
+| KRACK | `krack_detector.py` | T1557.002 |
+| PMKID Harvesting | `pmkid_detector.py` | T1110.002 |
+| Karma | `karma_detector.py` | T1583.008 |
+| RF Jamming | `jamming_detector.py` | T1465 |
+| Wardriving | `wardrive_detector.py` | T1595.002 |
+| WEP IV | `wep_iv_detector.py` | T1600.001 |
+| Exploit Chain | `exploit_chain_analyzer.py` | TA0001 |

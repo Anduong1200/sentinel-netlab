@@ -7,21 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-25
+
 ### Added
-- **PMKID Harvesting Detector** (`algos/pmkid_detector.py`): Dual-layer detection combining Auth flood tracking from random MACs and orphaned EAPOL M1 analysis. MITRE ATT&CK T1110.002.
-- Unit tests for PMKID detector (14 tests) covering threshold, cooldown, combined severity, and multi-AP tracking.
-- Unit tests for KarmaDetector, JammingDetector, WardriveDetector, WEPIVDetector, ExploitChainAnalyzer, and DeauthFloodDetector.
-- `algos/__init__.py` now exports all detector classes for convenient importing.
+- **Disassociation Flood Detector** (`algos/disassoc_detector.py`): Sliding-window rate analysis with multi-client severity escalation. MITRE ATT&CK T1499.001.
+- **Beacon Flood Detector** (`algos/beacon_flood_detector.py`): Fake AP detection via unique SSID/BSSID diversity counting. MITRE ATT&CK T1498.001.
+- **KRACK Detector** (`algos/krack_detector.py`): Key Reinstallation Attack detection — M3 retransmission and M3-after-M4 replay. CVE-2017-13077. MITRE ATT&CK T1557.002.
+- Unit tests: 39 new tests across 4 test files (disassoc, beacon flood, KRACK, Evil Twin).
+- **MITRE ATT&CK ID** added to `DeauthFloodAlert` (T1499.001).
+- All 11 detectors now integrated into `sensor_controller.py` capture loop.
 
 ### Fixed
-- **DeauthFloodDetector** (`dos.py`): Was never wired into `sensor_controller.py` capture loop — now connected.
-- **PMKIDAttackDetector**: Now integrated into the sensor capture pipeline alongside all other detectors.
-- Removed junk file `algos/__ini`.
+- 10 lint errors in test files (unused imports, import sorting).
 
 ### Documentation
-- Updated `docs/detection/overview.md` to reflect all 8 active detectors.
-- Updated `algos/README.md` with PMKID detector entry.
-- Updated `ROADMAP.md` with PMKID and detector pipeline milestones.
+- Rewrote `docs/detection/overview.md` — all 11 detectors with updated pipeline diagram.
+- Rewrote `algos/README.md` — full detector table with MITRE ATT&CK IDs.
+- Rewrote `docs/dev_detectors.md` — updated to `ingest()` API pattern.
+- Updated `README.md` project structure with all detector files.
+- Removed tracked junk files (`.dos_state.json`, `ruff.log`, `test_migration_v6.db`).
+
 
 
 ## [0.4.0] - 2026-02-14

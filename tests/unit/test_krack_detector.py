@@ -3,11 +3,9 @@
 Tests for KRACKDetector.
 """
 
-import time
 
-import pytest
 
-from algos.krack_detector import HandshakeState, KRACKConfig, KRACKDetector
+from algos.krack_detector import KRACKConfig, KRACKDetector
 
 
 class TestKRACKDetector:
