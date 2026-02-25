@@ -81,4 +81,4 @@ Attackers actively interfere with the association process to block WPA2/3 advert
 
 ---
 
-*Document integrated into Sentinel NetLab Knowledge Base - January 2024*
+*Document integrated into Sentinel NetLab Knowledge Base - February 2026*

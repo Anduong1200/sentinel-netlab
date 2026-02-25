@@ -15,11 +15,17 @@ Please use the new documentation structure:
 The following locations are no longer maintained:
 
 - `docs/getting-started/` -> Use `docs/lab/quickstart.md`
-- `docs/lab_mode/` -> Use `docs/lab/`
+- `docs/lab_mode/` -> Merged into `docs/lab/` and `docs/reference/legal_ethics.md`
 - `docs/operations/` -> Use `docs/prod/ops-runbook.md`
 - `docs/tuning.md` -> Use `docs/prod/ops-runbook.md` (Tuning section)
 - `docs/operations.md` -> Use `docs/prod/ops-runbook.md`
 - `docs/api.md` -> Use `docs/reference/api.md`
+- `docs/architecture/detection.md` -> Use `docs/detection/overview.md`
+- `docs/reference/config.md` -> Use `docs/reference/configuration.md`
+- `docs/appendix/config_reference.md` -> Use `docs/reference/configuration.md`
+- `docs/research/wifi-security.md` -> Content in `docs/research/methodology.md`
+- `docs/evaluation/methodology.md` -> Content in `docs/research/methodology.md`
+- `docs/ethics_legal/` -> Merged into `docs/reference/legal_ethics.md`
 
 ---
-*Retained for historical context until v0.2 release.*
+*Updated: February 2026. Files removed in v0.5 cleanup.*

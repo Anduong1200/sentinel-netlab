@@ -89,4 +89,4 @@ Export data to CSV/JSON and use Python `scikit-learn` to train an anomaly detect
 
 ---
 
-*Document integrated into Sentinel NetLab Knowledge Base - January 2024*
+*Document integrated into Sentinel NetLab Knowledge Base - February 2026*

@@ -26,7 +26,7 @@ All Controller endpoints require headers:
 
 > [!WARNING]
 > **Active Defense Endpoints**
-> Endpoints related to "Active Defense" (e.g., `/api/v1/lab/attack`) are **ISOLATED**, **DISABLED BY DEFAULT**, and only available when `LAB_MODE=true`. See [Lab Mode](../lab_mode/mode_b_overview.md) for details. Do NOT use these in production.
+> Endpoints related to "Active Defense" (e.g., `/api/v1/lab/attack`) are **ISOLATED**, **DISABLED BY DEFAULT**, and only available when `LAB_MODE=true`. See [Lab Quickstart](../lab/quickstart.md) for details. Do NOT use these in production.
 
 ## Sensor API (Internal)
 

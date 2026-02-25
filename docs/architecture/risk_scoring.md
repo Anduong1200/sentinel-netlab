@@ -108,4 +108,4 @@ While the current heuristic model is robust for known threats, we plan to implem
 
 ---
 
-*Document integrated into Sentinel NetLab Knowledge Base - January 2024*
+*Document integrated into Sentinel NetLab Knowledge Base - February 2026*

@@ -5,10 +5,21 @@ Sensor,sensor/transport.py,HTTP client for controller upload
 Controller,controller/api_server.py,Flask API entrypoint
 Controller,controller/api/auth.py,Authentication & Token management
 Algos,algos/risk.py,Risk scoring logic (Rule-based + ML)
-Algos,algos/evil_twin.py,Evil Twin detection logic
+Algos,algos/evil_twin.py,Evil Twin detection (weighted risk scoring)
+Algos,algos/dos.py,Deauthentication Flood detection
+Algos,algos/disassoc_detector.py,Disassociation Flood detection
+Algos,algos/beacon_flood_detector.py,Beacon Flood / Fake AP detection
+Algos,algos/krack_detector.py,KRACK (Key Reinstallation Attack) detection
+Algos,algos/pmkid_detector.py,PMKID Harvesting detection
+Algos,algos/karma_detector.py,Karma / WiFi Pineapple detection
+Algos,algos/jamming_detector.py,RF Jamming detection
+Algos,algos/wardrive_detector.py,Wardriving detection
+Algos,algos/wep_iv_detector.py,WEP IV Attack detection
+Algos,algos/exploit_chain_analyzer.py,Multi-stage exploit chain correlation
 ML,ml/anomaly_model.py,PyTorch Autoencoder
 Common,common/schemas/,Shared Pydantic models
 Common,common/metrics.py,Prometheus metrics Definitions
 Docs,docs/architecture/,System design docs
+Docs,docs/detection/,Detection pipeline docs
 Docs,docs/research/,Research papers and notes
 Ops,ops/docker-compose.yml,Main deployment manifest

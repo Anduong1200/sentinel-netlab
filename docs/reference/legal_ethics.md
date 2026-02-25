@@ -236,4 +236,4 @@ By using Sentinel NetLab, you acknowledge that:
 
 ---
 
-*Last updated: January 2024*
+*Last updated: February 2026*

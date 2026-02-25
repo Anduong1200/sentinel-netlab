@@ -1,5 +1,7 @@
 # Risk Scoring Algorithm
 
+> **Canonical Reference**: For the full mathematical framework including feature engineering, confidence metrics, and JSON output schema, see [Risk Scoring Model & Feature Engineering](../architecture/risk_scoring.md).
+
 The `RiskScorer` engine aggregates multiple weighted factors into a single threat score (0-100).
 
 ## 1. Scoring Formula

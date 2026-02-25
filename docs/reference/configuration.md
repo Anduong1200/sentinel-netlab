@@ -50,15 +50,18 @@ Copy `config.example.yaml` to `config.yaml` and modify as needed.
 
 ## `risk` - Risk Scoring Weights
 
-These weights control the ML-based risk scoring algorithm. Must sum to 1.0.
+> These weights control the risk scoring algorithm. See [Risk Scoring Model](../architecture/risk_scoring.md) for the full mathematical framework.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `encryption_weight` | float | `0.45` | Weight for encryption strength factor |
-| `signal_weight` | float | `0.20` | Weight for signal strength anomalies |
-| `ssid_weight` | float | `0.15` | Weight for suspicious SSID patterns |
+| `encryption_weight` | float | `0.40` | Weight for encryption strength factor |
+| `signal_weight` | float | `0.15` | Weight for signal strength anomalies |
+| `ssid_weight` | float | `0.08` | Weight for suspicious SSID patterns |
 | `vendor_weight` | float | `0.10` | Weight for vendor reputation |
-| `channel_weight` | float | `0.10` | Weight for channel anomalies |
+| `channel_weight` | float | `0.04` | Weight for channel anomalies |
+| `beacon_anomaly_weight` | float | `0.12` | Weight for beacon interval variance |
+| `wps_weight` | float | `0.06` | Weight for WPS vulnerability |
+| `hidden_flag_weight` | float | `0.05` | Weight for hidden SSID flag |
 | `high_risk_threshold` | int | `70` | Score >= this triggers "High" severity |
 | `critical_risk_threshold` | int | `90` | Score >= this triggers "Critical" severity |
 

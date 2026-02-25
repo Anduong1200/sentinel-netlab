@@ -20,7 +20,7 @@ Batched telemetry upload format.
 {
   "sensor_id": "sensor-01",
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
-  "timestamp": "2024-03-20T10:00:00Z",
+  "timestamp": "2026-02-25T10:00:00Z",
   "items": [
     {
       "bssid": "aa:bb:cc:11:22:33",
