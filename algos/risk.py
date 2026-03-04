@@ -101,7 +101,7 @@ class EnhancedRiskScorer:
     def calculate_risk(
         self,
         network: dict,
-        ground_truth_label: str | None = None,
+        ground_truth_label: str | None = None,  # noqa: ARG002 - reserved for future model validation
         deviation_score: float = 0.0,
     ) -> dict:
         """

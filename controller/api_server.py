@@ -45,6 +45,11 @@ app.register_blueprint(admin_bp, url_prefix="/api/v1")
 
 # Create tables
 with app.app_context():
+    from controller.db.extensions import db
+
+    if config.environment == "testing":
+        db.create_all()
+
     # In production, we assume DB is initialized via ops/init-db.sql or Alembic
     # Schema must be present before app starts (enforced by /readyz)
     init_default_tokens()

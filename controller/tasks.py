@@ -50,14 +50,13 @@ def process_telemetry_batch(self, batch_id: str, sensor_id: str, items: list[dic
                 batch_id,
                 extra={"event": "ingest.duplicate"},
             )
-            return {"status": "duplicate", "accepted": existing_batch.item_count}
+            return {"status": "duplicate"}
 
         # 2. Register Batch (Lock)
         try:
             new_batch = IngestJob(
                 job_id=batch_id,
                 sensor_id=sensor_id,
-                item_count=len(items),
                 status="processing",
             )
             db.session.add(new_batch)

@@ -61,6 +61,16 @@ class ForensicAnalyzer:
             logger.error(f"Failed to read PCAP stream: {e}")
             yield from []
 
+    @staticmethod
+    def _extract_ssid(pkt) -> str:
+        """Extract SSID from a Dot11Elt layer chain."""
+        elt = pkt.getlayer(Dot11Elt)
+        while elt:
+            if elt.ID == 0 and elt.info:
+                return elt.info.decode("utf-8", errors="ignore").strip("\x00")
+            elt = elt.payload.getlayer(Dot11Elt)
+        return ""
+
     def detect_deauth_flood(
         self, threshold: int = 10, window_seconds: float = 1.0
     ) -> list[dict[str, Any]]:
@@ -154,17 +164,7 @@ class ForensicAnalyzer:
                     if not bssid:
                         continue
 
-                    # Extract SSID
-                    ssid = ""
-                    elt = pkt.getlayer(Dot11Elt)
-                    while elt:
-                        if elt.ID == 0:
-                            ssid = elt.info.decode("utf-8", errors="ignore").strip(
-                                "\x00"
-                            )
-                            break
-                        elt = elt.payload.getlayer(Dot11Elt)
-
+                    ssid = self._extract_ssid(pkt)
                     if ssid:
                         seen_ssids[ssid].append(bssid.upper())
                 except (AttributeError, UnicodeDecodeError):
@@ -214,20 +214,9 @@ class ForensicAnalyzer:
                                 "probed_ssids": [],
                             }
 
-                        # Get probed SSID
-                        elt = pkt.getlayer(Dot11Elt)
-                        while elt:
-                            if elt.ID == 0 and elt.info:
-                                ssid = elt.info.decode("utf-8", errors="ignore").strip(
-                                    "\x00"
-                                )
-                                if (
-                                    ssid
-                                    and ssid not in clients[client_mac]["probed_ssids"]
-                                ):
-                                    clients[client_mac]["probed_ssids"].append(ssid)
-                                break
-                            elt = elt.payload.getlayer(Dot11Elt)
+                        ssid = self._extract_ssid(pkt)
+                        if ssid and ssid not in clients[client_mac]["probed_ssids"]:
+                            clients[client_mac]["probed_ssids"].append(ssid)
                     except (AttributeError, UnicodeDecodeError):
                         pass
 

@@ -54,7 +54,7 @@ SYSTEM_INFO = Gauge(
 # -----------------------------------------------------------------------------
 
 
-def setup_json_logging(app_name="sentinel-sensor"):
+def setup_json_logging(_app_name="sentinel-sensor"):
     """
     Configure structured JSON logging for ELK stack integration.
     """

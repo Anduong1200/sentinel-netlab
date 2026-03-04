@@ -29,21 +29,26 @@ class TrustedProxyMiddleware:
 
         # Simple prefix check for "trusted" (e.g. Docker subnet)
         # In production this should be robust CIDR matching.
+        import ipaddress
+
         is_trusted = False
-        for cidr in self.trusted_cidrs:
-            # Very naive string match for now to avoid 'ipaddress' overhead if not needed yet
-            # Ideally: ipaddress.ip_address(remote_addr) in ipaddress.ip_network(cidr)
-            if (
-                remote_addr == cidr
-                or (cidr.endswith(".0/0") and True)
-                or remote_addr.startswith(cidr.replace(".0/0", "").replace("/", ""))
-            ):
-                is_trusted = True
-                break
-            # Support exact match
-            if remote_addr == cidr:
-                is_trusted = True
-                break
+        try:
+            remote_ip = ipaddress.ip_address(remote_addr)
+        except ValueError:
+            remote_ip = None
+
+        if remote_ip:
+            for cidr in self.trusted_cidrs:
+                try:
+                    if remote_ip in ipaddress.ip_network(cidr):
+                        is_trusted = True
+                        break
+                except ValueError:
+                    if remote_addr == cidr:
+                        is_trusted = True
+                        break
+        else:
+            is_trusted = remote_addr in self.trusted_cidrs
 
         # 2. Handle Headers
         if is_trusted:

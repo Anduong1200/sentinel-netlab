@@ -144,6 +144,85 @@ class TransportClient:
         adjusted = time.time() + self._time_offset
         return datetime.fromtimestamp(adjusted, tz=UTC)
 
+    def _validate_batch(self, batch: dict[str, Any]) -> dict[str, Any] | None:
+        """Validate batch against TelemetryBatch schema. Returns error dict or None."""
+        try:
+            from pydantic import ValidationError
+
+            from common.schemas.telemetry import TelemetryBatch
+
+            TelemetryBatch(**batch)
+        except ImportError:
+            pass  # Pydantic not available, skip validation
+        except ValidationError as e:
+            logger.error(f"Schema Validation Failed: {e}")
+            return {"success": False, "error": f"Schema Validation Failed: {str(e)}"}
+        return None
+
+    def _check_circuit_breaker(self) -> dict[str, Any] | None:
+        """Check circuit breaker state. Returns error dict if open, None if ok."""
+        if not self._circuit_open:
+            return None
+        if time.time() < self._circuit_reset_time:
+            return {
+                "success": False,
+                "error": "Circuit breaker open",
+                "retry_after": self._circuit_reset_time - time.time(),
+            }
+        # Half-open: reset and allow attempt
+        self._circuit_open = False
+        self._circuit_failures = 0
+        return None
+
+    def _prepare_payload(
+        self, batch: dict[str, Any], compress: bool
+    ) -> tuple[bytes, dict[str, str]]:
+        """Serialize, compress, and sign payload. Returns (wire_bytes, headers)."""
+        import uuid
+
+        payload_str = json.dumps(batch)
+        headers: dict[str, str] = {}
+
+        # Compress
+        if compress:
+            payload_bytes = gzip.compress(payload_str.encode())
+            headers["Content-Encoding"] = "gzip"
+            content_encoding = "gzip"
+        else:
+            payload_bytes = payload_str.encode()
+            content_encoding = "identity"
+
+        # Standard headers
+        timestamp = self.get_server_time().isoformat()
+        headers.update(
+            {
+                "Authorization": f"Bearer {self.auth_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "Sentinel-Sensor/1.0",
+                "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
+                "X-Timestamp": timestamp,
+                "X-Request-ID": str(uuid.uuid4()),
+                "X-Sensor-ID": batch.get("sensor_id", "unknown"),
+            }
+        )
+
+        # HMAC signing
+        if self.hmac_secret:
+            from urllib.parse import urlparse
+
+            path = urlparse(self.upload_url).path
+            sensor_id = batch.get("sensor_id", "unknown")
+            headers["X-Signature"] = self._sign_payload(
+                "POST",
+                path,
+                payload_bytes,
+                timestamp,
+                sensor_id=sensor_id,
+                content_encoding=content_encoding,
+            )
+
+        return payload_bytes, headers
+
     def upload(self, batch: dict[str, Any], compress: bool = True) -> dict[str, Any]:
         """
         Upload batch to controller.
@@ -157,85 +236,20 @@ class TransportClient:
         """
         import requests
 
-        # Validation
-        try:
-            # We import here to avoid circular or early import issues if sys.path isn't ready at module level
-            from pydantic import ValidationError
+        # 1. Validate
+        validation_err = self._validate_batch(batch)
+        if validation_err:
+            return validation_err
 
-            from common.schemas.telemetry import TelemetryBatch
-
-            # Validate
-            # Note: batch dict might need adjustment if schema expects strict types
-            TelemetryBatch(**batch)
-        except ImportError:
-            pass  # Pydantic/Schemas not available (e.g. running outside prod env), skip validation
-        except ValidationError as e:
-            logger.error(f"Schema Validation Failed: {e}")
-            return {"success": False, "error": f"Schema Validation Failed: {str(e)}"}
-
-        # Check circuit breaker
-        if self._circuit_open:
-            if time.time() < self._circuit_reset_time:
-                return {
-                    "success": False,
-                    "error": "Circuit breaker open",
-                    "retry_after": self._circuit_reset_time - time.time(),
-                }
-            else:
-                # Try to reset circuit
-                self._circuit_open = False
-                self._circuit_failures = 0
+        # 2. Circuit breaker
+        cb_err = self._check_circuit_breaker()
+        if cb_err:
+            return cb_err
 
         self._uploads_total += 1
 
-        # Prepare payload
-        payload_str = json.dumps(batch)
-        headers = {}  # Initialize headers
-
-        # Compress first
-        if compress:
-            payload_bytes = gzip.compress(payload_str.encode())
-            headers["Content-Encoding"] = "gzip"
-            content_encoding = "gzip"
-        else:
-            payload_bytes = payload_str.encode()
-            content_encoding = "identity"
-
-        # Sign if HMAC configured
-        # Headers
-        import uuid
-
-        request_id = str(uuid.uuid4())
-        timestamp = self.get_server_time().isoformat()
-
-        headers.update(
-            {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json",
-                "User-Agent": "Sentinel-Sensor/1.0",
-                "X-Idempotency-Key": batch.get("batch_id") or str(time.time()),
-                "X-Timestamp": timestamp,
-                "X-Request-ID": request_id,
-                "X-Sensor-ID": batch.get("sensor_id", "unknown"),
-            }
-        )
-
-        if self.hmac_secret:
-            from urllib.parse import urlparse
-
-            path = urlparse(self.upload_url).path
-
-            # Sign the WIRE BYTES (compressed or not)
-            sensor_id = batch.get("sensor_id", "unknown")
-            signature = self._sign_payload(
-                "POST",
-                path,
-                payload_bytes,
-                timestamp,
-                sensor_id=sensor_id,
-                content_encoding=content_encoding,
-            )
-            headers["X-Signature"] = signature
+        # 3. Prepare payload + headers
+        payload_bytes, headers = self._prepare_payload(batch, compress)
 
         # Retry loop
         delay = self.initial_delay

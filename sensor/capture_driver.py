@@ -238,8 +238,6 @@ class IwCaptureDriver(CaptureDriver):
             logger.info(f"Capture started on {self.iface}")
             return True
 
-            return True
-
         except (ImportError, OSError) as e:
             logger.error(
                 f"Scapy capture error (scapy not available or OS missing libs): {e}"

@@ -71,7 +71,7 @@ class ControllerConfig:
         }
 
 
-def init_config(strict_production: bool = True) -> ControllerConfig:
+def init_config(strict_production: bool = True) -> ControllerConfig:  # noqa: ARG001
     """
     Initialize configuration from environment variables.
 

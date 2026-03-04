@@ -136,16 +136,17 @@ def test_hmac_required_allows_signed_requests(tmp_path: Path, tokens):
         payload = json.dumps(batch, separators=(",", ":"), sort_keys=True).encode(
             "utf-8"
         )
-        sig_headers = signer.sign_request("POST", "/api/v1/telemetry", payload)
+        sig_headers = signer.sign_request(
+            "POST", "/api/v1/telemetry", payload, sensor_id="sensor-01"
+        )
 
         headers = {"Authorization": f"Bearer {tokens['sensor']}", **sig_headers}
         r1 = requests.post(
             f"{base}/api/v1/telemetry", headers=headers, data=payload, timeout=3
         )
-        assert r1.status_code == 200
+        assert r1.status_code == 202
         j = r1.json()
         assert j["success"] is True
-        assert j["accepted"] == len(batch["items"])
     finally:
         proc.terminate()
         try:
@@ -198,9 +199,9 @@ def test_rate_limit_telemetry(tmp_path: Path, tokens):
         r2 = requests.post(f"{base}/api/v1/telemetry", headers=h, json=batch, timeout=3)
         r3 = requests.post(f"{base}/api/v1/telemetry", headers=h, json=batch, timeout=3)
 
-        assert r1.status_code == 200
-        assert r2.status_code in (200, 429)  # depending on limiter window start
-        assert r3.status_code in (429, 200)
+        assert r1.status_code == 202
+        assert r2.status_code in (200, 202, 429)  # depending on limiter window start
+        assert r3.status_code in (429, 202)
         assert any(
             code == 429 for code in (r1.status_code, r2.status_code, r3.status_code)
         )

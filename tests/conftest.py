@@ -12,21 +12,26 @@ Usage:
 import hashlib
 import os
 import secrets
+import sys
 import time
 from datetime import UTC, datetime, timedelta
+
+# Add root project dir to python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 # Set Default Test Environment Variables BEFORE any imports that might use config
-os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-for-integration"
-os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-for-integration"
+os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-for-integration-val12345"
+os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-for-integration-val12345"
 # os.environ["CONTROLLER_DATABASE_URL"] = "sqlite:///:memory:"
 # Use file based DB for persistence across contexts in tests
 os.environ["CONTROLLER_DATABASE_URL"] = (
     f"sqlite:///{os.path.abspath('test_sentinel.db')}"
 )
 os.environ["FLASK_ENV"] = "testing"
+os.environ["ENVIRONMENT"] = "testing"
 os.environ["REQUIRE_HMAC"] = "false"
 os.environ["REQUIRE_TLS"] = "false"
 
@@ -101,18 +106,24 @@ def mock_wep_network():
 def mock_telemetry_batch():
     """Sample telemetry batch"""
     return {
-        "sensor_id": "test-sensor-01",
+        "sensor_id": "sensor-01",
         "batch_id": f"batch-{secrets.token_hex(4)}",
-        "timestamp_utc": datetime.now(UTC).isoformat(),
-        "sequence_number": 1,
         "items": [
             {
+                "sensor_id": "sensor-01",
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+                "sequence_id": 1,
+                "frame_type": "beacon",
                 "bssid": "AA:BB:CC:11:22:33",
                 "ssid": "TestNet",
                 "rssi_dbm": -55,
                 "channel": 6,
             },
             {
+                "sensor_id": "sensor-01",
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+                "sequence_id": 2,
+                "frame_type": "probe_req",
                 "bssid": "AA:BB:CC:44:55:66",
                 "ssid": "SecondNet",
                 "rssi_dbm": -65,
@@ -163,70 +174,67 @@ def mock_alert():
 @pytest.fixture
 def app_client():
     """Flask test client for Controller API"""
-    try:
-        from controller.api.auth import Role
-        from controller.api.deps import config, db
-        from controller.api_server import app
-        from controller.db.models import APIToken as Token
+    from controller.api.auth import Role
+    from controller.api.deps import config, db
+    from controller.api_server import app
+    from controller.db.models import APIToken as Token
 
-        # Force strict security OFF for tests
-        config.security.require_tls = False
-        config.security.require_hmac = False
+    # Force strict security OFF for tests
+    config.security.require_tls = False
+    config.security.require_hmac = False
 
-        app.config["TESTING"] = True
+    app.config["TESTING"] = True
 
-        with app.app_context():
-            # Ensure fresh DB
-            db.drop_all()
-            db.create_all()
+    with app.app_context():
+        # Ensure fresh DB
+        db.drop_all()
+        db.create_all()
 
-            # Create Admin Token
-            admin_token = Token(
-                token_id="admin-test",
-                token_hash=hashlib.sha256(b"admin-token-dev").hexdigest(),
-                name="Admin Test",
-                role=Role.ADMIN,
-                created_at=datetime.now(UTC),
-                expires_at=datetime.now(UTC) + timedelta(days=365),
-                is_active=True,
-            )
-            db.session.add(admin_token)
+        # Create Admin Token
+        admin_token = Token(
+            token_id="admin-test",
+            token_hash=hashlib.sha256(b"admin-token-dev").hexdigest(),
+            name="Admin Test",
+            role=Role.ADMIN,
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=365),
+            is_active=True,
+        )
+        db.session.add(admin_token)
 
-            # Create Sensor Token
-            sensor_token = Token(
-                token_id="sensor-test",
-                token_hash=hashlib.sha256(b"sensor-01-token").hexdigest(),
-                name="Sensor Test",
-                role=Role.SENSOR,
-                sensor_id="sensor-01",
-                created_at=datetime.now(UTC),
-                expires_at=datetime.now(UTC) + timedelta(days=365),
-                is_active=True,
-            )
-            db.session.add(sensor_token)
-            db.session.commit()
+        # Create Sensor Token
+        sensor_token = Token(
+            token_id="sensor-test",
+            token_hash=hashlib.sha256(b"sensor-01-token").hexdigest(),
+            name="Sensor Test",
+            role=Role.SENSOR,
+            sensor_id="sensor-01",
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC) + timedelta(days=365),
+            is_active=True,
+        )
+        db.session.add(sensor_token)
+        db.session.commit()
 
-            # Debug DB content
-            # print(f"DEBUG: Fixture DB Tokens: {[t.token_hash for t in Token.query.all()]}")
+        # Debug DB content
+        # print(f"DEBUG: Fixture DB Tokens: {[t.token_hash for t in Token.query.all()]}")
 
-            db.session.add(sensor_token)
-            db.session.commit()
+        db.session.add(sensor_token)
+        db.session.commit()
 
-            # Debug DB content
-            # print(f"DEBUG: Fixture DB Tokens: {[t.token_hash for t in Token.query.all()]}")
+    with app.test_client() as client:
+        yield client
 
-        with app.test_client() as client:
-            yield client
-
-        # Cleanup
-        with app.app_context():
-            db.session.remove()
-            db.drop_all()
-        if os.path.exists("test_sentinel.db"):
+    # Cleanup
+    with app.app_context():
+        db.session.remove()
+        db.drop_all()
+        db.engine.dispose()
+    if os.path.exists("test_sentinel.db"):
+        try:
             os.remove("test_sentinel.db")
-
-    except ImportError:
-        pytest.skip("Controller not available")
+        except OSError:
+            pass
 
 
 @pytest.fixture
@@ -315,10 +323,10 @@ def deauth_detector():
 @pytest.fixture
 def env_vars(monkeypatch):
     """Set common environment variables for tests"""
-    monkeypatch.setenv("CONTROLLER_SECRET_KEY", "test-secret-key-123")
+    monkeypatch.setenv("CONTROLLER_SECRET_KEY", "test-secret-key-123-val123456789")
     monkeypatch.setenv("DASH_USERNAME", "admin")
     monkeypatch.setenv("DASH_PASSWORD", "password123")
-    monkeypatch.setenv("CONTROLLER_HMAC_SECRET", "test-hmac-secret")
+    monkeypatch.setenv("CONTROLLER_HMAC_SECRET", "test-hmac-secret-123-val123456789")
     monkeypatch.setenv("REQUIRE_HMAC", "false")
     monkeypatch.setenv("REQUIRE_TLS", "false")
     monkeypatch.setenv("FLASK_ENV", "testing")

@@ -47,6 +47,36 @@ class WEPIVDetector:
         self.config = config or WEPConfig()
         self.bssid_stats: dict[str, BSSIDWEPStats] = {}
 
+    def _check_iv_collision(
+        self, bssid: str, st: BSSIDWEPStats, frame: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Check for IV collision (same IV repeated beyond threshold)."""
+        iv = frame.get("wep_iv")
+        if not iv:
+            return None
+        st.iv_history[iv] = st.iv_history.get(iv, 0) + 1
+        if st.iv_history[iv] >= self.config.iv_collision_threshold:
+            return self._create_alert(
+                bssid, "iv_collision", {"iv": iv, "count": st.iv_history[iv]}
+            )
+        return None
+
+    def _check_injection(
+        self, bssid: str, st: BSSIDWEPStats, frame: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Check for packet injection (many small packets)."""
+        frame_len = frame.get("frame_len", 0)
+        if frame_len > 0 and frame_len <= self.config.small_packet_max_len:
+            st.small_packet_count += 1
+            if st.small_packet_count >= self.config.injection_rate_threshold:
+                st.small_packet_count = -1000  # Cooldown
+                return self._create_alert(
+                    bssid,
+                    "packet_injection",
+                    {"small_packets": self.config.injection_rate_threshold},
+                )
+        return None
+
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
         """
         Process a frame for WEP indicators.
@@ -80,29 +110,13 @@ class WEPIVDetector:
             st.small_packet_count = 0
             st.last_reset = now
 
-        # 1. Track IV Collision
-        iv = frame.get("wep_iv")
-        if iv:
-            st.iv_history[iv] = st.iv_history.get(iv, 0) + 1
-            if st.iv_history[iv] >= self.config.iv_collision_threshold:
-                return self._create_alert(
-                    bssid, "iv_collision", {"iv": iv, "count": st.iv_history[iv]}
-                )
+        # 1. IV Collision
+        result = self._check_iv_collision(bssid, st, frame)
+        if result:
+            return result
 
-        # 2. Track Injection (many small packets)
-        frame_len = frame.get("frame_len", 0)
-        if frame_len > 0 and frame_len <= self.config.small_packet_max_len:
-            st.small_packet_count += 1
-            if st.small_packet_count >= self.config.injection_rate_threshold:
-                # Only alert once per window
-                st.small_packet_count = -1000  # Cooldown
-                return self._create_alert(
-                    bssid,
-                    "packet_injection",
-                    {"small_packets": self.config.injection_rate_threshold},
-                )
-
-        return None
+        # 2. Packet Injection
+        return self._check_injection(bssid, st, frame)
 
     def _create_alert(self, bssid: str, sub_type: str, details: dict) -> dict[str, Any]:
         """Build a WEP alert"""

@@ -11,14 +11,14 @@ import pytest
 # =============================================================================
 
 
-class TestWiFiParser:
+class TestFrameParser:
     """Test WiFi frame parsing"""
 
     def test_parse_beacon_frame(self):
         """Test beacon frame parsing"""
-        from sensor.parser import WiFiParser
+        from sensor.frame_parser import FrameParser
 
-        parser = WiFiParser()
+        parser = FrameParser()
 
         # Mock beacon data
 
@@ -27,9 +27,9 @@ class TestWiFiParser:
 
     def test_parse_rssi_extraction(self):
         """Test RSSI extraction from radiotap"""
-        from sensor.parser import WiFiParser
+        from sensor.frame_parser import FrameParser
 
-        WiFiParser()
+        FrameParser()
 
         # Mock frame with RSSI
         rssi = -65
@@ -74,14 +74,14 @@ class TestRiskScorer:
         open_network = {
             "bssid": "AA:BB:CC:11:22:33",
             "ssid": "OpenNet",
-            "encryption": "Open",
+            "security": "Open",
             "capabilities": {"privacy": False},
         }
 
         secure_network = {
             "bssid": "AA:BB:CC:44:55:66",
             "ssid": "SecureNet",
-            "encryption": "WPA3",
+            "security": "WPA3",
             "capabilities": {"privacy": True, "pmf": True},
         }
 
@@ -183,7 +183,7 @@ class TestAudit:
 
     def test_security_auditor(self):
         """Test security auditor"""
-        from sensor.audit import NetworkInfo, SecurityAuditor
+        from sensor.auditor import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor", profile="home")
 
@@ -203,7 +203,7 @@ class TestAudit:
 
     def test_wep_detection(self):
         """Test WEP detection creates critical finding"""
-        from sensor.audit import NetworkInfo, SecurityAuditor
+        from sensor.auditor import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor")
 

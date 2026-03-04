@@ -14,49 +14,48 @@ class MessageSigner:
     def __init__(self, secret: str):
         self.secret = secret
 
+    def derive_sensor_key(self, sensor_id: str) -> bytes:
+        """Derive a per-sensor HMAC key from master secret using HKDF-SHA256."""
+        # HKDF-Extract: PRK = HMAC(salt, IKM)
+        salt = b"sentinel-netlab-hmac-v1"  # Fixed salt for reproducibility
+        prk = hmac.new(salt, self.secret.encode(), hashlib.sha256).digest()
+
+        # HKDF-Expand: OKM = HMAC(PRK, info || 0x01)
+        info = f"sensor-hmac|{sensor_id}".encode()
+        okm = hmac.new(prk, info + b"\x01", hashlib.sha256).digest()
+        return okm
+
     def sign_request(
         self,
         method: str,
         path: str,
         payload: bytes,
+        sensor_id: str = "unknown",
         timestamp: str | None = None,
         sequence: int | None = None,
         content_encoding: str = "identity",
     ) -> dict[str, str]:
-        """
-        Generate headers for signed request.
-
-        Args:
-            method: HTTP method (e.g. POST)
-            path: request path (e.g. /api/v1/telemetry)
-            payload: Request body bytes (JSON)
-            timestamp: ISO timestamp (optional, defaults to now)
-            sequence: Sequence number (optional)
-            content_encoding: Content-Encoding header value (default: identity)
-
-        Returns:
-            Dictionary of headers (X-Signature, X-Timestamp, etc)
-        """
         if not timestamp:
             from datetime import datetime
 
             timestamp = datetime.now(UTC).isoformat()
 
-        # Canonical string: method + path + timestamp + sequence + payload + encoding
-        data_to_sign = method.encode() + path.encode() + timestamp.encode()
-        if sequence is not None:
-            data_to_sign += str(sequence).encode()
+        # V1 Canonical String Format (newline delimited)
+        parts = [method, path, timestamp, sensor_id, content_encoding]
+        canonical_meta = "\n".join(parts) + "\n"
 
-        data_to_sign += payload
-        data_to_sign += content_encoding.encode()
+        sensor_key = self.derive_sensor_key(sensor_id)
 
-        signature = hmac.new(
-            self.secret.encode("utf-8"), data_to_sign, hashlib.sha256
-        ).hexdigest()
+        h = hmac.new(sensor_key, digestmod=hashlib.sha256)
+        h.update(canonical_meta.encode())
+        h.update(payload)
+
+        signature = h.hexdigest()
 
         headers = {
             "X-Signature": signature,
             "X-Timestamp": timestamp,
+            "X-Sensor-ID": sensor_id,
             "Content-Type": "application/json",
         }
 

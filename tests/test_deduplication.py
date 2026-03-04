@@ -7,8 +7,9 @@ from unittest.mock import MagicMock, patch
 # Mock Env
 os.environ["SENTINEL_ENV"] = "test"
 os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-32-chars-minimum"
-os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac"
+os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-32-chars-minimum-length"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["REDIS_URL"] = "redis://mock"
 
 from controller.api.auth import Role
 from controller.api_server import app

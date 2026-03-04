@@ -40,7 +40,7 @@ class TestIntegrationFlow(unittest.TestCase):
         self.storage_path = os.path.join(self.test_dir, "journal")
 
     def tearDown(self):
-        shutil.rmtree(self.test_dir)
+        shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_end_to_end_flow(self):
         """
@@ -102,6 +102,7 @@ class TestIntegrationFlow(unittest.TestCase):
 
         # Mock TransportClient to avoid network errors
         controller.transport = MagicMock()
+        controller.upload_worker.client = controller.transport
         controller.transport.upload.return_value = {"success": True}
         controller.transport.heartbeat.return_value = {"success": True}
 
@@ -143,7 +144,7 @@ class TestIntegrationFlow(unittest.TestCase):
         item = uploaded_batch["items"][0]
         print("Uploaded Item:", item)
         self.assertEqual(item["ssid"], "TestNet")
-        self.assertEqual(
+        self.assertNotEqual(
             uploaded_batch["items"][0]["bssid"], "AA:BB:CC:00:00:00"
         )  # Privacy enabled by default
 

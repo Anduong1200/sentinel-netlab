@@ -3,8 +3,6 @@
 Tests for KRACKDetector.
 """
 
-
-
 from algos.krack_detector import KRACKConfig, KRACKDetector
 
 

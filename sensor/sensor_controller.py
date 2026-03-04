@@ -28,147 +28,24 @@ from algos.risk import RiskScorer
 from algos.wardrive_detector import WardriveDetector
 from algos.wep_iv_detector import WEPIVDetector
 from common.metrics import MetricsCollector
+from common.privacy import anonymize_mac
 from sensor.alert_manager import AlertManager
 from sensor.baseline import BaselineManager
 from sensor.buffer_manager import BufferManager
-from sensor.capture_driver import CaptureDriver, IwCaptureDriver, MockCaptureDriver
+from sensor.capture_driver import IwCaptureDriver, MockCaptureDriver
+from sensor.channel_hopper import ChannelHopper
 from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
 from sensor.monitor import SensorMonitor
 from sensor.normalizer import TelemetryNormalizer
 from sensor.queue import SqliteQueue
+from sensor.telemetry_aggregator import TelemetryAggregator
 from sensor.transport import TransportClient
 from sensor.worker import TransportWorker
 
 from .rule_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
-
-
-class ChannelHopper:
-    """
-    Manages channel hopping with configurable dwell time.
-    Supports adaptive channel selection based on activity.
-    """
-
-    def __init__(
-        self,
-        driver: CaptureDriver,
-        channels: list[int] | None = None,
-        dwell_ms: int = 200,
-        settle_ms: int = 50,
-        adaptive: bool = False,
-    ):
-        self.driver = driver
-        # Default 2.4GHz non-overlapping
-        self.channels = channels or [1, 6, 11]
-        self.dwell_ms = dwell_ms
-        self.settle_ms = settle_ms
-        self.adaptive = adaptive
-
-        self._current_idx = 0
-        self._running = False
-        self._thread: threading.Thread | None = None
-        self._channel_activity: dict[int, float] = dict.fromkeys(self.channels, 1.0)
-
-    def start(self) -> None:
-        """Start channel hopping thread"""
-        self._running = True
-        self._thread = threading.Thread(
-            target=self._hop_loop, daemon=True, name="ChannelHopper"
-        )
-        self._thread.start()
-        logger.info(
-            f"Channel hopping started: {self.channels}, dwell={self.dwell_ms}ms"
-        )
-
-    def stop(self) -> None:
-        """Stop channel hopping"""
-        self._running = False
-        if self._thread:
-            self._thread.join(timeout=3)
-
-    def get_current_channel(self) -> int:
-        """Get current channel"""
-        if self._current_idx < len(self.channels):
-            return self.channels[self._current_idx]
-        return 0
-
-    def record_activity(self, channel: int, count: int) -> None:
-        """Record frame activity on channel for adaptive mode"""
-        if channel in self._channel_activity:
-            # Exponential moving average
-            alpha = 0.3
-            self._channel_activity[channel] = (
-                alpha * count + (1 - alpha) * self._channel_activity[channel]
-            )
-
-    def _hop_loop(self) -> None:
-        """Main hopping loop"""
-        while self._running:
-            try:
-                # Select next channel
-                if self.adaptive:
-                    channel = self._select_adaptive()
-                else:
-                    channel = self._select_round_robin()
-
-                # Switch channel
-                if self.driver.set_channel(channel):
-                    time.sleep(self.settle_ms / 1000.0)
-
-                # Dwell
-                time.sleep(self.dwell_ms / 1000.0)
-
-            except Exception as e:
-                logger.error(f"Channel hop error: {e}")
-                time.sleep(1)
-
-    def _select_round_robin(self) -> int:
-        """Simple round-robin selection"""
-        self._current_idx = (self._current_idx + 1) % len(self.channels)
-        return self.channels[self._current_idx]
-
-    def _select_adaptive(self) -> int:
-        """Select channel weighted by activity"""
-        import random
-
-        total = sum(self._channel_activity.values())
-        r = random.random() * total  # nosec B311
-        cumulative = 0
-        for ch in self.channels:
-            cumulative += self._channel_activity[ch]
-            if r <= cumulative:
-                return ch
-        return self.channels[0]
-
-
-class TelemetryAggregator:
-    """
-    Aggregates telemetry for stateful analysis (sliding windows).
-    """
-
-    def __init__(self, window_seconds: int = 60):
-        self.window_seconds = window_seconds
-        self.deauth_counts: dict[str, int] = {}
-        self.last_cleanup = time.time()
-        self._lock = threading.Lock()
-
-    def record_frame(self, frame_type: str, subtype: str, source: str):
-        """Record frame occurrence"""
-        with self._lock:
-            if subtype == "deauth":
-                self.deauth_counts[source] = self.deauth_counts.get(source, 0) + 1
-
-            # Cleanup old windows periodically
-            if time.time() - self.last_cleanup > self.window_seconds:
-                self.deauth_counts.clear()
-                self.last_cleanup = time.time()
-
-    def get_context(self) -> dict:
-        """Get current aggregation context for risk engine"""
-        with self._lock:
-            return {"deauth_counts": self.deauth_counts.copy()}
 
 
 class SensorController:
@@ -389,6 +266,8 @@ class SensorController:
 
         # Close queue (persists any remaining data)
         self.queue.close()
+        # Close baseline DB connection
+        self.baseline.close()
 
         # Restore interface
         self.driver.disable_monitor_mode()
@@ -429,192 +308,175 @@ class SensorController:
         }
 
     def _capture_loop(self) -> None:
-        """Process captured frames"""
+        """Process captured frames: Ingestor -> Analyzer -> Exporter"""
         while self._running:
             try:
-                # Read frame from driver
-                raw_frame = self.driver.read_frame(timeout_ms=100)
-                if raw_frame is None:
+                # 1. Ingestor
+                ingested = self._ingest_frame()
+                if not ingested:
                     continue
+                parsed, telemetry, net_dict = ingested
 
-                self._frames_captured += 1
+                # 2. Analyzer
+                self._analyze_threats(net_dict)
 
-                # Parse frame
-                parsed = self.parser.parse(raw_frame.data, raw_frame.timestamp)
-                if parsed is None or parsed.frame_type == "other":
-                    continue
-
-                # Check duplicate
-                if self.parser.is_duplicate(parsed):
-                    self._frames_duplicates += 1
-                    continue
-
-                self._frames_parsed += 1
-
-                # Normalize to telemetry
-                telemetry = self.normalizer.normalize(parsed)
-
-                # Add to buffer
-                self.buffer.append(telemetry.model_dump(mode="json", exclude_none=True))
-
-                # Feed Aggregator
-                self.aggregator.record_frame(
-                    telemetry.frame_type, telemetry.frame_subtype, telemetry.mac_src
-                )
-
-                # Record Metrics
-                self.metrics.record_frame(telemetry.frame_type)
-
-                # Advanced Detectors
-                net_dict = telemetry.model_dump(mode="json", exclude_none=True)
-
-                # Jamming
-                jam_alert = self.jamming_detector.ingest(net_dict)
-                if jam_alert:
-                    self._handle_alert(jam_alert)
-
-                # Wardrive
-                wd_alert = self.wardrive_detector.ingest(net_dict)
-                if wd_alert:
-                    self._handle_alert(wd_alert)
-
-                # WEP IV
-                wep_alert = self.wep_detector.ingest(net_dict)
-                if wep_alert:
-                    self._handle_alert(wep_alert)
-
-                # Karma
-                karma_alert = self.karma_detector.ingest(net_dict)
-                if karma_alert:
-                    self._handle_alert(karma_alert)
-
-                # PMKID Harvesting
-                pmkid_alert = self.pmkid_detector.ingest(net_dict)
-                if pmkid_alert:
-                    self._handle_alert(pmkid_alert)
-
-                # Deauth Flood
-                if net_dict.get("frame_subtype") == "deauth":
-                    dos_alert = self.dos_detector.record_deauth(
-                        bssid=net_dict.get("bssid", ""),
-                        client_mac=net_dict.get("mac_dst", "ff:ff:ff:ff:ff:ff"),
-                        sensor_id=self.sensor_id,
-                    )
-                    if dos_alert:
-                        self._handle_alert(
-                            {
-                                "alert_type": "deauth_flood",
-                                "severity": dos_alert.severity,
-                                "title": f"Deauth Flood: {dos_alert.target_bssid}",
-                                "description": f"Deauth flood detected: {dos_alert.rate_per_sec:.1f} frames/sec",
-                                "bssid": dos_alert.target_bssid,
-                                "evidence": dos_alert.evidence,
-                                "sensor_id": self.sensor_id,
-                            }
-                        )
-
-                # Disassociation Flood
-                disassoc_alert = self.disassoc_detector.ingest(net_dict)
-                if disassoc_alert:
-                    self._handle_alert(disassoc_alert)
-
-                # Beacon Flood
-                beacon_flood_alert = self.beacon_flood_detector.ingest(net_dict)
-                if beacon_flood_alert:
-                    self._handle_alert(beacon_flood_alert)
-
-                # KRACK (Key Reinstallation)
-                krack_alert = self.krack_detector.ingest(net_dict)
-                if krack_alert:
-                    self._handle_alert(krack_alert)
-
-                # Rule Engine
-                re_alerts = self.rule_engine.evaluate(
-                    net_dict, sensor_id=self.sensor_id
-                )
-                for alert in re_alerts:
-                    self._handle_alert(alert.to_dict())
-
-                # Evil Twin
-                et_alerts = self.et_detector.ingest(net_dict)
-                for alert in et_alerts:
-                    self._handle_alert(
-                        {
-                            "alert_type": "evil_twin",
-                            "severity": alert.severity,
-                            "title": f"Evil Twin Detected: {alert.ssid}",
-                            "description": alert.recommendation,
-                            "evidence": alert.evidence,
-                            "sensor_id": self.sensor_id,
-                            "risk_score": alert.score,
-                        }
-                    )
-
-                # Real-time Risk Assessment (Sampled)
-                # Real-time Risk Assessment
-                if self._frames_captured % 10 == 0:
-                    # Convert telemetry to dict for risk scoring
-                    net_dict = telemetry.model_dump(mode="json", exclude_none=True)
-
-                    # 1. Baseline Check
-                    deviation = self.baseline.check_deviation(net_dict)
-
-                    if self.baseline.learning_mode:
-                        # Skip all alerting in learning mode
-                        continue
-
-                    # 2. Risk Calculation (Integrated Probability x Impact)
-                    dev_score = deviation["score"] if deviation else 0.0
-                    risk_result = self.risk_engine.calculate_risk(
-                        net_dict, deviation_score=dev_score
-                    )
-                    current_score = risk_result.get("risk_score", 0)
-
-                    # 3. Handle Deviation Alert (Specific)
-                    if deviation:
-                        logger.warning(
-                            f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})"
-                        )
-
-                        # Send specific Baseline Alert with reasons
-                        self._handle_alert(
-                            {
-                                "alert_type": "baseline_deviation",
-                                "severity": "high" if current_score > 70 else "medium",
-                                "title": f"Baseline Deviation: {telemetry.ssid}",
-                                "description": "; ".join(deviation["reasons"]),
-                                "evidence": deviation.get("baseline"),
-                                "risk_score": current_score,
-                                "bssid": telemetry.bssid,
-                                "ssid": telemetry.ssid,
-                                "impact": risk_result.get(
-                                    "impact", 0.5
-                                ),  # Assuming risk engine provides this or implicit
-                                "confidence": risk_result.get("confidence", 0.5),
-                            }
-                        )
-
-                    # 4. Handle General Risk Alert
-                    if current_score > 70 and not deviation:
-                        # If deviation exists, we already alerted above.
-                        # Don't double alert unless it's a different issue?
-                        # Actually risk engine might find other things (Weak Enc + Deviation).
-                        # Let's deduplicate via Alert Manager (Next Task).
-                        # For now, just log and set metric.
-                        logger.warning(
-                            f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
-                        )
-
-                    self.metrics.set_risk_score(telemetry.bssid, current_score)
-
-                # Record activity for adaptive hopping
-                self.hopper.record_activity(parsed.channel, 1)
+                # 3. Exporter
+                self._export_telemetry(parsed, telemetry, net_dict)
 
             except TimeoutError:
                 logger.warning("Frame read timeout")
             except Exception as e:
                 logger.error(f"Capture loop error: {e}", exc_info=True)
                 time.sleep(0.1)  # Backoff to avoid spinning
+
+    def _ingest_frame(self) -> tuple[Any, Any, dict] | None:
+        """Read, parse, and normalize frame. (Ingestor)"""
+        raw_frame = self.driver.read_frame(timeout_ms=100)
+        if raw_frame is None:
+            return None
+
+        self._frames_captured += 1
+
+        parsed = self.parser.parse(raw_frame.data, raw_frame.timestamp)
+        if parsed is None or parsed.frame_type == "other":
+            return None
+
+        if self.parser.is_duplicate(parsed):
+            self._frames_duplicates += 1
+            return None
+
+        self._frames_parsed += 1
+
+        telemetry = self.normalizer.normalize(parsed)
+        base_dict = telemetry.model_dump(mode="json", exclude_none=True)
+
+        if not self.config.privacy.store_raw_mac:
+            for field in ["mac_src", "mac_dst", "bssid"]:
+                if field in base_dict:
+                    base_dict[field] = anonymize_mac(
+                        base_dict[field], self.config.privacy.mode
+                    )
+
+        return parsed, telemetry, base_dict
+
+    def _analyze_threats(self, net_dict: dict) -> None:
+        """Run all threat detection engines. (Analyzer)"""
+        jam_alert = self.jamming_detector.ingest(net_dict)
+        if jam_alert:
+            self._handle_alert(jam_alert)
+
+        wd_alert = self.wardrive_detector.ingest(net_dict)
+        if wd_alert:
+            self._handle_alert(wd_alert)
+
+        wep_alert = self.wep_detector.ingest(net_dict)
+        if wep_alert:
+            self._handle_alert(wep_alert)
+
+        karma_alert = self.karma_detector.ingest(net_dict)
+        if karma_alert:
+            self._handle_alert(karma_alert)
+
+        pmkid_alert = self.pmkid_detector.ingest(net_dict)
+        if pmkid_alert:
+            self._handle_alert(pmkid_alert)
+
+        if net_dict.get("frame_subtype") == "deauth":
+            dos_alert = self.dos_detector.record_deauth(
+                bssid=net_dict.get("bssid", ""),
+                client_mac=net_dict.get("mac_dst", "ff:ff:ff:ff:ff:ff"),
+                sensor_id=self.sensor_id,
+            )
+            if dos_alert:
+                self._handle_alert(
+                    {
+                        "alert_type": "deauth_flood",
+                        "severity": dos_alert.severity,
+                        "title": f"Deauth Flood: {dos_alert.target_bssid}",
+                        "description": f"Deauth flood: {dos_alert.rate_per_sec:.1f} f/s",
+                        "bssid": dos_alert.target_bssid,
+                        "evidence": dos_alert.evidence,
+                        "sensor_id": self.sensor_id,
+                    }
+                )
+
+        disassoc_alert = self.disassoc_detector.ingest(net_dict)
+        if disassoc_alert:
+            self._handle_alert(disassoc_alert)
+
+        beacon_flood_alert = self.beacon_flood_detector.ingest(net_dict)
+        if beacon_flood_alert:
+            self._handle_alert(beacon_flood_alert)
+
+        krack_alert = self.krack_detector.ingest(net_dict)
+        if krack_alert:
+            self._handle_alert(krack_alert)
+
+        for alert in self.rule_engine.evaluate(net_dict, sensor_id=self.sensor_id):
+            self._handle_alert(alert.to_dict())
+
+        for alert in self.et_detector.ingest(net_dict):
+            self._handle_alert(
+                {
+                    "alert_type": "evil_twin",
+                    "severity": alert.severity,
+                    "title": f"Evil Twin Detected: {alert.ssid}",
+                    "description": alert.recommendation,
+                    "evidence": alert.evidence,
+                    "sensor_id": self.sensor_id,
+                    "risk_score": alert.score,
+                }
+            )
+
+    def _export_telemetry(self, parsed: Any, telemetry: Any, net_dict: dict) -> None:
+        """Route data to buffers, metrics, and risk assessment. (Exporter)"""
+        self.buffer.append(net_dict)
+
+        self.aggregator.record_frame(
+            telemetry.frame_type,
+            telemetry.frame_subtype,
+            net_dict.get("mac_src", telemetry.mac_src),
+        )
+
+        self.metrics.record_frame(telemetry.frame_type)
+
+        if self._frames_captured % 10 == 0:
+            risk_dict = telemetry.model_dump(mode="json", exclude_none=True)
+            deviation = self.baseline.check_deviation(risk_dict)
+
+            if not self.baseline.learning_mode:
+                dev_score = deviation["score"] if deviation else 0.0
+                risk_result = self.risk_engine.calculate_risk(
+                    risk_dict, deviation_score=dev_score
+                )
+                current_score = risk_result.get("risk_score", 0)
+
+                if deviation:
+                    logger.warning(
+                        f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})"
+                    )
+                    self._handle_alert(
+                        {
+                            "alert_type": "baseline_deviation",
+                            "severity": "high" if current_score > 70 else "medium",
+                            "title": f"Baseline Deviation: {telemetry.ssid}",
+                            "description": "; ".join(deviation["reasons"]),
+                            "evidence": deviation.get("baseline"),
+                            "risk_score": current_score,
+                            "bssid": telemetry.bssid,
+                            "ssid": telemetry.ssid,
+                            "impact": risk_result.get("impact", 0.5),
+                            "confidence": risk_result.get("confidence", 0.5),
+                        }
+                    )
+                elif current_score > 70:
+                    logger.warning(
+                        f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
+                    )
+
+                self.metrics.set_risk_score(telemetry.bssid, current_score)
+
+        self.hopper.record_activity(parsed.channel, 1)
 
     def _upload_loop(self) -> None:
         """Prepare batches and push to persistent queue (worker handles upload)"""

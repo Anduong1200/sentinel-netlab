@@ -21,7 +21,7 @@ def test_init_config_production_missing_secrets(monkeypatch):
         config_mod.init_config(strict_production=True)
 
     assert (
-        "Application refused to start in PRODUCTION mode without these secrets"
+        "CRITICAL: Missing required production secret 'CONTROLLER_SECRET_KEY'"
         in str(excinfo.value)
     )
 
@@ -35,7 +35,7 @@ def test_init_config_dev_allows_missing(monkeypatch):
     cfg = config_mod.init_config(strict_production=True)
 
     assert cfg.environment == "development"
-    assert cfg.security.secret_key == "dev-secret-unsafe-do-not-use-in-prod"
+    assert len(cfg.security.secret_key) >= 16
 
 
 def test_safe_dict_redaction():

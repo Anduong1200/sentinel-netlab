@@ -205,6 +205,31 @@ class BaselineManager:
 
             conn.commit()
 
+    def _check_vendor_deviation(
+        self, baseline: "BaselineEntry", frame_data: dict[str, Any]
+    ) -> tuple[str | None, float]:
+        """Check for vendor OUI mismatch. Returns (deviation_msg, score)."""
+        observed_vendor = frame_data.get("vendor_oui")
+        if baseline.vendor and observed_vendor:
+            if not baseline.is_vendor_match(observed_vendor):
+                return (
+                    f"Vendor Mismatch: Expected {baseline.vendor}, Got {observed_vendor}",
+                    1.0,
+                )
+        return None, 0.0
+
+    def _check_signal_deviation(
+        self, baseline: "BaselineEntry", frame_data: dict[str, Any], avg: float
+    ) -> tuple[str | None, float]:
+        """Check for signal strength anomaly. Returns (deviation_msg, score)."""
+        sig_score = baseline.check_signal_deviation(frame_data.get("rssi_dbm", -100))
+        if sig_score > 0:
+            return (
+                f"Signal Anomaly: RSSI {frame_data.get('rssi_dbm')} vs Avg {avg:.1f} (Z={sig_score:.1f})",
+                sig_score,
+            )
+        return None, 0.0
+
     def check_deviation(self, frame_data: dict[str, Any]) -> dict[str, Any] | None:
         """
         Check frame against baseline.
@@ -224,9 +249,6 @@ class BaselineManager:
             row = cursor.fetchone()
 
             if not row:
-                # Unknown Device
-                # In strict mode, this might be an alert.
-                # For now, we auto-learn new devices conservatively or return "New Device" info.
                 self.learn(frame_data)
                 return None
 
@@ -250,38 +272,25 @@ class BaselineManager:
             rssi_samples=rssi_samples,
             capabilities={},
             first_seen=datetime.fromisoformat(row["first_seen"]),
-            last_seen=datetime.fromisoformat(
-                row["first_seen"]
-            ),  # Not retrieved, use first_seen or now
+            last_seen=datetime.fromisoformat(row["first_seen"]),
         )
 
         deviations = []
         score = 0.0
 
         # 1. Vendor Check
-        observed_vendor = frame_data.get("vendor_oui")
-        if baseline.vendor and observed_vendor:
-            if not baseline.is_vendor_match(observed_vendor):
-                deviations.append(
-                    f"Vendor Mismatch: Expected {baseline.vendor}, Got {observed_vendor}"
-                )
-                score += 1.0  # Critical
+        vendor_msg, vendor_score = self._check_vendor_deviation(baseline, frame_data)
+        if vendor_msg:
+            deviations.append(vendor_msg)
+            score += vendor_score
 
         # 2. Signal Check
-        sig_score = baseline.check_signal_deviation(frame_data.get("rssi_dbm", -100))
-        if sig_score > 0:
-            deviations.append(
-                f"Signal Anomaly: RSSI {frame_data.get('rssi_dbm')} vs Avg {avg:.1f} (Z={sig_score:.1f})"
-            )
-            score += sig_score
-
-        # 3. Channel Check
-        # Optional: Evil Twin on different channel?
-        curr_channel = frame_data.get("channel")
-        if curr_channel and curr_channel not in baseline.channel_history:
-            # Weak evidence, APs can switch. But if fixed infra...
-            # deviations.append(f"New Channel: {curr_channel}")
-            pass
+        signal_msg, signal_score = self._check_signal_deviation(
+            baseline, frame_data, avg
+        )
+        if signal_msg:
+            deviations.append(signal_msg)
+            score += signal_score
 
         # Always passive learn to update stats slowly
         self.learn(frame_data)

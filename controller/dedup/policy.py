@@ -18,7 +18,7 @@ class TriagePolicy:
         self,
         finding: Finding,
         state: EventState | None,
-        current_severity: Severity,
+        _current_severity: Severity,
         current_risk: float,
     ) -> bool:
         """

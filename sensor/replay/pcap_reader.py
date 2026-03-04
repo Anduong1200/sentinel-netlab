@@ -48,7 +48,9 @@ class PcapStream:
 
                         rssi = -100
                         if pkt.haslayer(RadioTap):
-                            rssi = pkt[RadioTap].dBm_AntSignal
+                            val = pkt[RadioTap].dBm_AntSignal
+                            if val is not None:
+                                rssi = val
 
                         # Security (Simplified)
                         security = "Open"

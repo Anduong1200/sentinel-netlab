@@ -11,7 +11,7 @@ from functools import wraps
 from flask import g, jsonify, request
 
 from controller.db.models import APIToken
-from controller.metrics import AUTH_FAILURES, HMAC_FAILURES
+from controller.metrics import INGEST_FAILURES
 
 from .deps import config, db, logger
 
@@ -225,7 +225,7 @@ def require_auth(permission: Permission = None):
 
             token_obj = verify_token(token)
             if not token_obj:
-                AUTH_FAILURES.labels(type="token_invalid").inc()
+                INGEST_FAILURES.labels(reason="auth").inc()
                 return jsonify({"error": "Invalid or expired token"}), 401
 
             g.token = token_obj
@@ -276,7 +276,7 @@ def require_signed():
 
             # Fail-closed check for encoding
             if content_encoding not in ["gzip", "identity", ""]:
-                AUTH_FAILURES.labels(type="bad_encoding").inc()
+                INGEST_FAILURES.labels(reason="validation").inc()
                 return jsonify({"error": "Unsupported Content-Encoding"}), 415
 
             sensor_id = request.headers.get("X-Sensor-ID", "unknown")
@@ -291,9 +291,7 @@ def require_signed():
                 sequence,
                 content_encoding=content_encoding,
             ):
-                HMAC_FAILURES.labels(reason="signature_mismatch").inc() if hasattr(
-                    HMAC_FAILURES, "labels"
-                ) else HMAC_FAILURES.inc()
+                INGEST_FAILURES.labels(reason="validation").inc()
                 return jsonify({"error": "Invalid signature"}), 401
 
             # Sequence check (replay protection)

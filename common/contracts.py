@@ -411,11 +411,3 @@ class SensorStatus(BaseModel):
 def hash_mac(mac: str, salt: str = "") -> str:
     """Hash MAC address for privacy (one-way, salted)"""
     return hashlib.sha256((salt + mac.upper()).encode()).hexdigest()[:16]
-
-
-def anonymize_mac(mac: str) -> str:
-    """Anonymize MAC by zeroing last 3 octets (keep OUI)"""
-    parts = mac.split(":")
-    if len(parts) == 6:
-        return ":".join(parts[:3] + ["XX", "XX", "XX"])
-    return mac

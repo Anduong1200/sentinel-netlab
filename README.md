@@ -42,18 +42,14 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Risk Scoring** | Weighted threat assessment with explainability |
 | **Distributed Architecture** | Multiple sensors → centralized controller |
 | **Geo-Location** | Trilateration & Heatmaps for physical source tracking |
-| **Active Defense** | *Opt-in* Deauth & FakeAP generation (**Strictly Lab/Authorized Only**) |
 | **Wardriving** | GPS-correlated mobile network mapping |
 | **Hybrid ML Analysis** | Rule-based engine boosted by Autoencoder Anomaly Detection |
 | **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
 | **Scenario Replay** | Replay captured traffic (PCAP) for regression testing and algorithm tuning |
 
 > [!IMPORTANT]
-> **WIDS vs WIPS Scope**:
-> *   **WIDS (Supported)**: Passive detecting, logging, and alerting on threats (Rogue AP, Deauth, Evil Twin). This is the core function of Sentinel NetLab.
-> *   **WIPS (Experimental)**: Active countermeasures (e.g., Deauth containment) are **experimental** and often restricted by hardware/driver support or legal constraints. We provide interfaces for these in `lab_attack_service/attacks.py` but they are **disabled by default**, **isolated**, and require **strict authorization**.
->
-> Proceed with caution and ensure you have authorization before enabling any active response features.
+> **Scope**:
+> This is strictly a **Passive WIDS**. It focuses exclusively on passively detecting, logging, and alerting on threats (Rogue AP, Deauth, Evil Twin) without transmitting disruptive countermeasures. Active countermeasures (WIPS) are deliberately out of scope for this repository.
 
 ---
 
@@ -211,17 +207,6 @@ docker compose -f ops/docker-compose.yml up -d
 > **NEVER COMMIT `.env` FILES**
 > This repository is configured to fail CI/CD if `.env` or `.venv` files are detected. 
 > Always use the provided `.env.example` as a template and keep your actual configuration local.
-
-### 3. Safety & Lab Mode (Active Defense)
-
-> [!WARNING]
-> **Active Defense features are ISOLATED and DISABLED by default.**
-> To enable them for authorized lab testing, you must:
-> 1. Set `SENTINEL_LAB_MODE=true` environment variable.
-> 2. Create an authorization file `LAB_AUTHORIZED` in the data directory.
-> 3. Explicitly configure an `allowed_bssid_prefixes` allowlist in `config.yaml`.
->
-> See [docs/lab_mode/mode_b_overview.md](docs/lab_mode/mode_b_overview.md) for full compliance details.
 
 ### Usage
 

@@ -437,3 +437,12 @@ class FrameParser:
 
         self._dedup_cache[key] = now
         return False
+
+    def get_vendor(self, mac: str) -> str:
+        """
+        Lookup vendor from MAC address using OUI database.
+        """
+        if not mac or len(mac) < 8:
+            return "Unknown"
+        oui = mac[:8].upper()
+        return self.oui_db.get(oui, "Unknown")

@@ -9,12 +9,24 @@ def test_telemetry_ingestion_flow(
     """
 
     # 1. Ingest Telemetry (as Sensor)
+    import time
+
+    mock_telemetry_batch["batch_id"] = f"unique-flow-{time.time()}"
     resp = app_client.post(
         "/api/v1/telemetry", headers=sensor_auth_headers, json=mock_telemetry_batch
     )
-    assert resp.status_code == 200
+    if resp.status_code != 202:
+        print(f"Validation Error: {resp.json}")
+    assert resp.status_code == 202
     assert resp.json["success"] is True
-    assert resp.json["accepted"] == len(mock_telemetry_batch["items"])
+
+    # Manually process queue
+    from controller.ingest.worker import IngestWorker
+
+    worker = IngestWorker()
+    worker.app = app_client.application
+    with worker.app.app_context():
+        worker._loop()
 
     # 2. Query Telemetry (as Admin/Analyst)
     resp = app_client.get("/api/v1/telemetry", headers=auth_headers)
@@ -49,7 +61,7 @@ def test_alert_creation_flow(app_client, sensor_auth_headers, auth_headers, mock
     resp = app_client.post(
         "/api/v1/alerts", headers=sensor_auth_headers, json=mock_alert
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 202
     assert "alert_id" in resp.json
     alert_id = resp.json["alert_id"]
 

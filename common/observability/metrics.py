@@ -53,7 +53,7 @@ class DummyMetric:
     def labels(self, **kwargs):
         return self
 
-    def inc(self, amount=1):
+    def inc(self, _amount=1):
         pass
 
     def set(self, value):

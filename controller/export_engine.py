@@ -401,11 +401,11 @@ class ReportEngine:
 
         # Fill content template
         content = Template(SECURITY_ASSESSMENT_TEMPLATE).safe_substitute(
-            title=data.title,
-            date_range_start=data.date_range_start or "N/A",
-            date_range_end=data.date_range_end or "N/A",
-            generated_at=data.generated_at,
-            confidentiality=data.confidentiality,
+            title=SafeRenderer.escape(data.title),
+            date_range_start=SafeRenderer.escape(data.date_range_start or "N/A"),
+            date_range_end=SafeRenderer.escape(data.date_range_end or "N/A"),
+            generated_at=SafeRenderer.escape(data.generated_at),
+            confidentiality=SafeRenderer.escape(data.confidentiality),
             total_networks=data.total_networks,
             critical_risks=data.critical_risks,
             high_risks=data.high_risks,
@@ -417,9 +417,10 @@ class ReportEngine:
             or "<li>No recommendations at this time.</li>",
         )
 
-        # Fill base template
         html = Template(HTML_BASE_TEMPLATE).safe_substitute(
-            title=data.title, generated_at=data.generated_at, content=content
+            title=SafeRenderer.escape(data.title),
+            generated_at=SafeRenderer.escape(data.generated_at),
+            content=content,
         )
 
         # Write file

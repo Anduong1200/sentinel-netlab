@@ -160,6 +160,57 @@ class BufferedStorage:
         with self.buffer_lock:
             self._do_flush()
 
+    def _flush_networks(self, cursor, networks: list[dict]) -> None:
+        """Bulk upsert network records."""
+        for item in networks:
+            net = item["data"]
+            cursor.execute(
+                """
+                INSERT INTO networks (bssid, ssid, channel, rssi, encryption, vendor, wps, handshake_captured, first_seen, last_seen, risk_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(bssid, ssid) DO UPDATE SET
+                    rssi = excluded.rssi,
+                    last_seen = excluded.last_seen,
+                    beacon_count = beacon_count + 1,
+                    wps = MAX(wps, excluded.wps),
+                    handshake_captured = MAX(handshake_captured, excluded.handshake_captured),
+                    risk_score = excluded.risk_score
+            """,
+                (
+                    net.get("bssid"),
+                    net.get("ssid"),
+                    net.get("channel"),
+                    net.get("rssi"),
+                    net.get("encryption"),
+                    net.get("vendor"),
+                    1 if net.get("wps") else 0,
+                    1 if net.get("handshake_captured") else 0,
+                    net.get("first_seen", item["timestamp"]),
+                    net.get("last_seen", item["timestamp"]),
+                    net.get("risk_score"),
+                ),
+            )
+
+    def _flush_events(self, cursor, events: list[dict]) -> None:
+        """Bulk insert security events."""
+        for item in events:
+            evt = item["data"]
+            cursor.execute(
+                """
+                INSERT INTO security_events (event_type, severity, sender, target, bssid, details, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    evt.get("type"),
+                    evt.get("severity"),
+                    evt.get("sender"),
+                    evt.get("target"),
+                    evt.get("bssid"),
+                    json.dumps(evt),
+                    evt.get("timestamp", item["timestamp"]),
+                ),
+            )
+
     def _do_flush(self):
         """Internal flush (must hold lock)."""
         if not self.buffer:
@@ -172,54 +223,8 @@ class BufferedStorage:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            # Bulk upsert networks
-            for item in networks:
-                net = item["data"]
-                cursor.execute(
-                    """
-                    INSERT INTO networks (bssid, ssid, channel, rssi, encryption, vendor, wps, handshake_captured, first_seen, last_seen, risk_score)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(bssid, ssid) DO UPDATE SET
-                        rssi = excluded.rssi,
-                        last_seen = excluded.last_seen,
-                        beacon_count = beacon_count + 1,
-                        wps = MAX(wps, excluded.wps),
-                        handshake_captured = MAX(handshake_captured, excluded.handshake_captured),
-                        risk_score = excluded.risk_score
-                """,
-                    (
-                        net.get("bssid"),
-                        net.get("ssid"),
-                        net.get("channel"),
-                        net.get("rssi"),
-                        net.get("encryption"),
-                        net.get("vendor"),
-                        1 if net.get("wps") else 0,
-                        1 if net.get("handshake_captured") else 0,
-                        net.get("first_seen", item["timestamp"]),
-                        net.get("last_seen", item["timestamp"]),
-                        net.get("risk_score"),
-                    ),
-                )
-
-            # Bulk insert events
-            for item in events:
-                evt = item["data"]
-                cursor.execute(
-                    """
-                    INSERT INTO security_events (event_type, severity, sender, target, bssid, details, timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        evt.get("type"),
-                        evt.get("severity"),
-                        evt.get("sender"),
-                        evt.get("target"),
-                        evt.get("bssid"),
-                        json.dumps(evt),
-                        evt.get("timestamp", item["timestamp"]),
-                    ),
-                )
+            self._flush_networks(cursor, networks)
+            self._flush_events(cursor, events)
 
             conn.commit()
             conn.close()

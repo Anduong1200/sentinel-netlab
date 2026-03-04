@@ -4,7 +4,6 @@ Integration tests with mock mode for CI.
 Run: pytest tests/integration/ -v --tb=short
 """
 
-import os
 import time
 import unittest.mock
 from datetime import UTC, datetime
@@ -128,7 +127,7 @@ class TestFullPipelineMock:
 
     def test_audit_full_cycle(self, mock_networks):
         """Test: Full audit cycle"""
-        from sensor.audit import NetworkInfo, SecurityAuditor
+        from sensor.auditor import NetworkInfo, SecurityAuditor
 
         auditor = SecurityAuditor("test-sensor", profile="home")
 
@@ -159,22 +158,6 @@ class TestFullPipelineMock:
 
 class TestControllerAPIMock:
     """Integration tests for Controller API"""
-
-    @pytest.fixture
-    def app_client(self):
-        """Flask test client"""
-        # Skip if REDIS_URL not configured (CI without Redis)
-        if (
-            not os.environ.get("REDIS_URL")
-            and os.environ.get("ENVIRONMENT") != "development"
-        ):
-            pytest.skip("Controller API tests require REDIS_URL in production")
-
-        from controller.api_server import app
-
-        app.config["TESTING"] = True
-        with app.test_client() as client:
-            yield client
 
     def test_health_endpoint(self, app_client):
         """Test health check"""
@@ -310,20 +293,24 @@ class TestMessageSigningIntegration:
         headers = signer.sign_request("POST", "/api/v1/telemetry", payload)
         signature = headers["X-Signature"]
 
-        # Verify manually using same canonical format as MessageSigner:
-        # method + path + timestamp + payload + content_encoding
+        # Verify manually using same canonical format as MessageSigner
         timestamp = headers["X-Timestamp"]
-        data_to_sign = (
-            b"POST"
-            + b"/api/v1/telemetry"
-            + timestamp.encode()
-            + payload
-            + b"identity"  # default content_encoding
-        )
 
-        expected = hmac_lib.new(
-            secret.encode(), data_to_sign, hashlib.sha256
-        ).hexdigest()
+        # HKDF Derive key
+        salt = b"sentinel-netlab-hmac-v1"
+        prk = hmac_lib.new(salt, secret.encode(), hashlib.sha256).digest()
+        info = b"sensor-hmac|unknown"
+        sensor_key = hmac_lib.new(prk, info + b"\x01", hashlib.sha256).digest()
+
+        # Canonical string
+        parts = ["POST", "/api/v1/telemetry", timestamp, "unknown", "identity"]
+        canonical_meta = "\n".join(parts) + "\n"
+
+        h = hmac_lib.new(sensor_key, digestmod=hashlib.sha256)
+        h.update(canonical_meta.encode())
+        h.update(payload)
+
+        expected = h.hexdigest()
         assert signature == expected
 
 

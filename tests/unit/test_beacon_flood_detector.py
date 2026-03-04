@@ -3,8 +3,6 @@
 Tests for BeaconFloodDetector.
 """
 
-
-
 from algos.beacon_flood_detector import BeaconFloodConfig, BeaconFloodDetector
 
 

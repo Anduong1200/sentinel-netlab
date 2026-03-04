@@ -11,29 +11,42 @@ def test_ingest_telemetry_async_contract(app_client, sensor_auth_headers):
     if app_client is None:
         pytest.skip("Client fixture not available")
 
-    # Payload
     payload = {
         "sensor_id": "sensor-01",
         "batch_id": "test-batch-async-01",
-        "items": [{"temp": 50}],
+        "items": [
+            {
+                "sensor_id": "sensor-01",
+                "timestamp_utc": "2026-02-26T12:00:00Z",
+                "sequence_id": 1,
+                "frame_type": "beacon",
+                "bssid": "AA:BB:CC:11:22:33",
+                "rssi_dbm": -50,
+                "channel": 6,
+            }
+        ],
     }
 
-    # Mock the Celery task
-    with patch("controller.api.telemetry.process_telemetry_batch") as mock_task:
+    # Mock the Queue
+    with patch("controller.api.telemetry.IngestQueue.enqueue") as mock_enqueue:
+        mock_enqueue.return_value = ("test-batch-async-01", False)
+
         response = app_client.post(
             "/api/v1/telemetry", json=payload, headers=sensor_auth_headers
         )
 
+        if response.status_code != 202:
+            print(f"FAIL: {response.json}")
         assert response.status_code == 202
-        assert response.json["status"] == "accepted"
+        assert response.json["status"] == "queued"
         assert response.json["ack_id"] == "test-batch-async-01"
 
         # Verify enqueue
-        mock_task.delay.assert_called_once()
-        args = mock_task.delay.call_args[0]
-        assert args[0] == "test-batch-async-01"
-        assert args[1] == "sensor-01"
-        assert len(args[2]) == 1
+        mock_enqueue.assert_called_once()
+        args = mock_enqueue.call_args[0]
+        assert args[0] == "sensor-01"
+        assert args[1] == "test-batch-async-01"
+        assert len(args[2]["items"]) == 1
 
 
 def test_worker_task_logic():
@@ -71,7 +84,6 @@ def test_worker_task_logic():
             batch = db.session.get(IngestJob, batch_id)
             assert batch is not None
             assert batch.status == "processed"
-            assert batch.item_count == 2
 
             telem = Telemetry.query.filter_by(batch_id=batch_id).all()
             assert len(telem) == 2

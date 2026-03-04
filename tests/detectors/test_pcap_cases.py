@@ -1,6 +1,11 @@
+import os
+import sys
 from pathlib import Path
 
 from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, wrpcap
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 
 from common.detection.pipeline import DetectionPipeline
 from controller.detection.detectors.policy import PolicyDetector

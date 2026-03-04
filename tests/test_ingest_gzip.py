@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 # Mock environment variables BEFORE any imports
 os.environ["SENTINEL_ENV"] = "test"
 os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-32-chars-minimum-length"
-os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret"
+os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-32-chars-minimum-length"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["REDIS_URL"] = "redis://mock"
 os.environ["REQUIRE_HMAC"] = "true"

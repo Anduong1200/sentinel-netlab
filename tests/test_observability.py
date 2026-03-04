@@ -1,4 +1,8 @@
+import os
 from unittest.mock import MagicMock, patch
+
+os.environ["CONTROLLER_SECRET_KEY"] = "test-secret-key-32-chars-minimum-length"
+os.environ["CONTROLLER_HMAC_SECRET"] = "test-hmac-secret-32-chars-minimum-length"
 
 from common.observability.ingest_logger import IngestLogger
 from common.observability.metrics import INGEST_LATENCY, INGEST_SUCCESS, INGEST_TOTAL

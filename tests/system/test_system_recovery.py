@@ -59,12 +59,29 @@ def test_controller_persists_data_across_restart(tmp_path: Path, tokens):
             json=batch,
             timeout=3,
         )
-        assert r.status_code == 200
+        assert r.status_code == 202
 
         # Stop controller 1
         proc1.terminate()
         proc1.wait(timeout=8)
         lf1.close()
+
+        # Manually process the queue for testing since we don't start db_worker.
+        # Process AFTER controller 1 stops to prevent SQLite lock on Windows.
+        from controller.api.deps import config, create_app
+        from controller.ingest.worker import IngestWorker
+
+        # Override the loaded config explicitly
+        original_db = config.database.url
+        config.database.url = f"sqlite:///{db_path.as_posix()}"
+
+        try:
+            worker = IngestWorker()
+            worker.app = create_app()
+            with worker.app.app_context():
+                worker._loop()
+        finally:
+            config.database.url = original_db
 
         # Start controller 2 on another port but same DB
         port2 = _free_port()

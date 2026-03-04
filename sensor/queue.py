@@ -44,8 +44,6 @@ class SqliteQueue:
     MAX_SIZE = 10000
     MAX_BYTES = 100 * 1024 * 1024  # 100MB
 
-    MAX_BYTES = 100 * 1024 * 1024  # 100MB
-
     def __init__(
         self,
         db_path: str | None = None,
@@ -277,7 +275,7 @@ class SqliteQueue:
         raw = min(cap, base * (2 ** max(0, attempts - 1)))
         return float(raw * random.uniform(0.5, 1.5))  # noqa: S311
 
-    def recover_stuck_inflight(self, age_seconds=60) -> None:
+    def recover_stuck_inflight(self, _age_seconds=60) -> None:
         """Reset stuck inflight items to queued on startup."""
         with self._lock:
             conn = self._get_conn()

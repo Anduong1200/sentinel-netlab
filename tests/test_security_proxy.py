@@ -94,6 +94,7 @@ def test_tls_enforcement_block(mock_app):
         "REMOTE_ADDR": "10.0.0.1",
         "HTTP_X_FORWARDED_PROTO": "http",  # Not HTTPS
         "PATH_INFO": "/api/v1/data",
+        "REQUEST_METHOD": "GET",
     }
 
     start_response = Mock()
