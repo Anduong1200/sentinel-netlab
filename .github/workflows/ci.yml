@@ -126,6 +126,13 @@ jobs:
             --exclude-mail
             --exclude "doi.org/10.1177/1550147718795838"
             --exclude "docs.fcc.gov"
+            --exclude "fptshop.com.vn"
+            --exclude "cisa.gov/resources-tools/resources/understanding-denial-service-attacks"
+            --exclude "jumpcloud.com/blog/vlan-hopping-attack"
+            --exclude "juniper.net/documentation/us/en/software/junos/vlan-l2/topics/concept/l2-vlan-tagging-understanding.html"
+            --exclude "documentation.meraki.com/Switching/MS"
+            --exclude "cs.umd.edu/~waa/rc4_ksaproc.pdf"
+            --exclude "fcc.gov/general/jammer-enforcement"
             "README.md"
             "docs/**/*.md"
           fail: true
