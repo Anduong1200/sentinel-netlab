@@ -65,6 +65,7 @@ COPY --chown=sentinel:sentinel common/ ./common/
 COPY --chown=sentinel:sentinel algos/ ./algos/
 COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
 COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
+COPY --chown=sentinel:sentinel ops/ ./ops/
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -fsS http://127.0.0.1:5000/api/v1/health || exit 1
