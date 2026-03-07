@@ -6,7 +6,6 @@ from sensor.cli import load_config, main
 
 
 class TestCLI(unittest.TestCase):
-
     @patch("sensor.cli.Path.exists", return_value=True)
     @patch("builtins.open", unittest.mock.mock_open(read_data="sensor_id: test-id"))
     def test_load_config(self, mock_exists):
@@ -34,7 +33,7 @@ class TestCLI(unittest.TestCase):
             upload_url=None,
             dwell_ms=200,
             buffered_storage=False,
-            storage_path="/tmp",
+            storage_path="/tmp",  # noqa: S108
             watchdog=False,
             auth_token=None,
             batch_size=50,

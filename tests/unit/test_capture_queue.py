@@ -1,12 +1,12 @@
 import multiprocessing as mp
-import os
-import queue
 import time
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from sensor.capture_queue import CaptureConsumer, CaptureProducer, ProducerConsumerEngine
+from sensor.capture_queue import (
+    CaptureConsumer,
+    CaptureProducer,
+    ProducerConsumerEngine,
+)
 
 
 class TestCaptureProducer:
@@ -19,10 +19,11 @@ class TestCaptureProducer:
 
         # Setup mock subprocess
         mock_process = MagicMock()
+
         # Make readline return packets and then raise to simulate blocking/end
         def mock_readline():
             if not getattr(mock_readline, "called", False):
-                setattr(mock_readline, "called", True)
+                mock_readline.called = True
                 return b"packet1\n"
             time.sleep(0.05)
             return b""
@@ -35,7 +36,7 @@ class TestCaptureProducer:
             interface="wlan0mon",
             channels=[1],
             dwell_time=0.1,
-            stop_event=stop_event
+            stop_event=stop_event,
         )
 
         def set_stop():
@@ -43,6 +44,7 @@ class TestCaptureProducer:
             stop_event.set()
 
         import threading
+
         t = threading.Thread(target=set_stop)
         t.start()
 
@@ -59,12 +61,16 @@ class TestCaptureProducer:
     def test_enable_monitor_mode(self, mock_run):
         q = mp.Queue()
         stop_event = mp.Event()
-        producer = CaptureProducer(q, "wlan0", channels=[1, 6, 11], stop_event=stop_event)
+        producer = CaptureProducer(
+            q, "wlan0", channels=[1, 6, 11], stop_event=stop_event
+        )
 
         res = producer.enable_monitor_mode()
         assert res is True
         assert mock_run.call_count == 3
-        mock_run.assert_any_call(["ip", "link", "set", "wlan0", "down"], check=True, timeout=5)
+        mock_run.assert_any_call(
+            ["ip", "link", "set", "wlan0", "down"], check=True, timeout=5
+        )
 
 
 class TestCaptureConsumer:
@@ -79,7 +85,7 @@ class TestCaptureConsumer:
             stop_event=stop_event,
             packet_callback=callback_mock,
             batch_size=2,
-            batch_timeout=0.1
+            batch_timeout=0.1,
         )
 
         # Put 3 packets in queue
