@@ -170,7 +170,7 @@ def run_sensor_logic(config: dict) -> int:
     """Run the sensor logic with the given config"""
     # Import and start controller
     try:
-        from sensor.sensor_controller import SensorController
+        from sensor_controller import SensorController
 
         controller = SensorController(
             sensor_id=config["sensor"]["id"],
