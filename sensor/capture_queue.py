@@ -130,7 +130,7 @@ class CaptureProducer(mp.Process):
                         self.packet_queue.put_nowait(
                             {
                                 "timestamp": time.time(),
-                                "data": line.strip() if isinstance(line, str) else line,
+                                "data": line.strip() if isinstance(line, (str, bytes)) else line,
                                 "channel": self.channels[
                                     (channel_idx - 1) % len(self.channels)
                                 ],
