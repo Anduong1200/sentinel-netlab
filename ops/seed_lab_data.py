@@ -31,6 +31,8 @@ def seed_data():
     # Initialize app context
     app = create_app()
     with app.app_context():
+        # Ensure tables exist before querying
+        db.create_all()
         session = db.session
 
         # Paths
