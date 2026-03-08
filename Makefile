@@ -133,7 +133,7 @@ lab-up:
 	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
 	@# Ensure DB init works in lab context
-	@$(PYTHON) ops/init_lab_db.py
+	@set -a; . ops/.env.lab; set +a; $(PYTHON) ops/init_lab_db.py
 	cd ops && docker-compose -f docker-compose.lab.yml up --build -d --remove-orphans
 	@echo "waiting for health..."
 	@sleep 5

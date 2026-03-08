@@ -30,6 +30,10 @@ def main():
 
     print("Initializing Lab Database...")
 
+    # Ensure data directory exists for SQLite
+    data_dir = Path(__file__).parent.parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
     app = create_app()
     with app.app_context():
         # Create Tables
