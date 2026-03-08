@@ -31,8 +31,8 @@ help:
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker       Build all Docker images"
-	@echo "  make docker-up    Start docker-compose stack"
-	@echo "  make docker-down  Stop docker-compose stack"
+	@echo "  make docker-up    Start docker compose stack"
+	@echo "  make docker-down  Stop docker compose stack"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make schema       Generate JSON schemas from Pydantic"
@@ -61,16 +61,16 @@ requirements-dev.txt:
 # =============================================================================
 
 test:
-	cd ops && docker-compose run --rm sensor pytest tests/ -v
+	cd ops && docker compose -f docker-compose.dev.yml run --rm sensor pytest tests/ -v
 
 test-unit:
-	cd ops && docker-compose run --rm sensor pytest tests/unit -v
+	cd ops && docker compose -f docker-compose.dev.yml run --rm sensor pytest tests/unit -v
 
 test-int:
-	cd ops && docker-compose run --rm sensor pytest tests/integration -v
+	cd ops && docker compose -f docker-compose.dev.yml run --rm sensor pytest tests/integration -v
 
 test-cov:
-	cd ops && docker-compose run --rm sensor pytest tests/ --cov=. --cov-report=html
+	cd ops && docker compose -f docker-compose.dev.yml run --rm sensor pytest tests/ --cov=. --cov-report=html
 
 
 # =============================================================================
@@ -116,13 +116,13 @@ docker:
 	docker build -t sentinel-sensor:latest -f ops/Dockerfile.sensor .
 
 docker-up:
-	cd ops && docker-compose up -d
+	cd ops && docker compose up -d
 
 docker-down:
-	cd ops && docker-compose down
+	cd ops && docker compose down
 
 docker-logs:
-	cd ops && docker-compose logs -f
+	cd ops && docker compose logs -f
 
 # =============================================================================
 # LAB (SAFE MODE)
@@ -132,23 +132,23 @@ lab-up:
 	@echo "Starting Sentinel NetLab (Lab Mode)..."
 	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
+	cd ops && docker compose -f docker-compose.lab.yml up --build -d --remove-orphans
+	@echo "Waiting for health..."
+	@sleep 10
 	@# Ensure DB init works in lab context
-	@$(PYTHON) ops/init_lab_db.py
-	cd ops && docker-compose -f docker-compose.lab.yml up --build -d --remove-orphans
-	@echo "waiting for health..."
-	@sleep 5
+	cd ops && docker compose -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
 	@$(MAKE) lab-status
 	@echo "Dashboard:  http://127.0.0.1:8050"
 	@echo "Controller: http://127.0.0.1:5000"
 
 lab-down:
 	@echo "Stopping Sentinel NetLab..."
-	cd ops && docker-compose -f docker-compose.lab.yml down
+	cd ops && docker compose -f docker-compose.lab.yml down
 
 lab-reset:
 	@echo "⚠️  RESETTING LAB ENVIRONMENT ⚠️"
 	@echo "Stopping stack..."
-	cd ops && docker-compose -f docker-compose.lab.yml down -v
+	cd ops && docker compose -f docker-compose.lab.yml down -v
 	@echo "Generating fresh secrets..."
 	@# We remove the old .env.lab to rotate secrets on reset, OR we keep it? 
 	@# User request: "bootstrap secrets lab (không default hardcoded)". 
@@ -162,24 +162,24 @@ lab-reset:
 	@# Wait! "DB... không publish port". 
 	@# If DB is not published, `ops/init_lab_db.py` (running on host) CANNOT interact with it!
 	@# This is a critical architectural conflict with "Option A" offline/internal-only requirement.
-	@# If DB is internal, we must run seed/init via `docker-compose run`.
+	@# If DB is internal, we must run seed/init via `docker compose -f docker-compose.dev.yml run`.
 	@# Let's check `ops/init_lab_db.py`.
 	@# It likely uses `psycopg2` to connect. 
 	@# Modification: We need a `lab-seed` target that runs inside the network.
 	@echo "Starting stack..."
-	cd ops && docker-compose -f docker-compose.lab.yml up -d --build
+	cd ops && docker compose -f docker-compose.lab.yml up -d --build
 	@echo "Waiting for DB..."
 	@sleep 5
 	@echo "Seeding data..."
-	cd ops && docker-compose -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
-	cd ops && docker-compose -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
+	cd ops && docker compose -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+	cd ops && docker compose -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
 	@echo "✅ Lab Reset Complete."
 
 lab-logs:
-	cd ops && docker-compose -f docker-compose.lab.yml logs -f
+	cd ops && docker compose -f docker-compose.lab.yml logs -f
 
 lab-status:
-	cd ops && docker-compose -f docker-compose.lab.yml ps
+	cd ops && docker compose -f docker-compose.lab.yml ps
 	@echo ""
 	@curl -s -o /dev/null -w "Controller Health: %%{http_code}\n" http://127.0.0.1:5000/api/v1/health || echo "Controller Health: DOWN"
 
