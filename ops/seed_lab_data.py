@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+"""
+Seed Lab Data
+-------------
+Populates the Lab database with sample data from `examples/`.
+Ensures the dashboard has visible content immediately after reset.
+"""
+
 import logging
 import random
 import sys
@@ -60,6 +68,7 @@ def seed_data():
             )
             session.add(sensor)
 
+        # 2. Seed Telemetry
         # 2. Seed Telemetry (Deterministic)
         if True:  # Always use deterministic for now to simplify
             # Fallback: Deterministic Generation
