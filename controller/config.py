@@ -107,6 +107,7 @@ def init_config(strict_production: bool = True) -> ControllerConfig:  # noqa: AR
         else:
             # use absolute path to avoid "unable to open database file" in different CWDs
             import pathlib
+
             base_dir = pathlib.Path(__file__).parent.parent
             data_dir = base_dir / "data"
             data_dir.mkdir(parents=True, exist_ok=True)
