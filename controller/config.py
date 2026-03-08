@@ -105,8 +105,15 @@ def init_config(strict_production: bool = True) -> ControllerConfig:  # noqa: AR
         if is_prod:
             raise RuntimeError("CRITICAL: Missing DATABASE_URL in production.")
         else:
-            db_url = "sqlite:///data/sentinel.db"
-            logger.info("Using default SQLite database (Dev Mode)")
+            # use absolute path to avoid "unable to open database file" in different CWDs
+            import pathlib
+
+            base_dir = pathlib.Path(__file__).parent.parent
+            data_dir = base_dir / "data"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            db_path = data_dir / "sentinel.db"
+            db_url = f"sqlite:///{db_path}"
+            logger.info(f"Using default SQLite database (Dev Mode): {db_url}")
 
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:

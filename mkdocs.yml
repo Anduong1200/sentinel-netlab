@@ -1,0 +1,85 @@
+site_name: Sentinel NetLab Documentation
+site_description: Lightweight Hybrid Wireless Intrusion Detection System
+repo_url: https://github.com/Anduong1200/sentinel-netlab
+repo_name: Anduong1200/sentinel-netlab
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+nav:
+  - Home: README.md
+  - Getting Started:
+    - Overview: getting-started/ELI5_Guide.md
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+    - Quickstart: getting-started/quickstart.md
+  - Lab Mode:
+    - Lab Quickstart: lab/quickstart.md
+    - Safety: lab/safety.md
+    - Reset Seed: lab/reset_seed.md
+    - Troubleshooting: lab/troubleshooting.md
+  - Production Mode:
+    - Deployment: prod/deployment.md
+    - Data Lifecycle: prod/data_lifecycle.md
+    - Operations Runbook: prod/ops-runbook.md
+  - Architecture:
+    - System Design: architecture/system-design.md
+    - Overview: architecture/overview.md
+    - Threat Model: architecture/threat_model.md
+    - Trust Model: architecture/trust_model.md
+    - Data Flow: architecture/data_flow.md
+    - Data Schema: architecture/data_schema.md
+    - Risk Scoring: architecture/risk_scoring.md
+    - Risk Management: architecture/risk_management.md
+  - Detection Engine:
+    - Overview: detection/overview.md
+    - Rule Based: detection/rule_based.md
+    - ML Anomaly: detection/ml_anomaly.md
+    - Risk Scoring: detection/risk_scoring.md
+  - Research:
+    - Security Analysis: research/security_analysis.md
+    - Methodology: research/methodology.md
+    - Behavioral Risk: research/behavioral_risk.md
+    - Deep Research Report: research/deep-research-report.md
+  - Reference:
+    - API: reference/api.md
+    - API Ingest: reference/api_ingest.md
+    - API Overview: reference/api_overview.md
+    - Configuration: reference/configuration.md
+    - Schema: reference/schema.md
+    - Legal & Ethics: reference/legal_ethics.md
+    - Observability: reference/observability.md
+    - Proxy Trust: reference/proxy-trust.md

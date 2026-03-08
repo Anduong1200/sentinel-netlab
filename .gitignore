@@ -80,3 +80,8 @@ scan_results/
 uploads/
 sentinel.log
 celerybeat-schedule
+site/
+*.log
+*.img
+*.iso
+*.output

@@ -18,7 +18,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # CRITICAL: Install packages AND upgrade security packages in same layer
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install ".[dashboard]" "wheel>=0.46.2" "jaraco-context>=6.1.0"
+    pip install ".[dashboard]" && \
+    pip install --upgrade --force-reinstall "wheel>=0.46.2" "jaraco-context>=6.1.0"
 
 FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app

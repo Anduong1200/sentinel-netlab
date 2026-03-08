@@ -314,7 +314,7 @@ sequenceDiagram
 *   **[Troubleshooting](docs/lab/troubleshooting.md)**: Common Lab/Dev issues.
 
 ### Reference
-*   **[Configuration](docs/reference/config.md)**: Environment Variables & Secrets.
+*   **[Configuration](docs/reference/configuration.md)**: Environment Variables & Secrets.
 *   **[Observability](docs/reference/observability.md)**: Metrics, Logs, and Dashboards.
 *   **[Trust Model](docs/reference/proxy-trust.md)**: Security architecture.
 *   **[Architecture](docs/architecture/system-design.md)**: System design.
@@ -322,7 +322,6 @@ sequenceDiagram
 *   **[API Spec](docs/reference/api.md)**: REST Endpoints.
 
 ### Research
-*   [Lab Mode Overview](docs/lab_mode/mode_b_overview.md)
 *   [Threat Model](docs/architecture/threat_model.md)
 ---
 
@@ -358,7 +357,7 @@ mypy algos/ controller/ sensor/ common/ --ignore-missing-imports
 > - Computer Misuse Act (UK)
 > - Similar legislation in other jurisdictions
 
-See [Ethics Statement](docs/ethics_legal/ethics_statement.md) and [Legal Scope](docs/ethics_legal/legal_scope.md) for detailed guidelines.
+See [Legal & Ethics Statement](docs/reference/legal_ethics.md) for detailed guidelines.
 
 ---
 
@@ -390,3 +389,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) 
 <p align="center">
   <sub>Built with ❤️ for security research and education</sub>
 </p>
+
+### Known Limitations
+* **WPA3 and PMF (Protected Management Frames):** The system currently lacks the ability to inspect data frames encrypted with WPA3/PMF. Additionally, containment (deterrence) actions will fail on the 6GHz band because management frames are protected.

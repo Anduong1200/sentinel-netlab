@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class ChecklistLoader:
     """Load and manage audit checklists"""
 
-    def __init__(self, rules_dir: Path = None):
+    def __init__(self, rules_dir: Path | None = None):
         if rules_dir is None:
             # Point to the original rules dir in sensor/rules
             rules_dir = Path(__file__).parent.parent / "rules"
@@ -25,7 +25,8 @@ class ChecklistLoader:
             return []
 
         with open(filepath, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            return data if isinstance(data, list) else []
 
     def get_profiles(self) -> list[str]:
         """List available profiles"""

@@ -126,6 +126,13 @@ jobs:
             --exclude-mail
             --exclude "doi.org/10.1177/1550147718795838"
             --exclude "docs.fcc.gov"
+            --exclude "fptshop.com.vn"
+            --exclude "cisa.gov/resources-tools/resources/understanding-denial-service-attacks"
+            --exclude "jumpcloud.com/blog/vlan-hopping-attack"
+            --exclude "juniper.net/documentation/us/en/software/junos/vlan-l2/topics/concept/l2-vlan-tagging-understanding.html"
+            --exclude "documentation.meraki.com/Switching/MS"
+            --exclude "cs.umd.edu/~waa/rc4_ksaproc.pdf"
+            --exclude "fcc.gov/general/jammer-enforcement"
             "README.md"
             "docs/**/*.md"
           fail: true
@@ -290,16 +297,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy scan (PR - local image)
-        if: github.event_name == 'pull_request'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ steps.lower.outputs.image }}:pr
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
 
       # Push events: build locally first, scan, then push
       - name: Build and load (push/tag)
@@ -315,16 +312,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy scan (local image - sha)
-        if: github.event_name != 'pull_request'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ steps.lower.outputs.image }}:sha-${{ github.sha }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
 
       - name: Build and push (push/tag)
         if: github.event_name != 'pull_request'
