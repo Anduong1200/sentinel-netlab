@@ -115,7 +115,7 @@ The `sensor/attacks.py` module contains offensive capabilities:
 Enabling monitor mode captures all wireless traffic in range:
 - May include personal devices
 - Requires authorization from network owner
-- See [Ethics Statement](../docs/ethics_legal/ethics_statement.md) and [LAB_AUTH_TEMPLATE](../LAB_AUTH_TEMPLATE)
+- See [Ethics Statement](../docs/reference/legal_ethics.md) and [LAB_AUTH_TEMPLATE](../LAB_AUTH_TEMPLATE)
 
 ---
 

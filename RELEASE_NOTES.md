@@ -85,4 +85,4 @@ Five systematic audit passes across 130+ production Python files:
 ## 📚 Documentation
 -   [Deployment Guide](docs/prod/deployment.md)
 -   [Observability Contract](docs/reference/observability.md)
--   [Configuration Reference](docs/reference/config.md)
+-   [Configuration Reference](docs/reference/configuration.md)
