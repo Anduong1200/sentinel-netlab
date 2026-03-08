@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class ReportGenerator:
     """Generate reports in various formats"""
 
-    def __init__(self, templates_dir: Path = None):
+    def __init__(self, templates_dir: Path | None = None):
         if templates_dir is None:
             # Point to the original templates dir
             templates_dir = Path(__file__).parent.parent / "templates"
