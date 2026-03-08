@@ -187,7 +187,7 @@ def wait_for_health_check(url):
 def verify_ingest_via_proxy(url):
     print("Verifying via Proxy...")
     # Admin token from seed
-    headers = {"X-API-Token": "admin-token-dev"}
+    headers = {"Authorization": "Bearer admin-token-dev"}
     for _ in range(MAX_RETRIES):
         try:
             # Fix S113
