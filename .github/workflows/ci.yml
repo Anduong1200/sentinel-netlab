@@ -298,6 +298,7 @@ jobs:
           cache-to: type=gha,mode=max
 
 
+
       # Push events: build locally first, scan, then push
       - name: Build and load (push/tag)
         if: github.event_name != 'pull_request'
@@ -311,6 +312,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
 
 
       - name: Build and push (push/tag)
