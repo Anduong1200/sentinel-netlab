@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Seed Lab Data
--------------
-Populates the Lab database with sample data from `examples/`.
-Ensures the dashboard has visible content immediately after reset.
-"""
-
 import logging
 import random
 import sys
@@ -15,8 +7,10 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
+import hashlib
+
 from controller.api.deps import create_app, db
-from controller.db.models import Alert, Sensor, Telemetry
+from controller.db.models import Alert, APIToken, Sensor, Telemetry
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +31,20 @@ def seed_data():
 
         # Paths
 
+        # 0. Ensure Admin Token Exists (for smoke test verification)
+        admin_token_hash = hashlib.sha256(b"admin-token-dev").hexdigest()
+        if not session.query(APIToken).filter_by(token_hash=admin_token_hash).first():
+            logger.info("Creating admin-token-dev")
+            admin_token = APIToken(
+                token_id="admin-dev",  # noqa: S106
+                token_hash=admin_token_hash,
+                name="Lab Admin",
+                role="admin",
+                is_active=True,
+                created_at=datetime.now(UTC),
+            )
+            session.add(admin_token)
+
         # 1. Ensure Sensor Exists
         sensor_id = "sensor-01"
         sensor = session.query(Sensor).filter_by(id=sensor_id).first()
@@ -52,7 +60,6 @@ def seed_data():
             )
             session.add(sensor)
 
-        # 2. Seed Telemetry
         # 2. Seed Telemetry (Deterministic)
         if True:  # Always use deterministic for now to simplify
             # Fallback: Deterministic Generation
