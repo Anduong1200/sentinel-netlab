@@ -54,3 +54,7 @@ This document outlines the strategic plan for the Sentinel NetLab project.
 *   **Edge Intelligence**: Move more detection logic to the sensor edge to reduce bandwidth.
 *   **Plugin System**: Allow community contributions for new attack detection signatures.
 *   **Cloud Integration**: Native support for AWS/Azure/GCP IoT core.
+
+### Security Features
+- [ ] Implement WPA3/PMF (Protected Management Frames) analysis capabilities.
+- [ ] Address containment and deterrence limitations on the 6GHz band caused by protected management frames.

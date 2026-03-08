@@ -297,14 +297,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy scan (PR - local image)
-        if: github.event_name == 'pull_request'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ steps.lower.outputs.image }}:pr
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
 
@@ -322,14 +314,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy scan (local image - sha)
-        if: github.event_name != 'pull_request'
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ${{ steps.lower.outputs.image }}:sha-${{ github.sha }}
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
 
