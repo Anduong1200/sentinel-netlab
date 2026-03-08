@@ -8,6 +8,13 @@ https://www.openwips-ng.org/
 https://arubanetworking.hpe.com/.*
 https://documentation.meraki.com/Platform_Management/Dashboard_Administration/Design_and_Configure/Architectures_and_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices
 https://www.mdpi.com/1424-8220/25/6/1913
+https://fptshop.com.vn/.*
+https://www.cisa.gov/resources-tools/resources/understanding-denial-service-attacks
+https://jumpcloud.com/blog/vlan-hopping-attack
+https://www.juniper.net/documentation/us/en/software/junos/vlan-l2/topics/concept/l2-vlan-tagging-understanding.html
+https://documentation.meraki.com/Switching/MS
+https://www.cs.umd.edu/~waa/rc4_ksaproc.pdf
+https://www.fcc.gov/general/jammer-enforcement
 
 # Ignore sandbox placeholders
 sandbox:/.*
