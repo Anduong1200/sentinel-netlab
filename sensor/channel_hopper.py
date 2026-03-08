@@ -96,7 +96,7 @@ class ChannelHopper:
         """Select channel weighted by activity"""
         total = sum(self._channel_activity.values())
         r = random.random() * total  # noqa: S311
-        cumulative = 0
+        cumulative: float = 0.0
         for ch in self.channels:
             cumulative += self._channel_activity[ch]
             if r <= cumulative:
