@@ -389,3 +389,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) 
 <p align="center">
   <sub>Built with ❤️ for security research and education</sub>
 </p>
+
+### Known Limitations
+* **WPA3 and PMF (Protected Management Frames):** The system currently lacks the ability to inspect data frames encrypted with WPA3/PMF. Additionally, containment (deterrence) actions will fail on the 6GHz band because management frames are protected.
