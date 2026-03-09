@@ -298,6 +298,8 @@ jobs:
           cache-to: type=gha,mode=max
 
 
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
 
       # Push events: build locally first, scan, then push
       - name: Build and load (push/tag)
@@ -314,6 +316,8 @@ jobs:
           cache-to: type=gha,mode=max
 
 
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
 
       - name: Build and push (push/tag)
         if: github.event_name != 'pull_request'
