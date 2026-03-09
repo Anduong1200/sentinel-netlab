@@ -1,14 +1,22 @@
 # Sentinel NetLab - Makefile
 # Single entry point for all build/test/deploy operations
 
-.PHONY: help install dev test lint security docker clean
+.PHONY: help install dev test lint security docker clean compose-check
 
 PYTHON := python
 VENV := venv
 PIP := $(VENV)/Scripts/pip
 PYTEST := $(VENV)/Scripts/pytest
 # Prefer Docker Compose v2 (`docker compose`), fallback to legacy (`docker-compose`).
-DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo ""; fi)
+
+compose-check:
+	@if [ -z "$(DOCKER_COMPOSE)" ]; then \
+		echo "ERROR: Docker Compose is not installed."; \
+		echo "Install plugin: sudo apt-get install docker-compose-plugin"; \
+		echo "Or run with explicit binary: make DOCKER_COMPOSE=docker-compose <target>"; \
+		exit 127; \
+	fi
 # Default target
 help:
 	@echo "Sentinel NetLab - Build System"
@@ -61,16 +69,16 @@ requirements-dev.txt:
 # TESTING
 # =============================================================================
 
-test:
+test: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/ -v
 
-test-unit:
+test-unit: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/unit -v
 
-test-int:
+test-int: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/integration -v
 
-test-cov:
+test-cov: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/ --cov=. --cov-report=html
 
 
@@ -116,20 +124,20 @@ docker:
 	docker build -t sentinel-controller:latest -f ops/Dockerfile.controller .
 	docker build -t sentinel-sensor:latest -f ops/Dockerfile.sensor .
 
-docker-up:
+docker-up: compose-check
 	cd ops && $(DOCKER_COMPOSE) up -d
 
-docker-down:
+docker-down: compose-check
 	cd ops && $(DOCKER_COMPOSE) down
 
-docker-logs:
+docker-logs: compose-check
 	cd ops && $(DOCKER_COMPOSE) logs -f
 
 # =============================================================================
 # LAB (SAFE MODE)
 # =============================================================================
 
-lab-up:
+lab-up: compose-check
 	@echo "Starting Sentinel NetLab (Lab Mode)..."
 	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
@@ -142,11 +150,11 @@ lab-up:
 	@echo "Dashboard:  http://127.0.0.1:8050"
 	@echo "Controller: http://127.0.0.1:5000"
 
-lab-down:
+lab-down: compose-check
 	@echo "Stopping Sentinel NetLab..."
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down
 
-lab-reset:
+lab-reset: compose-check
 	@echo "⚠️  RESETTING LAB ENVIRONMENT ⚠️"
 	@echo "Stopping stack..."
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down -v
@@ -176,10 +184,10 @@ lab-reset:
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
 	@echo "✅ Lab Reset Complete."
 
-lab-logs:
+lab-logs: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml logs -f
 
-lab-status:
+lab-status: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml ps
 	@echo ""
 	@curl -s -o /dev/null -w "Controller Health: %%{http_code}\n" http://127.0.0.1:5000/api/v1/health || echo "Controller Health: DOWN"
@@ -246,5 +254,3 @@ pre-commit-install:
 
 pre-commit: lint-check typecheck test-unit
 	@echo "Pre-commit checks complete"
-
-
