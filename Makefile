@@ -9,14 +9,11 @@ PIP := $(VENV)/Scripts/pip
 PYTEST := $(VENV)/Scripts/pytest
 # Prefer Docker Compose v2 (`docker compose`), fallback to legacy (`docker-compose`).
 DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo ""; fi)
+LAB_ENV_FILE := --env-file .env.lab
 
 compose-check:
-	@if [ -z "$(DOCKER_COMPOSE)" ]; then \
-		echo "ERROR: Docker Compose is not installed."; \
-		echo "Install plugin: sudo apt-get install docker-compose-plugin"; \
-		echo "Or run with explicit binary: make DOCKER_COMPOSE=docker-compose <target>"; \
-		exit 127; \
-	fi
+	@if [ -z "$(DOCKER_COMPOSE)" ]; then echo "ERROR: Docker Compose is not installed."; echo "Install plugin: sudo apt-get install docker-compose-plugin"; echo "Or run with explicit binary: make DOCKER_COMPOSE=docker-compose <target>"; exit 127; fi
+	@if ! docker info >/dev/null 2>&1; then echo "ERROR: Docker daemon is not running or not accessible."; echo "Try: sudo systemctl start docker"; echo "If permission issue: sudo usermod -aG docker $$USER && newgrp docker"; exit 125; fi
 # Default target
 help:
 	@echo "Sentinel NetLab - Build System"
@@ -141,23 +138,23 @@ lab-up: compose-check
 	@echo "Starting Sentinel NetLab (Lab Mode)..."
 	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml up --build -d --remove-orphans
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml up --build -d --remove-orphans
 	@echo "Waiting for health..."
 	@sleep 10
 	@# Ensure DB init works in lab context
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
 	@$(MAKE) lab-status
 	@echo "Dashboard:  http://127.0.0.1:8050"
 	@echo "Controller: http://127.0.0.1:5000"
 
 lab-down: compose-check
 	@echo "Stopping Sentinel NetLab..."
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml down
 
 lab-reset: compose-check
 	@echo "⚠️  RESETTING LAB ENVIRONMENT ⚠️"
 	@echo "Stopping stack..."
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down -v
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml down -v
 	@echo "Generating fresh secrets..."
 	@# We remove the old .env.lab to rotate secrets on reset, OR we keep it? 
 	@# User request: "bootstrap secrets lab (không default hardcoded)". 
@@ -176,19 +173,19 @@ lab-reset: compose-check
 	@# It likely uses `psycopg2` to connect. 
 	@# Modification: We need a `lab-seed` target that runs inside the network.
 	@echo "Starting stack..."
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml up -d --build
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml up -d --build
 	@echo "Waiting for DB..."
 	@sleep 5
 	@echo "Seeding data..."
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
 	@echo "✅ Lab Reset Complete."
 
 lab-logs: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml logs -f
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml logs -f
 
 lab-status: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml ps
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml ps
 	@echo ""
 	@curl -s -o /dev/null -w "Controller Health: %%{http_code}\n" http://127.0.0.1:5000/api/v1/health || echo "Controller Health: DOWN"
 
