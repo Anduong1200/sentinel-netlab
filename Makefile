@@ -8,6 +8,9 @@ VENV := venv
 PIP := $(VENV)/Scripts/pip
 PYTEST := $(VENV)/Scripts/pytest
 
+# Detect docker compose vs docker-compose
+DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; else echo "docker-compose"; fi)
+
 # Default target
 help:
 	@echo "Sentinel NetLab - Build System"
@@ -31,6 +34,8 @@ help:
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker       Build all Docker images"
+	@echo "  make docker-up    Start $(DOCKER_COMPOSE) stack"
+	@echo "  make docker-down  Stop $(DOCKER_COMPOSE) stack"
 	@echo "  make docker-up    Start docker compose stack"
 	@echo "  make docker-down  Stop docker compose stack"
 	@echo ""
@@ -61,6 +66,16 @@ requirements-dev.txt:
 # =============================================================================
 
 test:
+	pytest tests/ -v
+
+test-unit:
+	pytest tests/unit -v
+
+test-int:
+	pytest tests/integration -v
+
+test-cov:
+	pytest tests/ --cov=. --cov-report=html
 	cd ops && docker compose -f docker-compose.dev.yml run --rm sensor pytest tests/ -v
 
 test-unit:
@@ -116,6 +131,13 @@ docker:
 	docker build -t sentinel-sensor:latest -f ops/Dockerfile.sensor .
 
 docker-up:
+	cd ops && $(DOCKER_COMPOSE) up -d
+
+docker-down:
+	cd ops && $(DOCKER_COMPOSE) down
+
+docker-logs:
+	cd ops && $(DOCKER_COMPOSE) logs -f
 	cd ops && docker compose up -d
 
 docker-down:
@@ -132,6 +154,11 @@ lab-up:
 	@echo "Starting Sentinel NetLab (Lab Mode)..."
 	@# Bootstrap secrets if missing
 	@$(PYTHON) ops/gen_lab_secrets.py
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml up --build -d --remove-orphans
+	@echo "Waiting for health..."
+	@sleep 10
+	@# Ensure DB init works in lab context
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
 	cd ops && docker compose -f docker-compose.lab.yml up --build -d --remove-orphans
 	@echo "Waiting for health..."
 	@sleep 10
@@ -143,11 +170,13 @@ lab-up:
 
 lab-down:
 	@echo "Stopping Sentinel NetLab..."
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down
 	cd ops && docker compose -f docker-compose.lab.yml down
 
 lab-reset:
 	@echo "⚠️  RESETTING LAB ENVIRONMENT ⚠️"
 	@echo "Stopping stack..."
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml down -v
 	cd ops && docker compose -f docker-compose.lab.yml down -v
 	@echo "Generating fresh secrets..."
 	@# We remove the old .env.lab to rotate secrets on reset, OR we keep it? 
@@ -162,11 +191,25 @@ lab-reset:
 	@# Wait! "DB... không publish port". 
 	@# If DB is not published, `ops/init_lab_db.py` (running on host) CANNOT interact with it!
 	@# This is a critical architectural conflict with "Option A" offline/internal-only requirement.
+	@# If DB is internal, we must run seed/init via `$(DOCKER_COMPOSE) -f docker-compose.dev.yml run`.
 	@# If DB is internal, we must run seed/init via `docker compose -f docker-compose.dev.yml run`.
 	@# Let's check `ops/init_lab_db.py`.
 	@# It likely uses `psycopg2` to connect. 
 	@# Modification: We need a `lab-seed` target that runs inside the network.
 	@echo "Starting stack..."
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml up -d --build
+	@echo "Waiting for DB..."
+	@sleep 5
+	@echo "Seeding data..."
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml exec -T controller python ops/seed_lab_data.py
+	@echo "✅ Lab Reset Complete."
+
+lab-logs:
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml logs -f
+
+lab-status:
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.lab.yml ps
 	cd ops && docker compose -f docker-compose.lab.yml up -d --build
 	@echo "Waiting for DB..."
 	@sleep 5
