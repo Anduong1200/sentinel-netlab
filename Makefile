@@ -9,7 +9,6 @@ PIP := $(VENV)/Scripts/pip
 PYTEST := $(VENV)/Scripts/pytest
 # Prefer Docker Compose v2 (`docker compose`), fallback to legacy (`docker-compose`).
 DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
-
 # Default target
 help:
 	@echo "Sentinel NetLab - Build System"
@@ -164,8 +163,8 @@ lab-reset:
 	@# Wait! "DB... không publish port". 
 	@# If DB is not published, `ops/init_lab_db.py` (running on host) CANNOT interact with it!
 	@# This is a critical architectural conflict with "Option A" offline/internal-only requirement.
-	@# If DB is internal, we must run seed/init via `docker compose -f docker-compose.dev.yml run`.
-	@# Let's check `ops/init_lab_db.py`.
+	@# If DB is internal, we must run seed/init via `$(DOCKER_COMPOSE) -f docker-compose.dev.yml run`.
+	@# Let's check ops/init_lab_db.py.
 	@# It likely uses `psycopg2` to connect. 
 	@# Modification: We need a `lab-seed` target that runs inside the network.
 	@echo "Starting stack..."
@@ -247,3 +246,5 @@ pre-commit-install:
 
 pre-commit: lint-check typecheck test-unit
 	@echo "Pre-commit checks complete"
+
+
