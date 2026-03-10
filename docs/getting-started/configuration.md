@@ -217,3 +217,30 @@ upload:
   batch_size: 50
   interval_sec: 30
 ```
+
+---
+
+## Distributed Geo-Location (Controller + Sensor)
+
+Use these env vars for end-to-end geo estimation:
+
+```bash
+# Controller
+GEO_ENABLED=true
+SENSOR_POSITIONS_JSON='{"sensor-01":{"x":0,"y":0},"sensor-02":{"x":20,"y":0},"sensor-03":{"x":10,"y":17.3}}'
+GEO_ORIGIN_LAT=10.776889
+GEO_ORIGIN_LON=106.700806
+GEO_SAMPLE_WINDOW_SEC=30
+
+# Sensor
+SENSOR_GEO_ENABLED=true
+SENSOR_GEO_X_M=0
+SENSOR_GEO_Y_M=0
+SENSOR_GEO_Z_M=0
+SENSOR_GEO_HEATMAP_ENABLED=true
+```
+
+Behavior:
+- `>=3` positioned sensors in sample window: controller uses trilateration (`trilateration+kalman`).
+- `<3` positioned sensors: controller falls back to `strongest_rssi` sensor position.
+- `GEO_ORIGIN_LAT/LON` optional; without them, local `x/y` still computed but `lat/lon` projection is omitted.

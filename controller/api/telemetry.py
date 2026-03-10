@@ -5,6 +5,7 @@ from flask import Blueprint, g, jsonify, request
 
 from common.schemas.telemetry import TelemetryBatch  # noqa: E402
 from controller.db.models import Telemetry
+from controller.geo import DistributedGeoService
 from controller.ingest.queue import IngestQueue
 from controller.metrics import (
     BACKPRESSURE,
@@ -130,6 +131,14 @@ def get_networks():
     # Get recent telemetry
     records = Telemetry.query.order_by(Telemetry.ingested_at.desc()).limit(limit).all()
 
+    geo_estimates: dict[str, dict] = {}
+    if config.geo.enabled:
+        try:
+            geo_service = DistributedGeoService(config.geo)
+            geo_estimates = geo_service.estimate_by_bssid(records)
+        except Exception as e:
+            logger.warning(f"Geo enrichment failed: {e}")
+
     networks = {}
     for r in records:
         if not r.data:
@@ -145,12 +154,26 @@ def get_networks():
             net["sensor_id"] = r.sensor_id
             net["last_seen"] = r.ingested_at.isoformat()
 
-            # Ensure Dashboard expects: lat, lon, ssid, risk_score
+            # Preserve GPS projection if present in payload
             if "gps" in net:
                 net["lat"] = net["gps"].get("lat")
                 net["lon"] = net["gps"].get("lon")
+
+            # Geo enrichment from distributed controller estimation
+            geo_data = geo_estimates.get(bssid)
+            if geo_data:
+                net["geo"] = geo_data.get("geo")
+                geo_lat = geo_data.get("lat")
+                geo_lon = geo_data.get("lon")
+                if geo_lat is not None and geo_lon is not None:
+                    net["lat"] = geo_lat
+                    net["lon"] = geo_lon
+                else:
+                    net.setdefault("lat", geo_lat)
+                    net.setdefault("lon", geo_lon)
 
             networks[bssid] = net
 
     results = list(networks.values())
     return jsonify({"count": len(results), "networks": results})
+

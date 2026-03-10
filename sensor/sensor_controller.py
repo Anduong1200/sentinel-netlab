@@ -178,6 +178,107 @@ class SensorController:
         self._frames_parsed = 0
         self._frames_duplicates = 0
 
+        # Geo pipeline (optional)
+        self.geo_mapper = None
+        self._geo_sample_cls = None
+        self._last_heatmap_export_ts = 0.0
+        self._init_geo_pipeline()
+
+    def _init_geo_pipeline(self) -> None:
+        """Initialize geo-mapping dependencies and sensor position."""
+        geo_cfg = getattr(self.config, "geo", None)
+        if not geo_cfg or not geo_cfg.enabled:
+            return
+
+        if geo_cfg.sensor_x_m is None or geo_cfg.sensor_y_m is None:
+            raise ValueError(
+                "Geo pipeline enabled but sensor position missing. "
+                "Set SENSOR_GEO_X_M and SENSOR_GEO_Y_M."
+            )
+
+        try:
+            from sensor.geo_mapping import GeoMapper, RSSISample
+        except ImportError as e:
+            raise RuntimeError(
+                "Geo pipeline enabled but geo dependencies are unavailable"
+            ) from e
+
+        self.geo_mapper = GeoMapper(environment=geo_cfg.environment)
+        self.geo_mapper.register_sensor(
+            self.sensor_id,
+            x=float(geo_cfg.sensor_x_m),
+            y=float(geo_cfg.sensor_y_m),
+            z=float(geo_cfg.sensor_z_m),
+        )
+
+        if geo_cfg.heatmap_enabled:
+            self.geo_mapper.init_heatmap(
+                width_m=float(geo_cfg.heatmap_width_m),
+                height_m=float(geo_cfg.heatmap_height_m),
+                resolution=float(geo_cfg.heatmap_resolution_m),
+            )
+
+        self._geo_sample_cls = RSSISample
+        logger.info(
+            "Geo pipeline enabled for sensor %s at (%.2f, %.2f)",
+            self.sensor_id,
+            float(geo_cfg.sensor_x_m),
+            float(geo_cfg.sensor_y_m),
+        )
+
+    def _geo_ingest_sample(self, net_dict: dict[str, Any]) -> None:
+        """Feed telemetry into geo-mapping pipeline."""
+        if not self.geo_mapper or not self._geo_sample_cls:
+            return
+
+        bssid = net_dict.get("bssid")
+        rssi = net_dict.get("rssi_dbm")
+        if not bssid or rssi is None:
+            return
+
+        frequency = net_dict.get("frequency_mhz") or 2412
+        try:
+            sample = self._geo_sample_cls(
+                sensor_id=self.sensor_id,
+                bssid=str(bssid),
+                rssi_dbm=float(rssi),
+                timestamp_utc=str(
+                    net_dict.get("timestamp_utc") or datetime.now(UTC).isoformat()
+                ),
+                frequency_mhz=int(frequency),
+            )
+            estimate = self.geo_mapper.process_samples([sample])
+        except Exception as e:
+            logger.debug("Geo sample ingestion failed: %s", e)
+            return
+
+        if estimate:
+            net_dict["geo_local"] = {
+                "method": estimate.method,
+                "x_m": round(float(estimate.x), 3),
+                "y_m": round(float(estimate.y), 3),
+                "confidence": round(float(estimate.confidence), 4),
+                "error_radius_m": round(float(estimate.error_radius_m), 3),
+            }
+
+        geo_cfg = self.config.geo
+        if (
+            geo_cfg.heatmap_enabled
+            and self.geo_mapper.heatmap
+            and geo_cfg.heatmap_export_interval_sec > 0
+        ):
+            now = time.monotonic()
+            if now - self._last_heatmap_export_ts >= geo_cfg.heatmap_export_interval_sec:
+                try:
+                    export_path = geo_cfg.heatmap_export_path
+                    export_dir = os.path.dirname(export_path)
+                    if export_dir:
+                        os.makedirs(export_dir, exist_ok=True)
+                    self.geo_mapper.heatmap.export_json(export_path)
+                    self._last_heatmap_export_ts = now
+                except Exception as e:
+                    logger.debug("Heatmap export failed: %s", e)
+
     def start(self) -> bool:
         """
         Start sensor capture and upload loops.
@@ -429,7 +530,8 @@ class SensorController:
             )
 
     def _export_telemetry(self, parsed: Any, telemetry: Any, net_dict: dict) -> None:
-        """Route data to buffers, metrics, and risk assessment. (Exporter)"""
+        """Route data to buffers, metrics, risk, and geo enrichment. (Exporter)"""
+        self._geo_ingest_sample(net_dict)
         self.buffer.append(net_dict)
 
         self.aggregator.record_frame(
@@ -668,3 +770,4 @@ Examples:
 
 if __name__ == "__main__":
     main()
+
