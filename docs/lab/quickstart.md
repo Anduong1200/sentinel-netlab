@@ -30,7 +30,7 @@ By following this guide (approx. 10 minutes), you will have:
 ## 1. Prerequisites
 
 *   **Docker Desktop** (with Docker Compose v2)
-*   **Hardware**: 4GB RAM minimum allocated to Docker.
+*   **Hardware**: 2+ Cores, 4GB RAM minimum allocated to Docker. See **[Hardware & Software Requirements](../reference/hardware_requirements.md)** for detailed specs (including VM setups).
 
 ---
 

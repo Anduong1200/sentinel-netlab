@@ -37,6 +37,7 @@ Sentinel NetLab is a specialized platform for WiFi security research and intrusi
 
 *   **[API Reference](reference/api.md)**: REST API contract, authentication, and endpoints.
 *   **[Configuration](reference/configuration.md)**: Environment variables and profile settings.
+*   **[Hardware & Software Requirements](reference/hardware_requirements.md)**: Detailed specs for CPU, RAM, OS Kernel, Storage, and Virtual Machines.
 *   **[Database Schema](reference/schema.md)**: Data models and schema definitions.
 *   **[Detection Pipeline](detection/overview.md)**: 11-detector architecture and pipeline diagram.
 *   **[Legal & Ethics](reference/legal_ethics.md)**: Authorization, consent, and data handling.

@@ -169,8 +169,7 @@ Then open [http://127.0.0.1:8050](http://127.0.0.1:8050) in your browser.
 
 ### Prerequisites
 - Python 3.11+
-- Linux (for Monitor Mode) or Windows (Development)
-- WiFi Adapter supporting Monitor Mode (e.g., Alfa AWUS036ACM)
+- **[Detailed System Requirements](docs/reference/hardware_requirements.md)** (CPU, RAM, OS Kernel, Storage, and WiFi Adapters for VMs, Lab, and Production).
 
 ### 1. Installation
 

@@ -4,20 +4,7 @@ This guide covers the installation of Sentinel NetLab on Debian-based systems (U
 
 ## Prerequisite Hardware
 
-### Controller (Server)
-- **CPU**: 2+ Cores
-- **RAM**: 4GB+ (8GB recommended for heavy ELK usage)
-- **Storage**: 20GB+
-- **OS**: Ubuntu Server 22.04 LTS
-
-### Sensor (Agent)
-- **Device**: Raspberry Pi 4 (recommended) or any Linux laptop
-- **WiFi Adapter**: Must support **Monitor Mode** and **Packet Injection**.
-    - Recommended Chipsets:
-        - `Atheros AR9271` (Alfa AWUS036NHA) - Rock solid
-        - `MediaTek MT7612U` (Alfa AWUS036ACM) - Good 5GHz support
-        - `RTL8812AU` - Common, but requires messy drivers
-- **OS**: Raspberry Pi OS (64-bit) or Ubuntu/Kali
+For detailed hardware specifications (CPU, RAM, OS Kernel, Storage) for both the Sensor and Controller across different deployment environments (including Virtual Machines), please refer to the **[Hardware & Software Requirements](../reference/hardware_requirements.md)** document.
 
 ---
 
