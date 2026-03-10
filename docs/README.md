@@ -10,6 +10,8 @@ Sentinel NetLab is a specialized platform for WiFi security research and intrusi
 | :--- | :--- | :--- |
 | **Learn & Research** | **[Lab (Quickstart)](lab/quickstart.md)** | Developers, Researchers, Educational use. Uses SQLite, mock sensors, and offline-first mode. |
 | **Deploy & Monitor** | **[Production](prod/deployment.md)** | Security Operations, Permanent deployment. Requires PostgreSQL, TLS, and secure secrets. |
+| **Verify Features** | **[Testing Guide](lab/testing_guide.md)** | Step-by-step instructions to test Controller, Dashboard, Sensor, and Mock pipelines. |
+| **Set up Hardware** | **[WiFi Drivers Guide](reference/wifi_drivers.md)** | Instruction to recognize, install, and troubleshoot Monitor Mode WiFi adapters. |
 
 ---
 
