@@ -117,3 +117,38 @@ docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml ps
 * **Triệu chứng:** Trình duyệt Firefox/Chrome báo không kết nối được đến `127.0.0.1:8080` hoặc vào được URL gốc nhưng hiện "Not Found".
 * **Nguyên nhân:** App Dashboard mặc định phục vụ ở đường dẫn `/dashboard/`.
 * **Cách sửa:** URL chuẩn xác để truy cập bảng điều khiển là: `http://127.0.0.1:8080/dashboard/`. Nếu bạn mới cập nhật Server, hệ thống (Proxy Nginx) sẽ tự chuyển hướng bạn sang đó. Nếu lỗi vẫn tiếp diễn, hãy thử xóa lịch sử/bộ nhớ đệm trình duyệt, hoặc chạy lệnh ép khởi động lại proxy ở lỗi số 1 phía trên.
+
+### 3. Trình duyệt báo lỗi "Secure Connection Failed" (SSL_ERROR_RX_RECORD_TOO_LONG)
+* **Triệu chứng:** Truy cập trang web màn hình báo lỗi SSL, URL tự động bị gắn chữ `https://`.
+* **Nguyên nhân:** Lab Mode của chúng ta được thiết kế chạy nội bộ (localhost) nhẹ và nhanh nên chỉ dùng đường truyền văn bản (HTTP). Các trình duyệt hiện đại (đặc biệt là Firefox) có tính năng tự động nâng cấp bảo mật, ép kết nối qua giao thức mã hóa HTTPS, trong khi cổng 8080 của chúng ta không cấu hình Chứng chỉ Số (SSL/TLS).
+* **Cách sửa:** Bạn phải gõ lại cực chuẩn xác thanh địa chỉ là `http://` thay vì `https://` (Ví dụ: `http://127.0.0.1:8080/dashboard/`). Trường hợp trình duyệt quá "ngoan cố", hãy mở Cửa sổ Ẩn danh (Private/Incognito Mode - Ctrl+Shift+P trên Firefox) dán lại đúng đường dẫn HTTP là xong.
+
+### 4. Lỗi "Failed to create an image... already exists" khi chạy make lab-up
+* **Triệu chứng:** Gõ `make lab-up` bị văng lỗi đỏ lòm báo `failed to create an image docker.io/library/sentinel-controller:lab with target... AlreadyExists`.
+* **Nguyên nhân:** Lệnh buildx/compose của Docker đang bị "kẹt" bộ nhớ đệm (cache) hoặc xung đột tag ảnh khi cố đè một image đang được container tạm thời chiếm giữ.
+* **Cách sửa:** Chạy các lệnh sau để ép Docker xóa sổ ảnh cũ bị lỗi và dọn dẹp cache trước khi build lại:
+  ```bash
+  # Xóa bỏ image bị kẹt một cách triệt để
+  docker rmi sentinel-controller:lab --force
+  
+  # Dọn dẹp cache builder rác (nếu lệnh trên chưa đủ đô)
+  docker builder prune -f
+  
+  # Khởi động lại lab
+  make lab-up
+  ```
+
+### 5. Lỗi "Scapy not installed" (dù đã chạy pip install thành công)
+* **Triệu chứng:** Bạn kích hoạt `source venv/bin/activate` và gõ `pip install scapy` báo thành công. Nhưng khi chạy Script Wardrive/Sensor thì hệ thống vẫn văng lỗi: `Scapy not installed but required for real capture`.
+* **Nguyên nhân:** Có 2 nguyên nhân kinh điển trên các hệ thống Linux:
+  1. **Bạn CHƯA dùng lệnh `sudo` (Trường hợp trong ảnh báo lỗi):** Khi gọi `python sensor/wardrive.py` bằng user thường, module `scapy.all` bên dưới sẽ thất bại khi cố gắng nạp các thư viện bắt gói tin mạng ở tầng thấp (do bị OS từ chối quyền - Permission Denied). Lỗi này bị code bắt nhầm thành `ImportError` khiến nó in ra "Scapy not installed".
+  2. **Bạn cố dùng `sudo python` nhưng bị văng mất môi trường:** Lệnh `sudo` theo mặc định của Linux sẽ **xóa bỏ toàn bộ biến môi trường PATH** của user. Hệ quả là `sudo python` sẽ gọi bản Python gốc của toàn hệ thống (bản chưa cài Scapy) thay vì gọi Python trong `venv/` của bạn!
+* **Cách sửa chuẩn xác 100%:** Luôn kết hợp quyền Root (`sudo`) và gọi chính xác đường dẫn tuyệt đối (Absolute Path) tới file thực thi Python nằm **bên trong venv** của bạn:
+  
+  ```bash
+  # Kích hoạt venv (nếu chưa bật)
+  source venv/bin/activate
+
+  # [QUAN TRỌNG] Gọi sudo kèm đường dẫn python CỦA VENV thay vì gõ python không!
+  sudo venv/bin/python sensor/wardrive.py --sensor-id alfa-01 --iface wlan0 --output wardrive_session.json
+  ```

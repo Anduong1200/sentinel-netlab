@@ -111,10 +111,11 @@ class WardriveCapture:
 
             return networks
 
-        except ImportError:
+        except ImportError as e:
             if not self.mock:
                 logger.critical(
-                    "Scapy not installed but required for real capture. Run: pip install scapy"
+                    f"Scapy failed to load (Error: {e}). "
+                    "Are you running as root with the correct Python venv? Run: pip install scapy"
                 )
                 sys.exit(1)
             return []
