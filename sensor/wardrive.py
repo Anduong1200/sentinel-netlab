@@ -19,8 +19,13 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add repo root to path for imports, and remove script directory to avoid
+# shadowing stdlib modules (e.g. sensor/queue.py vs stdlib queue).
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+sys.path = [p for p in sys.path if Path(p).resolve() != SCRIPT_DIR]
 
 from common.gps.gps_reader import GPSReader  # noqa: E402
 
@@ -346,3 +351,4 @@ See ETHICS.md for legal guidelines.
 
 if __name__ == "__main__":
     main()
+
