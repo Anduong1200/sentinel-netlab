@@ -48,16 +48,26 @@ use an **Arch Linux** guest with USB passthrough for your WiFi adapter (e.g., TL
 
 ### B. Arch Linux dependencies (guest side)
 ```bash
-sudo pacman -Syu --needed \
+sudo pacman -Syu --noconfirm
+sudo pacman -S --needed --noconfirm \
+  git base-devel make curl jq \
   python python-pip python-virtualenv \
-  libpcap \
-  git base-devel \
-  wireless_tools iw tcpdump \
-  aircrack-ng \
-  gpsd
+  docker docker-compose
+
+# Nếu bạn dùng capture thật (không mock), cài thêm:
+sudo pacman -S --needed --noconfirm iw wireless_tools aircrack-ng tcpdump tshark gpsd
 ```
 
-### C. Verify adapter + monitor mode
+### C. Bật Docker đúng cách
+```bash
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker info
+docker compose version
+```
+
+### D. Verify adapter + monitor mode
 ```bash
 lsusb
 ip link
@@ -67,7 +77,7 @@ sudo ip link set wlan0 up
 iw wlan0 info
 ```
 
-### D. Continue with Part 2–4 below
+### E. Continue with Part 2–4 below
 Once monitor mode is working, follow **Part 2–4** to install dependencies and run the sensor.
 
 ---
