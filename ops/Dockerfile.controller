@@ -55,8 +55,8 @@ RUN pip install --no-cache-dir /wheels/*.whl && \
     pip install --no-cache-dir --upgrade --force-reinstall "wheel>=0.46.2" "jaraco-context>=6.1.0" && \
     rm -rf /wheels
 
-# Change ownership of venv to sentinel user
-RUN chown -R sentinel:sentinel /opt/venv
+# Change ownership of venv and app directory to sentinel user
+RUN chown -R sentinel:sentinel /opt/venv /app
 
 USER sentinel
 
