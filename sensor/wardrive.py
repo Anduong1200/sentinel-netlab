@@ -62,10 +62,12 @@ class WardriveCapture:
         try:
             from scapy.all import Dot11, Dot11Beacon, Dot11Elt, RadioTap, sniff
 
-            # Sniff for a short duration
-            packets = sniff(
-                iface=self.iface, timeout=self.timeout, count=50, verbose=False
-            )
+            # Sniff for a short duration (Scapy API differs across versions).
+            try:
+                packets = sniff(iface=self.iface, timeout=self.timeout, count=50)
+            except TypeError:
+                # Fallback for older/newer scapy variants with stricter signatures.
+                packets = sniff(iface=self.iface, timeout=self.timeout)
 
             networks = []
             seen_bssids = set()

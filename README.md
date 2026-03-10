@@ -155,6 +155,11 @@ sentinel-netlab/
 ```bash
 git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
+
+# Option 1: Interactive GUI Setup (Recommended)
+bash sentinel-setup.sh
+
+# Option 2: Manual Makefile (Advanced)
 make lab-up
 ```
 
