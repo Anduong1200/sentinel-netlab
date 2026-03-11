@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import logging
-import math
-from collections import defaultdict
-from dataclasses import dataclass
+import math`r`nfrom collections import defaultdict`r`nfrom collections.abc import Iterable`r`nfrom dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, Iterable
+from typing import Any
 
 from controller.config import GeoConfig
 
@@ -249,3 +247,4 @@ class DistributedGeoService:
         """Normalize RSSI into [0, 1], where 1 means strongest signal."""
         clamped = max(-90.0, min(-30.0, rssi_dbm))
         return (clamped + 90.0) / 60.0
+
