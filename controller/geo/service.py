@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
-import math`r`nfrom collections import defaultdict`r`nfrom collections.abc import Iterable`r`nfrom dataclasses import dataclass
+import math
+from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -87,7 +90,9 @@ class DistributedGeoService:
         if not self.enabled:
             return {}
 
-        cutoff = datetime.now(UTC) - timedelta(seconds=self.geo_config.sample_window_sec)
+        cutoff = datetime.now(UTC) - timedelta(
+            seconds=self.geo_config.sample_window_sec
+        )
 
         grouped: dict[str, dict[str, _SensorReading]] = defaultdict(dict)
         for record in telemetry_records:
@@ -123,9 +128,13 @@ class DistributedGeoService:
             if timestamp < cutoff:
                 continue
 
-            frequency = data.get("frequency_mhz") or getattr(record, "frequency_mhz", None)
+            frequency = data.get("frequency_mhz") or getattr(
+                record, "frequency_mhz", None
+            )
             try:
-                frequency_mhz = int(frequency) if frequency is not None else DEFAULT_FREQUENCY_MHZ
+                frequency_mhz = (
+                    int(frequency) if frequency is not None else DEFAULT_FREQUENCY_MHZ
+                )
             except (TypeError, ValueError):
                 frequency_mhz = DEFAULT_FREQUENCY_MHZ
 
@@ -227,7 +236,9 @@ class DistributedGeoService:
             },
         }
 
-    def _xy_to_lat_lon(self, x_m: float, y_m: float) -> tuple[float | None, float | None]:
+    def _xy_to_lat_lon(
+        self, x_m: float, y_m: float
+    ) -> tuple[float | None, float | None]:
         if self.geo_config.origin_lat is None or self.geo_config.origin_lon is None:
             return None, None
 
@@ -247,4 +258,3 @@ class DistributedGeoService:
         """Normalize RSSI into [0, 1], where 1 means strongest signal."""
         clamped = max(-90.0, min(-30.0, rssi_dbm))
         return (clamped + 90.0) / 60.0
-
