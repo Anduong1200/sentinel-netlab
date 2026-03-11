@@ -32,7 +32,7 @@ from common.privacy import anonymize_mac
 from sensor.alert_manager import AlertManager
 from sensor.baseline import BaselineManager
 from sensor.buffer_manager import BufferManager
-from sensor.capture_driver import IwCaptureDriver, MockCaptureDriver
+from sensor.capture_driver import IwCaptureDriver, MockCaptureDriver, PcapCaptureDriver
 from sensor.channel_hopper import ChannelHopper
 from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
@@ -75,7 +75,9 @@ class SensorController:
         self.batch_size = 200
 
         # Initialize components
-        if config.mock_mode:
+        if getattr(config.capture, "pcap_file", None):
+            self.driver = PcapCaptureDriver(config.capture.pcap_file)
+        elif config.mock_mode:
             self.driver = MockCaptureDriver(self.iface)
         else:
             self.driver = IwCaptureDriver(self.iface)
@@ -140,7 +142,8 @@ class SensorController:
         # Load Risk Engine (Lazy load to avoid circular imports if any)
 
         # Risk Engine
-        self.risk_engine = RiskScorer()
+        ml_model = config.ml.model_path if config.ml.enabled else None
+        self.risk_engine = RiskScorer(ml_model_path=ml_model)
 
         # Advanced Detection Engines
         self.et_detector = AdvancedEvilTwinDetector()
@@ -709,6 +712,13 @@ Examples:
     parser.add_argument("--iface", help="Capture interface")
     parser.add_argument("--channels", help="Comma-separated channels")
     parser.add_argument("--mock-mode", action="store_true", help="Enable mock mode")
+    parser.add_argument("--pcap", help="Replay PCAP file instead of live capture")
+    parser.add_argument(
+        "--enable-ml", action="store_true", help="Enable ML Risk Scoring Boost"
+    )
+    parser.add_argument(
+        "--enable-geo", action="store_true", help="Enable Geo-Location triangulation"
+    )
     parser.add_argument(
         "--learning-mode", action="store_true", help="Enable Baseline Learning Mode"
     )
@@ -728,6 +738,12 @@ Examples:
         os.environ["SENSOR_ID"] = args.sensor_id  # Store in ENV for controller
     if args.mock_mode:
         config.mock_mode = True
+    if args.pcap:
+        config.capture.pcap_file = args.pcap
+    if args.enable_ml:
+        config.ml.enabled = True
+    if args.enable_geo:
+        config.geo.enabled = True
 
     # Setup logging
     logging.basicConfig(

@@ -96,6 +96,17 @@ python sensor/audit.py --profile home --output audit_report.json
 ```
 * **Kỳ vọng:** Công cụ sẽ xuất ra một file JSON báo cáo: "Mạng nhà bạn đạt chuẩn WPA2/WPA3. Không phát hiện lổ hổng OWE thiếu mã hóa PMF, v.v..."
 
+### 4. Test Định Vị (Geo-Location), Học Máy (ML Boost) & Chạy lại PCAP
+Bạn có thể thử nghiệm các tính năng nâng cao trực tiếp từ CLI bằng các cờ đã được tích hợp sẵn:
+```bash
+# Test Replay gói tin mẫu (thay thế cho việc dùng USB WiFi thật để phát hiện tấn công)
+sudo python sensor/cli.py --sensor-id test-pcap --pcap tests/data/captured_attack.pcap
+
+# Khởi chạy Sensor kèm hệ thống học máy (ML Anomaly Detection) và vẽ bản đồ nhiệt (Geo Heatmap)
+sudo python sensor/cli.py --sensor-id test-ml --iface wlan1 --enable-ml --enable-geo
+```
+* **Kỳ vọng:** Khi chạy cờ `--pcap`, hệ thống sẽ đọc gói tin từ file `.pcap` để chấm điểm tấn công thay vì card mạng. Khi chạy với cờ `--enable-ml` và `--enable-geo`, màn hình khởi động (Banner) sẽ thông báo rõ `ML Boost: ENABLED` và `Geo Loc: ENABLED`, đồng thời Pipeline sẽ móc nối dữ liệu Tọa độ và Máy học vào quá trình chấm điểm Risk Score.
+
 ---
 
 ## 5. Xử lý sự cố thường gặp (Troubleshooting Lab Mode)

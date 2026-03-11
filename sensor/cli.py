@@ -82,64 +82,57 @@ def validate_preconditions(args: argparse.Namespace) -> bool:
     return True
 
 
-def merge_config(args: argparse.Namespace, file_config: dict) -> dict[str, Any]:
-    """Merge CLI args with file config (CLI takes precedence)"""
-    config = {
-        "sensor": {
-            "id": args.sensor_id
-            or file_config.get("sensor", {}).get("id", "sensor-01"),
-            "interface": args.iface
-            or file_config.get("sensor", {}).get("interface", "wlan0"),
-        },
-        "capture": {
-            "method": (
-                "mock"
-                if args.mock_mode
-                else file_config.get("capture", {}).get("method", "scapy")
-            ),
-            "channels": (
-                [int(c) for c in args.channels.split(",")]
-                if args.channels
-                else file_config.get("capture", {}).get("channels", [1, 6, 11])
-            ),
-            "dwell_ms": args.dwell_ms
-            or file_config.get("capture", {}).get("dwell_ms", 200),
-        },
-        "buffer": {
-            "max_items": file_config.get("buffer", {}).get("max_items", 10000),
-            "storage_path": args.storage_path
-            or file_config.get("buffer", {}).get(
-                "storage_path", "/var/lib/sentinel/journal"
-            ),
-        },
-        "transport": {
-            "upload_url": args.upload_url
-            or file_config.get("transport", {}).get(
-                "upload_url", "http://localhost:5000/api/v1/telemetry"
-            ),
-            "auth_token": args.auth_token
-            or file_config.get("transport", {}).get("auth_token", "sentinel-dev-2024"),
-        },
-        "upload": {
-            "batch_size": args.batch_size
-            or file_config.get("upload", {}).get("batch_size", 200),
-            "interval_sec": args.upload_interval
-            or file_config.get("upload", {}).get("interval_sec", 5.0),
-        },
-        "privacy": {
-            "anonymize_ssid": args.anonymize_ssid
-            or file_config.get("privacy", {}).get("anonymize_ssid", False),
-            "store_raw_mac": args.store_raw_mac
-            or file_config.get("privacy", {}).get("store_raw_mac", False),
-            "mode": args.privacy_mode
-            or file_config.get("privacy", {}).get("mode", "anonymized"),
-        },
-        "logging": {
-            "level": args.log_level
-            or file_config.get("logging", {}).get("level", "INFO"),
-        },
-        "mock_mode": args.mock_mode,
-    }
+def merge_config(args: argparse.Namespace) -> Any:
+    """Load config and apply CLI overrides"""
+    import os
+
+    from sensor.config import init_config
+
+    config = init_config(args.config_file)
+
+    # Apply Overrides
+    if getattr(args, "sensor_id", None):
+        config.sensor.id = args.sensor_id
+        os.environ["SENSOR_ID"] = args.sensor_id
+    if getattr(args, "iface", None):
+        config.sensor.interface = args.iface
+    if getattr(args, "channels", None):
+        config.capture.channels = [int(c) for c in args.channels.split(",")]
+    if getattr(args, "dwell_ms", None):
+        config.capture.dwell_time = args.dwell_ms / 1000.0
+    if getattr(args, "batch_size", None):
+        config.upload.batch_size = args.batch_size
+    if getattr(args, "upload_interval", None):
+        config.upload.interval_sec = args.upload_interval
+    if getattr(args, "upload_url", None):
+        config.api.upload_url = args.upload_url
+    if getattr(args, "auth_token", None):
+        config.api.api_key = args.auth_token
+    if getattr(args, "storage_path", None):
+        config.storage.pcap_dir = args.storage_path
+
+    # Privacy
+    if getattr(args, "anonymize_ssid", False):
+        config.privacy.anonymize_ssid = True
+    if getattr(args, "store_raw_mac", False):
+        config.privacy.store_raw_mac = True
+    if getattr(args, "privacy_mode", None):
+        config.privacy.mode = args.privacy_mode
+
+    # Modes
+    if getattr(args, "mock_mode", False):
+        config.mock_mode = True
+    if getattr(args, "pcap", None):
+        config.capture.pcap_file = args.pcap
+    if getattr(args, "enable_ml", False):
+        config.ml.enabled = True
+    if getattr(args, "enable_geo", False):
+        config.geo.enabled = True
+
+    # Logging
+    if getattr(args, "log_level", None):
+        config.log_level = args.log_level
+
     return config
 
 
@@ -152,17 +145,23 @@ def setup_logging(level: str) -> None:
     )
 
 
-def print_banner(config: dict) -> None:
+def print_banner(config: Any) -> None:
     """Print startup banner"""
     print("=" * 60)
     print("  Sentinel NetLab Sensor")
     print("  Lightweight Hybrid Wireless IDS")
     print("=" * 60)
-    print(f"  Sensor ID:  {config['sensor']['id']}")
-    print(f"  Interface:  {config['sensor']['interface']}")
-    print(f"  Channels:   {config['capture']['channels']}")
-    print(f"  Mock Mode:  {config['mock_mode']}")
-    print(f"  Upload URL: {config['transport']['upload_url']}")
+    print(f"  Sensor ID:  {config.sensor.id}")
+    print(f"  Interface:  {config.sensor.interface}")
+    print(f"  Channels:   {config.capture.channels}")
+    print(f"  Mock Mode:  {config.mock_mode}")
+    print(f"  Upload URL: {config.api.host}:{config.api.port}")
+    if getattr(config.capture, "pcap_file", None):
+        print(f"  PCAP File:  {config.capture.pcap_file}")
+    if config.ml.enabled:
+        print("  ML Boost:   ENABLED")
+    if config.geo.enabled:
+        print("  Geo Loc:    ENABLED")
     print("=" * 60)
 
 
@@ -172,21 +171,7 @@ def run_sensor_logic(config: dict) -> int:
     try:
         from sensor_controller import SensorController
 
-        controller = SensorController(
-            sensor_id=config["sensor"]["id"],
-            iface=config["sensor"]["interface"],
-            channels=config["capture"]["channels"],
-            dwell_ms=config["capture"]["dwell_ms"],
-            upload_url=config["transport"]["upload_url"],
-            auth_token=config["transport"]["auth_token"],
-            storage_path=config["buffer"]["storage_path"],
-            batch_size=config["upload"]["batch_size"],
-            upload_interval=config["upload"]["interval_sec"],
-            mock_mode=config["mock_mode"],
-            anonymize_ssid=config["privacy"]["anonymize_ssid"],
-            store_raw_mac=config["privacy"]["store_raw_mac"],
-            privacy_mode=config["privacy"]["mode"],
-        )
+        controller = SensorController(config=config)
 
         if controller.start():
             print("\nSensor running. Press Ctrl+C to stop.\n")
@@ -264,6 +249,13 @@ Examples:
     parser.add_argument(
         "--mock-mode", action="store_true", help="Use mock capture driver"
     )
+    parser.add_argument("--pcap", help="Replay PCAP file instead of live capture")
+    parser.add_argument(
+        "--enable-ml", action="store_true", help="Enable ML Risk Scoring Boost"
+    )
+    parser.add_argument(
+        "--enable-geo", action="store_true", help="Enable Geo-Location triangulation"
+    )
     parser.add_argument(
         "--mode", choices=["capture", "test"], default="capture", help="Operation mode"
     )
@@ -305,18 +297,11 @@ Examples:
 
     args = parser.parse_args()
 
-    # Load config file
-    file_config = load_config(args.config_file)
-
-    # Validate
-    if not validate_preconditions(args):
-        return 1
-
     # Merge config
-    config = merge_config(args, file_config)
+    config = merge_config(args)
 
     # Setup logging
-    setup_logging(config["logging"]["level"])
+    setup_logging(config.log_level)
 
     # Print banner
     print_banner(config)

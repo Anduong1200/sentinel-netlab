@@ -29,6 +29,7 @@ class CaptureConfig:
     enable_channel_hop: bool = True
     scan_duration: int = 10  # seconds for single scan
     packet_filter: str = "type mgt"  # Scapy BPF filter
+    pcap_file: str | None = None
 
 
 @dataclass
