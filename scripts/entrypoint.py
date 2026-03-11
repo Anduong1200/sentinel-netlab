@@ -104,11 +104,11 @@ def run_monitor_wrapper(args):
         if not hasattr(args, k):
             setattr(args, k, v)
 
-    # Merge with empty file config (defaults)
-    config = merge_config(args, {})
+    # Merge config
+    config = merge_config(args)
 
     # Initialize system
-    setup_logging(config["logging"]["level"])
+    setup_logging(config.log_level)
     print_banner(config)
 
     # Run
