@@ -268,7 +268,10 @@ class SensorController:
             and geo_cfg.heatmap_export_interval_sec > 0
         ):
             now = time.monotonic()
-            if now - self._last_heatmap_export_ts >= geo_cfg.heatmap_export_interval_sec:
+            if (
+                now - self._last_heatmap_export_ts
+                >= geo_cfg.heatmap_export_interval_sec
+            ):
                 try:
                     export_path = geo_cfg.heatmap_export_path
                     export_dir = os.path.dirname(export_path)
@@ -770,4 +773,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-

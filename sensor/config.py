@@ -446,4 +446,3 @@ if __name__ == "__main__":
 
     # Generate sample config
     generate_sample_config("./sample_config.json")
-

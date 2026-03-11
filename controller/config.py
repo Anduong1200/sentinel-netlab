@@ -108,7 +108,9 @@ def _parse_sensor_positions(raw_json: str) -> dict[str, dict[str, float]]:
     parsed: dict[str, dict[str, float]] = {}
     for sensor_id, pos in payload.items():
         if not isinstance(sensor_id, str) or not sensor_id.strip():
-            raise RuntimeError("Invalid SENSOR_POSITIONS_JSON: sensor_id must be non-empty")
+            raise RuntimeError(
+                "Invalid SENSOR_POSITIONS_JSON: sensor_id must be non-empty"
+            )
         if not isinstance(pos, dict):
             raise RuntimeError(
                 f"Invalid SENSOR_POSITIONS_JSON for '{sensor_id}': position must be object"
@@ -294,4 +296,3 @@ def init_config(strict_production: bool = True) -> ControllerConfig:  # noqa: AR
     )
 
     return cfg
-

@@ -176,4 +176,3 @@ def get_networks():
 
     results = list(networks.values())
     return jsonify({"count": len(results), "networks": results})
-

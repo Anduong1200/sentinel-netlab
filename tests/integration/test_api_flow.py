@@ -228,4 +228,3 @@ def test_networks_geo_enrichment(app_client, auth_headers):
 
     finally:
         telemetry_config.geo = original_geo
-
