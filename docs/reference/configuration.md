@@ -1,6 +1,6 @@
 # Configuration Reference
 
-This document describes all configuration parameters available in `config.example.yaml`.
+This document describes configuration parameters for Sentinel NetLab sensor and controller runtime.
 
 Copy `config.example.yaml` to `config.yaml` and modify as needed.
 
@@ -86,6 +86,52 @@ Copy `config.example.yaml` to `config.yaml` and modify as needed.
 
 ---
 
+## `geo` - Sensor Geo Pipeline
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `enabled` | bool | `false` | Enable geo pipeline inside sensor processing loop |
+| `environment` | string | `indoor_los` | Path-loss profile for RSSI-to-distance modeling |
+| `sensor_x_m` | float | `null` | Sensor local X coordinate (meters, east axis) |
+| `sensor_y_m` | float | `null` | Sensor local Y coordinate (meters, north axis) |
+| `sensor_z_m` | float | `0.0` | Sensor height (meters) |
+| `origin_lat` | float | `null` | Optional map origin latitude for local->GPS projection |
+| `origin_lon` | float | `null` | Optional map origin longitude for local->GPS projection |
+| `heatmap_enabled` | bool | `false` | Enable heatmap accumulation/export |
+| `heatmap_width_m` | float | `50.0` | Heatmap width in meters |
+| `heatmap_height_m` | float | `50.0` | Heatmap height in meters |
+| `heatmap_resolution_m` | float | `1.0` | Grid resolution in meters |
+| `heatmap_export_path` | string | `/var/lib/wifi-scanner/geo_heatmap.json` | JSON export output path |
+| `heatmap_export_interval_sec` | int | `60` | Export interval (seconds) |
+
+When geo is enabled on a sensor, missing `sensor_x_m`/`sensor_y_m` causes fail-fast startup error.
+
+---
+
+## Controller Distributed Geo Settings
+
+| Env Key | Type | Description |
+|---------|------|-------------|
+| `GEO_ENABLED` | bool | Enable controller-side distributed geo enrichment |
+| `SENSOR_POSITIONS_JSON` | JSON | Static sensor coordinates map used for trilateration/fallback |
+| `GEO_ORIGIN_LAT` | float | Optional latitude origin for x/y -> lat/lon projection |
+| `GEO_ORIGIN_LON` | float | Optional longitude origin for x/y -> lat/lon projection |
+| `GEO_SAMPLE_WINDOW_SEC` | int | Time window for per-BSSID sample grouping |
+
+Example:
+
+```bash
+SENSOR_POSITIONS_JSON='{"sensor-01":{"x":0,"y":0},"sensor-02":{"x":20,"y":0},"sensor-03":{"x":10,"y":17.3}}'
+GEO_ORIGIN_LAT=10.776889
+GEO_ORIGIN_LON=106.700806
+```
+
+Geo method semantics:
+- If >=3 positioned sensors exist for a BSSID in the sample window: `trilateration+kalman`.
+- If <3 sensors are available: fallback `strongest_rssi` at strongest sensor position.
+
+---
+
 ## Global Settings
 
 | Parameter | Type | Default | Description |
@@ -97,13 +143,21 @@ Copy `config.example.yaml` to `config.yaml` and modify as needed.
 
 ## Environment Variable Overrides
 
-Some parameters can be overridden via environment variables:
-
 | Config Key | Environment Variable |
 |------------|---------------------|
 | `api.api_key` | `CONTROLLER_SECRET_KEY` |
 | `log_level` | `LOG_LEVEL` |
 | `mock_mode` | `MOCK_MODE` |
+| `geo.enabled` | `SENSOR_GEO_ENABLED` |
+| `geo.sensor_x_m` | `SENSOR_GEO_X_M` |
+| `geo.sensor_y_m` | `SENSOR_GEO_Y_M` |
+| `geo.sensor_z_m` | `SENSOR_GEO_Z_M` |
+| `geo.heatmap_enabled` | `SENSOR_GEO_HEATMAP_ENABLED` |
+| `geo.heatmap_width_m` | `SENSOR_GEO_HEATMAP_WIDTH_M` |
+| `geo.heatmap_height_m` | `SENSOR_GEO_HEATMAP_HEIGHT_M` |
+| `geo.heatmap_resolution_m` | `SENSOR_GEO_HEATMAP_RESOLUTION_M` |
+| `geo.heatmap_export_path` | `SENSOR_GEO_HEATMAP_EXPORT_PATH` |
+| `geo.heatmap_export_interval_sec` | `SENSOR_GEO_HEATMAP_EXPORT_INTERVAL_SEC` |
 
 ---
 

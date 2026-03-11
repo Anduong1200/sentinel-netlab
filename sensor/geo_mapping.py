@@ -660,12 +660,20 @@ class GeoMapper:
 
         bssid = samples[0].bssid
 
+        # Update heatmap from all registered sensor observations, even when there
+        # are not enough sensors for trilateration yet.
+        if self.heatmap:
+            for sample in samples:
+                if sample.sensor_id in self.sensors:
+                    sensor = self.sensors[sample.sensor_id]
+                    self.heatmap.add_reading(sensor.x, sensor.y, sample.rssi_dbm)
+
         # Get trilateration estimate
         sensor_list = [
             self.sensors[s.sensor_id] for s in samples if s.sensor_id in self.sensors
         ]
 
-        if len(sensor_list) < 3:
+        if len(sensor_list) < self.trilateration.min_sensors:
             return None
 
         estimate = self.trilateration.solve_from_rssi(
@@ -687,13 +695,6 @@ class GeoMapper:
         estimate.y = filtered_y
         estimate.error_radius_m = uncertainty
         estimate.method = "trilateration+kalman"
-
-        # Update heatmap
-        if self.heatmap:
-            for sample in samples:
-                if sample.sensor_id in self.sensors:
-                    sensor = self.sensors[sample.sensor_id]
-                    self.heatmap.add_reading(sensor.x, sensor.y, sample.rssi_dbm)
 
         return estimate
 
@@ -773,3 +774,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

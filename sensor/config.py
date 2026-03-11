@@ -101,6 +101,25 @@ class PrivacyConfig:
 
 
 @dataclass
+class GeoConfig:
+    """Geo-location and heatmap settings."""
+
+    enabled: bool = False
+    environment: str = "indoor_los"
+    sensor_x_m: float | None = None
+    sensor_y_m: float | None = None
+    sensor_z_m: float = 0.0
+    origin_lat: float | None = None
+    origin_lon: float | None = None
+    heatmap_enabled: bool = False
+    heatmap_width_m: float = 50.0
+    heatmap_height_m: float = 50.0
+    heatmap_resolution_m: float = 1.0
+    heatmap_export_path: str = "/var/lib/wifi-scanner/geo_heatmap.json"
+    heatmap_export_interval_sec: int = 60
+
+
+@dataclass
 class Config:
     """Main configuration container."""
 
@@ -111,6 +130,7 @@ class Config:
     risk: RiskConfig = field(default_factory=RiskConfig)
     ml: MLConfig = field(default_factory=MLConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
+    geo: GeoConfig = field(default_factory=GeoConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
 
@@ -174,6 +194,11 @@ class ConfigManager:
                 if hasattr(self.config.risk, key):
                     setattr(self.config.risk, key, value)
 
+        if "geo" in data:
+            for key, value in data["geo"].items():
+                if hasattr(self.config.geo, key):
+                    setattr(self.config.geo, key, value)
+
         if "mock_mode" in data:
             self.config.mock_mode = data["mock_mode"]
 
@@ -214,6 +239,28 @@ class ConfigManager:
                 "anonymize_ssid",
                 lambda x: x.lower() == "true",
             ),
+            # Geo
+            "SENSOR_GEO_ENABLED": ("geo", "enabled", lambda x: x.lower() == "true"),
+            "SENSOR_GEO_ENVIRONMENT": ("geo", "environment"),
+            "SENSOR_GEO_X_M": ("geo", "sensor_x_m", float),
+            "SENSOR_GEO_Y_M": ("geo", "sensor_y_m", float),
+            "SENSOR_GEO_Z_M": ("geo", "sensor_z_m", float),
+            "SENSOR_GEO_HEATMAP_ENABLED": (
+                "geo",
+                "heatmap_enabled",
+                lambda x: x.lower() == "true",
+            ),
+            "SENSOR_GEO_HEATMAP_WIDTH_M": ("geo", "heatmap_width_m", float),
+            "SENSOR_GEO_HEATMAP_HEIGHT_M": ("geo", "heatmap_height_m", float),
+            "SENSOR_GEO_HEATMAP_RESOLUTION_M": ("geo", "heatmap_resolution_m", float),
+            "SENSOR_GEO_HEATMAP_EXPORT_PATH": ("geo", "heatmap_export_path"),
+            "SENSOR_GEO_HEATMAP_EXPORT_INTERVAL_SEC": (
+                "geo",
+                "heatmap_export_interval_sec",
+                int,
+            ),
+            "GEO_ORIGIN_LAT": ("geo", "origin_lat", float),
+            "GEO_ORIGIN_LON": ("geo", "origin_lon", float),
         }
 
         # Environment check
@@ -277,6 +324,7 @@ class ConfigManager:
             "storage": asdict(self.config.storage),
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
+            "geo": asdict(self.config.geo),
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }
@@ -293,6 +341,7 @@ class ConfigManager:
             "storage": asdict(self.config.storage),
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
+            "geo": asdict(self.config.geo),
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }
@@ -353,6 +402,7 @@ def generate_sample_config(output_path: str = "./sample_config.json"):
         "storage": asdict(config.storage),
         "api": asdict(config.api),
         "risk": asdict(config.risk),
+        "geo": asdict(config.geo),
         "mock_mode": False,
         "log_level": "INFO",
     }
@@ -386,8 +436,14 @@ if __name__ == "__main__":
     print(f"  DB Path: {config.storage.db_path}")
     print(f"  PCAP Dir: {config.storage.pcap_dir}")
 
+    print("\nGeo Settings:")
+    print(f"  Enabled: {config.geo.enabled}")
+    print(f"  Position: ({config.geo.sensor_x_m}, {config.geo.sensor_y_m})")
+    print(f"  Heatmap Enabled: {config.geo.heatmap_enabled}")
+
     print(f"\nMock Mode: {config.mock_mode}")
     print(f"Log Level: {config.log_level}")
 
     # Generate sample config
     generate_sample_config("./sample_config.json")
+
