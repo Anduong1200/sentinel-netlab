@@ -56,8 +56,8 @@ class DistributedGeoService:
     def __init__(self, geo_config: GeoConfig):
         self.geo_config = geo_config
         self.enabled = bool(geo_config and geo_config.enabled)
-        self._geo_mapper = None
-        self._rssi_sample_cls = None
+        self._geo_mapper: Any = None
+        self._rssi_sample_cls: Any = None
 
         if self.enabled:
             self._init_mapper()
