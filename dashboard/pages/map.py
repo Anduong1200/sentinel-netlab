@@ -78,7 +78,7 @@ layout = html.Div(
         ),
         dcc.Interval(
             id="map-interval",
-            interval=10000,  # Update every 10s
+            interval=3000,  # Update every 3s
             n_intervals=0,
         ),
     ],

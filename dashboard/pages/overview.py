@@ -171,7 +171,7 @@ layout = html.Div(
         ),
         dcc.Interval(
             id="interval-component",
-            interval=5000,
+            interval=2000,
             n_intervals=0,
         ),
     ],

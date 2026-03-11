@@ -44,7 +44,7 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 | **Geo-Location** | Trilateration & Heatmaps for physical source tracking *(Note: `geo_mapping.py` is currently external to the main sensor pipeline)* |
 | **Wardriving** | GPS-correlated mobile network mapping |
 | **Hybrid ML Analysis** | Rule-based engine boosted by Autoencoder Anomaly Detection *(Note: ML boost is disabled by default in `RiskScorer` unless `ml_model_path` is explicitly provided)* |
-| **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly) |
+| **Real-time Dashboard** | Live heatmaps and alert visualization (Dash/Plotly). *[See Real-Time Architecture & Tweaks Guide](docs/architecture/realtime_dashboard.md)* |
 | **Scenario Replay** | Replay captured traffic (PCAP) for regression testing and algorithm tuning *(Note: Runtime primarily uses `IwCaptureDriver` or `MockCaptureDriver`; `PcapCaptureDriver` is currently focused on CI/CD integration testing)* |
 
 > [!IMPORTANT]

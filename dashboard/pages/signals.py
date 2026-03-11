@@ -84,7 +84,7 @@ layout = html.Div(
         ),
         dcc.Interval(
             id="signals-interval",
-            interval=15000,  # Update every 15s
+            interval=5000,  # Update every 5s
             n_intervals=0,
         ),
     ],
