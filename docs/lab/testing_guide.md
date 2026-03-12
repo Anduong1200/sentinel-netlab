@@ -57,18 +57,45 @@ sudo python sentinel.py monitor --sensor-id my-test-sensor --iface wlan1
 *Kết quả:* Terminal của bạn sẽ nhảy liên tục thông tin: Phát hiện AP `MyHomeWiFi`, Ghi nhận Client `00:11...` liên kết. Cứ sau 10 giây (Tùy cấu hình) sẽ có dòng In ra màn hình là đã gom được X frames.
 
 ### 2. Liên kết Sensor và Controller (E2E Test)
-Chạy Sensor và chỉ định gửi dữ liệu sống về Controller của bạn:
+Trước khi chạy sensor thật, tạo token runtime tự động:
 ```bash
-sudo python sentinel.py monitor \
-    --sensor-id "lab-sensor-real" \
-    --iface wlan1 \
-    --upload-url "http://127.0.0.1:8080/api/v1/telemetry"
+# Tạo DASHBOARD_API_TOKEN + SENSOR_AUTH_TOKEN và cập nhật ops/.env.lab
+make lab-gen-runtime-tokens SENSOR_ID=lab-sensor-real
 ```
-*(Nếu Controller ở máy khác, thay 127.0.0.1 bằng IP máy chủ Controller)*
+
+*Lưu ý:* Nếu chưa khởi tạo DB lab thì chạy trước:
+```bash
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+```
+
+Sau đó chạy sensor thật với config trỏ vào proxy lab:
+```bash
+# Lấy token vừa tạo
+SENSOR_TOKEN=$(grep "^SENSOR_AUTH_TOKEN=" ops/.env.lab | cut -d= -f2-)
+
+# Tạo config runtime cho sensor thật
+cat > /tmp/sensor-real.json <<EOF
+{
+  "sensor": { "id": "lab-sensor-real" },
+  "capture": { "interface": "wlan1", "channels": [1, 6, 11], "dwell_time": 0.4 },
+  "api": { "host": "127.0.0.1", "port": 8080, "api_key": "
+${SENSOR_TOKEN}
+", "ssl_enabled": false },
+  "mock_mode": false,
+  "log_level": "INFO"
+}
+EOF
+
+# Chạy sensor (dùng python trong venv)
+sudo .venv/bin/python sentinel.py monitor --config-file /tmp/sensor-real.json
+```
+
+*(Nếu Controller ở máy khác, thay `127.0.0.1` bằng IP máy chủ Controller.)*
 
 *Xác nhận:*
-* Nhìn log của Sensor: Xem dòng `[POST /api/v1/telemetry] 201 Created`
-* Mở Dashboard: Xem số lượng AP / Client / Frames thay đổi theo thời gian thực (Real-time).
+* Sensor không còn lỗi `401 Unauthorized` / `Invalid signature`.
+* API `/api/v1/networks` tăng `count` theo thời gian thực.
+* Dashboard hiển thị AP/Alerts mới ở `/dashboard/`.
 
 ---
 

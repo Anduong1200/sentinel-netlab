@@ -39,6 +39,7 @@ help:
 	@echo "  make docker       Build all Docker images"
 	@echo "  make docker-up    Start docker compose stack"
 	@echo "  make docker-down  Stop docker compose stack"
+	@echo "  make lab-gen-runtime-tokens SENSOR_ID=sensor-real-01  Auto-create dashboard/sensor tokens and update ops/.env.lab"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make schema       Generate JSON schemas from Pydantic"
@@ -251,3 +252,8 @@ pre-commit-install:
 
 pre-commit: lint-check typecheck test-unit
 	@echo "Pre-commit checks complete"
+
+lab-gen-runtime-tokens: compose-check
+	@if [ -z "$(SENSOR_ID)" ]; then echo "Usage: make lab-gen-runtime-tokens SENSOR_ID=sensor-real-01"; exit 2; fi
+	$(PYTHON) ops/gen_lab_runtime_tokens.py --sensor-id $(SENSOR_ID)
+	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml up -d dashboard

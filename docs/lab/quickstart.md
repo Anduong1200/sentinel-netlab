@@ -69,7 +69,28 @@ The entire lab is exposed on **ONE** localhost port:
 
 ---
 
-## 4. Resetting the Lab
+## 4. Optional: Use a Real Sensor (No Mock)
+
+By default, `ops/docker-compose.lab.yml` starts a mock sensor (`SENSOR_MOCK_MODE=true`).
+If you want real telemetry from a physical adapter:
+
+```bash
+# 1) Ensure lab DB has bootstrap admin token (admin-token-dev)
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
+
+# 2) Stop mock sensor container
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml stop sensor
+
+# 3) Auto-create fresh dashboard + sensor runtime tokens, then refresh dashboard
+make lab-gen-runtime-tokens SENSOR_ID=sensor-real-01
+```
+
+Then run your physical sensor process on Linux host/VM using that `SENSOR_ID`.
+See **[Testing Guide](testing_guide.md)** for the end-to-end command flow.
+
+---
+
+## 5. Resetting the Lab
 
 To wipe all data and start fresh:
 
@@ -86,7 +107,7 @@ docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm se
 
 ---
 
-## 5. Stop (Keep Data)
+## 6. Stop (Keep Data)
 
 ```bash
 docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down
