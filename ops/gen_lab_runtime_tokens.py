@@ -24,7 +24,7 @@ from pathlib import Path
 def _create_token(base_url: str, admin_token: str, payload: dict[str, str]) -> str:
     url = f"{base_url.rstrip('/')}/api/v1/tokens"
     body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
+    req = urllib.request.Request(  # noqa: S310
         url=url,
         data=body,
         method="POST",
@@ -50,7 +50,7 @@ def _create_token(base_url: str, admin_token: str, payload: dict[str, str]) -> s
     token = data.get("token")
     if not token:
         raise RuntimeError(f"Token API response missing 'token': {data}")
-    return token
+    return str(token)
 
 
 def _upsert_env(path: Path, updates: dict[str, str]) -> None:
