@@ -1,0 +1,6228 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Tổng hợp kỹ thuật & phòng thủ cho các kiểu tấn công mạng/Wi‑Fi (dạng “attack cards”) - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tong-hop-ky-thuat-phong-thu-cho-cac-kieu-tan-cong-mangwifi-dang-attack-cards" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tổng hợp kỹ thuật &amp; phòng thủ cho các kiểu tấn công mạng/Wi‑Fi (dạng “attack cards”)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../lab/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deep-research-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quy-uoc-source-preference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quy ước “Source Preference”
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-windows-name-resolution-smb-attacks-llmnrnbtnswpadsmb-relay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Windows Name Resolution &amp; SMB Attacks (LLMNR/NBT‑NS/WPAD/SMB Relay)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1) Windows Name Resolution &amp; SMB Attacks (LLMNR/NBT‑NS/WPAD/SMB Relay)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat-technical-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật (Technical Information)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán (Algorithms)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references-uu-tien" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References (ưu tiên)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-dns-cache-poisoning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) DNS Cache Poisoning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2) DNS Cache Poisoning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-snmp-exploits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) SNMP Exploits
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3) SNMP Exploits">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-ftp-exploits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) FTP Exploits
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4) FTP Exploits">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-passthehash-pth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) Pass‑the‑Hash (PtH)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5) Pass‑the‑Hash (PtH)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-kerberos-ldapbased-attacks-active-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) Kerberos &amp; LDAP‑Based Attacks (Active Directory)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6) Kerberos &amp; LDAP‑Based Attacks (Active Directory)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-kerberoasting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) Kerberoasting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7) Kerberoasting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-onpath-adversaryinthemiddle-aitm-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8) On‑Path / Adversary‑in‑the‑Middle (AiTM) Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8) On‑Path / Adversary‑in‑the‑Middle (AiTM) Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-route-manipulation-attacks-bgpigp-hijack-route-leak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9) Route Manipulation Attacks (BGP/IGP hijack, route leak)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9) Route Manipulation Attacks (BGP/IGP hijack, route leak)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-dos-ddos-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10) DoS &amp; DDoS Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10) DoS &amp; DDoS Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-network-access-control-nac-bypass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11) Network Access Control (NAC) Bypass
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11) Network Access Control (NAC) Bypass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-vlan-hopping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12) VLAN Hopping
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12) VLAN Hopping">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-dhcp-starvation-rogue-dhcp-servers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13) DHCP Starvation &amp; Rogue DHCP Servers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13) DHCP Starvation &amp; Rogue DHCP Servers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-rogue-access-points-rogue-ap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14) Rogue Access Points (Rogue AP)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14) Rogue Access Points (Rogue AP)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-evil-twin-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15) Evil Twin Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="15) Evil Twin Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-disassociation-deauthentication-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16) Disassociation / Deauthentication Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="16) Disassociation / Deauthentication Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-preferred-network-list-pnl-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17) Preferred Network List (PNL) Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17) Preferred Network List (PNL) Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-wireless-signal-jamming-interference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18) Wireless Signal Jamming &amp; Interference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="18) Wireless Signal Jamming &amp; Interference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-war-driving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19) War Driving
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19) War Driving">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20-initialization-vector-iv-attacks-unsecured-wireless-protocols-weptkip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20) Initialization Vector (IV) Attacks &amp; Unsecured Wireless Protocols (WEP/TKIP)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="20) Initialization Vector (IV) Attacks &amp; Unsecured Wireless Protocols (WEP/TKIP)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#21-karma-attacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        21) Karma Attacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="21) Karma Attacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#22-fragmentation-attacks-fragattacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22) Fragmentation Attacks (FragAttacks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="22) Fragmentation Attacks (FragAttacks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#23-credential-harvesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23) Credential Harvesting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="23) Credential Harvesting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#24-bluejacking-bluesnarfing-bluetooth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24) Bluejacking &amp; Bluesnarfing (Bluetooth)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="24) Bluejacking &amp; Bluesnarfing (Bluetooth)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#25-rfid-attacks-va-phan-mo-rong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25) RFID Attacks (và phần mở rộng)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="25) RFID Attacks (và phần mở rộng)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#26-password-spraying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26) Password Spraying
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="26) Password Spraying">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Thông tin kỹ thuật
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-thuat-toan_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-dependencies_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-context_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-core-weakness_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Core Weakness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-cost-risk_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-control-surface_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Control Surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-chain-value_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Chain Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phu-luc-nguon-cong-cu-quan-satphan-tich-tham-khao-chung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phụ lục: Nguồn công cụ quan sát/phân tích (tham khảo chung)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="tong-hop-ky-thuat-phong-thu-cho-cac-kieu-tan-cong-mangwifi-dang-attack-cards">Tổng hợp kỹ thuật &amp; phòng thủ cho các kiểu tấn công mạng/Wi‑Fi (dạng “attack cards”)<a class="headerlink" href="#tong-hop-ky-thuat-phong-thu-cho-cac-kieu-tan-cong-mangwifi-dang-attack-cards" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Mục đích:</strong> tài liệu phục vụ <strong>phòng thủ, đánh giá an ninh, và đào tạo</strong>.<br />
+<strong>Lưu ý an toàn:</strong> nội dung <strong>không</strong> cung cấp hướng dẫn khai thác từng bước/command cụ thể; chỉ mô tả cơ chế ở mức kỹ thuật và các biện pháp giảm thiểu/giám sát.</p>
+</blockquote>
+<h2 id="quy-uoc-source-preference">Quy ước “Source Preference”<a class="headerlink" href="#quy-uoc-source-preference" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>P1 (Ưu tiên cao nhất):</strong> Chuẩn/tiêu chuẩn &amp; tài liệu chính thức (RFC/IETF, NIST, Microsoft Learn/whitepaper, Wi‑Fi Alliance, IEEE/nhà sản xuất).</li>
+<li><strong>P2:</strong> Khung tri thức &amp; hướng dẫn cơ quan nhà nước/phi lợi nhuận (MITRE ATT&amp;CK, CISA, MANRS…).</li>
+<li><strong>P3:</strong> Nghiên cứu học thuật/whitepaper hội nghị (USENIX/Black Hat…).</li>
+<li><strong>P4:</strong> Tài liệu vendor/primer (Fortinet, Cisco Meraki docs, Aruba docs…) khi cần thêm ngữ cảnh triển khai.</li>
+</ul>
+<hr />
+<h2 id="1-windows-name-resolution-smb-attacks-llmnrnbtnswpadsmb-relay">1) Windows Name Resolution &amp; SMB Attacks (LLMNR/NBT‑NS/WPAD/SMB Relay)<a class="headerlink" href="#1-windows-name-resolution-smb-attacks-llmnrnbtnswpadsmb-relay" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat-technical-information">1. Thông tin kỹ thuật (Technical Information)<a class="headerlink" href="#1-thong-tin-ky-thuat-technical-information" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức liên quan:</strong> LLMNR (UDP/5355), NBT‑NS/NetBIOS (UDP/137), (thường đi kèm) WPAD, <strong>SMB</strong> (TCP/445), xác thực <strong>NTLM</strong>.</li>
+<li><strong>Cơ chế hoạt động:</strong> Khi <strong>DNS không trả lời/không có bản ghi</strong>, Windows có thể <strong>fallback</strong> sang LLMNR/NBT‑NS để phân giải tên; kẻ tấn công có thể giả làm “nguồn phân giải tên” để <strong>dẫn hướng</strong> lưu lượng và khiến nạn nhân <strong>gửi vật liệu xác thực</strong> (NTLM) tới máy của kẻ tấn công → <strong>thu thập/relay</strong>.</li>
+<li><strong>Công cụ/PM thường gặp (quan sát/đánh giá):</strong> Wireshark để phân tích LLMNR/NBNS/SMB; log Windows Security; công cụ WIDS/IDS nội bộ để phát hiện broadcast/poisoning; hardening bằng GPO.</li>
+</ul>
+<h3 id="2-thuat-toan-algorithms">2. Thuật toán (Algorithms)<a class="headerlink" href="#2-thuat-toan-algorithms" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mã hóa/xác thực bị khai thác:</strong> NTLM là cơ chế challenge‑response dựa trên “password‑derived key/hash”; SMB dùng ký/niêm phong (signing/encryption) nếu bật.</li>
+<li><strong>Thuật toán tấn công (khái niệm):</strong> spoofing/poisoning (phản hồi nhanh hơn), relay (chuyển tiếp chứng thực), replay.</li>
+<li><strong>Thuật toán phòng thủ:</strong> bắt buộc <strong>SMB signing/encryption</strong>, giảm bề mặt NTLM; phát hiện bất thường dựa trên entropy/độ hiếm truy vấn LLMNR, ML anomaly detection trên broadcast + pattern đăng nhập.</li>
+</ul>
+<h3 id="3-dependencies">3. Dependencies<a class="headerlink" href="#3-dependencies" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>OS/driver:</strong> Windows client/Server; tuỳ phiên bản và chính sách bảo mật.</li>
+<li><strong>Cấu hình người dùng:</strong> bật auto-discovery (WPAD), cho phép NTLM, dùng local admin tái sử dụng.</li>
+<li><strong>Hạ tầng:</strong> LAN có broadcast; switch/AP không chặn LLMNR/NBNS; SMB signing không bắt buộc.</li>
+</ul>
+<h3 id="4-context">4. Context<a class="headerlink" href="#4-context" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Môi trường:</strong> doanh nghiệp/campus, đặc biệt VLAN nội bộ.</li>
+<li><strong>Kịch bản:</strong> thiết bị người dùng truy cập share “\server\share” nhưng DNS lỗi → fallback → bị dẫn hướng.</li>
+</ul>
+<h3 id="5-core-weakness">5. Core Weakness<a class="headerlink" href="#5-core-weakness" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Điểm yếu cốt lõi:</strong> cơ chế <strong>fallback name resolution</strong> không có xác thực; phụ thuộc vào việc nạn nhân tự gửi NTLM tới “máy được tin là đúng”.</li>
+<li><strong>Yếu tố con người:</strong> người dùng dễ bấm/nhập vào share/tài nguyên theo tên.</li>
+</ul>
+<h3 id="6-cost-risk">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp (phần mềm miễn phí, 1 máy trong LAN).</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (GPO hardening, SMB signing, giám sát).</li>
+<li><strong>Rủi ro:</strong> lộ thông tin đăng nhập, lateral movement, chiếm domain nếu kết hợp kỹ thuật khác.</li>
+</ul>
+<h3 id="7-control-surface">7. Control Surface<a class="headerlink" href="#7-control-surface" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Client:</strong> tắt LLMNR/NBT‑NS nếu không cần; giảm NTLM; Credential Guard.</li>
+<li><strong>Server/SMB:</strong> bắt buộc SMB signing; cân nhắc SMB encryption.</li>
+<li><strong>Network:</strong> chặn UDP/5355, UDP/137 ở nơi phù hợp; segmentation; IDS/IPS.</li>
+<li><strong>Policy:</strong> chuẩn hoá cấu hình Windows; kiểm kê dịch vụ legacy.</li>
+</ul>
+<h3 id="8-chain-value">8. Chain Value<a class="headerlink" href="#8-chain-value" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chuỗi giá trị:</strong> Microsoft (OS/SMB/NTLM), nhà cung cấp switch/IDS, doanh nghiệp triển khai AD, người dùng cuối, kẻ tấn công, cơ quan/chuẩn (MITRE/CISA).</li>
+</ul>
+<h3 id="references-uu-tien">References (ưu tiên)<a class="headerlink" href="#references-uu-tien" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> Microsoft SMB security hardening: https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security-hardening  </li>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – LLMNR/NBT‑NS Poisoning &amp; SMB Relay (T1557.001): https://attack.mitre.org/techniques/T1557/001/  </li>
+<li><strong>P2:</strong> CISA – Adversary-in-the-Middle (T1557): https://www.cisa.gov/eviction-strategies-tool/info-attack/T1557  </li>
+</ul>
+<hr />
+<h2 id="2-dns-cache-poisoning">2) DNS Cache Poisoning<a class="headerlink" href="#2-dns-cache-poisoning" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> DNS (RFC 1034/1035), caching recursive resolver; DNSSEC (RFC 4033+) cho xác thực dữ liệu DNS.</li>
+<li><strong>Cơ chế:</strong> kẻ tấn công tìm cách làm “resolver cache” lưu bản ghi sai (A/AAAA/NS…) bằng cách <strong>tiêm</strong> phản hồi giả với TxID/port khớp hoặc tận dụng sai sót cấu hình (open recursion, weak randomization).</li>
+<li><strong>Công cụ quan sát/đánh giá:</strong> Wireshark/pcap, log BIND/Unbound, hệ thống Protective DNS.</li>
+</ul>
+<h3 id="2-thuat-toan">2. Thuật toán<a class="headerlink" href="#2-thuat-toan" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mã hóa/xác thực:</strong> DNSSEC dùng chữ ký số (RSA/ECDSA tuỳ triển khai) để xác thực RRsets.</li>
+<li><strong>Tấn công:</strong> spoofing, replay; “guessing”/birthday‑style trên entropy của TxID/port.</li>
+<li><strong>Phòng thủ:</strong> DNSSEC validation; tăng entropy (port + TxID + 0x20 encoding); anomaly detection theo “NXDOMAIN spikes”, TTL bất thường.</li>
+</ul>
+<h3 id="3-dependencies_1">3. Dependencies<a class="headerlink" href="#3-dependencies_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Hệ điều hành/phần mềm:</strong> resolver (BIND/Unbound/Windows DNS…).</li>
+<li><strong>Cấu hình:</strong> open recursion, không bật DNSSEC validation, NAT làm giảm entropy.</li>
+<li><strong>Hạ tầng:</strong> upstream DNS, mạng có khả năng on‑path/off‑path.</li>
+</ul>
+<h3 id="4-context_1">4. Context<a class="headerlink" href="#4-context_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Môi trường:</strong> ISP/corporate DNS; IoT gateway dùng DNS yếu.</li>
+<li><strong>Kịch bản:</strong> chuyển hướng người dùng tới host giả/phishing/malware; phá vỡ cập nhật.</li>
+</ul>
+<h3 id="5-core-weakness_1">5. Core Weakness<a class="headerlink" href="#5-core-weakness_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>DNS truyền thống trên UDP <strong>không có xác thực</strong> nội dung; cache tin vào phản hồi “đúng định danh truy vấn”.</li>
+</ul>
+<h3 id="6-cost-risk_1">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> từ thấp→vừa (tuỳ vị trí on‑path).</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa→cao (DNSSEC, vận hành trust anchor, giám sát).</li>
+<li><strong>Rủi ro:</strong> chiếm phiên, phishing quy mô lớn, gián đoạn dịch vụ.</li>
+</ul>
+<h3 id="7-control-surface_1">7. Control Surface<a class="headerlink" href="#7-control-surface_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Resolver:</strong> bật DNSSEC, harden recursion, randomization.</li>
+<li><strong>Network:</strong> chặn spoofing (BCP38/ingress filtering), DoT/DoH cho client khi phù hợp.</li>
+<li><strong>Policy:</strong> quản trị DNS tập trung, kiểm kê subdomain.</li>
+</ul>
+<h3 id="8-chain-value_1">8. Chain Value<a class="headerlink" href="#8-chain-value_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>IETF/RFC, NIST, nhà cung cấp DNS (Microsoft/ISC), doanh nghiệp vận hành, người dùng.</li>
+</ul>
+<h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 5452 – DNS Cache Poisoning defenses: https://www.rfc-editor.org/rfc/rfc5452  </li>
+<li><strong>P1:</strong> RFC 1034 – DNS concepts: https://www.rfc-editor.org/rfc/rfc1034  </li>
+<li><strong>P1:</strong> RFC 4033 – DNSSEC intro: https://www.rfc-editor.org/rfc/rfc4033  </li>
+<li><strong>P1/P2:</strong> NIST SP 800-81 Rev.3 (IPD) – Secure DNS Deployment: https://csrc.nist.gov/pubs/sp/800/81/r3/ipd  </li>
+</ul>
+<hr />
+<h2 id="3-snmp-exploits">3) SNMP Exploits<a class="headerlink" href="#3-snmp-exploits" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_1">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> SNMPv1/v2c (community string), SNMPv3 (USM/VACM, auth/privacy).</li>
+<li><strong>Cơ chế:</strong> lạm dụng <strong>community string yếu/mặc định</strong>, cấu hình “read‑write”, lộ MIB; đôi khi SNMP bị lợi dụng cho <strong>reflection/amplification</strong> nếu mở ra Internet.</li>
+<li><strong>Công cụ:</strong> Wireshark; công cụ kiểm kê/giám sát SNMP; log thiết bị mạng.</li>
+</ul>
+<h3 id="2-thuat-toan_1">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mã hóa/xác thực:</strong> SNMPv3 USM hỗ trợ xác thực và bảo mật nội dung (auth/integrity/confidentiality).</li>
+<li><strong>Tấn công:</strong> dictionary/brute force vào community; enumeration; replay khi cấu hình yếu.</li>
+<li><strong>Phòng thủ:</strong> chuyển sang SNMPv3; ACL theo IP quản trị; anomaly detection trên tần suất truy vấn/varBind.</li>
+</ul>
+<h3 id="3-dependencies_2">3. Dependencies<a class="headerlink" href="#3-dependencies_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Firmware router/switch/printer; cấu hình community mặc định; mở UDP/161/162.</li>
+</ul>
+<h3 id="4-context_2">4. Context<a class="headerlink" href="#4-context_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp/OT/IoT; thiết bị biên cấu hình lâu năm.</li>
+</ul>
+<h3 id="5-core-weakness_2">5. Core Weakness<a class="headerlink" href="#5-core-weakness_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>SNMPv1/v2c <strong>thiếu bảo mật</strong> (community như “shared secret” yếu; payload có thể bị lộ).</li>
+</ul>
+<h3 id="6-cost-risk_2">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp nếu có truy cập mạng; cao hơn nếu phải on‑path/Internet.</li>
+<li><strong>Rủi ro:</strong> lộ cấu hình mạng, thay đổi cấu hình, gián đoạn.</li>
+</ul>
+<h3 id="7-control-surface_2">7. Control Surface<a class="headerlink" href="#7-control-surface_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Thiết bị:</strong> SNMPv3, tắt RW, đổi community, rotate.</li>
+<li><strong>Network:</strong> quản trị qua VLAN/VRF riêng; chặn SNMP từ Internet.</li>
+<li><strong>Policy:</strong> baseline cấu hình thiết bị.</li>
+</ul>
+<h3 id="8-chain-value_2">8. Chain Value<a class="headerlink" href="#8-chain-value_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor thiết bị, NOC/SOC, nhà tích hợp.</li>
+</ul>
+<h3 id="references_1">References<a class="headerlink" href="#references_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 3411 – SNMP architecture: https://www.rfc-editor.org/rfc/rfc3411  </li>
+<li><strong>P1:</strong> RFC 3414 – SNMPv3 USM security model: https://www.rfc-editor.org/rfc/rfc3414  </li>
+</ul>
+<hr />
+<h2 id="4-ftp-exploits">4) FTP Exploits<a class="headerlink" href="#4-ftp-exploits" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_2">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> FTP (RFC 959) truyền thống <strong>không mã hoá</strong>, kênh điều khiển + kênh dữ liệu; FTPS (FTP over TLS) theo RFC 4217; (khuyến nghị thay thế) SFTP/SSH.</li>
+<li><strong>Cơ chế:</strong> đánh cắp credential qua sniffing, lạm dụng cấu hình anonymous/weak auth, tấn công brute‑force vào tài khoản; sai cấu hình firewall/NAT gây mở rộng bề mặt.</li>
+<li><strong>Công cụ:</strong> Wireshark; log FTP server; hệ thống brute force detection.</li>
+</ul>
+<h3 id="2-thuat-toan_2">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mã hóa/xác thực:</strong> FTPS dùng TLS (AES/ChaCha20… tuỳ cấu hình); FTP thường không mã hoá.</li>
+<li><strong>Tấn công:</strong> brute force/dictionary; credential replay nếu lộ.</li>
+<li><strong>Phòng thủ:</strong> dùng TLS đúng chuẩn, MFA cho quản trị, rate limiting, denylist theo IP.</li>
+</ul>
+<h3 id="3-dependencies_3">3. Dependencies<a class="headerlink" href="#3-dependencies_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Phần mềm FTP server (vsftpd/IIS FTP…); cấu hình TLS; hệ điều hành.</li>
+</ul>
+<h3 id="4-context_3">4. Context<a class="headerlink" href="#4-context_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Hệ thống legacy, trao đổi file nội bộ, đối tác B2B.</li>
+</ul>
+<h3 id="5-core-weakness_3">5. Core Weakness<a class="headerlink" href="#5-core-weakness_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>FTP cổ điển <strong>lộ mật khẩu/phiên</strong> trên mạng; mô hình kênh đôi làm phức tạp firewall.</li>
+</ul>
+<h3 id="6-cost-risk_3">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp nếu sniffing nội bộ; vừa nếu chỉ có Internet.</li>
+<li><strong>Rủi ro:</strong> lộ dữ liệu, chèn file độc hại, chiếm tài khoản.</li>
+</ul>
+<h3 id="7-control-surface_3">7. Control Surface<a class="headerlink" href="#7-control-surface_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Server:</strong> tắt FTP cleartext; bật FTPS/SFTP; harden cipher suites.</li>
+<li><strong>Client:</strong> không dùng FTP plaintext; kiểm tra chứng chỉ.</li>
+<li><strong>Network:</strong> segment server, WAF/IDS cho dịch vụ quản trị.</li>
+<li><strong>Policy:</strong> loại bỏ legacy.</li>
+</ul>
+<h3 id="8-chain-value_3">8. Chain Value<a class="headerlink" href="#8-chain-value_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor OS/server, doanh nghiệp vận hành, đối tác, người dùng.</li>
+</ul>
+<h3 id="references_2">References<a class="headerlink" href="#references_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 959 – FTP: https://www.rfc-editor.org/rfc/rfc959  </li>
+<li><strong>P1:</strong> RFC 4217 – Securing FTP with TLS: https://www.rfc-editor.org/rfc/rfc4217  </li>
+</ul>
+<hr />
+<h2 id="5-passthehash-pth">5) Pass‑the‑Hash (PtH)<a class="headerlink" href="#5-passthehash-pth" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_3">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức/cơ chế liên quan:</strong> NTLM (challenge‑response), NTLM over SMB/HTTP; Windows credential storage (LSASS).</li>
+<li><strong>Cơ chế:</strong> kẻ tấn công lấy được <strong>password hash</strong> (ví dụ NTLM hash) và dùng nó như “vật liệu xác thực thay thế” để đăng nhập/lateral movement mà không cần plaintext password.</li>
+<li><strong>Công cụ quan sát/đánh giá:</strong> Windows event logs, Microsoft Defender/EDR, Sysmon; phân tích đăng nhập NTLM.</li>
+</ul>
+<h3 id="2-thuat-toan_3">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mã hóa/xác thực:</strong> NTLM challenge‑response dựa trên hash; PtH khai thác việc hash có thể đóng vai “bí mật”.</li>
+<li><strong>Tấn công:</strong> credential replay/alternate authentication material.</li>
+<li><strong>Phòng thủ:</strong> giảm/loại NTLM; Credential Guard; hạn chế local admin; tiered admin; phát hiện bất thường (anomaly detection theo logon type, nguồn/đích).</li>
+</ul>
+<h3 id="3-dependencies_4">3. Dependencies<a class="headerlink" href="#3-dependencies_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Windows/AD; NTLM còn được cho phép; reuse local admin; thiếu LAPS/không phân tầng admin.</li>
+</ul>
+<h3 id="4-context_4">4. Context<a class="headerlink" href="#4-context_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp AD, file share/SMB/RDP nội bộ.</li>
+</ul>
+<h3 id="5-core-weakness_4">5. Core Weakness<a class="headerlink" href="#5-core-weakness_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Hash có thể được dùng lại trong một số luồng xác thực; môi trường nhiều tài khoản đặc quyền + reuse.</li>
+</ul>
+<h3 id="6-cost-risk_4">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> vừa (cần lấy hash trước), nhưng sau đó lan rộng nhanh.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa→cao (hardening, thay đổi quy trình admin).</li>
+<li><strong>Rủi ro:</strong> domain compromise, ransomware.</li>
+</ul>
+<h3 id="7-control-surface_4">7. Control Surface<a class="headerlink" href="#7-control-surface_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Client/Server:</strong> Credential Guard, LSASS protection, patching.</li>
+<li><strong>Identity:</strong> giảm NTLM, ưu tiên Kerberos; LAPS/Windows LAPS cho local admin.</li>
+<li><strong>Network:</strong> segmentation, restrict admin protocols.</li>
+<li><strong>Policy:</strong> PAM, least privilege.</li>
+</ul>
+<h3 id="8-chain-value_4">8. Chain Value<a class="headerlink" href="#8-chain-value_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Microsoft, vendor EDR, doanh nghiệp triển khai AD, người dùng/IT admins.</li>
+</ul>
+<h3 id="references_3">References<a class="headerlink" href="#references_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> Microsoft PtH whitepaper (PDF): https://download.microsoft.com/download/7/7/A/77ABC5BD-8320-41AF-863C-6ECFB10CB4B9/Mitigating-Pass-the-Hash-Attacks-and-Other-Credential-Theft-Version-2.pdf  </li>
+<li><strong>P1:</strong> NTLM overview: https://learn.microsoft.com/en-us/windows-server/security/kerberos/ntlm-overview  </li>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Pass the Hash (T1550.002): https://attack.mitre.org/techniques/T1550/002/  </li>
+</ul>
+<hr />
+<h2 id="6-kerberos-ldapbased-attacks-active-directory">6) Kerberos &amp; LDAP‑Based Attacks (Active Directory)<a class="headerlink" href="#6-kerberos-ldapbased-attacks-active-directory" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_4">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> Kerberos (KDC, TGT/TGS), LDAP cho truy vấn directory; LDAPS/StartTLS khi mã hoá.</li>
+<li><strong>Cơ chế:</strong> tấn công thường xoay quanh <strong>vật liệu vé (ticket)</strong>, cấu hình cipher yếu (ví dụ RC4 legacy), hoặc cấu hình LDAP không an toàn (simple bind không TLS, thiếu LDAP signing/channel binding, quyền truy vấn quá rộng).</li>
+<li><strong>Công cụ (phòng thủ/giám sát):</strong> Windows auditing (event 4768/4769…), giám sát DC, Wireshark cho Kerberos/LDAP, SIEM.</li>
+</ul>
+<h3 id="2-thuat-toan_4">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Kerberos:</strong> dùng AES/RC4‑HMAC tuỳ cấu hình; khoá từ mật khẩu tài khoản dịch vụ/máy.</li>
+<li><strong>LDAP:</strong> xác thực qua SASL hoặc simple bind; bảo vệ qua TLS; integrity/signing ở lớp ứng dụng/transport.</li>
+<li><strong>Phòng thủ:</strong> migration từ RC4 sang AES; nguyên tắc “secure bind”; anomaly detection trên volume truy vấn/đăng nhập.</li>
+</ul>
+<h3 id="3-dependencies_5">3. Dependencies<a class="headerlink" href="#3-dependencies_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Phiên bản Windows Server/DC, cấu hình domain, legacy apps cần RC4/LDAP simple bind.</li>
+</ul>
+<h3 id="4-context_5">4. Context<a class="headerlink" href="#4-context_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp; tích hợp SSO, ứng dụng nội bộ, hệ thống IAM.</li>
+</ul>
+<h3 id="5-core-weakness_5">5. Core Weakness<a class="headerlink" href="#5-core-weakness_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Trust/misconfig; legacy crypto; quyền truy cập directory “quá rộng”; thiếu ràng buộc kênh (channel binding).</li>
+</ul>
+<h3 id="6-cost-risk_5">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> từ vừa→cao (phụ thuộc vị trí và quyền).</li>
+<li><strong>Rủi ro:</strong> leo thang đặc quyền, điều khiển domain.</li>
+</ul>
+<h3 id="7-control-surface_5">7. Control Surface<a class="headerlink" href="#7-control-surface_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Identity/DC:</strong> harden Kerberos/LDAP, bật logging, giảm RC4, LDAP signing.</li>
+<li><strong>Apps:</strong> migrate LDAPS/StartTLS; giảm đặc quyền tài khoản dịch vụ.</li>
+<li><strong>Policy:</strong> quản trị SPN/service account, kiểm soát thay đổi.</li>
+</ul>
+<h3 id="8-chain-value_5">8. Chain Value<a class="headerlink" href="#8-chain-value_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Microsoft/AD ecosystem, vendor ứng dụng, doanh nghiệp, người dùng.</li>
+</ul>
+<h3 id="references_4">References<a class="headerlink" href="#references_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 4120 – Kerberos V5: https://www.rfc-editor.org/rfc/rfc4120  </li>
+<li><strong>P1:</strong> RFC 4511 – LDAP protocol: https://www.rfc-editor.org/rfc/rfc4511  </li>
+<li><strong>P2:</strong> CISA – Detecting &amp; Mitigating Active Directory Compromises: https://www.cisa.gov/resources-tools/resources/detecting-and-mitigating-active-directory-compromises  </li>
+</ul>
+<hr />
+<h2 id="7-kerberoasting">7) Kerberoasting<a class="headerlink" href="#7-kerberoasting" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_5">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> Kerberos (TGS ticket cho service/SPN).</li>
+<li><strong>Cơ chế:</strong> kẻ tấn công tìm cách có được <strong>service ticket (TGS)</strong> cho tài khoản dịch vụ; nếu ticket được mã hoá bằng khoá suy ra từ mật khẩu yếu/RC4 legacy, có thể bị <strong>brute‑force offline</strong> để suy ra mật khẩu tài khoản dịch vụ.</li>
+<li><strong>Quan sát/giám sát:</strong> event <strong>4769</strong> trên DC (TGS requested) là tín hiệu cần tương quan ngữ cảnh.</li>
+</ul>
+<h3 id="2-thuat-toan_5">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Crypto liên quan:</strong> RC4‑HMAC (legacy) dễ bị lạm dụng hơn; AES tốt hơn nhưng vẫn phụ thuộc mật khẩu mạnh.</li>
+<li><strong>Tấn công:</strong> dictionary/brute force offline trên vật liệu ticket.</li>
+<li><strong>Phòng thủ:</strong> chuyển sang AES, bỏ RC4; mật khẩu dài cho service accounts; gMSA; anomaly detection cho pattern TGS.</li>
+</ul>
+<h3 id="3-dependencies_6">3. Dependencies<a class="headerlink" href="#3-dependencies_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>AD có service accounts/SPN; policy crypto còn RC4; mật khẩu dịch vụ yếu/không rotate.</li>
+</ul>
+<h3 id="4-context_6">4. Context<a class="headerlink" href="#4-context_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp; hệ thống có nhiều dịch vụ (SQL/HTTP/SharePoint…) dùng SPN.</li>
+</ul>
+<h3 id="5-core-weakness_6">5. Core Weakness<a class="headerlink" href="#5-core-weakness_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vé dịch vụ có thể bị lấy bởi principal hợp lệ; sức mạnh bảo mật phụ thuộc vào khoá từ mật khẩu/cipher.</li>
+</ul>
+<h3 id="6-cost-risk_6">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> vừa (cần foothold/quyền trong domain); bẻ offline có thể tốn compute.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa→cao (migrate crypto, gMSA, inventory SPN).</li>
+<li><strong>Rủi ro:</strong> chiếm tài khoản dịch vụ, leo thang.</li>
+</ul>
+<h3 id="7-control-surface_6">7. Control Surface<a class="headerlink" href="#7-control-surface_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>DC/KDC:</strong> giảm RC4, tăng logging.</li>
+<li><strong>Identity:</strong> gMSA, mật khẩu dài; giảm SPN không cần thiết.</li>
+<li><strong>Network/Policy:</strong> phát hiện truy vấn TGS bất thường; quy trình quản lý service accounts.</li>
+</ul>
+<h3 id="8-chain-value_6">8. Chain Value<a class="headerlink" href="#8-chain-value_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Microsoft + vendor ứng dụng AD‑integrated; doanh nghiệp; attacker.</li>
+</ul>
+<h3 id="references_5">References<a class="headerlink" href="#references_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> Microsoft guidance to mitigate Kerberoasting: https://www.microsoft.com/en-us/security/blog/2024/10/11/microsofts-guidance-to-help-mitigate-kerberoasting/  </li>
+<li><strong>P1:</strong> Microsoft blog “Beyond RC4…” (lộ trình tắt RC4): https://www.microsoft.com/en-us/windows-server/blog/2025/12/03/beyond-rc4-for-windows-authentication  </li>
+<li><strong>P1:</strong> Event 4769 (Kerberos service ticket requested): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769  </li>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Kerberoasting (T1558.003): https://attack.mitre.org/techniques/T1558/003/  </li>
+</ul>
+<hr />
+<h2 id="8-onpath-adversaryinthemiddle-aitm-attacks">8) On‑Path / Adversary‑in‑the‑Middle (AiTM) Attacks<a class="headerlink" href="#8-onpath-adversaryinthemiddle-aitm-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_6">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> phụ thuộc lớp tấn công: ARP (LAN), DHCP (LAN), DNS (resolver), Wi‑Fi evil twin; mục tiêu là “đứng giữa” để sniff/modify/relay.</li>
+<li><strong>Cơ chế:</strong> thao túng cơ chế định tuyến/ánh xạ (ARP), cấp phát địa chỉ (DHCP), phân giải tên (DNS/LLMNR), hoặc lừa kết nối Wi‑Fi để trở thành điểm trung gian.</li>
+<li><strong>Công cụ (phòng thủ):</strong> DAI/DHCP snooping, IDS/IPS, TLS inspection theo chính sách, chứng chỉ/pinning.</li>
+</ul>
+<h3 id="2-thuat-toan_6">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> spoofing + replay + relay.</li>
+<li><strong>Phòng thủ:</strong> xác thực hai chiều (mTLS/802.1X/EAP‑TLS), integrity checking (DAI), anomaly detection theo thay đổi gateway/DNS.</li>
+</ul>
+<h3 id="3-dependencies_7">3. Dependencies<a class="headerlink" href="#3-dependencies_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mạng LAN broadcast; switch/AP không bật DAI/DHCP snooping; thiết bị tin vào gateway/DNS không xác thực.</li>
+</ul>
+<h3 id="4-context_7">4. Context<a class="headerlink" href="#4-context_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Quán café, mạng doanh nghiệp, IoT subnet.</li>
+</ul>
+<h3 id="5-core-weakness_7">5. Core Weakness<a class="headerlink" href="#5-core-weakness_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhiều giao thức lớp 2/3 <strong>thiếu xác thực</strong> (ARP/DHCP), và con người dễ bị lừa (Wi‑Fi).</li>
+</ul>
+<h3 id="6-cost-risk_7">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp→vừa (tuỳ vị trí).</li>
+<li><strong>Rủi ro:</strong> đánh cắp credential/phiên, chỉnh sửa dữ liệu, malware.</li>
+</ul>
+<h3 id="7-control-surface_7">7. Control Surface<a class="headerlink" href="#7-control-surface_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Network:</strong> DAI, DHCP snooping, segmentation.</li>
+<li><strong>App/Client:</strong> TLS/HSTS, VPN, certificate validation.</li>
+<li><strong>Policy:</strong> ZTNA, đào tạo người dùng.</li>
+</ul>
+<h3 id="8-chain-value_7">8. Chain Value<a class="headerlink" href="#8-chain-value_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor switch/AP, enterprise SOC, chuẩn TLS/IETF.</li>
+</ul>
+<h3 id="references_6">References<a class="headerlink" href="#references_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Adversary‑in‑the‑Middle (T1557): https://attack.mitre.org/techniques/T1557/  </li>
+<li><strong>P2:</strong> MITRE – ARP Cache Poisoning (T1557.002): https://attack.mitre.org/techniques/T1557/002/  </li>
+<li><strong>P1:</strong> RFC 826 – ARP: https://www.rfc-editor.org/rfc/rfc826  </li>
+<li><strong>P4:</strong> Cisco Meraki – Dynamic ARP Inspection (DAI): https://documentation.meraki.com/Switching/MS_-_Switches/Operate_and_Maintain/How-Tos/Dynamic_ARP_Inspection  </li>
+</ul>
+<hr />
+<h2 id="9-route-manipulation-attacks-bgpigp-hijack-route-leak">9) Route Manipulation Attacks (BGP/IGP hijack, route leak)<a class="headerlink" href="#9-route-manipulation-attacks-bgpigp-hijack-route-leak" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_7">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> BGP (Internet), IGP (OSPF/IS‑IS) trong nội bộ; tuyến đường quyết định đường đi gói tin.</li>
+<li><strong>Cơ chế:</strong> quảng bá prefix sai/hijack, route leak, thay đổi policy để chuyển hướng lưu lượng qua AS/thiết bị của kẻ tấn công.</li>
+<li><strong>Công cụ (phòng thủ):</strong> giám sát BGP (ROV/RPKI), route monitoring, alert theo bất thường ASN/prefix.</li>
+</ul>
+<h3 id="2-thuat-toan_7">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> route injection/announcement manipulation; đôi khi kết hợp traffic engineering.</li>
+<li><strong>Phòng thủ:</strong> <strong>RPKI/ROV</strong>, lọc prefix (prefix‑list), anomaly detection theo thay đổi AS‑path.</li>
+</ul>
+<h3 id="3-dependencies_8">3. Dependencies<a class="headerlink" href="#3-dependencies_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhà mạng/AS vận hành BGP; thiếu RPKI/ROV; cấu hình policy sai.</li>
+</ul>
+<h3 id="4-context_8">4. Context<a class="headerlink" href="#4-context_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>ISP, CDN, enterprise multi‑homing.</li>
+</ul>
+<h3 id="5-core-weakness_8">5. Core Weakness<a class="headerlink" href="#5-core-weakness_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>BGP truyền thống dựa nhiều vào <strong>trust</strong> giữa các AS; bảo mật phụ thuộc thực hành vận hành.</li>
+</ul>
+<h3 id="6-cost-risk_8">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> cao hơn (cần vị trí/AS hoặc compromise).</li>
+<li><strong>Rủi ro:</strong> nghe lén, chuyển hướng, gián đoạn diện rộng.</li>
+</ul>
+<h3 id="7-control-surface_8">7. Control Surface<a class="headerlink" href="#7-control-surface_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Routing:</strong> ROV, filtering, MANRS.</li>
+<li><strong>Network:</strong> giám sát NetFlow, DDoS mitigation kết hợp.</li>
+<li><strong>Policy:</strong> quy trình change management.</li>
+</ul>
+<h3 id="8-chain-value_8">8. Chain Value<a class="headerlink" href="#8-chain-value_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhà mạng, IETF, NIST, doanh nghiệp dùng dịch vụ.</li>
+</ul>
+<h3 id="references_7">References<a class="headerlink" href="#references_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 4271 – BGP‑4: https://www.rfc-editor.org/rfc/rfc4271  </li>
+<li><strong>P1:</strong> NIST SP 800-189 Rev.1 (IPD) – BGP Security &amp; Resilience: https://csrc.nist.gov/pubs/sp/800/189/r1/ipd  </li>
+<li><strong>P2:</strong> MANRS documentation: https://docs.manrs.org/  </li>
+</ul>
+<hr />
+<h2 id="10-dos-ddos-attacks">10) DoS &amp; DDoS Attacks<a class="headerlink" href="#10-dos-ddos-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_8">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Loại hình:</strong> volumetric (băng thông), protocol (SYN floods, amplification), application (HTTP floods).</li>
+<li><strong>Cơ chế:</strong> làm cạn kiệt tài nguyên (CPU, conn table, băng thông) hoặc kích hoạt cơ chế retry/backoff.</li>
+<li><strong>Công cụ (phòng thủ):</strong> rate limiting, WAF, CDN/scrubbing, NetFlow, SIEM.</li>
+</ul>
+<h3 id="2-thuat-toan_8">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> flooding, reflection/amplification (DNS/NTP/SSDP…).</li>
+<li><strong>Phòng thủ:</strong> anomaly detection (baseline theo thời gian), entropy‑based (IP/UA distribution), automated mitigation (RTBH/flowspec theo chính sách).</li>
+</ul>
+<h3 id="3-dependencies_9">3. Dependencies<a class="headerlink" href="#3-dependencies_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Bề mặt dịch vụ public; thiếu CDN/WAF; cấu hình anti‑spoofing yếu.</li>
+</ul>
+<h3 id="4-context_9">4. Context<a class="headerlink" href="#4-context_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp public web/API; dịch vụ critical.</li>
+</ul>
+<h3 id="5-core-weakness_9">5. Core Weakness<a class="headerlink" href="#5-core-weakness_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Internet “best effort”; khó phân biệt flash crowd vs DoS.</li>
+</ul>
+<h3 id="6-cost-risk_9">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp→rất cao (tùy botnet).</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa→cao (scrubbing, CDN).</li>
+<li><strong>Rủi ro:</strong> downtime, thiệt hại doanh thu, SLA.</li>
+</ul>
+<h3 id="7-control-surface_9">7. Control Surface<a class="headerlink" href="#7-control-surface_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Edge/CDN/WAF</strong>, <strong>Network</strong> (RTBH/flowspec), <strong>App</strong> (caching, backpressure), <strong>Policy</strong> (IR playbook).</li>
+</ul>
+<h3 id="8-chain-value_9">8. Chain Value<a class="headerlink" href="#8-chain-value_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>ISP/CDN, enterprise, người dùng.</li>
+</ul>
+<h3 id="references_8">References<a class="headerlink" href="#references_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 4732 – Internet DoS considerations: https://www.rfc-editor.org/rfc/rfc4732  </li>
+<li><strong>P2:</strong> CISA – DDoS Quick Guide: https://www.cisa.gov/resources-tools/resources/understanding-denial-service-attacks  </li>
+<li><strong>P1/P2:</strong> NIST SP 800-189 Rev.1 (IPD) – routing security + DDoS aspects: https://csrc.nist.gov/pubs/sp/800/189/r1/ipd  </li>
+</ul>
+<hr />
+<h2 id="11-network-access-control-nac-bypass">11) Network Access Control (NAC) Bypass<a class="headerlink" href="#11-network-access-control-nac-bypass" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_9">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức/công nghệ:</strong> 802.1X (port‑based access control), EAP, RADIUS; NAC thường kết hợp posture (AV/MDM) và dynamic VLAN/ACL.</li>
+<li><strong>Cơ chế bypass (khái niệm):</strong> khai thác <strong>misconfiguration</strong> (fallback sang MAB/guest), lộ credential, thiết bị trung gian (rogue switch), hoặc thiếu ràng buộc danh tính thiết bị.</li>
+<li><strong>Công cụ (phòng thủ):</strong> log NAC/RADIUS, Wireshark cho EAPOL, SIEM correlation.</li>
+</ul>
+<h3 id="2-thuat-toan_9">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Xác thực:</strong> EAP‑TLS (mạnh), PEAP/MSCHAPv2 (yếu hơn nếu triển khai sai).</li>
+<li><strong>Tấn công:</strong> credential replay, session hijack nếu kiểm soát kênh yếu.</li>
+<li><strong>Phòng thủ:</strong> EAP‑TLS + device cert; continuous posture; anomaly detection theo “MAC move”, “unexpected VLAN”.</li>
+</ul>
+<h3 id="3-dependencies_10">3. Dependencies<a class="headerlink" href="#3-dependencies_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Firmware switch, supplicant OS/driver; cấu hình fallback; quản lý chứng chỉ/PKI.</li>
+</ul>
+<h3 id="4-context_10">4. Context<a class="headerlink" href="#4-context_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Campus/enterprise wired + Wi‑Fi.</li>
+</ul>
+<h3 id="5-core-weakness_10">5. Core Weakness<a class="headerlink" href="#5-core-weakness_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>“Compatibility mode” (guest/MAB) và quy trình onboard thiết bị không chặt.</li>
+</ul>
+<h3 id="6-cost-risk_10">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> vừa (thường cần có mặt trong mạng).</li>
+<li><strong>Chi phí phòng thủ:</strong> cao (NAC, PKI, vận hành).</li>
+<li><strong>Rủi ro:</strong> truy cập trái phép vào VLAN nội bộ, lateral movement.</li>
+</ul>
+<h3 id="7-control-surface_10">7. Control Surface<a class="headerlink" href="#7-control-surface_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Access layer:</strong> cấu hình 802.1X đúng, giảm fallback.</li>
+<li><strong>Identity/PKI:</strong> cấp/thu hồi cert, MDM.</li>
+<li><strong>Network:</strong> dynamic segmentation, monitoring.</li>
+<li><strong>Policy:</strong> onboarding thiết bị, BYOD.</li>
+</ul>
+<h3 id="8-chain-value_10">8. Chain Value<a class="headerlink" href="#8-chain-value_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor NAC, switch/AP, PKI/MDM, doanh nghiệp.</li>
+</ul>
+<h3 id="references_9">References<a class="headerlink" href="#references_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 3748 – EAP: https://www.rfc-editor.org/rfc/rfc3748  </li>
+<li><strong>P1:</strong> RFC 2865 – RADIUS: https://www.rfc-editor.org/rfc/rfc2865  </li>
+<li><strong>P1/P4:</strong> NIST SP 800-97 – Wireless RSN guidance (nêu 802.1X/EAP trong ngữ cảnh WLAN): https://csrc.nist.gov/pubs/sp/800/97/final  </li>
+</ul>
+<hr />
+<h2 id="12-vlan-hopping">12) VLAN Hopping<a class="headerlink" href="#12-vlan-hopping" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_10">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức/công nghệ:</strong> IEEE 802.1Q VLAN tagging; trunk/access port; một số môi trường có cơ chế auto‑trunk (DTP/vendor‑specific).</li>
+<li><strong>Cơ chế (khái niệm):</strong> lợi dụng cấu hình trunk/native VLAN để “nhảy” VLAN (ví dụ double‑tagging) hoặc switch spoofing khi port bị cấu hình sai.</li>
+<li><strong>Công cụ phòng thủ:</strong> giám sát switch logs, port security, IDS nội bộ.</li>
+</ul>
+<h3 id="2-thuat-toan_10">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> frame crafting/tagging (khái niệm).</li>
+<li><strong>Phòng thủ:</strong> disable auto‑trunk, xác định rõ native VLAN, pruning, VLAN ACL.</li>
+</ul>
+<h3 id="3-dependencies_11">3. Dependencies<a class="headerlink" href="#3-dependencies_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Cấu hình switch (trunk để hở, native VLAN dùng chung), driver NIC hỗ trợ tagging.</li>
+</ul>
+<h3 id="4-context_11">4. Context<a class="headerlink" href="#4-context_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp/campus nhiều VLAN.</li>
+</ul>
+<h3 id="5-core-weakness_11">5. Core Weakness<a class="headerlink" href="#5-core-weakness_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Misconfiguration ở access layer (trunk negotiation/thiếu kiểm soát).</li>
+</ul>
+<h3 id="6-cost-risk_11">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> vừa (thường cần cắm dây/foothold).</li>
+<li><strong>Rủi ro:</strong> phá segmentation, truy cập tài nguyên VLAN khác.</li>
+</ul>
+<h3 id="7-control-surface_11">7. Control Surface<a class="headerlink" href="#7-control-surface_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Switch:</strong> port mode cố định, tắt negotiation khi không cần, ACL.</li>
+<li><strong>Network:</strong> micro‑segmentation, monitoring.</li>
+<li><strong>Policy:</strong> baseline cấu hình access switch.</li>
+</ul>
+<h3 id="8-chain-value_11">8. Chain Value<a class="headerlink" href="#8-chain-value_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor switch, enterprise ops.</li>
+</ul>
+<h3 id="references_10">References<a class="headerlink" href="#references_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P4:</strong> Juniper – VLAN tagging (802.1Q) concepts: https://www.juniper.net/documentation/us/en/software/junos/vlan-l2/topics/concept/l2-vlan-tagging-understanding.html  </li>
+<li><strong>P4:</strong> JumpCloud – VLAN hopping overview &amp; mitigations: https://jumpcloud.com/blog/vlan-hopping-attack  </li>
+</ul>
+<hr />
+<h2 id="13-dhcp-starvation-rogue-dhcp-servers">13) DHCP Starvation &amp; Rogue DHCP Servers<a class="headerlink" href="#13-dhcp-starvation-rogue-dhcp-servers" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_11">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> DHCP (RFC 2131). Client tin vào DHCP server để nhận IP/gateway/DNS.</li>
+<li><strong>Cơ chế:</strong> <strong>starvation</strong> làm cạn pool DHCP; hoặc <strong>rogue DHCP</strong> cấp phát cấu hình sai (gateway/DNS) để dẫn hướng/gián đoạn.</li>
+<li><strong>Công cụ phòng thủ:</strong> DHCP snooping, IP source guard, log DHCP server, IDS.</li>
+</ul>
+<h3 id="2-thuat-toan_11">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> flooding/abuse of state; spoofing DHCP responses.</li>
+<li><strong>Phòng thủ:</strong> DHCP snooping + binding table; anomaly detection theo số lease request/spike.</li>
+</ul>
+<h3 id="3-dependencies_12">3. Dependencies<a class="headerlink" href="#3-dependencies_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Switch hỗ trợ snooping; cấu hình trust/untrust; DHCP server logs.</li>
+</ul>
+<h3 id="4-context_12">4. Context<a class="headerlink" href="#4-context_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>LAN doanh nghiệp, Wi‑Fi guest/campus.</li>
+</ul>
+<h3 id="5-core-weakness_12">5. Core Weakness<a class="headerlink" href="#5-core-weakness_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>DHCP không có xác thực mặc định; dễ bị giả mạo trong broadcast domain.</li>
+</ul>
+<h3 id="6-cost-risk_12">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp nếu ở cùng L2.</li>
+<li><strong>Rủi ro:</strong> MITM, DNS hijack, mất kết nối diện rộng.</li>
+</ul>
+<h3 id="7-control-surface_12">7. Control Surface<a class="headerlink" href="#7-control-surface_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Switch:</strong> DHCP snooping, rate limit.</li>
+<li><strong>Server:</strong> monitoring lease anomalies.</li>
+<li><strong>Policy:</strong> phân tách VLAN, cổng “trusted” rõ ràng.</li>
+</ul>
+<h3 id="8-chain-value_12">8. Chain Value<a class="headerlink" href="#8-chain-value_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor switch, enterprise networking.</li>
+</ul>
+<h3 id="references_11">References<a class="headerlink" href="#references_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> RFC 2131 – DHCP: https://www.rfc-editor.org/rfc/rfc2131  </li>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – DHCP Spoofing (T1557.003): https://attack.mitre.org/techniques/T1557/003/  </li>
+</ul>
+<hr />
+<h2 id="14-rogue-access-points-rogue-ap">14) Rogue Access Points (Rogue AP)<a class="headerlink" href="#14-rogue-access-points-rogue-ap" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_12">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> IEEE 802.11 (Wi‑Fi). Rogue AP là AP không được quản trị cho phép nhưng nối vào mạng nội bộ (cắm LAN hoặc mesh).</li>
+<li><strong>Cơ chế:</strong> mở “cửa hậu” vào mạng; có thể dùng SSID hợp pháp hoặc SSID mới; đôi khi cấu hình bảo mật yếu (open/WEP).</li>
+<li><strong>Công cụ:</strong> WIDS/WIPS; Kismet; kiểm kê RF; NAC.</li>
+</ul>
+<h3 id="2-thuat-toan_12">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> social + misconfig exploitation.</li>
+<li><strong>Phòng thủ:</strong> phát hiện dựa trên RF fingerprint, ML anomaly (BSSID lạ, location, channel), whitelist.</li>
+</ul>
+<h3 id="3-dependencies_13">3. Dependencies<a class="headerlink" href="#3-dependencies_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chính sách BYOD lỏng; cổng mạng không kiểm soát (802.1X chưa bật); AP consumer dễ mua.</li>
+</ul>
+<h3 id="4-context_13">4. Context<a class="headerlink" href="#4-context_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Campus/doanh nghiệp; nhân viên tự cắm AP.</li>
+</ul>
+<h3 id="5-core-weakness_13">5. Core Weakness<a class="headerlink" href="#5-core-weakness_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiếu kiểm soát ở access layer + thiếu giám sát RF.</li>
+</ul>
+<h3 id="6-cost-risk_13">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (WIDS/WIPS, survey định kỳ).</li>
+<li><strong>Rủi ro:</strong> truy cập trái phép, MITM, rò rỉ dữ liệu.</li>
+</ul>
+<h3 id="7-control-surface_13">7. Control Surface<a class="headerlink" href="#7-control-surface_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP/controller:</strong> rogue detection, WLAN policy.</li>
+<li><strong>Switch/NAC:</strong> 802.1X, port security.</li>
+<li><strong>Policy:</strong> cấm AP cá nhân, kiểm tra định kỳ.</li>
+</ul>
+<h3 id="8-chain-value_13">8. Chain Value<a class="headerlink" href="#8-chain-value_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor Wi‑Fi, SOC/NOC, người dùng.</li>
+</ul>
+<h3 id="references_12">References<a class="headerlink" href="#references_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> NIST SP 800-153 – WLAN security lifecycle: https://csrc.nist.gov/pubs/sp/800/153/final  </li>
+<li><strong>P4:</strong> Kismet docs (WIDS/wardriving): https://www.kismetwireless.net/docs/readme/configuring/  </li>
+</ul>
+<hr />
+<h2 id="15-evil-twin-attacks">15) Evil Twin Attacks<a class="headerlink" href="#15-evil-twin-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_13">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> 802.11; SSID/BSSID; WPA2/WPA3; captive portal.</li>
+<li><strong>Cơ chế:</strong> dựng AP giả mạo SSID giống thật để lừa client kết nối; sau khi kết nối có thể theo dõi/điều hướng traffic, hoặc dùng captive portal giả để thu credential.</li>
+<li><strong>Công cụ phòng thủ:</strong> WIDS/WIPS; xác thực chứng chỉ (HTTPS), VPN, cảnh báo SSID.</li>
+</ul>
+<h3 id="2-thuat-toan_13">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> spoofing (SSID/BSSID), credential harvesting, AiTM.</li>
+<li><strong>Phòng thủ:</strong> 802.1X/EAP‑TLS cho enterprise; WPA3 + PMF; anomaly detection (BSSID mới, RSSI bất thường, location).</li>
+</ul>
+<h3 id="3-dependencies_14">3. Dependencies<a class="headerlink" href="#3-dependencies_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Người dùng bật auto‑join; mạng open/captive portal; thiếu certificate hygiene.</li>
+</ul>
+<h3 id="4-context_14">4. Context<a class="headerlink" href="#4-context_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Quán café/sân bay; hội nghị; campus.</li>
+</ul>
+<h3 id="5-core-weakness_14">5. Core Weakness<a class="headerlink" href="#5-core-weakness_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wi‑Fi truyền thống <strong>không xác thực AP mạnh</strong> với người dùng (đặc biệt mạng open); con người dễ bị lừa.</li>
+</ul>
+<h3 id="6-cost-risk_14">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp→vừa.</li>
+<li><strong>Rủi ro:</strong> lộ credential, session hijack, malware.</li>
+</ul>
+<h3 id="7-control-surface_14">7. Control Surface<a class="headerlink" href="#7-control-surface_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP:</strong> WPA3/Enterprise; PMF; tắt WPS.</li>
+<li><strong>Client:</strong> VPN, kiểm tra HTTPS, tắt auto‑join.</li>
+<li><strong>Network:</strong> WIDS/WIPS.</li>
+<li><strong>Policy:</strong> đào tạo nhận biết “SSID giả”.</li>
+</ul>
+<h3 id="8-chain-value_14">8. Chain Value<a class="headerlink" href="#8-chain-value_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wi‑Fi Alliance, vendor AP, doanh nghiệp, người dùng.</li>
+</ul>
+<h3 id="references_13">References<a class="headerlink" href="#references_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Evil Twin (T1557.004): https://attack.mitre.org/techniques/T1557/004/  </li>
+<li><strong>P1:</strong> NIST SP 800-153 – WLAN guidelines: https://csrc.nist.gov/pubs/sp/800/153/final  </li>
+</ul>
+<hr />
+<h2 id="16-disassociation-deauthentication-attacks">16) Disassociation / Deauthentication Attacks<a class="headerlink" href="#16-disassociation-deauthentication-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_14">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> 802.11 management frames (disassoc/deauth). Nếu không bảo vệ, kẻ tấn công có thể làm client bị rớt khỏi AP (DoS) hoặc ép roam/reconnect.</li>
+<li><strong>Cơ chế:</strong> lạm dụng việc management frames (một số loại) historically không được bảo vệ; tiêu chuẩn <strong>802.11w / Protected Management Frames (PMF)</strong> bổ sung bảo vệ cho một tập khung quản trị.</li>
+<li><strong>Công cụ phòng thủ:</strong> bật PMF, giám sát “deauth storm”, WIDS.</li>
+</ul>
+<h3 id="2-thuat-toan_14">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> spoofing management frames.</li>
+<li><strong>Phòng thủ:</strong> PMF (integrity/replay protection), anomaly detection theo tần suất deauth.</li>
+</ul>
+<h3 id="3-dependencies_15">3. Dependencies<a class="headerlink" href="#3-dependencies_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Hỗ trợ PMF ở AP/client; cấu hình WPA3 (thường bắt buộc PMF) hoặc WPA2+PMF.</li>
+</ul>
+<h3 id="4-context_15">4. Context<a class="headerlink" href="#4-context_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp (gián đoạn), sự kiện đông người.</li>
+</ul>
+<h3 id="5-core-weakness_15">5. Core Weakness<a class="headerlink" href="#5-core-weakness_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Khung quản trị trước khi có PMF dễ bị giả mạo.</li>
+</ul>
+<h3 id="6-cost-risk_15">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp (thiết bị RF phổ biến).</li>
+<li><strong>Rủi ro:</strong> gián đoạn dịch vụ, tạo điều kiện cho Evil Twin.</li>
+</ul>
+<h3 id="7-control-surface_15">7. Control Surface<a class="headerlink" href="#7-control-surface_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP/controller:</strong> bật PMF; WPA3.</li>
+<li><strong>Client:</strong> cập nhật driver, chọn WPA3.</li>
+<li><strong>Network/Policy:</strong> WIDS/WIPS; SOP phản ứng sự cố.</li>
+</ul>
+<h3 id="8-chain-value_15">8. Chain Value<a class="headerlink" href="#8-chain-value_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chipset vendors, Wi‑Fi Alliance, doanh nghiệp.</li>
+</ul>
+<h3 id="references_14">References<a class="headerlink" href="#references_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> Wi‑Fi Alliance – PMF overview: https://www.wi-fi.org/security  </li>
+<li><strong>P4:</strong> Aruba – PMF tech docs: https://arubanetworking.hpe.com/techdocs/aos/wifi-design-deploy/security/features/pmf/  </li>
+<li><strong>P4:</strong> Cisco – 802.11w/PMF deployment guide (PDF): https://www.cisco.com/c/en/us/td/docs/wireless/controller/technotes/5700/software/release/ios_xe_33/11rkw_DeploymentGuide/b_802point11rkw_deployment_guide_cisco_ios_xe_release33/b_802point11rkw_deployment_guide_cisco_ios_xe_release33_chapter_0100.pdf  </li>
+</ul>
+<hr />
+<h2 id="17-preferred-network-list-pnl-attacks">17) Preferred Network List (PNL) Attacks<a class="headerlink" href="#17-preferred-network-list-pnl-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_15">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> 802.11 scanning/probe requests; client có thể phát probe chứa SSID đã từng kết nối.</li>
+<li><strong>Cơ chế:</strong> kẻ tấn công nghe probe/PNL và dựng AP với SSID phù hợp để dụ client auto‑connect.</li>
+<li><strong>Công cụ phòng thủ:</strong> cấu hình client (tắt auto‑join), MAC randomization, WIDS.</li>
+</ul>
+<h3 id="2-thuat-toan_15">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> probe‑based spoofing.</li>
+<li><strong>Phòng thủ:</strong> ngẫu nhiên hoá MAC/scrambling, giảm phát probe, ML detection theo SSID/BSSID bất thường.</li>
+</ul>
+<h3 id="3-dependencies_16">3. Dependencies<a class="headerlink" href="#3-dependencies_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>OS/driver hành vi scanning; danh sách mạng lưu; auto‑connect.</li>
+</ul>
+<h3 id="4-context_16">4. Context<a class="headerlink" href="#4-context_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Khu vực công cộng, hội nghị.</li>
+</ul>
+<h3 id="5-core-weakness_16">5. Core Weakness<a class="headerlink" href="#5-core-weakness_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Metadata quản lý (probe) thường không mã hoá; hành vi auto‑join.</li>
+</ul>
+<h3 id="6-cost-risk_16">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp.</li>
+<li><strong>Rủi ro:</strong> MITM, credential harvesting.</li>
+</ul>
+<h3 id="7-control-surface_16">7. Control Surface<a class="headerlink" href="#7-control-surface_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Client:</strong> xoá mạng cũ, tắt auto‑join; cập nhật OS.</li>
+<li><strong>AP/Network:</strong> WPA3‑Enterprise; WIDS/WIPS.</li>
+<li><strong>Policy:</strong> hướng dẫn người dùng.</li>
+</ul>
+<h3 id="8-chain-value_16">8. Chain Value<a class="headerlink" href="#8-chain-value_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>OS vendors, chipset, enterprise security.</li>
+</ul>
+<h3 id="references_15">References<a class="headerlink" href="#references_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2:</strong> MITRE – Evil Twin (nêu captive portal/credential capture): https://attack.mitre.org/techniques/T1557/004/  </li>
+<li><strong>P1:</strong> Apple security – privacy features for probe requests: https://support.apple.com/guide/security/privacy-features-connecting-wireless-networks-secb9cb3140c/web  </li>
+<li><strong>P1:</strong> IETF draft – MAC address randomization: https://www.ietf.org/archive/id/draft-ietf-madinas-mac-address-randomization-08.html  </li>
+</ul>
+<hr />
+<h2 id="18-wireless-signal-jamming-interference">18) Wireless Signal Jamming &amp; Interference<a class="headerlink" href="#18-wireless-signal-jamming-interference" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_16">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bản chất:</strong> gây nhiễu/chèn sóng trên băng tần Wi‑Fi (2.4/5/6 GHz) → tăng lỗi, giảm throughput, rớt kết nối.</li>
+<li><strong>Lưu ý pháp lý:</strong> nhiều quốc gia (ví dụ Mỹ) <strong>cấm</strong> thiết bị gây nhiễu chủ động.</li>
+<li><strong>Công cụ phòng thủ:</strong> spectrum analyzer, WIDS, khảo sát site, thiết kế kênh.</li>
+</ul>
+<h3 id="2-thuat-toan_16">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> “energy”/noise flooding, interference.</li>
+<li><strong>Phòng thủ:</strong> phát hiện dựa trên phổ (spectral), ML anomaly theo RSSI/noise floor.</li>
+</ul>
+<h3 id="3-dependencies_17">3. Dependencies<a class="headerlink" href="#3-dependencies_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mật độ AP, vật liệu toà nhà, thiết bị RF lân cận (lò vi sóng, BT…).</li>
+</ul>
+<h3 id="4-context_17">4. Context<a class="headerlink" href="#4-context_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp (ảnh hưởng năng suất), sự kiện đông người.</li>
+</ul>
+<h3 id="5-core-weakness_17">5. Core Weakness<a class="headerlink" href="#5-core-weakness_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wi‑Fi hoạt động trên phổ chia sẻ, dễ bị nhiễu.</li>
+</ul>
+<h3 id="6-cost-risk_17">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> từ thấp (gây nhiễu “tình cờ”) đến cao (thiết bị chuyên dụng).</li>
+<li><strong>Rủi ro:</strong> gián đoạn dịch vụ, ảnh hưởng OT/IoT.</li>
+</ul>
+<h3 id="7-control-surface_17">7. Control Surface<a class="headerlink" href="#7-control-surface_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>RF design:</strong> channel planning, AP density, 5/6 GHz.</li>
+<li><strong>Monitoring:</strong> WIDS + spectrum.</li>
+<li><strong>Policy:</strong> quy trình phản ứng; phối hợp pháp lý khi nghi jamming.</li>
+</ul>
+<h3 id="8-chain-value_17">8. Chain Value<a class="headerlink" href="#8-chain-value_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhà cung cấp RF/Wi‑Fi, doanh nghiệp, cơ quan quản lý tần số.</li>
+</ul>
+<h3 id="references_16">References<a class="headerlink" href="#references_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2/P1:</strong> FCC – Jammer enforcement (mang tính tham khảo pháp lý): https://www.fcc.gov/general/jammer-enforcement  </li>
+<li><strong>P1:</strong> NIST SP 800-153 – WLAN guidelines: https://csrc.nist.gov/pubs/sp/800/153/final  </li>
+</ul>
+<hr />
+<h2 id="19-war-driving">19) War Driving<a class="headerlink" href="#19-war-driving" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_17">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Khái niệm:</strong> thu thập thông tin Wi‑Fi (SSID/BSSID, kênh, RSSI, đôi khi vị trí GPS) khi di chuyển.</li>
+<li><strong>Cơ chế:</strong> chủ yếu “passive scanning”; có thể dẫn tới tìm mạng open/misconfig.</li>
+<li><strong>Công cụ:</strong> Kismet (sniffer/WIDS/wardriving), phần mềm khảo sát.</li>
+</ul>
+<h3 id="2-thuat-toan_17">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> reconnaissance + clustering (gom nhóm AP theo vị trí/SSID).</li>
+<li><strong>Phòng thủ:</strong> giảm metadata lộ (ẩn SSID không đủ), mạnh hoá WPA2/3, theo dõi beacon bất thường.</li>
+</ul>
+<h3 id="3-dependencies_18">3. Dependencies<a class="headerlink" href="#3-dependencies_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>AP phát beacon; thiết bị có GPS; chính sách ghi log.</li>
+</ul>
+<h3 id="4-context_18">4. Context<a class="headerlink" href="#4-context_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Khu dân cư/campus; tấn công giai đoạn recon.</li>
+</ul>
+<h3 id="5-core-weakness_18">5. Core Weakness<a class="headerlink" href="#5-core-weakness_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Beacon/probe là metadata công khai; misconfig (open/WEP).</li>
+</ul>
+<h3 id="6-cost-risk_18">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp.</li>
+<li><strong>Rủi ro:</strong> thông tin phục vụ giai đoạn tấn công tiếp theo.</li>
+</ul>
+<h3 id="7-control-surface_18">7. Control Surface<a class="headerlink" href="#7-control-surface_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP:</strong> WPA2‑AES/WPA3; tắt WPS; segmentation IoT.</li>
+<li><strong>Monitoring:</strong> WIDS; survey định kỳ.</li>
+<li><strong>Policy:</strong> không dùng mạng open cho nội bộ.</li>
+</ul>
+<h3 id="8-chain-value_18">8. Chain Value<a class="headerlink" href="#8-chain-value_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor Wi‑Fi, doanh nghiệp, người dùng.</li>
+</ul>
+<h3 id="references_17">References<a class="headerlink" href="#references_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P4:</strong> Kismet – Wardrive Mode: https://www.kismetwireless.net/docs/readme/configuring/wardrive/  </li>
+<li><strong>P4:</strong> Fortinet – Wardriving definition: https://www.fortinet.com/resources/cyberglossary/wardriving  </li>
+</ul>
+<hr />
+<h2 id="20-initialization-vector-iv-attacks-unsecured-wireless-protocols-weptkip">20) Initialization Vector (IV) Attacks &amp; Unsecured Wireless Protocols (WEP/TKIP)<a class="headerlink" href="#20-initialization-vector-iv-attacks-unsecured-wireless-protocols-weptkip" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_18">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức/chuẩn:</strong> WEP dùng RC4 + IV ngắn; TKIP (WPA) là giải pháp chuyển tiếp; WPA2/802.11i dùng AES‑CCMP.</li>
+<li><strong>Cơ chế:</strong> IV ngắn và/hoặc thiết kế/triển khai yếu dẫn tới thu thập đủ mẫu để phân tích thống kê → suy giảm bí mật khoá (đặc biệt WEP).</li>
+<li><strong>Công cụ:</strong> phân tích gói (Wireshark); audit toolsets cho WLAN (chỉ dùng khi được phép).</li>
+</ul>
+<h3 id="2-thuat-toan_18">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Crypto bị khai thác:</strong> RC4 KSA weaknesses + IV reuse; WEP integrity yếu.</li>
+<li><strong>Tấn công:</strong> statistical key recovery, replay.</li>
+<li><strong>Phòng thủ:</strong> loại bỏ WEP/TKIP; dùng WPA2‑AES/WPA3‑SAE; PMF.</li>
+</ul>
+<h3 id="3-dependencies_19">3. Dependencies<a class="headerlink" href="#3-dependencies_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>AP/IoT legacy chỉ hỗ trợ WEP/TKIP; cấu hình người dùng.</li>
+</ul>
+<h3 id="4-context_19">4. Context<a class="headerlink" href="#4-context_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Legacy IoT/thiết bị công nghiệp cũ.</li>
+</ul>
+<h3 id="5-core-weakness_19">5. Core Weakness<a class="headerlink" href="#5-core-weakness_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiết kế WEP yếu (IV ngắn + RC4 KSA issues + integrity).</li>
+</ul>
+<h3 id="6-cost-risk_19">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp→vừa; phụ thuộc lưu lượng.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (thay thiết bị/upgrade).</li>
+<li><strong>Rủi ro:</strong> giải mã lưu lượng, truy cập trái phép.</li>
+</ul>
+<h3 id="7-control-surface_19">7. Control Surface<a class="headerlink" href="#7-control-surface_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP:</strong> tắt WEP/TKIP; bật WPA2/WPA3.</li>
+<li><strong>Client:</strong> không kết nối WEP; cảnh báo.</li>
+<li><strong>Policy:</strong> kế hoạch thay thế thiết bị legacy.</li>
+</ul>
+<h3 id="8-chain-value_19">8. Chain Value<a class="headerlink" href="#8-chain-value_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chipset vendors, Wi‑Fi Alliance, doanh nghiệp.</li>
+</ul>
+<h3 id="references_18">References<a class="headerlink" href="#references_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P3:</strong> Fluhrer–Mantin–Shamir (RC4 KSA weakness, nền cho WEP break): https://www.cs.umd.edu/~waa/rc4_ksaproc.pdf  </li>
+<li><strong>P1:</strong> NIST SP 800-97 – RSN/WLAN security: https://csrc.nist.gov/pubs/sp/800/97/final  </li>
+</ul>
+<hr />
+<h2 id="21-karma-attacks">21) Karma Attacks<a class="headerlink" href="#21-karma-attacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_19">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> 802.11 probe requests; hành vi client tìm mạng đã biết.</li>
+<li><strong>Cơ chế:</strong> một dạng “evil twin” khai thác việc client tiết lộ SSID đã lưu/đang tìm; AP giả trả lời để dụ client kết nối.</li>
+<li><strong>Công cụ phòng thủ:</strong> giảm probe/auto‑join; randomization; WPA3/Enterprise.</li>
+</ul>
+<h3 id="2-thuat-toan_19">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> probe‑response spoofing.</li>
+<li><strong>Phòng thủ:</strong> giảm metadata, ML detection theo SSID/BSSID + location.</li>
+</ul>
+<h3 id="3-dependencies_20">3. Dependencies<a class="headerlink" href="#3-dependencies_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>OS/driver hành vi probe; auto‑reconnect; mạng open/captive portal.</li>
+</ul>
+<h3 id="4-context_20">4. Context<a class="headerlink" href="#4-context_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mạng công cộng, khu vực đông thiết bị.</li>
+</ul>
+<h3 id="5-core-weakness_20">5. Core Weakness<a class="headerlink" href="#5-core-weakness_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiếu xác thực AP + probe metadata không mã hoá.</li>
+</ul>
+<h3 id="6-cost-risk_20">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chi phí thấp; rủi ro cao nếu kết hợp credential harvesting.</li>
+</ul>
+<h3 id="7-control-surface_20">7. Control Surface<a class="headerlink" href="#7-control-surface_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Client:</strong> tắt auto‑join; cập nhật OS; xóa mạng cũ.</li>
+<li><strong>Network/AP:</strong> WPA3 + PMF; enterprise auth.</li>
+<li><strong>Policy:</strong> hướng dẫn người dùng.</li>
+</ul>
+<h3 id="8-chain-value_20">8. Chain Value<a class="headerlink" href="#8-chain-value_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>OS vendors, Wi‑Fi Alliance, doanh nghiệp.</li>
+</ul>
+<h3 id="references_19">References<a class="headerlink" href="#references_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P4:</strong> KARMA attack overview: https://en.wikipedia.org/wiki/KARMA_attack  </li>
+<li><strong>P1:</strong> Wi‑Fi Alliance security / PMF: https://www.wi-fi.org/security  </li>
+<li><strong>P1:</strong> Apple probe/privacy randomization: https://support.apple.com/guide/security/privacy-features-connecting-wireless-networks-secb9cb3140c/web  </li>
+</ul>
+<hr />
+<h2 id="22-fragmentation-attacks-fragattacks">22) Fragmentation Attacks (FragAttacks)<a class="headerlink" href="#22-fragmentation-attacks-fragattacks" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_20">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức/chuẩn:</strong> 802.11 fragmentation &amp; aggregation (A‑MSDU/A‑MPDU).  </li>
+<li><strong>Cơ chế:</strong> các “design flaws” và “implementation flaws” cho phép kẻ tấn công <strong>forge/inject</strong> frame trong một số điều kiện, ngay cả khi mạng được bảo vệ, dẫn đến exfiltration/attacks nội bộ.</li>
+<li><strong>Công cụ phòng thủ:</strong> update firmware/driver; theo khuyến nghị vendor; WIDS.</li>
+</ul>
+<h3 id="2-thuat-toan_20">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> frame manipulation, fragmentation/aggregation abuse.</li>
+<li><strong>Phòng thủ:</strong> patching; cấu hình giảm rủi ro theo hướng dẫn; anomaly detection theo pattern frame.</li>
+</ul>
+<h3 id="3-dependencies_21">3. Dependencies<a class="headerlink" href="#3-dependencies_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Firmware AP, driver client, chipset; mức độ ảnh hưởng khác nhau theo thiết bị.</li>
+</ul>
+<h3 id="4-context_21">4. Context<a class="headerlink" href="#4-context_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Doanh nghiệp, IoT, Wi‑Fi gia đình (thiết bị không cập nhật).</li>
+</ul>
+<h3 id="5-core-weakness_21">5. Core Weakness<a class="headerlink" href="#5-core-weakness_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Flaw ở chuẩn/triển khai 802.11 liên quan fragmentation/aggregation.</li>
+</ul>
+<h3 id="6-cost-risk_21">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> vừa (cần trong vùng RF).</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (patching diện rộng).</li>
+<li><strong>Rủi ro:</strong> xâm nhập nội bộ, rò dữ liệu.</li>
+</ul>
+<h3 id="7-control-surface_21">7. Control Surface<a class="headerlink" href="#7-control-surface_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AP/Client:</strong> cập nhật, kiểm kê thiết bị; tắt tính năng rủi ro nếu vendor khuyến nghị.</li>
+<li><strong>Network:</strong> segmentation, zero trust.</li>
+<li><strong>Policy:</strong> quản trị vòng đời thiết bị IoT.</li>
+</ul>
+<h3 id="8-chain-value_21">8. Chain Value<a class="headerlink" href="#8-chain-value_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chipset/AP vendors, doanh nghiệp, người dùng.</li>
+</ul>
+<h3 id="references_20">References<a class="headerlink" href="#references_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P3:</strong> FragAttacks official site: https://www.fragattacks.com/  </li>
+<li><strong>P3:</strong> USENIX paper (sec21‑vanhoef): https://www.usenix.org/system/files/sec21-vanhoef.pdf  </li>
+<li><strong>P3:</strong> Overview PDF: https://papers.mathyvanhoef.com/fragattacks-overview.pdf  </li>
+</ul>
+<hr />
+<h2 id="23-credential-harvesting">23) Credential Harvesting<a class="headerlink" href="#23-credential-harvesting" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_21">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bề mặt:</strong> phishing email/web, fake login portal, captive portal Wi‑Fi giả (liên quan Evil Twin).</li>
+<li><strong>Cơ chế:</strong> lừa người dùng nhập credential hoặc đánh cắp input (keylogging/web portal capture).</li>
+<li><strong>Công cụ phòng thủ:</strong> MFA (phishing‑resistant), email security, browser isolation, EDR, user training.</li>
+</ul>
+<h3 id="2-thuat-toan_21">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> social engineering + web capture; đôi khi dùng replay.</li>
+<li><strong>Phòng thủ:</strong> FIDO2/WebAuthn, risk‑based auth, anomaly detection theo địa lý/thiết bị, entropy detection cho login patterns.</li>
+</ul>
+<h3 id="3-dependencies_22">3. Dependencies<a class="headerlink" href="#3-dependencies_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thói quen người dùng; thiếu MFA; thiếu DMARC/SPF/DKIM; thiếu giám sát.</li>
+</ul>
+<h3 id="4-context_22">4. Context<a class="headerlink" href="#4-context_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mọi môi trường; Wi‑Fi công cộng dễ kết hợp captive portal giả.</li>
+</ul>
+<h3 id="5-core-weakness_22">5. Core Weakness<a class="headerlink" href="#5-core-weakness_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Con người + giao diện đăng nhập dễ bị giả mạo; reuse mật khẩu.</li>
+</ul>
+<h3 id="6-cost-risk_22">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (MFA, secure email).</li>
+<li><strong>Rủi ro:</strong> account takeover, ransomware.</li>
+</ul>
+<h3 id="7-control-surface_22">7. Control Surface<a class="headerlink" href="#7-control-surface_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Identity:</strong> MFA chống phishing, conditional access.</li>
+<li><strong>Network:</strong> DNS filtering, web proxy.</li>
+<li><strong>Policy:</strong> đào tạo + diễn tập phishing.</li>
+</ul>
+<h3 id="8-chain-value_22">8. Chain Value<a class="headerlink" href="#8-chain-value_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhà cung cấp email/IdP, doanh nghiệp, người dùng, cơ quan hướng dẫn.</li>
+</ul>
+<h3 id="references_21">References<a class="headerlink" href="#references_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2:</strong> CISA/NSA/FBI/MS‑ISAC – Phishing Guidance (PDF): https://www.cisa.gov/sites/default/files/2023-10/Phishing%20Guidance%20-%20Stopping%20the%20Attack%20Cycle%20at%20Phase%20One_508c.pdf  </li>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Input Capture (T1056): https://attack.mitre.org/techniques/T1056/  </li>
+<li><strong>P2:</strong> MITRE – Evil Twin (captive portal credential capture): https://attack.mitre.org/techniques/T1557/004/  </li>
+</ul>
+<hr />
+<h2 id="24-bluejacking-bluesnarfing-bluetooth">24) Bluejacking &amp; Bluesnarfing (Bluetooth)<a class="headerlink" href="#24-bluejacking-bluesnarfing-bluetooth" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_22">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giao thức:</strong> Bluetooth BR/EDR, Bluetooth Low Energy (BLE); profile như OBEX (tuỳ trường hợp).</li>
+<li><strong>Cơ chế:</strong>  </li>
+<li><strong>Bluejacking:</strong> gửi tin nhắn/“business card” không mong muốn (spam), thường ít nghiêm trọng hơn.  </li>
+<li><strong>Bluesnarfing:</strong> truy cập trái phép dữ liệu/đối tượng Bluetooth (đặc biệt trên thiết bị/stack cũ hoặc cấu hình discoverable/pairing yếu).</li>
+<li><strong>Công cụ phòng thủ:</strong> tắt discoverable, quản lý pairing, update OS/firmware.</li>
+</ul>
+<h3 id="2-thuat-toan_22">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bảo mật:</strong> pairing/auth + encryption (tuỳ phiên bản; LE Secure Connections mạnh hơn).</li>
+<li><strong>Tấn công:</strong> abuse pairing/implementation flaws; brute force nếu cơ chế yếu.</li>
+<li><strong>Phòng thủ:</strong> LE Secure Connections, policy “non‑discoverable”, anomaly detection cho pairing events.</li>
+</ul>
+<h3 id="3-dependencies_23">3. Dependencies<a class="headerlink" href="#3-dependencies_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Phiên bản Bluetooth stack; chế độ discoverable; driver/firmware.</li>
+</ul>
+<h3 id="4-context_23">4. Context<a class="headerlink" href="#4-context_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Văn phòng, nơi công cộng, thiết bị IoT/wearables.</li>
+</ul>
+<h3 id="5-core-weakness_23">5. Core Weakness<a class="headerlink" href="#5-core-weakness_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiết bị cũ, pairing yếu, người dùng để discoverable.</li>
+</ul>
+<h3 id="6-cost-risk_23">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp (thiết bị BT phổ biến).</li>
+<li><strong>Rủi ro:</strong> từ phiền nhiễu → lộ dữ liệu.</li>
+</ul>
+<h3 id="7-control-surface_23">7. Control Surface<a class="headerlink" href="#7-control-surface_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Client/device:</strong> tắt BT khi không dùng; update; giới hạn profile.</li>
+<li><strong>Policy:</strong> MDM baseline, quy định pairing.</li>
+</ul>
+<h3 id="8-chain-value_23">8. Chain Value<a class="headerlink" href="#8-chain-value_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Vendor OS/phone, chipset BT, doanh nghiệp.</li>
+</ul>
+<h3 id="references_22">References<a class="headerlink" href="#references_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> NIST SP 800-121 Rev.2 (PDF) – Bluetooth Security: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-121r2-upd1.pdf  </li>
+<li><strong>P1:</strong> NIST publication page: https://csrc.nist.gov/pubs/sp/800/121/r2/upd1/final  </li>
+</ul>
+<hr />
+<h2 id="25-rfid-attacks-va-phan-mo-rong">25) RFID Attacks (và phần mở rộng)<a class="headerlink" href="#25-rfid-attacks-va-phan-mo-rong" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_23">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Công nghệ:</strong> RFID (passive/active tags), nhiều chuẩn (ISO/IEC 14443, EPC Gen2… tuỳ ứng dụng).</li>
+<li><strong>Cơ chế:</strong> skimming/eavesdropping, cloning, relay, tracking; nhiều tag giá rẻ có bảo mật hạn chế.</li>
+<li><strong>Công cụ phòng thủ:</strong> shielding (ví), reader authentication, crypto tags, kiểm soát vùng đọc.</li>
+</ul>
+<h3 id="2-thuat-toan_23">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Crypto:</strong> tuỳ chuẩn (một số tag hỗ trợ challenge‑response, AES…; nhiều tag không).</li>
+<li><strong>Tấn công:</strong> replay/relay, brute force vào secret yếu.</li>
+<li><strong>Phòng thủ:</strong> mutual authentication, rolling codes, distance bounding (nếu có), anomaly detection theo thời gian/địa điểm quẹt.</li>
+</ul>
+<h3 id="3-dependencies_24">3. Dependencies<a class="headerlink" href="#3-dependencies_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Loại tag/reader, firmware, chính sách truy cập vật lý.</li>
+</ul>
+<h3 id="4-context_24">4. Context<a class="headerlink" href="#4-context_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Kiểm soát ra vào, kho vận, thanh toán không tiếp xúc.</li>
+</ul>
+<h3 id="5-core-weakness_24">5. Core Weakness<a class="headerlink" href="#5-core-weakness_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiết bị rẻ, phạm vi đọc khó kiểm soát, thiếu xác thực ở một số hệ thống.</li>
+</ul>
+<h3 id="6-cost-risk_24">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> từ thấp→vừa.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa→cao (thay tag/reader, quy trình).</li>
+<li><strong>Rủi ro:</strong> gian lận, xâm nhập vật lý, vi phạm riêng tư.</li>
+</ul>
+<h3 id="7-control-surface_24">7. Control Surface<a class="headerlink" href="#7-control-surface_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Reader/Back-end:</strong> auth mạnh, logging, anti‑relay.</li>
+<li><strong>Physical:</strong> kiểm soát vùng, shield.</li>
+<li><strong>Policy:</strong> vòng đời thẻ, thu hồi.</li>
+</ul>
+<h3 id="8-chain-value_24">8. Chain Value<a class="headerlink" href="#8-chain-value_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Nhà sản xuất tag/reader, doanh nghiệp, người dùng, cơ quan tiêu chuẩn.</li>
+</ul>
+<h3 id="references_23">References<a class="headerlink" href="#references_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P1:</strong> NIST SP 800-98 – RFID Systems Security: https://csrc.nist.gov/pubs/sp/800/98/final  </li>
+<li><strong>P1:</strong> NIST publication page: https://www.nist.gov/publications/guidelines-securing-radio-frequency-identification-rfid-systems  </li>
+</ul>
+<hr />
+<h2 id="26-password-spraying">26) Password Spraying<a class="headerlink" href="#26-password-spraying" title="Permanent link">&para;</a></h2>
+<h3 id="1-thong-tin-ky-thuat_24">1. Thông tin kỹ thuật<a class="headerlink" href="#1-thong-tin-ky-thuat_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bề mặt:</strong> dịch vụ đăng nhập (VPN, O365/Entra, RDP, webmail, SSO).</li>
+<li><strong>Cơ chế:</strong> thử <strong>một vài mật khẩu phổ biến</strong> trên <strong>nhiều tài khoản</strong> để tránh lockout của brute force 1 tài khoản.</li>
+<li><strong>Công cụ phòng thủ:</strong> Identity Protection, SIEM, rate‑limit, MFA, banned passwords.</li>
+</ul>
+<h3 id="2-thuat-toan_24">2. Thuật toán<a class="headerlink" href="#2-thuat-toan_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Tấn công:</strong> brute force “low‑and‑slow” / dictionary ngắn.</li>
+<li><strong>Phòng thủ:</strong> throttling, risk‑based auth, ML anomaly (impossible travel, IP reputation), breached password screening.</li>
+</ul>
+<h3 id="3-dependencies_25">3. Dependencies<a class="headerlink" href="#3-dependencies_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chính sách lockout quá “dễ né”, thiếu MFA, mật khẩu yếu/reuse.</li>
+</ul>
+<h3 id="4-context_25">4. Context<a class="headerlink" href="#4-context_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Internet‑facing authentication.</li>
+</ul>
+<h3 id="5-core-weakness_25">5. Core Weakness<a class="headerlink" href="#5-core-weakness_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mật khẩu yếu + không có MFA; bảo vệ rate‑based chưa đủ.</li>
+</ul>
+<h3 id="6-cost-risk_25">6. Cost &amp; Risk<a class="headerlink" href="#6-cost-risk_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chi phí tấn công:</strong> thấp.</li>
+<li><strong>Chi phí phòng thủ:</strong> vừa (MFA/conditional access).</li>
+<li><strong>Rủi ro:</strong> account takeover, initial access.</li>
+</ul>
+<h3 id="7-control-surface_25">7. Control Surface<a class="headerlink" href="#7-control-surface_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Identity:</strong> MFA chống phishing; banned passwords; conditional access.</li>
+<li><strong>Network/App:</strong> rate limiting, WAF.</li>
+<li><strong>Policy:</strong> password manager, đào tạo.</li>
+</ul>
+<h3 id="8-chain-value_25">8. Chain Value<a class="headerlink" href="#8-chain-value_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>IdP, doanh nghiệp, người dùng.</li>
+</ul>
+<h3 id="references_24">References<a class="headerlink" href="#references_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>P2:</strong> MITRE ATT&amp;CK – Password Spraying (T1110.003): https://attack.mitre.org/techniques/T1110/003/  </li>
+<li><strong>P1:</strong> Microsoft Learn – Password spray investigation playbook: https://learn.microsoft.com/en-us/security/operations/incident-response-playbook-password-spray  </li>
+<li><strong>P2:</strong> CISA alert on password spraying: https://www.cisa.gov/news-events/alerts/2019/08/08/acsc-releases-advisory-password-spraying-attacks  </li>
+<li><strong>P1:</strong> NIST SP 800-63B (Digital Identity Guidelines – Authentication &amp; lifecycle): https://pages.nist.gov/800-63-3/sp800-63b.html  </li>
+</ul>
+<hr />
+<h2 id="phu-luc-nguon-cong-cu-quan-satphan-tich-tham-khao-chung">Phụ lục: Nguồn công cụ quan sát/phân tích (tham khảo chung)<a class="headerlink" href="#phu-luc-nguon-cong-cu-quan-satphan-tich-tham-khao-chung" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Wireshark: https://www.wireshark.org/docs/  </li>
+<li>Kismet docs: https://www.kismetwireless.net/docs/readme/  </li>
+<li>MITRE ATT&amp;CK: https://attack.mitre.org/  </li>
+<li>NIST CSRC Publications: https://csrc.nist.gov/publications  </li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

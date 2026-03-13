@@ -1,0 +1,2415 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+        <link rel="prev" href="../behavioral_risk/">
+      
+      
+        <link rel="next" href="../../reference/api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Deep Research Report - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sentinel-netlab-in-the-widswips-ecosystem-market-value-and-scientific-significance" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Deep Research Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../lab/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sentinel-netlab-summary-from-its-repository-claims-and-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sentinel NetLab summary from its repository claims and artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#widswips-landscape-products-standards-and-current-research-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WIDS/WIPS landscape: products, standards, and current research direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparative-positioning-of-sentinel-netlab-against-widswips-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparative positioning of Sentinel NetLab against WIDS/WIPS solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comparative positioning of Sentinel NetLab against WIDS/WIPS solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#competitive-landscape-and-feature-overlap-visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Competitive landscape and feature overlap visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#direct-capability-comparison-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct capability comparison table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-sentinel-netlab-matches-unresolved-challengesand-where-it-likely-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Sentinel NetLab matches unresolved challenges—and where it likely gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#market-value-assessment-commercial-viability-deployment-friction-and-legalregulatory-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Market value assessment: commercial viability, deployment friction, and legal/regulatory constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scientific-contribution-and-research-significance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scientific contribution and research significance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks-affecting-adoption-and-credibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks affecting adoption and credibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations-to-increase-competitiveness-and-scientific-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendations to increase competitiveness and scientific impact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preferences
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sentinel-netlab-summary-from-its-repository-claims-and-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sentinel NetLab summary from its repository claims and artifacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#widswips-landscape-products-standards-and-current-research-direction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WIDS/WIPS landscape: products, standards, and current research direction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparative-positioning-of-sentinel-netlab-against-widswips-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparative positioning of Sentinel NetLab against WIDS/WIPS solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Comparative positioning of Sentinel NetLab against WIDS/WIPS solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#competitive-landscape-and-feature-overlap-visuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Competitive landscape and feature overlap visuals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#direct-capability-comparison-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct capability comparison table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-sentinel-netlab-matches-unresolved-challengesand-where-it-likely-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Sentinel NetLab matches unresolved challenges—and where it likely gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#market-value-assessment-commercial-viability-deployment-friction-and-legalregulatory-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Market value assessment: commercial viability, deployment friction, and legal/regulatory constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scientific-contribution-and-research-significance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scientific contribution and research significance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks-affecting-adoption-and-credibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks affecting adoption and credibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommendations-to-increase-competitiveness-and-scientific-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommendations to increase competitiveness and scientific impact
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preferences
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="sentinel-netlab-in-the-widswips-ecosystem-market-value-and-scientific-significance">Sentinel NetLab in the WIDS/WIPS Ecosystem: Market Value and Scientific Significance<a class="headerlink" href="#sentinel-netlab-in-the-widswips-ecosystem-market-value-and-scientific-significance" title="Permanent link">&para;</a></h1>
+<h2 id="sentinel-netlab-summary-from-its-repository-claims-and-artifacts">Sentinel NetLab summary from its repository claims and artifacts<a class="headerlink" href="#sentinel-netlab-summary-from-its-repository-claims-and-artifacts" title="Permanent link">&para;</a></h2>
+<p>Sentinel NetLab positions itself as a “lightweight hybrid” <strong>wireless intrusion detection system (WIDS)</strong> oriented toward research, education, and authorized testing, combining signature/rule-based detection with an ML anomaly layer. Its README explicitly frames the platform as research-focused Wi‑Fi security monitoring that performs <strong>802.11 management-frame sniffing with channel hopping</strong>, detects <strong>evil twins/rogue AP impersonation</strong>, detects <strong>deauthentication/DoS floods</strong>, and provides <strong>risk scoring with explainability</strong>, <strong>distributed sensors feeding a centralized controller</strong>, and <strong>geolocation via trilateration and heatmaps</strong>, plus a dashboard for live visualization[1].</p>
+<p>Architecturally (as claimed in the README diagrams), Sentinel NetLab follows a conventional distributed WIDS pattern: multiple <strong>sensor nodes</strong> send telemetry batches to a central <strong>API server</strong>, backed by data services such as <strong>PostgreSQL</strong>, <strong>Redis</strong>, and <strong>Prometheus</strong> for persistence/queueing/metrics[1]. This aligns with widely recognized WIDS/WIPS reference architectures that rely on distributed RF sensors and a centralized analysis/control plane[2].</p>
+<p>The project also calls out a deliberate boundary between <strong>WIDS (core supported)</strong> and <strong>WIPS (experimental)</strong>: it warns that active countermeasures (e.g., containment/deauth) are often constrained by driver/chipset support and legal restrictions, and it states that active response interfaces exist but are <strong>disabled by default</strong>[1]. In parallel, it includes explicit “AUTHORIZED USE ONLY” guidance and points to an ethics policy file for authorization templates—an important adoption enabler for a research lab tool that touches RF interception and any active response[1]. </p>
+<p>From the repository’s visible structure, Sentinel NetLab is broader than a single script: it contains distinct folders for <strong>sensor</strong>, <strong>controller</strong>, <strong>dashboard</strong>, <strong>ML</strong>, <strong>algorithms</strong>, <strong>tests</strong>, <strong>ops</strong>, <strong>notebooks</strong>, and <strong>research/pcaps</strong>, which signals an intent to support both “product-like” operation and scientific workflows (datasets/notebooks)[1]. However, the repository root also contains several <strong>artifact/log-like files</strong> (e.g., <code>bluetooth_log.json</code>, <code>test_output.txt</code>, <code>unit_test_output.txt</code>, <code>integration_output.txt</code>) that commonly indicate an in-progress cleanup state rather than a hardened release layout[1]. </p>
+<p>A notable limitation for this assessment is that the README links a substantial documentation tree (installation/config/system design/threat model/data schema as well as “IEEE Report Template” and “IEEE Addendum”), but the content of those linked markdown artifacts was not reliably retrievable via the public GitHub render in this environment; therefore, the “documentation + IEEE report” portion can only be evaluated as <em>present by index</em>, not validated line-by-line for methodological rigor or internal consistency[1].</p>
+<h2 id="widswips-landscape-products-standards-and-current-research-direction">WIDS/WIPS landscape: products, standards, and current research direction<a class="headerlink" href="#widswips-landscape-products-standards-and-current-research-direction" title="Permanent link">&para;</a></h2>
+<p>Modern enterprise WIDS/WIPS sits at the intersection of (a) <strong>RF monitoring</strong> of 802.11 L1/L2 behaviors, (b) correlation to wired infrastructure (to distinguish a neighbor AP from a true rogue connected to the LAN), and (c) operational response workflows. NIST SP 800‑94 characterizes wireless IDPS as monitoring wireless traffic and analyzing protocols for suspicious activity, with guidance for implementation and operation[3]. CISA’s enterprise wireless guidance explicitly recommends deploying WIDS/WIPS and describes WIPS as applying countermeasures (disconnecting/mitigating threats) against rogue APs, evil twins, DoS, MAC spoofing, and more[4]. </p>
+<p>At the assurance/compliance layer, the NIAP Protection Profile Module for WIDS/WIPS (v2.0) defines WIDS as an edge security product that collects/inspects/analyzes wireless traffic and alerts on policy violations, and it treats WIPS as an optional extension providing real-time reaction. It also emphasizes the distributed sensor nature of WIDS/WIPS and includes updates for modern spectrum (including 6 GHz slices)[5]. This matters commercially because many regulated buyers (government/critical infrastructure) use such profiles as a procurement benchmark.</p>
+<p>On the <strong>commercial product side</strong>, most WIDS/WIPS capability today is delivered as an integrated function of enterprise WLAN infrastructure:</p>
+<p>Cisco Meraki’s <strong>Air Marshal</strong> provides rogue detection and containment; containment is performed by sending <strong>deauthentication packets</strong> spoofed as the rogue AP’s MAC/BSSID, and Meraki documents that <strong>6 GHz containment will not work</strong> because 6 GHz uses <strong>Protected Management Frames (PMF)</strong>[6]. Meraki also highlights explicit operational/legal caution: containment can have legal implications when directed at neighbors and can disrupt networks[7]. Modern Meraki AP hardware is designed with dedicated radios for continuous WIDS/WIPS, spectrum analysis, and location analytics[8]. </p>
+<p>HPE Aruba’s <strong>Wireless Intrusion Prevention (WIP)</strong> module in ArubaOS advertises wired and wireless AP detection/classification/containment and specifically calls out detection of DoS and impersonation attacks[9]. Aruba’s documentation enumerates containment mechanisms such as <strong>deauthentication containment</strong>, <strong>tarpit containment</strong>, and <strong>wired containment</strong>[10]. It also includes a direct legal warning tying containment to FCC concerns about 47 U.S.C. §333 (interference), which is one of the clearest examples of vendors embedding “legal guardrails” into operational documentation[11].</p>
+<p>Fortinet’s FortiGate/FortiAP stack supports monitoring and classifying rogue APs, including an <strong>on-wire rogue detection technique</strong> to distinguish rogues connected to the wired network[12]. For suppression, Fortinet documents a WIPS-style approach: sending deauth messages to rogue clients as if from the rogue AP and to the rogue AP as if from its clients, via a monitoring radio, with an explicit caution to verify compliance with local laws and regulations[13].</p>
+<p>Juniper Mist provides a cloud-managed “Wireless IDS” and security views for rogue/neighbor/honeypot APs. Mist documentation describes a <strong>dedicated scanning radio</strong>, rogue correlation requiring shared wired VLAN visibility, and an operator “Terminate” action where nearby Juniper APs send deauthentication frames to rogue clients[14]. </p>
+<p>On the <strong>open-source / research tooling side</strong>, “WIDS-like” capabilities tend to be (a) broad-spectrum RF reconnaissance tools with alerting, or (b) older modular WIPS projects:</p>
+<p>Kismet explicitly states it can function as a WIDS with fingerprint- and trend-based alerting, including detection of flooding/DoS patterns; it also highlights operational tradeoffs of channel hopping and notes higher effectiveness in stationary setups[15]. </p>
+<p>OpenWIPS‑ng describes itself as a modular open-source WIPS composed of sensors, server, and interface, including the ability to respond to attacks—conceptually similar to commercial WIPS architecture, though the project appears historically dated relative to modern Wi‑Fi 6E/7 realities[16]. </p>
+<p>On the <strong>academic research side</strong>, the key themes relevant to Sentinel NetLab’s stated approach include:</p>
+<p>Dataset-driven and reproducible Wi‑Fi IDS evaluation: the <strong>AWID3 dataset</strong> work (IEEE Access) emphasizes capturing and studying attacks in an 802.1X EAP environment and notes that the attacks were carried out when <strong>PMF defenses were operative</strong>, positioning it as a foundation for designing and evaluating IDS under modern constraints[17]. Public portals also describe AWID3 at scale (millions of frames and hundreds of features, including deauth and evil twin)[18]. </p>
+<p>ML detection using management-frame/radiotap features: an open-access paper in <em>Machine Learning with Applications</em> reports a supervised model detecting <strong>fake AP</strong>, <strong>jamming</strong>, and <strong>deauthentication</strong> attacks using features such as frame interval, RSSI, sequence-number gaps, and management-frame subtype, achieving &gt;96% precision for fake AP and deauth in their experiments[19]. </p>
+<p>Signal/RF variability and rogue AP detection: RSSI-based detection remains attractive but fragile; PRAPD highlights realistic issues such as missing RSSI dimensions from multi-sniffer vectors and proposes preprocessing/clustering strategies to reduce false alarms in practical environments[20]. </p>
+<p>PHY-layer fingerprints for spoofing/management-frame protection: PHYAlert proposes CSI-based authentication/detection for spoofing management frames and reports substantially lower false positive rates than RSS-only baselines in mobile scenarios (illustrating why pure RSSI trilateration/detection often struggles under mobility)[21]. </p>
+<p>WPA3-era attack surface and IDS gaps: Dalal et al. describe WPA3 attacks and show (in their testbed) an enterprise AP vulnerable to many attacks while an enterprise IDS failed to detect them; they propose and implement a signature-based IDS and emphasize public release of attack/IDS code for research reuse[22]. </p>
+<p>These themes set the bar for Sentinel NetLab’s scientific contribution: dataset transparency, evaluation under PMF/WPA3 constraints, and measurable improvements over simple RSSI/threshold baselines.</p>
+<h2 id="comparative-positioning-of-sentinel-netlab-against-widswips-solutions">Comparative positioning of Sentinel NetLab against WIDS/WIPS solutions<a class="headerlink" href="#comparative-positioning-of-sentinel-netlab-against-widswips-solutions" title="Permanent link">&para;</a></h2>
+<h3 id="competitive-landscape-and-feature-overlap-visuals">Competitive landscape and feature overlap visuals<a class="headerlink" href="#competitive-landscape-and-feature-overlap-visuals" title="Permanent link">&para;</a></h3>
+<p><em>Figure omitted: Competitive landscape map (source image not stored in repo).</em></p>
+<p>The map above is a qualitative positioning (not a market-share chart) showing how integrated enterprise WLAN vendors cluster toward “integrated + strong containment,” while open-source/research stacks cluster toward “overlay + detect/alert.” This bifurcation is grounded in vendor architectures that embed dedicated scanning radios and wired correlation inside AP infrastructure[8]. </p>
+<p><em>Figure omitted: Feature overlap matrix (source image not stored in repo).</em></p>
+<p>The matrix summarizes what is publicly documented as present/claimed (1) vs not publicly described (0). For vendors, the “absence” of ML often reflects lack of explicit public documentation rather than proof they do not use ML internally; conversely Sentinel explicitly claims an autoencoder anomaly component in the README[1]. </p>
+<h3 id="direct-capability-comparison-table">Direct capability comparison table<a class="headerlink" href="#direct-capability-comparison-table" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Sentinel NetLab (project claim)</th>
+<th>Cisco Meraki Air Marshal</th>
+<th>ArubaOS WIP</th>
+<th>Fortinet FortiAP/FortiGate WIDS/WIPS</th>
+<th>Juniper Mist Wireless IDS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Detection methods</td>
+<td>Signature/rule + ML anomaly (autoencoder) + risk scoring</td>
+<td>Policy + scanning/containment workflows</td>
+<td>WIP detection/classification for DoS/impersonation + policy enforcement</td>
+<td>Rogue detection (incl. on-wire) + monitoring radio</td>
+<td>Rogue/neighbor/honeypot detection + telemetry + security workflows</td>
+</tr>
+<tr>
+<td>Deployment model</td>
+<td>Overlay sensors + controller + dashboard (Python + Docker Compose claim)</td>
+<td>Built into Meraki WLAN + dashboard</td>
+<td>Built into Aruba WLAN controllers/management</td>
+<td>Built into FortiGate WiFi controller + FortiAP</td>
+<td>Built into Mist AP + cloud portal</td>
+</tr>
+<tr>
+<td>Active defense / WIPS</td>
+<td>Experimental, disabled by default; warned as legally constrained</td>
+<td>Containment via deauth spoofing; explicit PMF/6 GHz limitations</td>
+<td>Deauth/tarpit/wired containment options</td>
+<td>Rogue suppression via deauth spoofing; requires on-wire rogue + monitor mode</td>
+<td>“Terminate” rogue clients via deauth from nearby APs</td>
+</tr>
+<tr>
+<td>6 GHz / PMF reality</td>
+<td>Not explicitly described in README WIPS section</td>
+<td>Explicit: 6 GHz containment won’t work due to PMF</td>
+<td>Not explicit in cited WIP pages; PMF impacts generally apply</td>
+<td>Not explicit in cited rogue suppression pages; PMF impacts generally apply</td>
+<td>Docs describe deauth termination; PMF may constrain some scenarios (not fully detailed in cited pages)</td>
+</tr>
+<tr>
+<td>Scalability posture</td>
+<td>Claims distributed sensors, central API, DB/queue/metrics</td>
+<td>Scales with Meraki infrastructure/AP fleet</td>
+<td>Scales with Aruba controller/AP architecture</td>
+<td>Scales with FortiGate/FortiAP deployments</td>
+<td>Scales with Mist AP fleet + cloud analytics</td>
+</tr>
+<tr>
+<td>Documentation quality (publicly visible)</td>
+<td>Strong README structure + large doc index; some repo hygiene artifacts present</td>
+<td>Mature operational docs + cautions</td>
+<td>Mature operational docs + legal disclaimers</td>
+<td>Mature operational docs + legal cautions</td>
+<td>Mature operational docs</td>
+</tr>
+</tbody>
+</table>
+<p>This table is supported by Sentinel’s self-described capabilities and structure[1], Meraki’s description of deauth containment and PMF/6 GHz constraint [6], Aruba’s WIP feature set and containment methods + FCC/§333 caution[9], Fortinet’s on-wire rogue logic and rogue suppression deauth behavior with legal warning[12], and Mist’s scanning-radio + terminate/deauth behavior[14]. </p>
+<h3 id="how-sentinel-netlab-matches-unresolved-challengesand-where-it-likely-gaps">How Sentinel NetLab matches unresolved challenges—and where it likely gaps<a class="headerlink" href="#how-sentinel-netlab-matches-unresolved-challengesand-where-it-likely-gaps" title="Permanent link">&para;</a></h3>
+<p>A central unresolved challenge for “overlay WIDS/WIPS” is <strong>coverage</strong>: a single radio can only observe one channel at a time, so channel hopping trades completeness for breadth. Kismet’s documentation captures this operational constraint clearly, noting that faster hopping may observe more devices but can lose useful data, and recommending more datasources for increased coverage[23]. Sentinel NetLab explicitly relies on channel hopping for management-frame capture, so it inherits the same fundamental tradeoffs unless it supports multi-radio sensor nodes or channel pinning strategies per sensor[1]. </p>
+<p>A second unresolved challenge is that <strong>modern security (WPA3/PMF) changes the feasibility of “containment.”</strong> Meraki documents that 6 GHz containment won’t work due to PMF; Cisco also documents PMF requirements in 6 GHz/Wi‑Fi 6E and that WPA3 enforces PMF[6]. Sentinel NetLab’s README warns that active response is constrained and disabled by default, but it does not (in the accessible materials) explicitly model PMF/6 GHz operational boundaries[1]. This is a key competitiveness gap against enterprise WIPS positioning, because PMF-aware threat modeling is increasingly “table stakes” in Wi‑Fi 6E/7 environments[24]. </p>
+<p>A third unresolved challenge is <strong>ground truth, evaluation, and reproducibility</strong>. Academic work increasingly demands public datasets and rigorous testing under realistic defenses (e.g., AWID3 noting PMF‑operative attacks)[17]. Sentinel’s repository structure includes <code>research/ pcaps</code>, <code>data/</code>, and <code>notebooks/</code>, suggesting an intent to support reproducible research workflows[1]. However, absent access to the project’s IEEE report and experiment descriptions, it is not currently possible to validate whether Sentinel’s ML/anomaly claims are benchmarked against datasets like AWID3 or whether the work meets the reproducibility standard (dataset splits, baselines, confidence intervals, ablations) implied by modern literature[1]. </p>
+<p>A fourth challenge is <strong>RF variability and localization</strong>. Sentinel claims trilateration/heatmaps for physical source tracking[1]. Research literature shows why naive RSSI approaches can produce false alarms or unstable decisions without careful modeling of missing/noisy measurements (PRAPD) or without stronger PHY features like CSI (PHYAlert)[20]. Sentinel’s “market differentiation” hinges on whether it operationalizes these lessons (e.g., handling missing sniffer vectors, calibrating RSSI bias per adapter, or incorporating CSI where hardware permits).</p>
+<h2 id="market-value-assessment-commercial-viability-deployment-friction-and-legalregulatory-constraints">Market value assessment: commercial viability, deployment friction, and legal/regulatory constraints<a class="headerlink" href="#market-value-assessment-commercial-viability-deployment-friction-and-legalregulatory-constraints" title="Permanent link">&para;</a></h2>
+<p>Sentinel NetLab’s strongest commercial “wedge” is not replacing enterprise-integrated WIPS, but serving adjacent markets: <strong>security training labs, university research groups, and organizations needing transparent/inspectable WIDS telemetry pipelines</strong> for controlled environments. Its stated two-mode operation (“standalone tools” like wardriving/audit and “distributed monitoring”) and explicit ethics positioning fit this segment well[1]. </p>
+<p>In mainstream enterprise WLAN procurement, Sentinel faces structural disadvantages versus integrated vendors:</p>
+<p>Hardware integration: Vendors like Meraki and Mist design APs with dedicated scanning radios for always-on security analytics (and sometimes location analytics), reducing deployment complexity and RF blind spots compared with DIY monitor-mode dongles[8]. This is a major barrier because enterprises already own and manage an AP fleet, and WIDS/WIPS is often “bundled” as a feature rather than a separate sensor rollout.</p>
+<p>Operations and scale: Sentinel claims a controller stack with DB/queue/metrics, but enterprise value depends on SSO/RBAC, multi-tenant policy, device lifecycle management, change control, and robust upgrade/rollback. In contrast, vendor platforms expose mature operational workflows and controls[25]. The presence of ad-hoc artifacts in the repo root also signals additional maturity work before “product-grade” operations[1]. </p>
+<p>Legal/regulatory: Active containment is a repeated flashpoint. The FCC’s Marriott enforcement action (Consent Decree) explicitly addressed interference/disabling of Wi‑Fi networks and cites Section 333 of the Communications Act[26]. Vendors therefore embed warnings into containment documentation (Meraki: legal implications/DoS risk; Aruba: §333 warning; Fortinet: verify compliance)[7]. Sentinel’s ethics warning is directionally correct, but any attempt to commercialize a WIPS-like “Mode B” must include strong gating, auditing, allowlisting, and jurisdiction-aware defaults to avoid creating a product that customers might misuse[1]. </p>
+<p>In short: Sentinel’s <strong>market value is plausible</strong> as an open research platform and educational toolkit; its <strong>direct commercial competitiveness</strong> against enterprise WIPS is limited unless it pivots toward either (a) being a telemetry/analytics overlay that integrates into existing WLAN vendors/SIEMs, or (b) targeting niches where integrated AP scanning isn’t available (industrial, constrained budgets, bespoke research deployments).</p>
+<h2 id="scientific-contribution-and-research-significance">Scientific contribution and research significance<a class="headerlink" href="#scientific-contribution-and-research-significance" title="Permanent link">&para;</a></h2>
+<p>Scientifically, Sentinel NetLab’s declared design—hybrid rule + anomaly detection over 802.11 management telemetry—is consistent with the direction of the field, where anomaly/ML approaches complement signature rules. The NIAP PP module explicitly acknowledges that WIDS/WIPS may detect known threats via pattern matching and unknown threats via anomaly detection learned from expected traffic patterns[2].</p>
+<p>Whether Sentinel advances the state of the art depends on three research questions:</p>
+<p>Novelty beyond “system integration”: Many WIDS projects exist; novelty usually comes from (i) new features robust to modern security controls (PMF/WPA3), (ii) better physical-layer features (CSI) or calibration methods, or (iii) rigorous, reproducible evaluation across realistic environments. Works like PHYAlert demonstrate measurable gains (e.g., lower false positive rates than RSS baselines) enabled by CSI-based authentication[21]. Rogue AP detection research (PRAPD) shows practical pitfalls in RSSI-based systems and proposes techniques to reduce false alarms under missing data[20]. Sentinel’s trilateration/risk scoring claims are interesting, but without the IEEE report/results, they cannot be assessed for novelty.</p>
+<p>Reproducibility: High-impact Wi‑Fi IDS research increasingly provides datasets and code artifacts. Dalal et al. emphasize releasing attack/IDS code for WPA3 IDS research reuse. citeturn41view0 AWID3 explicitly targets IDS evaluation under PMF‑operative conditions and provides raw pcaps[17]. Sentinel’s repository layout suggests it could meet this standard (pcaps + notebooks), but the evidence needed—dataset provenance, labeling, baselines, hyperparameters, ablations, environmental descriptions—was not accessible here.</p>
+<p>Alignment with modern constraints: The “WPA3 era” problem is that some attacks persist and IDS efficacy can lag; Dalal et al. show an enterprise IDS failing to detect tested attacks and propose a signature-based design[22]. If Sentinel’s signature engine + anomaly model demonstrably improves detection for WPA3/PMF environments (or explicitly documents what becomes undetectable/preventable under PMF), that could be a meaningful scientific contribution. If not, the project risks being “WPA2-era assumptions” wrapped in modern packaging.</p>
+<h2 id="risks-affecting-adoption-and-credibility">Risks affecting adoption and credibility<a class="headerlink" href="#risks-affecting-adoption-and-credibility" title="Permanent link">&para;</a></h2>
+<p>Operationally and commercially, Sentinel NetLab carries several risks that would likely block adoption unless mitigated:</p>
+<p>Active-defense misuse risk: Even with “lab-only” disclaimers, any built-in deauth/fake AP tooling creates a high bar for safeguards. Vendor documentation repeatedly warns about legal constraints and misuse consequences[7]. Sentinel’s own warning is necessary but not sufficient for real-world governance[1]. </p>
+<p>Modern Wi‑Fi technical constraints: PMF and the 6 GHz band constrain over-the-air deauth containment, and multiple vendor docs explicitly highlight this (Meraki) and broader WPA3/6 GHz requirements[6]. Any WIPS claims that don’t incorporate these constraints risk being viewed as outdated or unreliable by practitioners.</p>
+<p>Coverage and false negatives: Channel hopping implies inevitable blind windows; Kismet’s docs reinforce that accuracy and coverage can suffer, particularly in mobile scenarios[15]. If Sentinel’s detection is evaluated only in simplified lab conditions, reported performance may not generalize.</p>
+<p>Repo hygiene and release readiness: The presence of test outputs/logs and similar artifacts in the repository root is a small but meaningful signal that “production packaging” and repeatable release processes may still be maturing[1]. Adoption—especially commercial—depends on deterministic builds, versioned schemas, and reproducible deployments.</p>
+<p>Evidence gap for the IEEE report: Because the IEEE report content was not retrievable in this environment, the credibility of any research claims that rely on that report cannot be independently assessed here[27]. This is a direct risk to scientific impact unless the report and artifacts are made easily accessible and verifiable.</p>
+<h2 id="recommendations-to-increase-competitiveness-and-scientific-impact">Recommendations to increase competitiveness and scientific impact<a class="headerlink" href="#recommendations-to-increase-competitiveness-and-scientific-impact" title="Permanent link">&para;</a></h2>
+<p>To “chốt hướng nghiên cứu khoa học” (lock the scientific research direction) while choosing your <strong>Option B (retain attack capabilities but isolate + gating + legal guardrails)</strong>, the most leverage comes from turning Sentinel NetLab into a <strong>reproducible, PMF-aware, dataset-driven research platform</strong> rather than a generic WIDS clone.</p>
+<p>First, make PMF/WPA3/6 GHz a first-class part of the threat model and evaluation. Vendor docs already make clear that containment breaks in 6 GHz due to PMF, and Cisco documents PMF requirements in 6 GHz/Wi‑Fi 6E/7[]6. Your scientific contribution can be “what is still detectable/preventable under PMF,” validated on modern datasets like AWID3 (PMF‑operative setting) and/or your own released traces[17].</p>
+<p>Second, anchor the ML story in accepted evaluation practice: adopt public baselines and datasets, and report metrics beyond accuracy (false positive rate, detection latency, robustness under mobility). PHYAlert is a useful exemplar of reporting improvements over RSS baselines, and PRAPD highlights pitfalls of missing/noisy RSSI vectors[21]. Use these as “baseline narratives” and show exactly where Sentinel improves (or where it cannot, due to physics/PMF constraints).</p>
+<p>Third, for Option B guardrails, align with the patterns vendors use: explicit policy controls, allowlists, and legal warnings directly in configuration and UI, not only in markdown. Aruba and Meraki provide strong examples of embedding these warnings in operator workflows[11]. Technically, you should treat active response as a <strong>separate service boundary</strong> (which the repo hints at via <code>lab_attack_service</code>) with authentication, audit logging, rate limits, “proof of authorization” workflow, and a hard default-off stance[1]. </p>
+<p>Finally, if the goal is eventual market-facing value, aim for “integration value” rather than “replacement value”: exporting detections/telemetry to SIEM/SOAR and documenting sensor deployment patterns (multi-radio coverage, stationary vs wardriving accuracy) in the same pragmatic style that Kismet uses when describing chanhop limitations[15]. This makes Sentinel complementary to enterprise WLAN stacks and more adoptable in real environments.</p>
+<p>Taken together, these moves reposition Sentinel NetLab from “a new WIDS” to “a reproducible, modern Wi‑Fi security research testbed that is PMF-aware and ethically gated”—a niche with clearer scientific novelty and a realistic adoption path.</p>
+<h2 id="preferences">Preferences<a class="headerlink" href="#preferences" title="Permanent link">&para;</a></h2>
+<p>[1]  https://github.com/anduong1200/sentinel-netlab
+[2]  https://commoncriteria.github.io/pp/wids/wids-release.html
+[3]  https://www.nist.gov/publications/guide-intrusion-detection-and-prevention-systems-idps
+[4]  https://www.cisa.gov/news-events/news/securing-enterprise-wireless-networks
+[5]  https://commoncriteria.github.io/pp/wids/wids.html
+[6]  https://documentation.meraki.com/Wireless/Operate_and_Maintain/User_Guides/Monitoring_and_Reporting/Air_Marshal
+[7]  https://documentation.meraki.com/Platform_Management/Dashboard_Administration/Design_and_Configure/Architectures_and_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices_-<em>Security
+[8]  https://documentation.meraki.com/Wireless/Product_Information/Overviews_and_Datasheets/CW9166_Datasheet
+[9]  https://arubanetworking.hpe.com/techdocs/ArubaDocPortal/content/new-portal/aos8.html
+[10] https://arubanetworking.hpe.com/techdocs/ArubaDocPortal/content/new-portal/aos8.html
+[11] https://help.centralon-prem.arubanetworks.com/2.5.3/documentation/online_help/content/nms-on-prem/access-points/rogue-ap-mgmt/conf_ids_params.htm
+[12] https://docs.fortinet.com/document/fortiap/6.2.2/fortiwifi-and-fortiap-configuration-guide/501673/monitoring-rogue-aps
+[13] https://docs.fortinet.com/document/fortiap/7.4.4/fortiwifi-and-fortiap-configuration-guide/684604/suppressing-rogue-aps
+[14] https://www.mist.com/documentation/rogue-neighbor-honeypot-aps/
+[15] https://www.kismetwireless.net/docs/readme/alerts/alerts/
+[16] https://www.openwips-ng.org/
+[17] https://doaj.org/article/fd96e0dc4ee9486fb78d41d6fc6cdf04
+[18] https://shield-datasets.in/guest/projects/dataset-details-publicly/96
+[19] https://doaj.org/article/08ade75e1e6346a69d5bb3e88f5f93a1
+[20] https://doi.org/10.1177/1550147718795838
+[21] https://journalofcloudcomputing.springeropen.com/articles/10.1186/s13677-020-0154-7
+[22] https://arxiv.org/abs/2110.04259
+[23] https://www.kismet-wifi.net/docs/readme/datasources/datasources/
+[24] https://documentation.meraki.com/Wireless/Design_and_Configure/Configuration_Guides/Encryption_and_Authentication/WPA3_Encryption_and_Configuration_Guide
+[25] https://documentation.meraki.com/Platform_Management/Dashboard_Administration/Design_and_Configure/Architectures_and_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices/Meraki_Wireless_for_Enterprise_Best_Practices</em>-_Security
+[26] https://docs.fcc.gov/public/attachments/DA-14-1444A1.pdf
+[27] https://github.com/anduong1200/sentinel-netlab</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

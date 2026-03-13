@@ -1,0 +1,2604 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Pass-the-Hash Attacks (PtH) — Lạm dụng NTLM hash để xác thực & di chuyển ngang - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pass-the-hash-attacks-pth-lam-dung-ntlm-hash-e-xac-thuc-di-chuyen-ngang" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pass-the-Hash Attacks (PtH) — Lạm dụng NTLM hash để xác thực &amp; di chuyển ngang
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../lab/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../research/security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/deep-research-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat-technical-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Thông tin kỹ thuật (Technical Information)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1) Thông tin kỹ thuật (Technical Information)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-giao-thuc-lien-quan-pth-thuan-la-windows-auth-80211wpaeap-chi-la-lop-truy-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Giao thức liên quan (PtH “thuần” là Windows auth; 802.11/WPA/EAP chỉ là lớp truy cập)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-co-che-hoat-ong-cua-ap-client-iot-device-tap-trung-vao-be-mat-pth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Cơ chế hoạt động của AP / Client / IoT device (tập trung vào bề mặt PtH)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-cong-cuphan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Công cụ/phần mềm thường dùng (tấn công &amp; phòng thủ) — ở mức khái quát
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-thuat-toan-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Thuật toán (Algorithms)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2) Thuật toán (Algorithms)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Thuật toán mã hóa/xác thực bị khai thác (hoặc liên quan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-thuat-toan-tan-cong-khai-niem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Thuật toán tấn công (khái niệm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-thuat-toan-phong-thu-entropy-based-mldl-anomaly-detection-va-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Thuật toán phòng thủ (entropy-based, ML/DL anomaly detection, và hardening)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3) Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-phu-thuoc-firmwaredriverhe-ieu-hanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Phụ thuộc firmware/driver/hệ điều hành
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-phu-thuoc-cau-hinh-nguoi-dungendpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Phụ thuộc cấu hình người dùng/endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-phu-thuoc-ha-tang-mang-aprouteriot-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Phụ thuộc hạ tầng mạng (AP/router/IoT gateway)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4) Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-moi-truong-trien-khai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Môi trường triển khai
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-kich-ban-tan-cong-vi-du" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Kịch bản tấn công (ví dụ)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-core-weakness-iem-yeu-cot-loi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) Core Weakness (điểm yếu cốt lõi)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-cost-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6) Cost &amp; Risk">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-chi-phi-trien-khai-tan-cong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Chi phí triển khai tấn công
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-chi-phi-phong-thu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Chi phí phòng thủ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-rui-ro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Rủi ro
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-control-surface-cac-lop-kiem-soat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) Control Surface (các lớp kiểm soát)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7) Control Surface (các lớp kiểm soát)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-access-point-access-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Access Point / Access Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-client-windows-endpoints-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Client (Windows endpoints) &amp; Server
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-network-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Network Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-policy-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Policy Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-chain-value-chuoi-gia-tri-lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8) Chain Value (chuỗi giá trị liên quan)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references-kem-source-preference-va-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References (kèm “Source Preference” và URL)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References (kèm “Source Preference” và URL)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#p1-chuantieu-chuan-tai-lieu-chinh-thuc-microsoft-learnrfcnist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P1 — Chuẩn/tiêu chuẩn &amp; tài liệu chính thức (Microsoft Learn/RFC/NIST)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#p2-khung-tri-thuchuong-dan-mitre" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P2 — Khung tri thức/hướng dẫn (MITRE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-trien-khai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P4 — Vendor/triển khai tham khảo (bổ sung góc nhìn triển khai)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="pass-the-hash-attacks-pth-lam-dung-ntlm-hash-e-xac-thuc-di-chuyen-ngang">Pass-the-Hash Attacks (PtH) — Lạm dụng NTLM hash để xác thực &amp; di chuyển ngang<a class="headerlink" href="#pass-the-hash-attacks-pth-lam-dung-ntlm-hash-e-xac-thuc-di-chuyen-ngang" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Phạm vi:</strong> mô tả kỹ thuật và kiểm soát <strong>phòng thủ</strong> cho tấn công <strong>Pass-the-Hash (PtH)</strong> trong hệ sinh thái Windows/Active Directory: kẻ tấn công dùng <strong>password hash</strong> (đặc biệt NTLM/NT hash) như “vật liệu xác thực thay thế” để đăng nhập/lateral movement mà <strong>không cần mật khẩu dạng rõ</strong>.<br />
+<strong>Nguyên tắc an toàn:</strong> không cung cấp lệnh/chuỗi thao tác khai thác; chỉ mô tả cơ chế, điều kiện, dấu hiệu và biện pháp giảm thiểu/giám sát.</p>
+</blockquote>
+<hr />
+<h2 id="1-thong-tin-ky-thuat-technical-information">1) Thông tin kỹ thuật (Technical Information)<a class="headerlink" href="#1-thong-tin-ky-thuat-technical-information" title="Permanent link">&para;</a></h2>
+<h3 id="11-giao-thuc-lien-quan-pth-thuan-la-windows-auth-80211wpaeap-chi-la-lop-truy-cap">1.1 Giao thức liên quan (PtH “thuần” là Windows auth; 802.11/WPA/EAP chỉ là lớp truy cập)<a class="headerlink" href="#11-giao-thuc-lien-quan-pth-thuan-la-windows-auth-80211wpaeap-chi-la-lop-truy-cap" title="Permanent link">&para;</a></h3>
+<p><strong>(A) Hệ cơ chế xác thực Windows</strong>
+- <strong>NTLM / NTLMv2</strong> (NT LAN Manager):
+  - cơ chế <strong>challenge–response</strong>; “bí mật” là khóa/giá trị dẫn xuất từ mật khẩu (NT hash), được dùng để tạo response.<br />
+  - PtH tận dụng việc “có hash” đôi khi đủ để hoàn tất xác thực NTLM mà không cần mật khẩu.
+  - Tài liệu giao thức (Open Specifications): <strong>[MS‑NLMP]</strong> mô tả NTLM chi tiết.
+- <strong>Kerberos</strong>:
+  - cơ chế ticket‑based (TGT/TGS); thường an toàn hơn NTLM trong nhiều kịch bản AD nhưng vẫn cần hardening.
+  - PtH khác với “Pass‑the‑Ticket” (PtT); tuy nhiên thực tế attacker thường phối hợp nhiều kỹ thuật.
+- <strong>SMB (TCP/445)</strong>:
+  - dịch vụ chia sẻ file/IPC; PtH hay được dùng để truy cập share/ADMIN$ hoặc dịch vụ quản trị liên quan.
+  - <strong>SMB signing/encryption</strong> là lớp bảo vệ quan trọng để giảm rủi ro các biến thể relay/tampering và tăng “assurance”.
+- <strong>RPC/DCOM, WMI, WinRM (PowerShell Remoting)</strong>:
+  - các kênh quản trị từ xa có thể sử dụng NTLM/Kerberos tùy cấu hình; nếu NTLM được phép và attacker có hash, rủi ro di chuyển ngang tăng.
+- <strong>LDAP/HTTP</strong> (IWA – Integrated Windows Authentication):
+  - nhiều dịch vụ ứng dụng hỗ trợ NTLM; nếu endpoint cho phép NTLM rộng rãi, PtH/AiTM/relay dễ hình thành “chuỗi tấn công”.</p>
+<p><strong>(B) Lớp truy cập mạng (khi PtH xảy ra trong WLAN/LAN)</strong>
+- <strong>IEEE 802.11 (Wi‑Fi)</strong>: PtH không “phụ thuộc” 802.11, nhưng Wi‑Fi là bối cảnh phổ biến để attacker <strong>vào được mạng nội bộ</strong> (Initial Access), rồi mới thực hiện PtH.
+- <strong>WPA2/WPA3</strong>:
+  - bảo vệ liên kết radio (client ↔ AP), không trực tiếp ngăn PtH nếu attacker đã có foothold trong mạng.
+- <strong>EAP/802.1X (Enterprise)</strong>:
+  - giúp kiểm soát ai/thiết bị nào được vào VLAN nội bộ; giảm xác suất attacker “đứng trong cùng segment” để thực hiện lateral movement.</p>
+<h3 id="12-co-che-hoat-ong-cua-ap-client-iot-device-tap-trung-vao-be-mat-pth">1.2 Cơ chế hoạt động của AP / Client / IoT device (tập trung vào bề mặt PtH)<a class="headerlink" href="#12-co-che-hoat-ong-cua-ap-client-iot-device-tap-trung-vao-be-mat-pth" title="Permanent link">&para;</a></h3>
+<p><strong>(A) AP/Switch (vai trò bề mặt “lateral movement enabler”)</strong>
+- PtH phát huy hiệu quả khi:
+  - attacker có thể <strong>kết nối tới mục tiêu</strong> qua các port/quản trị (SMB/RPC/WMI/WinRM),
+  - có <strong>east‑west connectivity</strong> trong VLAN.
+- Các kiểm soát ở access layer (isolation/segmentation/ACL/NAC) có thể làm PtH “khó dùng” dù attacker có hash.</p>
+<p><strong>(B) Windows client/server (nguồn hash &amp; đích xác thực)</strong>
+- <strong>Nguồn hash</strong>: attacker cần thu được password hash từ một nơi nào đó (ví dụ:
+  - bộ nhớ tiến trình xác thực (LSASS) / credential cache,
+  - cơ sở dữ liệu local (SAM) hoặc domain (NTDS.dit) nếu đã có quyền cao,
+  - backup/snapshot/EDR artifacts cấu hình sai).
+- <strong>Đích PtH</strong>: máy/ dịch vụ chấp nhận NTLM và cho phép sử dụng hash như vật liệu xác thực.
+- <strong>Tác động</strong>:
+  - nếu hash là của <strong>local admin</strong> và bị reuse giữa nhiều máy → lateral movement nhanh.
+  - nếu hash thuộc account có quyền cao (server admin, domain admin) → nguy cơ compromise diện rộng.</p>
+<p><strong>(C) IoT / thiết bị “non‑Windows” nhưng liên quan</strong>
+- Nhiều NAS/printer/thiết bị “SMB‑capable” có thể:
+  - chấp nhận NTLM/SMB từ Windows client,
+  - cấu hình signing/encryption yếu,
+  - trở thành pivot hoặc nơi lộ dữ liệu.
+- IoT thường khó harden ở tầng identity → cần segmentation &amp; deny‑by‑default.</p>
+<h3 id="13-cong-cuphan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat">1.3 Công cụ/phần mềm thường dùng (tấn công &amp; phòng thủ) — ở mức khái quát<a class="headerlink" href="#13-cong-cuphan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Không hướng dẫn sử dụng; chỉ liệt kê để hiểu hệ sinh thái.</p>
+</blockquote>
+<p><strong>Quan sát/điều tra &amp; phòng thủ</strong>
+- <strong>Windows Event Logs</strong> + Advanced Auditing (logon events, NTLM events).
+- <strong>EDR</strong> (Microsoft Defender for Endpoint, v.v.) để phát hiện credential dumping và bất thường đăng nhập.
+- <strong>Sysmon</strong> (tùy chính sách) để bổ sung telemetry.
+- <strong>Wireshark/Zeek/Suricata</strong>: quan sát NTLM/SMB patterns, bất thường đăng nhập từ xa, traffic east‑west.
+- <strong>SIEM</strong> (Sentinel/Splunk/Elastic…): tương quan logon + network flow + endpoint alerts.</p>
+<p><strong>Trong đánh giá an ninh được ủy quyền</strong>
+- Một số bộ công cụ thường được nhắc tới trong cộng đồng để mô phỏng PtH/PtT/relay (ví dụ công cụ credential dumping/NTLM relay frameworks).<br />
+<em>Lưu ý: chỉ nêu khái quát; không cung cấp thao tác.</em></p>
+<p><strong>Aircrack‑ng/Kismet</strong>
+- Không phải công cụ PtH trực tiếp; nhưng có thể xuất hiện trong chuỗi tấn công khi attacker dùng để <strong>xâm nhập WLAN</strong> trước khi thực hiện PtH.</p>
+<hr />
+<h2 id="2-thuat-toan-algorithms">2) Thuật toán (Algorithms)<a class="headerlink" href="#2-thuat-toan-algorithms" title="Permanent link">&para;</a></h2>
+<h3 id="21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-lien-quan">2.1 Thuật toán mã hóa/xác thực bị khai thác (hoặc liên quan)<a class="headerlink" href="#21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-lien-quan" title="Permanent link">&para;</a></h3>
+<p><strong>(A) NT hash &amp; NTLM family</strong>
+- <strong>NT hash (NTLM hash)</strong> thường được tính bằng <strong>MD4</strong> trên mật khẩu (Unicode) — mô tả khái niệm nền cho “có hash = có secret”.
+- <strong>NTLMv2</strong> sử dụng cấu trúc <strong>HMAC‑MD5</strong> trong quá trình tạo response (khái quát).<br />
+- Ý chính của PtH: attacker không cần phá crypto; họ <strong>tái sử dụng</strong> “vật liệu bí mật” đã bị lộ.</p>
+<p><strong>(B) SMB signing/encryption (liên quan giảm rủi ro lateral/relay)</strong>
+- SMB signing dùng các cơ chế dựa trên session key (ví dụ AES‑based signing trong SMB2/3) để đảm bảo integrity.
+- SMB encryption dùng AES modes (GCM/CCM tùy phiên bản) để bảo vệ confidentiality/integrity.</p>
+<p><strong>(C) Wi‑Fi crypto (ngữ cảnh truy cập)</strong>
+- <strong>WPA2:</strong> AES‑CCMP (chuẩn), <strong>TKIP</strong> (legacy/không khuyến nghị).
+- <strong>WPA3:</strong> <strong>SAE</strong> (Personal) + PMF mạnh hơn.</p>
+<blockquote>
+<p>Đây không phải “thuật toán PtH”, nhưng ảnh hưởng khả năng attacker tiếp cận mạng nội bộ (tức “điều kiện đầu vào” cho PtH).</p>
+</blockquote>
+<h3 id="22-thuat-toan-tan-cong-khai-niem">2.2 Thuật toán tấn công (khái niệm)<a class="headerlink" href="#22-thuat-toan-tan-cong-khai-niem" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Credential material acquisition</strong>:</li>
+<li>thu thập hash từ endpoint bị compromise, từ backup/config sai, hoặc từ hệ thống domain nếu đã có quyền.</li>
+<li><strong>Replay/Use Alternate Authentication Material</strong>:</li>
+<li>dùng hash như “chìa khóa” để xác thực NTLM tới dịch vụ đích (SMB/RPC/HTTP…).</li>
+<li><strong>Lateral movement graph</strong>:</li>
+<li>tìm mục tiêu nơi hash có quyền (admin share, remote management); mở rộng quyền theo đồ thị quan hệ.</li>
+<li><strong>Dictionary/brute‑force (bổ trợ, không phải PtH cốt lõi)</strong>:</li>
+<li>nếu attacker thu được vật liệu có thể brute‑force offline (tùy loại artifact) thì dùng để lấy plaintext; nhưng PtH bản chất là “không cần plaintext”.</li>
+</ul>
+<h3 id="23-thuat-toan-phong-thu-entropy-based-mldl-anomaly-detection-va-hardening">2.3 Thuật toán phòng thủ (entropy-based, ML/DL anomaly detection, và hardening)<a class="headerlink" href="#23-thuat-toan-phong-thu-entropy-based-mldl-anomaly-detection-va-hardening" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Entropy‑based detection</strong> (thường dùng trong SIEM/NDR):</li>
+<li>nguồn đăng nhập “hiếm” (rare source) tới nhiều máy,</li>
+<li>bùng nổ logon Type 3 (network logon) từ 1 host,</li>
+<li>tỷ lệ fail/success bất thường theo tài khoản/host,</li>
+<li>“new admin path” (máy trước đây không bao giờ đăng nhập vào server A, nay xuất hiện).</li>
+<li><strong>ML/DL anomaly detection</strong>:</li>
+<li>time‑series cho hành vi đăng nhập (per user/per host),</li>
+<li>graph anomaly (đường đi mới trong mạng quản trị),</li>
+<li>kết hợp signal EDR (credential dumping) + network east‑west.</li>
+<li><strong>Hardening “logic”</strong>:</li>
+<li>giảm/loại bỏ NTLM, ưu tiên Kerberos,</li>
+<li>bảo vệ LSASS/secret bằng VBS/Credential Guard,</li>
+<li>giảm reuse local admin (Windows LAPS),</li>
+<li>segmentation + block lateral management ports.</li>
+</ul>
+<hr />
+<h2 id="3-dependencies">3) Dependencies<a class="headerlink" href="#3-dependencies" title="Permanent link">&para;</a></h2>
+<h3 id="31-phu-thuoc-firmwaredriverhe-ieu-hanh">3.1 Phụ thuộc firmware/driver/hệ điều hành<a class="headerlink" href="#31-phu-thuoc-firmwaredriverhe-ieu-hanh" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Windows version/edition</strong>: có/không hỗ trợ và mức trưởng thành của:</li>
+<li><strong>Credential Guard / VBS</strong>,</li>
+<li><strong>NTLM auditing enhancements</strong>,</li>
+<li>SMB hardening defaults.</li>
+<li><strong>Driver/firmware</strong> ảnh hưởng gián tiếp:</li>
+<li>khả năng bật VBS, DMA protection,</li>
+<li>tương thích với security baselines.</li>
+</ul>
+<h3 id="32-phu-thuoc-cau-hinh-nguoi-dungendpoint">3.2 Phụ thuộc cấu hình người dùng/endpoint<a class="headerlink" href="#32-phu-thuoc-cau-hinh-nguoi-dungendpoint" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>NTLM được bật rộng rãi</strong> (fallback nhiều).</li>
+<li><strong>Local admin password reuse</strong> giữa máy.</li>
+<li>Cho phép <strong>remote admin</strong> (SMB/RPC/WMI/WinRM) từ user VLAN.</li>
+<li>Thiếu hardening endpoint:</li>
+<li>không bật Credential Guard/LSA protection,</li>
+<li>không có EDR/ASR rules hoặc cấu hình yếu.</li>
+<li>Nếu ở Wi‑Fi: <strong>PSK yếu/WPS bật</strong> làm attacker dễ vào mạng (tạo điều kiện cho PtH sau đó).</li>
+</ul>
+<h3 id="33-phu-thuoc-ha-tang-mang-aprouteriot-gateway">3.3 Phụ thuộc hạ tầng mạng (AP/router/IoT gateway)<a class="headerlink" href="#33-phu-thuoc-ha-tang-mang-aprouteriot-gateway" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Thiếu segmentation (user ↔ server ↔ management).</li>
+<li>Thiếu NAC/802.1X cho VLAN nội bộ.</li>
+<li>SMB/remote management ports mở “rộng” east‑west.</li>
+<li>Nhiều thiết bị SMB/IoT legacy không hỗ trợ signing/encryption.</li>
+</ul>
+<hr />
+<h2 id="4-context">4) Context<a class="headerlink" href="#4-context" title="Permanent link">&para;</a></h2>
+<h3 id="41-moi-truong-trien-khai">4.1 Môi trường triển khai<a class="headerlink" href="#41-moi-truong-trien-khai" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Doanh nghiệp Active Directory</strong> (phổ biến nhất).</li>
+<li><strong>Campus/corporate Wi‑Fi</strong> (attacker vào mạng qua WLAN rồi pivot).</li>
+<li><strong>IoT/OT</strong> có SMB shares/NAS/printer trong cùng VLAN user.</li>
+<li><strong>Hybrid/remote</strong> (VPN split‑tunnel hoặc thiết kế mạng cho phép east‑west rộng).</li>
+</ul>
+<h3 id="42-kich-ban-tan-cong-vi-du">4.2 Kịch bản tấn công (ví dụ)<a class="headerlink" href="#42-kich-ban-tan-cong-vi-du" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Enterprise lateral movement</strong>:</li>
+<li>attacker có foothold trên 1 máy trạm → lấy hash → đăng nhập sang file server/ứng dụng nội bộ dùng NTLM.</li>
+<li><strong>Campus</strong>:</li>
+<li>máy trong user VLAN dò và đăng nhập sang nhiều máy do local admin reuse.</li>
+<li><strong>IoT</strong>:</li>
+<li>NAS/printer dùng SMB + NTLM, cấu hình yếu → bị dùng làm điểm pivot hoặc lộ dữ liệu.</li>
+</ul>
+<hr />
+<h2 id="5-core-weakness-iem-yeu-cot-loi">5) Core Weakness (điểm yếu cốt lõi)<a class="headerlink" href="#5-core-weakness-iem-yeu-cot-loi" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>“Possession = authentication”</strong> trong một số luồng NTLM: nếu attacker có NT hash, họ có thể dùng nó như vật liệu xác thực (không cần bẻ mật khẩu).</li>
+<li><strong>Credential caching + đặc quyền admin</strong>:</li>
+<li>hash xuất hiện trong bộ nhớ/hệ thống nếu có đăng nhập đặc quyền.</li>
+<li><strong>Legacy &amp; compatibility</strong>:</li>
+<li>NTLM tồn tại vì tương thích; nhiều ứng dụng/thiết bị vẫn cần NTLM.</li>
+<li><strong>Human factor</strong>:</li>
+<li>reuse mật khẩu, chia sẻ tài khoản admin, vận hành thiếu phân tầng.</li>
+</ul>
+<hr />
+<h2 id="6-cost-risk">6) Cost &amp; Risk<a class="headerlink" href="#6-cost-risk" title="Permanent link">&para;</a></h2>
+<h3 id="61-chi-phi-trien-khai-tan-cong">6.1 Chi phí triển khai tấn công<a class="headerlink" href="#61-chi-phi-trien-khai-tan-cong" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Trung bình</strong>:</li>
+<li>PtH thường cần bước trước đó để lấy hash (malware/privilege/backup leak).</li>
+<li>Khi đã có hash + mạng cho phép lateral, chi phí mở rộng thường <strong>thấp</strong> (diễn ra nhanh).</li>
+</ul>
+<h3 id="62-chi-phi-phong-thu">6.2 Chi phí phòng thủ<a class="headerlink" href="#62-chi-phi-phong-thu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Trung bình → cao</strong>:</li>
+<li>triển khai Credential Guard/VBS ở quy mô lớn,</li>
+<li>migrate khỏi NTLM, kiểm thử ứng dụng legacy,</li>
+<li>áp dụng Windows LAPS và phân tầng quản trị,</li>
+<li>đầu tư SIEM/NDR/EDR và quy trình IR.</li>
+</ul>
+<h3 id="63-rui-ro">6.3 Rủi ro<a class="headerlink" href="#63-rui-ro" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Domain compromise</strong> và ransomware (nếu attacker đạt được đặc quyền cao).</li>
+<li><strong>Rò rỉ dữ liệu</strong> qua file server/SMB shares.</li>
+<li><strong>Gián đoạn dịch vụ</strong> do attacker thao tác cấu hình hoặc triển khai phá hoại.</li>
+<li><strong>Tuân thủ/pháp lý</strong>: ảnh hưởng dữ liệu nhạy cảm/PII, SLA.</li>
+</ul>
+<hr />
+<h2 id="7-control-surface-cac-lop-kiem-soat">7) Control Surface (các lớp kiểm soát)<a class="headerlink" href="#7-control-surface-cac-lop-kiem-soat" title="Permanent link">&para;</a></h2>
+<h3 id="71-access-point-access-layer">7.1 Access Point / Access Layer<a class="headerlink" href="#71-access-point-access-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>WPA2/WPA3‑Enterprise (802.1X/EAP‑TLS)</strong> cho mạng nội bộ để giảm “kẻ lạ vào mạng”.</li>
+<li><strong>Guest Wi‑Fi</strong>:</li>
+<li>bật client isolation,</li>
+<li>chặn truy cập tới VLAN server/management,</li>
+<li>không route SMB/WinRM/RPC sang nội bộ.</li>
+<li><strong>Segmentation</strong>:</li>
+<li>user VLAN không được phép truy cập admin ports tới workstation/server trừ khi cần và có kiểm soát.</li>
+</ul>
+<h3 id="72-client-windows-endpoints-server">7.2 Client (Windows endpoints) &amp; Server<a class="headerlink" href="#72-client-windows-endpoints-server" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Bảo vệ credential/LSASS</strong>:</li>
+<li>bật <strong>Credential Guard</strong> (VBS) theo baseline phù hợp,</li>
+<li>bật LSA protection/anti‑credential dumping controls (theo hướng dẫn Microsoft/EDR).</li>
+<li><strong>Giảm NTLM</strong>:</li>
+<li>bật auditing, lập kế hoạch loại bỏ NTLM theo lộ trình,</li>
+<li>ưu tiên Kerberos, cấu hình chặn NTLM nơi có thể (đặc biệt với SMB).</li>
+<li><strong>Giảm local admin reuse</strong>:</li>
+<li>triển khai <strong>Windows LAPS</strong> để mỗi máy có mật khẩu local admin khác nhau và rotate.</li>
+<li><strong>Nguyên tắc đặc quyền</strong>:</li>
+<li>tiered admin model, PAW (Privileged Access Workstation) cho admin,</li>
+<li>hạn chế “admin đăng nhập vào workstation người dùng”.</li>
+</ul>
+<h3 id="73-network-layer">7.3 Network Layer<a class="headerlink" href="#73-network-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Giảm khả năng lateral movement</strong>:</li>
+<li>hạn chế TCP/445 (SMB), WinRM, WMI/RPC theo zone,</li>
+<li>áp dụng micro‑segmentation/host firewall.</li>
+<li><strong>SMB hardening</strong>:</li>
+<li>yêu cầu SMB signing, cân nhắc SMB encryption,</li>
+<li>giám sát và giảm “insecure guest”.</li>
+<li><strong>Detection</strong>:</li>
+<li>tương quan event log (đăng nhập) + network flow (east‑west) + EDR alerts.</li>
+</ul>
+<h3 id="74-policy-layer">7.4 Policy Layer<a class="headerlink" href="#74-policy-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Chính sách mật khẩu</strong>: ưu tiên password dài, blocklist, không reuse (theo NIST 800‑63B).</li>
+<li><strong>PAM/PIM</strong> (Privileged Access Management / Just‑in‑Time):</li>
+<li>giảm thời gian tài khoản đặc quyền “luôn bật”.</li>
+<li><strong>Đào tạo &amp; quy trình</strong>:</li>
+<li>hướng dẫn admin không đăng nhập domain admin vào máy thường,</li>
+<li>playbook phản ứng khi nghi credential theft (rotate secrets, isolate host, hunt lateral).</li>
+</ul>
+<hr />
+<h2 id="8-chain-value-chuoi-gia-tri-lien-quan">8) Chain Value (chuỗi giá trị liên quan)<a class="headerlink" href="#8-chain-value-chuoi-gia-tri-lien-quan" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Nhà sản xuất phần cứng:</strong> PC, NIC, TPM, AP/switch (ảnh hưởng VBS/secure boot và segmentation).</li>
+<li><strong>Nhà cung cấp phần mềm:</strong> Windows/AD, SMB stack, EDR, SIEM/NDR, PAM solutions.</li>
+<li><strong>Doanh nghiệp triển khai:</strong> IT ops, Identity team, SOC, Network team.</li>
+<li><strong>Người dùng cuối:</strong> thói quen mật khẩu, tuân thủ chính sách thiết bị.</li>
+<li><strong>Kẻ tấn công:</strong> tận dụng legacy auth + credential reuse + lateral connectivity.</li>
+<li><strong>Cơ quan/chuẩn/pháp luật:</strong> RFC/IETF (Kerberos), NIST/CISA/MITRE (khung phòng thủ), quy định ATTT &amp; bảo vệ dữ liệu.</li>
+</ul>
+<hr />
+<h2 id="references-kem-source-preference-va-url">References (kèm “Source Preference” và URL)<a class="headerlink" href="#references-kem-source-preference-va-url" title="Permanent link">&para;</a></h2>
+<h3 id="p1-chuantieu-chuan-tai-lieu-chinh-thuc-microsoft-learnrfcnist">P1 — Chuẩn/tiêu chuẩn &amp; tài liệu chính thức (Microsoft Learn/RFC/NIST)<a class="headerlink" href="#p1-chuantieu-chuan-tai-lieu-chinh-thuc-microsoft-learnrfcnist" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Microsoft Download — <em>Mitigating Pass-the-Hash (PtH) Attacks and Other Credential Theft, Version 2</em> (PDF):<br />
+  https://www.microsoft.com/en-us/download/details.aspx?id=36036<br />
+  (Direct PDF) https://download.microsoft.com/download/7/7/A/77ABC5BD-8320-41AF-863C-6ECFB10CB4B9/Mitigating-Pass-the-Hash-Attacks-and-Other-Credential-Theft-Version-2.pdf</li>
+<li>Microsoft Learn — NTLM overview:<br />
+  https://learn.microsoft.com/en-us/windows-server/security/kerberos/ntlm-overview</li>
+<li>Microsoft Learn (Open Specifications) — [MS-NLMP] NTLM Protocol:<br />
+  https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/c50a85f0-5940-42d8-9e82-ed206902e919</li>
+<li>Microsoft Learn — Credential Guard overview:<br />
+  https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/</li>
+<li>Microsoft Learn — Configure Credential Guard:<br />
+  https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/configure</li>
+<li>Microsoft Support — NTLM auditing enhancements (Windows 11 24H2 / Windows Server 2025):<br />
+  https://support.microsoft.com/en-us/topic/overview-of-ntlm-auditing-enhancements-in-windows-11-version-24h2-and-windows-server-2025-b7ead732-6fc5-46a3-a943-27a4571d9e7b</li>
+<li>Microsoft Learn — SMB signing (overview):<br />
+  https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview<br />
+  (Policy/behavior) https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing</li>
+<li>Microsoft Learn — Block NTLM connections on SMB (Windows Server 2025 / Windows 11 24H2):<br />
+  https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-ntlm-blocking</li>
+<li>Microsoft Learn — Windows LAPS overview:<br />
+  https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-overview<br />
+  (Architecture concepts) https://learn.microsoft.com/en-us/windows-server/identity/laps/laps-concepts-overview</li>
+<li>NIST SP 800-63B — Digital Identity Guidelines (password/authenticator guidance):<br />
+  https://pages.nist.gov/800-63-3/sp800-63b.html</li>
+</ul>
+<h3 id="p2-khung-tri-thuchuong-dan-mitre">P2 — Khung tri thức/hướng dẫn (MITRE)<a class="headerlink" href="#p2-khung-tri-thuchuong-dan-mitre" title="Permanent link">&para;</a></h3>
+<ul>
+<li>MITRE ATT&amp;CK — T1550.002 Pass the Hash:<br />
+  https://attack.mitre.org/techniques/T1550/002/</li>
+</ul>
+<h3 id="p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-trien-khai">P4 — Vendor/triển khai tham khảo (bổ sung góc nhìn triển khai)<a class="headerlink" href="#p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-trien-khai" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Windows IT Pro Blog — Roadmap “Disabling NTLM by default” (cập nhật 2026):<br />
+  https://techcommunity.microsoft.com/blog/windows-itpro-blog/advancing-windows-security-disabling-ntlm-by-default/4489526</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
