@@ -27,7 +27,7 @@ class ReportGenerator:
             loader=FileSystemLoader(str(self.templates_dir)), autoescape=True
         )
         template = env.get_template("report_template.html")
-        return template.render(**data)
+        return str(template.render(**data))
 
     def render_json(self, data: dict[str, Any]) -> str:
         """Render JSON report"""

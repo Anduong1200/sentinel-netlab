@@ -68,16 +68,16 @@ requirements-dev.txt:
 # =============================================================================
 
 test: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/ -v
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/ -v
 
 test-unit: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/unit -v
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/unit -v
 
 test-int: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/integration -v
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/integration -v
 
 test-cov: compose-check
-	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm sensor pytest tests/ --cov=. --cov-report=html
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/ --cov=. --cov-report=html
 
 
 # =============================================================================
