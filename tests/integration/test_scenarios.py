@@ -180,8 +180,12 @@ class TestScenarioReplay:
         controller.stop()
 
         # Verify that Deauth flood was detected
-        assert mock_transport.upload_alert.called, "upload_alert should be called for Deauth Flood"
+        assert mock_transport.upload_alert.called, (
+            "upload_alert should be called for Deauth Flood"
+        )
 
         calls = mock_transport.upload_alert.call_args_list
-        assert any("Deauth Flood" in str(c) or "deauth" in str(c).lower() for c in calls)
+        assert any(
+            "Deauth Flood" in str(c) or "deauth" in str(c).lower() for c in calls
+        )
         print("Scenario passed: Deauth flood correctly triggered an alert.")
