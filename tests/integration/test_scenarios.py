@@ -143,3 +143,45 @@ class TestScenarioReplay:
         # Also check frames parsed
         assert controller._frames_parsed >= 10
         print("Scenario passed: Normal traffic processed without false positives.")
+
+    def test_replay_deauth_flood_detection(self, setup_pcap, mock_transport, test_env):
+        """
+        Scenario: Replay PCAP containing a Deauth flood attack.
+        Expected: Sensor detects Deauth Flood and calls upload_alert.
+        """
+        pcap_path = setup_pcap("deauth")
+        from sensor.config import get_config
+
+        config = get_config()
+        config.storage.pcap_dir = str(test_env / "pcaps_deauth")
+        config.storage.db_path = str(test_env / "test_deauth.db")
+        config.privacy.mode = "normal"
+        config.privacy.store_raw_mac = True
+        config.capture.enable_channel_hop = False
+
+        controller = SensorController(config=config)
+        controller.driver = PcapCaptureDriver(
+            iface="test_mon", pcap_path=pcap_path, realtime=False
+        )
+
+        # Configure thresholds
+        controller.dos_detector.threshold_per_sec = 2.0
+        controller.dos_detector.window_seconds = 1.0
+
+        controller.start()
+
+        # Wait for pcap processing
+        # deauth scenario has 100 packets
+        max_wait = 10
+        start_wait = time.time()
+        while controller._frames_parsed < 50 and time.time() - start_wait < max_wait:
+            time.sleep(0.1)
+
+        controller.stop()
+
+        # Verify that Deauth flood was detected
+        assert mock_transport.upload_alert.called, "upload_alert should be called for Deauth Flood"
+
+        calls = mock_transport.upload_alert.call_args_list
+        assert any("Deauth Flood" in str(c) or "deauth" in str(c).lower() for c in calls)
+        print("Scenario passed: Deauth flood correctly triggered an alert.")
