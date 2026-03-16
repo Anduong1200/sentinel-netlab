@@ -489,7 +489,7 @@ class SensorController:
             self._handle_alert(pmkid_alert)
 
         if (
-            net_dict.get("frame_type") == "deauth"
+            net_dict.get("frame_subtype") == "deauth"
             or net_dict.get("frame_subtype") == 12
         ):
             dos_alert = self.dos_detector.record_deauth(
