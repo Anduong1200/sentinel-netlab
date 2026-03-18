@@ -1,64 +1,82 @@
 
 # Developer Guide: Adding Detectors
 
+## Architecture Overview
+
+Sentinel NetLab uses a **Unified Detection Orchestrator** on the sensor side. Detectors are registered via adapters and selected through detector profiles — no edits to `sensor_controller.py` are needed.
+
 ## Detector Interface
 
-All sensor-side detectors follow the `ingest()` pattern. Each detector tracks its own state and returns alerts when thresholds are exceeded.
+All sensor-side detectors are wrapped by an adapter that implements `BaseSensorDetector`:
 
 ```python
-class MyDetector:
-    """Stateful detector with sliding-window analysis."""
+from sensor.detection.interface import BaseSensorDetector
 
-    def __init__(self, config: MyConfig | None = None):
-        self.config = config or MyConfig()
-        # Internal state
+class MyDetectorAdapter(BaseSensorDetector):
+    detector_id = "my_detector"
 
-    def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
-        """Process a single frame. Returns alert dict or None."""
-        # 1. Filter: Only process relevant frame types
-        # 2. Track: Update internal state
-        # 3. Evaluate: Check thresholds, apply cooldown
-        # 4. Return alert dict or None
+    def __init__(self, config=None):
+        super().__init__(config)
+        from algos.my_detector import MyDetector
+        self._det = MyDetector()
 
-    def get_stats(self) -> dict:
-        """Return current detection statistics."""
-
-    def reset(self):
-        """Clear all state."""
+    def process(self, telemetry, context=None):
+        result = self._det.ingest(telemetry)
+        if result is None:
+            return []
+        from sensor.detection.normalizer import normalize_alert
+        ctx = context or {}
+        return [normalize_alert(result, {"sensor_id": ctx.get("sensor_id", "")})]
 ```
 
 ## Creating an Alert
 
-Alerts are plain dicts returned by `ingest()`:
+Alerts are normalized dicts with these **required** fields:
 
-```python
-return {
-    "alert_type": "my_attack",
-    "severity": "HIGH",  # MEDIUM, HIGH, CRITICAL
-    "title": "Attack Detected: <details>",
-    "description": "Human-readable description",
-    "timestamp": datetime.now(UTC).isoformat(),
-    "evidence": {
-        "key_metric": value,
-        "window_seconds": self.config.time_window,
-    },
-    "mitre_attack": "T1234.001",  # MITRE ATT&CK ID
-}
-```
+| Field | Type | Description |
+|-------|------|-------------|
+| `alert_type` | str | e.g. `"my_attack"` |
+| `severity` | str | `MEDIUM`, `HIGH`, `CRITICAL` |
+| `title` | str | Human-readable title |
+| `description` | str | Detailed description |
+| `sensor_id` | str | Reporting sensor |
 
-## Integration Steps
+Optional fields: `bssid`, `ssid`, `evidence`, `risk_score`, `mitre_attack`, `timestamp`.
 
-1. Create `algos/my_detector.py` with your detector class
-2. Add export to `algos/__init__.py`
-3. In `sensor/sensor_controller.py`:
-   - Import the detector
-   - Instantiate in `__init__`
-   - Call `ingest()` in the capture loop
-   - Pass non-None results to `_handle_alert()`
+## Integration Steps (New Workflow)
+
+1. **Create your detector** in `algos/my_detector.py`
+2. **Create an adapter** in `sensor/detection/adapters.py` (see example above)
+3. **Register it** in `sensor/detection/registry.py`:
+   ```python
+   DETECTOR_REGISTRY["my_detector"] = MyDetectorAdapter
+   ```
+4. **Add to profiles** in `sensor/detection/profiles.py` as appropriate
+5. **Done** — the orchestrator will pick it up automatically
+
+> **No edits to `sensor_controller.py` are required.**
+
+## Detector Profiles
+
+| Profile | Description |
+|---------|-------------|
+| `lite_realtime` | Default. Low-latency, low-FP: deauth, disassoc, beacon, KRACK, PMKID, WEP, rules |
+| `full_wids` | All detectors including evil twin, karma, jamming, wardrive |
+| `audit_offline` | Same as full_wids (extensible for replay-only enrichments) |
+
+Select via config, env var (`SENSOR_DETECTOR_PROFILE`), or CLI (`--detector-profile`).
+
+## Detection Stages
+
+Detectors execute in order by stage:
+
+1. **fast_path** — Low-latency frame-driven: deauth, disassoc, beacon, KRACK, PMKID, WEP
+2. **stateful_path** — Heuristic/state-heavy: evil twin, karma, jamming, wardrive
+3. **correlation_path** — Alert-level: rules engine
 
 ## Unit Testing
 
-Create `tests/unit/test_my_detector.py` with tests covering:
+Create `tests/unit/test_my_detector.py`:
 
 ```python
 class TestMyDetector:
@@ -66,26 +84,23 @@ class TestMyDetector:
     def test_alert_on_attack(self): ...
     def test_cooldown_prevents_duplicates(self): ...
     def test_ignores_irrelevant_frames(self): ...
-    def test_severity_escalation(self): ...
-    def test_alert_evidence_fields(self): ...
-    def test_stats(self): ...
-    def test_reset(self): ...
 ```
 
 Run: `pytest tests/unit/test_my_detector.py -v`
 
 ## Existing Detectors (11 Total)
 
-| Detector | Module | MITRE |
-|----------|--------|-------|
-| Evil Twin | `evil_twin.py` | T1557.002 |
-| Deauth Flood | `dos.py` | T1499.001 |
-| Disassoc Flood | `disassoc_detector.py` | T1499.001 |
-| Beacon Flood | `beacon_flood_detector.py` | T1498.001 |
-| KRACK | `krack_detector.py` | T1557.002 |
-| PMKID Harvesting | `pmkid_detector.py` | T1110.002 |
-| Karma | `karma_detector.py` | T1583.008 |
-| RF Jamming | `jamming_detector.py` | T1465 |
-| Wardriving | `wardrive_detector.py` | T1595.002 |
-| WEP IV | `wep_iv_detector.py` | T1600.001 |
-| Exploit Chain | `exploit_chain_analyzer.py` | TA0001 |
+| Detector | Module | MITRE | Stage |
+|----------|--------|-------|-------|
+| Deauth Flood | `dos.py` | T1499.001 | fast_path |
+| Disassoc Flood | `disassoc_detector.py` | T1499.001 | fast_path |
+| Beacon Flood | `beacon_flood_detector.py` | T1498.001 | fast_path |
+| KRACK | `krack_detector.py` | T1557.002 | fast_path |
+| PMKID Harvesting | `pmkid_detector.py` | T1110.002 | fast_path |
+| WEP IV | `wep_iv_detector.py` | T1600.001 | fast_path |
+| Evil Twin | `evil_twin.py` | T1557.002 | stateful_path |
+| Karma | `karma_detector.py` | T1583.008 | stateful_path |
+| RF Jamming | `jamming_detector.py` | T1465 | stateful_path |
+| Wardriving | `wardrive_detector.py` | T1595.002 | stateful_path |
+| Rule Engine | `rule_engine.py` | various | correlation_path |
+| Exploit Chain | `exploit_chain_analyzer.py` | TA0001 | post-alert (in _handle_alert) |

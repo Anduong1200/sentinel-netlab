@@ -122,6 +122,19 @@ class GeoConfig:
 
 
 @dataclass
+class DetectorsConfig:
+    """Detector orchestration settings."""
+
+    default_profile: str = "lite_realtime"
+    enabled: list[str] = field(default_factory=list)
+    profiles: dict[str, list[str]] = field(default_factory=dict)
+    fast_path: list[str] = field(default_factory=list)
+    stateful_path: list[str] = field(default_factory=list)
+    correlation_path: list[str] = field(default_factory=list)
+    thresholds: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+
+@dataclass
 class Config:
     """Main configuration container."""
 
@@ -133,6 +146,7 @@ class Config:
     ml: MLConfig = field(default_factory=MLConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
     geo: GeoConfig = field(default_factory=GeoConfig)
+    detectors: DetectorsConfig = field(default_factory=DetectorsConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
 
@@ -203,6 +217,11 @@ class ConfigManager:
                 if hasattr(self.config.geo, key):
                     setattr(self.config.geo, key, value)
 
+        if "detectors" in data:
+            for key, value in data["detectors"].items():
+                if hasattr(self.config.detectors, key):
+                    setattr(self.config.detectors, key, value)
+
         if "mock_mode" in data:
             self.config.mock_mode = data["mock_mode"]
 
@@ -268,6 +287,8 @@ class ConfigManager:
             ),
             "GEO_ORIGIN_LAT": ("geo", "origin_lat", float),
             "GEO_ORIGIN_LON": ("geo", "origin_lon", float),
+            # Detectors
+            "SENSOR_DETECTOR_PROFILE": ("detectors", "default_profile"),
         }
 
         # Environment check
@@ -341,6 +362,10 @@ class ConfigManager:
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
             "geo": asdict(self.config.geo),
+            "detectors": asdict(self.config.detectors),
+            "sensor": asdict(self.config.sensor),
+            "privacy": asdict(self.config.privacy),
+            "ml": asdict(self.config.ml),
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }
@@ -358,6 +383,10 @@ class ConfigManager:
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
             "geo": asdict(self.config.geo),
+            "detectors": asdict(self.config.detectors),
+            "sensor": asdict(self.config.sensor),
+            "privacy": asdict(self.config.privacy),
+            "ml": asdict(self.config.ml),
             "mock_mode": self.config.mock_mode,
             "log_level": self.config.log_level,
         }

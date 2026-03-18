@@ -43,5 +43,38 @@ privacy:
   anonymize_ssid: false
   retention_days: 30
 
+# Detection Orchestrator
+detectors:
+  # Profile: lite_realtime (default), full_wids, audit_offline
+  default_profile: "lite_realtime"
+
+  # Explicit detector list (overrides profile if non-empty)
+  # enabled: ["deauth_flood", "beacon_flood", "rules"]
+
+  # Per-detector thresholds (override defaults)
+  thresholds:
+    deauth_flood:
+      threshold_per_sec: 10.0
+      window_seconds: 2.0
+    beacon_flood:
+      unique_ssid_threshold: 50
+      time_window: 30
+    # evil_twin:
+    #   threshold_critical: 80
+    #   threshold_high: 60
+
+  # Custom profiles (define without editing Python source)
+  # profiles:
+  #   my_custom:
+  #     - deauth_flood
+  #     - beacon_flood
+  #     - krack
+  #     - rules
+
+  # Stage overrides (optional, defaults are usually fine)
+  # fast_path: ["deauth_flood", "disassoc_flood", "beacon_flood", "krack", "pmkid", "wep_iv"]
+  # stateful_path: ["evil_twin", "karma", "jamming", "wardrive"]
+  # correlation_path: ["rules"]
+
 mock_mode: false
 log_level: "INFO"
