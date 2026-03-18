@@ -123,7 +123,7 @@ class TransportClient:
 
             response = requests.get(sync_url, timeout=10, verify=self.verify_ssl)
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 data = response.json()
                 server_time = data.get("unix_timestamp", time.time())
                 local_time = time.time()
@@ -453,7 +453,7 @@ class TransportClient:
                 verify=self.verify_ssl,
             )
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 logger.info(f"Alert uploaded successfully: {alert_data.get('title')}")
                 return {"success": True, "alert_id": response.json().get("alert_id")}
             else:
@@ -512,7 +512,7 @@ class TransportClient:
                 verify=self.verify_ssl,
             )
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 return {
                     "success": True,
                     "commands": response.json().get("commands", []),

@@ -15,18 +15,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 # Import Advanced Logic
-from algos.beacon_flood_detector import BeaconFloodDetector
-from algos.disassoc_detector import DisassocFloodDetector
-from algos.dos import DeauthFloodDetector
-from algos.evil_twin import AdvancedEvilTwinDetector
 from algos.exploit_chain_analyzer import ExploitChainAnalyzer
-from algos.jamming_detector import JammingDetector
-from algos.karma_detector import KarmaDetector
-from algos.krack_detector import KRACKDetector
-from algos.pmkid_detector import PMKIDAttackDetector
 from algos.risk import RiskScorer
-from algos.wardrive_detector import WardriveDetector
-from algos.wep_iv_detector import WEPIVDetector
 from common.metrics import MetricsCollector
 from common.privacy import anonymize_mac
 from sensor.alert_manager import AlertManager
@@ -35,6 +25,8 @@ from sensor.buffer_manager import BufferManager
 from sensor.capture_driver import IwCaptureDriver, MockCaptureDriver, PcapCaptureDriver
 from sensor.channel_hopper import ChannelHopper
 from sensor.config import Config, get_config, init_config
+from sensor.detection import SensorDetectionOrchestrator
+from sensor.detection.analysis_orchestrator import SensorAnalysisOrchestrator
 from sensor.frame_parser import FrameParser
 from sensor.monitor import SensorMonitor
 from sensor.normalizer import TelemetryNormalizer
@@ -42,8 +34,6 @@ from sensor.spool import SqliteQueue
 from sensor.telemetry_aggregator import TelemetryAggregator
 from sensor.transport import TransportClient
 from sensor.worker import TransportWorker
-
-from .rule_engine import RuleEngine
 
 logger = logging.getLogger(__name__)
 
@@ -141,19 +131,19 @@ class SensorController:
         ml_model = config.ml.model_path if config.ml.enabled else None
         self.risk_engine = RiskScorer(ml_model_path=ml_model)
 
-        # Advanced Detection Engines
-        self.et_detector = AdvancedEvilTwinDetector()
-        self.dos_detector = DeauthFloodDetector()
-        self.disassoc_detector = DisassocFloodDetector()
-        self.beacon_flood_detector = BeaconFloodDetector()
-        self.krack_detector = KRACKDetector()
-        self.pmkid_detector = PMKIDAttackDetector()
-        self.jamming_detector = JammingDetector()
-        self.wardrive_detector = WardriveDetector()
-        self.wep_detector = WEPIVDetector()
-        self.karma_detector = KarmaDetector()
+        # Advanced Detection - Unified Orchestrator
+        self.detector_orchestrator = SensorDetectionOrchestrator.from_config(
+            config, sensor_id=self.sensor_id
+        )
         self.chain_analyzer = ExploitChainAnalyzer()
-        self.rule_engine = RuleEngine()
+
+        # Analysis Orchestrator (baseline, risk, chain correlation)
+        self.analysis = SensorAnalysisOrchestrator(
+            risk_engine=self.risk_engine,
+            baseline=self.baseline,
+            chain_analyzer=self.chain_analyzer,
+            sensor_id=self.sensor_id,
+        )
 
         # Metrics
         self.metrics = MetricsCollector(self.sensor_id)
@@ -463,76 +453,12 @@ class SensorController:
         return parsed, telemetry, base_dict
 
     def _analyze_threats(self, net_dict: dict) -> None:
-        """Run all threat detection engines. (Analyzer)"""
-        jam_alert = self.jamming_detector.ingest(net_dict)
-        if jam_alert:
-            self._handle_alert(jam_alert)
-
-        wd_alert = self.wardrive_detector.ingest(net_dict)
-        if wd_alert:
-            self._handle_alert(wd_alert)
-
-        wep_alert = self.wep_detector.ingest(net_dict)
-        if wep_alert:
-            self._handle_alert(wep_alert)
-
-        karma_alert = self.karma_detector.ingest(net_dict)
-        if karma_alert:
-            self._handle_alert(karma_alert)
-
-        pmkid_alert = self.pmkid_detector.ingest(net_dict)
-        if pmkid_alert:
-            self._handle_alert(pmkid_alert)
-
-        if (
-            net_dict.get("frame_type") == "deauth"
-            or net_dict.get("frame_subtype") == 12
-        ):
-            dos_alert = self.dos_detector.record_deauth(
-                bssid=net_dict.get("bssid", ""),
-                client_mac=net_dict.get("mac_dst", "ff:ff:ff:ff:ff:ff"),
-                sensor_id=self.sensor_id,
-            )
-            if dos_alert:
-                self._handle_alert(
-                    {
-                        "alert_type": "deauth_flood",
-                        "severity": dos_alert.severity,
-                        "title": f"Deauth Flood: {dos_alert.target_bssid}",
-                        "description": f"Deauth flood: {dos_alert.rate_per_sec:.1f} f/s",
-                        "bssid": dos_alert.target_bssid,
-                        "evidence": dos_alert.evidence,
-                        "sensor_id": self.sensor_id,
-                    }
-                )
-
-        disassoc_alert = self.disassoc_detector.ingest(net_dict)
-        if disassoc_alert:
-            self._handle_alert(disassoc_alert)
-
-        beacon_flood_alert = self.beacon_flood_detector.ingest(net_dict)
-        if beacon_flood_alert:
-            self._handle_alert(beacon_flood_alert)
-
-        krack_alert = self.krack_detector.ingest(net_dict)
-        if krack_alert:
-            self._handle_alert(krack_alert)
-
-        for alert in self.rule_engine.evaluate(net_dict, sensor_id=self.sensor_id):
-            self._handle_alert(alert.to_dict())
-
-        for alert in self.et_detector.ingest(net_dict):
-            self._handle_alert(
-                {
-                    "alert_type": "evil_twin",
-                    "severity": alert.severity,
-                    "title": f"Evil Twin Detected: {alert.ssid}",
-                    "description": alert.recommendation,
-                    "evidence": alert.evidence,
-                    "sensor_id": self.sensor_id,
-                    "risk_score": alert.score,
-                }
-            )
+        """Run all threat detection engines via unified orchestrator. (Analyzer)"""
+        alerts = self.detector_orchestrator.process(
+            net_dict, context={"sensor_id": self.sensor_id}
+        )
+        for alert in alerts:
+            self._handle_alert(alert)
 
     def _export_telemetry(self, parsed: Any, telemetry: Any, net_dict: dict) -> None:
         """Route data to buffers, metrics, risk, and geo enrichment. (Exporter)"""
@@ -549,39 +475,21 @@ class SensorController:
 
         if self._frames_captured % 10 == 0:
             risk_dict = telemetry.model_dump(mode="json", exclude_none=True)
-            deviation = self.baseline.check_deviation(risk_dict)
+            analysis_alerts = self.analysis.analyze_telemetry(
+                telemetry_dict=risk_dict,
+                bssid=telemetry.bssid,
+                ssid=telemetry.ssid,
+                frame_count=10,  # always a multiple of 10 here
+            )
+            for alert in analysis_alerts:
+                self._handle_alert(alert)
 
+            # Update metrics risk score regardless of alerts.
             if not self.baseline.learning_mode:
-                dev_score = deviation["score"] if deviation else 0.0
-                risk_result = self.risk_engine.calculate_risk(
-                    risk_dict, deviation_score=dev_score
-                )
-                current_score = risk_result.get("risk_score", 0)
-
-                if deviation:
-                    logger.warning(
-                        f"Baseline Deviation [{deviation['score']}]: {deviation['reasons']} ({telemetry.ssid})"
-                    )
-                    self._handle_alert(
-                        {
-                            "alert_type": "baseline_deviation",
-                            "severity": "high" if current_score > 70 else "medium",
-                            "title": f"Baseline Deviation: {telemetry.ssid}",
-                            "description": "; ".join(deviation["reasons"]),
-                            "evidence": deviation.get("baseline"),
-                            "risk_score": current_score,
-                            "bssid": telemetry.bssid,
-                            "ssid": telemetry.ssid,
-                            "impact": risk_result.get("impact", 0.5),
-                            "confidence": risk_result.get("confidence", 0.5),
-                        }
-                    )
-                elif current_score > 70:
-                    logger.warning(
-                        f"High Risky Network: {telemetry.ssid} (Score: {current_score})"
-                    )
-
-                self.metrics.set_risk_score(telemetry.bssid, current_score)
+                dev = self.baseline.check_deviation(risk_dict)
+                dev_score = dev["score"] if dev else 0.0
+                rr = self.risk_engine.calculate_risk(risk_dict, deviation_score=dev_score)
+                self.metrics.set_risk_score(telemetry.bssid, rr.get("risk_score", 0))
 
         self.hopper.record_activity(parsed.channel, 1)
 
@@ -669,11 +577,9 @@ class SensorController:
         # Upload individual alert
         self.transport.upload_alert(alert_dict)
 
-        # Check for exploit chains
-        chain_alert = self.chain_analyzer.analyze(alert_dict)
+        # Check for exploit chains via analysis orchestrator
+        chain_alert = self.analysis.correlate_alert(alert_dict)
         if chain_alert:
-            logger.critical(f"CHAIN DETECTED: {chain_alert['title']}")
-            chain_alert["sensor_id"] = self.sensor_id
             self.transport.upload_alert(chain_alert)
 
     def _handle_command(self, cmd: dict[str, Any]) -> None:
@@ -731,6 +637,10 @@ Examples:
     parser.add_argument(
         "--learning-mode", action="store_true", help="Enable Baseline Learning Mode"
     )
+    parser.add_argument(
+        "--detector-profile",
+        help="Detector profile (lite_realtime, full_wids, audit_offline)",
+    )
 
     args = parser.parse_args()
 
@@ -753,6 +663,8 @@ Examples:
         config.ml.enabled = True
     if args.enable_geo:
         config.geo.enabled = True
+    if args.detector_profile:
+        config.detectors.default_profile = args.detector_profile
 
     # Setup logging
     logging.basicConfig(
