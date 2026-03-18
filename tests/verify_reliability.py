@@ -6,7 +6,7 @@ import time
 sys.path.append(os.getcwd())
 
 from sensor.config import get_config
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 
 TEST_SPOOL_PATH = "data/test_spool.db"
 

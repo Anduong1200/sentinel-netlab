@@ -478,13 +478,36 @@ class TransportClient:
         """
         import requests
 
-        heartbeat_url = self.upload_url.replace("/telemetry", "/heartbeat")
+        heartbeat_url = self.upload_url.replace("/telemetry", "/sensors/heartbeat")
+        if "/sensors/heartbeat" not in heartbeat_url:
+            base = self.upload_url.rsplit("/", 3)[0]
+            heartbeat_url = f"{base}/api/v1/sensors/heartbeat"
+
+        # Headers with Auth and Signing
+        timestamp = self.get_server_time().isoformat()
+        headers = {
+            "Authorization": f"Bearer {self.auth_token}",
+            "Content-Type": "application/json",
+            "X-Timestamp": timestamp,
+            "X-Sensor-ID": status.get("sensor_id", "unknown"),
+        }
+
+        payload = json.dumps(status)
+
+        if self.hmac_secret:
+            from urllib.parse import urlparse
+
+            path = urlparse(heartbeat_url).path
+            s_id = status.get("sensor_id", "unknown")
+            headers["X-Signature"] = self._sign_payload(
+                "POST", path, payload, timestamp, sensor_id=s_id
+            )
 
         try:
             response = requests.post(
                 heartbeat_url,
-                json=status,
-                headers={"Authorization": f"Bearer {self.auth_token}"},
+                data=payload,
+                headers=headers,
                 timeout=10,
                 verify=self.verify_ssl,
             )

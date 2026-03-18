@@ -82,7 +82,7 @@ services:
       dashboard:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "-qO-", "http://localhost/health" ]
+      test: [ "CMD", "wget", "-qO-", "http://127.0.0.1/health" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -152,6 +152,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      disable: true
     networks:
       - sentinel-lab-net
     env_file:
@@ -221,11 +223,15 @@ services:
     environment:
       SENSOR_ID: "lab-sensor-01"
       SENSOR_MOCK_MODE: "true" # Simulates WiFi traffic
-      CONTROLLER_URL: "http://controller:5000"
-      SENSOR_AUTH_TOKEN: ${SENSOR_AUTH_TOKEN}
+      SENSOR_CONTROLLER_HOST: "controller"
+      SENSOR_CONTROLLER_PORT: "5000"
+      SENSOR_AUTH_TOKEN: "sensor-01-token"
+      WIFI_SCANNER_API_KEY: "sensor-01-token"
     depends_on:
       controller:
         condition: service_healthy
+    volumes:
+      - sentinel-lab-sensor-data:/var/lib/wifi-scanner
     networks:
       - sentinel-lab-net
     env_file:
@@ -233,6 +239,7 @@ services:
 
 volumes:
   sentinel-lab-postgres:
+  sentinel-lab-sensor-data:
 
 
 networks:

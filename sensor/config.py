@@ -217,6 +217,8 @@ class ConfigManager:
             "SENSOR_INTERFACE": ("capture", "interface"),
             "SENSOR_ID": ("sensor", "id"),
             "SENSOR_AUTH_TOKEN": ("api", "api_key"),
+            "SENSOR_CONTROLLER_HOST": ("api", "host"),
+            "SENSOR_CONTROLLER_PORT": ("api", "port", int),
             "WIFI_SCANNER_PORT": ("api", "port", int),
             "SERVER_PORT": ("api", "port", int),
             "WIFI_SCANNER_API_KEY": ("api", "api_key"),

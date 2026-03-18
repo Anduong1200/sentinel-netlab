@@ -1,7 +1,7 @@
 import os
 import time
 
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 
 DB_PATH = "data/test_spool.db"
 if os.path.exists("data"):

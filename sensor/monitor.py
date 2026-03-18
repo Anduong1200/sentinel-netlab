@@ -9,7 +9,7 @@ import time
 import psutil
 
 from common.observability.metrics import create_gauge
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 
 logger = logging.getLogger(__name__)
 

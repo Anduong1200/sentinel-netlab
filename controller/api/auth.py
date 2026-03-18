@@ -49,7 +49,6 @@ ROLE_PERMISSIONS = {
 
 
 # TOKEN_STORE removed - using DB
-SENSOR_REGISTRY: dict[str, dict] = {}  # In-memory registry
 
 
 def init_default_tokens():

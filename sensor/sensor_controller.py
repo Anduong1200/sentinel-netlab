@@ -38,7 +38,7 @@ from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
 from sensor.monitor import SensorMonitor
 from sensor.normalizer import TelemetryNormalizer
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 from sensor.telemetry_aggregator import TelemetryAggregator
 from sensor.transport import TransportClient
 from sensor.worker import TransportWorker
@@ -635,8 +635,18 @@ class SensorController:
             try:
                 time.sleep(60)
 
-                status = self.status()
-                result = self.transport.heartbeat(status)
+                full_status = self.status()
+                # Build payload matching HeartbeatRequest schema (extra="forbid")
+                heartbeat_payload = {
+                    "sensor_id": self.sensor_id,
+                    "status": "online" if self._running else "offline",
+                    "metrics": {
+                        "frames_captured": full_status.get("frames_captured", 0),
+                        "frames_parsed": full_status.get("frames_parsed", 0),
+                        "uptime_seconds": full_status.get("uptime_seconds", 0),
+                    },
+                }
+                result = self.transport.heartbeat(heartbeat_payload)
 
                 if result.get("success"):
                     # Process commands
