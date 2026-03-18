@@ -87,7 +87,12 @@ def merge_config(args: argparse.Namespace) -> Any:
     import os
 
     from sensor.config import init_config
-    config = init_config(args.config_file) if getattr(args, "config_file", None) else init_config()
+
+    config = (
+        init_config(args.config_file)
+        if getattr(args, "config_file", None)
+        else init_config()
+    )
 
     # Apply Overrides
     if getattr(args, "sensor_id", None):
