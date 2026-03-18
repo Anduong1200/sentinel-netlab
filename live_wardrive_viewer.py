@@ -12,79 +12,118 @@ DATA_FILE = "wardrive_session.json"
 UPDATE_INTERVAL_MS = 3000  # Reload every 3 seconds
 
 # Setup minimal logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 # Initialize Dash App
 app = dash.Dash(__name__, title="Sentinel Live Wardrive Viewer")
 
 # Define layout
-app.layout = html.Div([
-    html.H1("🛰️ Sentinel Live Wardrive Viewer", style={"textAlign": "center"}),
-
-    # Auto-refresh timer
-    dcc.Interval(
-        id="interval-component",
-        interval=UPDATE_INTERVAL_MS,
-        n_intervals=0
-    ),
-
-    # Summary stats row
-    html.Div([
-        html.Div([
-            html.H3("Total Unique Networks"),
-            html.H2(id="stat-unique-networks", style={"color": "#007bff"})
-        ], style={"width": "30%", "display": "inline-block", "textAlign": "center"}),
-
-        html.Div([
-            html.H3("Total Sightings"),
-            html.H2(id="stat-total-sightings", style={"color": "#28a745"})
-        ], style={"width": "30%", "display": "inline-block", "textAlign": "center"}),
-
-        html.Div([
-            html.H3("Last Update"),
-            html.H4(id="stat-last-update", style={"color": "#6c757d"})
-        ], style={"width": "30%", "display": "inline-block", "textAlign": "center"}),
-    ], style={"marginBottom": "20px", "marginTop": "20px"}),
-
-    # Map and Bar Chart row
-    html.Div([
-        html.Div([
-            dcc.Graph(id="live-map")
-        ], style={"width": "65%", "display": "inline-block", "verticalAlign": "top"}),
-
-        html.Div([
-            dcc.Graph(id="security-bar-chart")
-        ], style={"width": "33%", "display": "inline-block", "verticalAlign": "top"})
-    ]),
-
-    # Data Table row
-    html.Div([
-        html.H3("10 Newest Networks Captured"),
-        dash_table.DataTable(
-            id="recent-networks-table",
-            columns=[
-                {"name": "Timestamp", "id": "timestamp"},
-                {"name": "BSSID", "id": "bssid"},
-                {"name": "SSID", "id": "ssid"},
-                {"name": "RSSI (dBm)", "id": "rssi_dbm"},
-                {"name": "Channel", "id": "channel"},
-                {"name": "Security", "id": "security"},
+app.layout = html.Div(
+    [
+        html.H1("🛰️ Sentinel Live Wardrive Viewer", style={"textAlign": "center"}),
+        # Auto-refresh timer
+        dcc.Interval(
+            id="interval-component", interval=UPDATE_INTERVAL_MS, n_intervals=0
+        ),
+        # Summary stats row
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.H3("Total Unique Networks"),
+                        html.H2(id="stat-unique-networks", style={"color": "#007bff"}),
+                    ],
+                    style={
+                        "width": "30%",
+                        "display": "inline-block",
+                        "textAlign": "center",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H3("Total Sightings"),
+                        html.H2(id="stat-total-sightings", style={"color": "#28a745"}),
+                    ],
+                    style={
+                        "width": "30%",
+                        "display": "inline-block",
+                        "textAlign": "center",
+                    },
+                ),
+                html.Div(
+                    [
+                        html.H3("Last Update"),
+                        html.H4(id="stat-last-update", style={"color": "#6c757d"}),
+                    ],
+                    style={
+                        "width": "30%",
+                        "display": "inline-block",
+                        "textAlign": "center",
+                    },
+                ),
             ],
-            style_table={"overflowX": "auto"},
-            style_cell={"textAlign": "left", "padding": "5px"},
-            style_header={"backgroundColor": "#f8f9fa", "fontWeight": "bold"},
-        )
-    ], style={"marginTop": "20px", "padding": "0 20px"}),
-
-    html.Div(id="error-msg", style={"color": "red", "textAlign": "center", "marginTop": "20px"})
-])
+            style={"marginBottom": "20px", "marginTop": "20px"},
+        ),
+        # Map and Bar Chart row
+        html.Div(
+            [
+                html.Div(
+                    [dcc.Graph(id="live-map")],
+                    style={
+                        "width": "65%",
+                        "display": "inline-block",
+                        "verticalAlign": "top",
+                    },
+                ),
+                html.Div(
+                    [dcc.Graph(id="security-bar-chart")],
+                    style={
+                        "width": "33%",
+                        "display": "inline-block",
+                        "verticalAlign": "top",
+                    },
+                ),
+            ]
+        ),
+        # Data Table row
+        html.Div(
+            [
+                html.H3("10 Newest Networks Captured"),
+                dash_table.DataTable(
+                    id="recent-networks-table",
+                    columns=[
+                        {"name": "Timestamp", "id": "timestamp"},
+                        {"name": "BSSID", "id": "bssid"},
+                        {"name": "SSID", "id": "ssid"},
+                        {"name": "RSSI (dBm)", "id": "rssi_dbm"},
+                        {"name": "Channel", "id": "channel"},
+                        {"name": "Security", "id": "security"},
+                    ],
+                    style_table={"overflowX": "auto"},
+                    style_cell={"textAlign": "left", "padding": "5px"},
+                    style_header={"backgroundColor": "#f8f9fa", "fontWeight": "bold"},
+                ),
+            ],
+            style={"marginTop": "20px", "padding": "0 20px"},
+        ),
+        html.Div(
+            id="error-msg",
+            style={"color": "red", "textAlign": "center", "marginTop": "20px"},
+        ),
+    ]
+)
 
 
 def load_data():
     """Safely loads and parses the wardrive JSON file."""
     filepath = Path(DATA_FILE)
     if not filepath.exists():
-        return None, "File not found. Please ensure the sensor is running and writing to wardrive_session.json."
+        return (
+            None,
+            "File not found. Please ensure the sensor is running and writing to wardrive_session.json.",
+        )
 
     try:
         with open(filepath, encoding="utf-8") as f:
@@ -92,7 +131,9 @@ def load_data():
             return data, None
     except json.JSONDecodeError:
         # File might be mid-write; ignore and wait for next interval
-        logging.warning("JSON Decode Error - file might be mid-write. Skipping this interval.")
+        logging.warning(
+            "JSON Decode Error - file might be mid-write. Skipping this interval."
+        )
         return None, "Reading file... (mid-write)"
     except Exception as e:
         err = f"Error reading data: {str(e)}"
@@ -110,7 +151,7 @@ def load_data():
         Output("recent-networks-table", "data"),
         Output("error-msg", "children"),
     ],
-    [Input("interval-component", "n_intervals")]
+    [Input("interval-component", "n_intervals")],
 )
 def update_dashboard(n):
     data, error = load_data()
@@ -123,7 +164,15 @@ def update_dashboard(n):
         if "(mid-write)" in error:
             # Prevent updating the UI if we're mid-write to avoid flashing
             raise dash.exceptions.PreventUpdate
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, error
+        return (
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            error,
+        )
 
     if not data or "sightings" not in data:
         return "-", "-", "-", empty_fig, empty_bar, [], "Invalid data format."
@@ -131,19 +180,33 @@ def update_dashboard(n):
     # Process Stats
     unique_nets = data.get("unique_networks", 0)
     total_sights = data.get("total_sightings", 0)
-    last_update = data.get("start_time", "N/A")  # Update this if there's a better last_update field
+    last_update = data.get(
+        "start_time", "N/A"
+    )  # Update this if there's a better last_update field
 
     sightings = data["sightings"]
     if not sightings:
-        return unique_nets, total_sights, last_update, empty_fig, empty_bar, [], "No sightings yet."
+        return (
+            unique_nets,
+            total_sights,
+            last_update,
+            empty_fig,
+            empty_bar,
+            [],
+            "No sightings yet.",
+        )
 
     # Convert to DataFrame
     df = pd.DataFrame(sightings)
 
     # Extract lat/lon safely (ignoring sightings without valid GPS)
     if "gps" in df.columns:
-        df["lat"] = df["gps"].apply(lambda x: x.get("lat") if isinstance(x, dict) else None)
-        df["lon"] = df["gps"].apply(lambda x: x.get("lon") if isinstance(x, dict) else None)
+        df["lat"] = df["gps"].apply(
+            lambda x: x.get("lat") if isinstance(x, dict) else None
+        )
+        df["lon"] = df["gps"].apply(
+            lambda x: x.get("lon") if isinstance(x, dict) else None
+        )
     else:
         df["lat"] = None
         df["lon"] = None
@@ -163,7 +226,7 @@ def update_dashboard(n):
             hover_data=["bssid", "rssi_dbm", "channel", "security"],
             zoom=14,
             height=500,
-            title="Wardrive Map (Colored by Security)"
+            title="Wardrive Map (Colored by Security)",
         )
         fig_map.update_layout(mapbox_style="open-street-map")
         fig_map.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0})
@@ -180,7 +243,7 @@ def update_dashboard(n):
             y="Count",
             color="Security Type",
             title="Networks by Security Standard",
-            height=500
+            height=500,
         )
     else:
         fig_bar = empty_bar
@@ -209,13 +272,13 @@ def update_dashboard(n):
 
 
 if __name__ == "__main__":
-    print("="*60)
+    print("=" * 60)
     print("  Starting Live Wardrive Viewer...")
     print("  Ensure you have installed dependencies:")
     print("  pip install dash pandas plotly")
     print("  ")
     print("  Looking for file: wardrive_session.json")
-    print("="*60)
+    print("=" * 60)
 
     # Run server locally
     app.run(debug=True, port=8050, use_reloader=False)
