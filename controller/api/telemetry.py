@@ -89,19 +89,20 @@ def ingest_telemetry():
 
     # Update Registry (Last Seen)
     try:
-        from controller.db.models import Sensor
         from controller.db.extensions import db
+        from controller.db.models import Sensor
+
         sensor = Sensor.query.get(sensor_id)
         if not sensor:
             sensor = Sensor(id=sensor_id, name=sensor_id)
             db.session.add(sensor)
-        
+
         sensor.status = "online"
         config_dict = dict(sensor.config or {})
         config_dict["last_seen"] = datetime.now(UTC).isoformat()
         config_dict["last_batch"] = batch_id
         sensor.config = config_dict
-        
+
         db.session.commit()
     except Exception as e:
         logger.error(f"Failed to update sensor state: {e}")
