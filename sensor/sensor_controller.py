@@ -99,15 +99,11 @@ class SensorController:
             ),  # Hacky but ok
         )
 
-        # HACK: Retrieve HMAC secret from env since it's not in Config struct yet (or I missed it)
-        # It was implicit.
-        hmac_secret = os.environ.get("SENSOR_HMAC_SECRET")
-
         self.transport = TransportClient(
             upload_url=f"http://{config.api.host}:{config.api.port}/api/v1/telemetry",  # Construct URL
             auth_token=config.api.api_key,
             verify_ssl=config.api.ssl_enabled,
-            hmac_secret=hmac_secret,
+            hmac_secret=config.api.hmac_secret,
         )
 
         # Persistent Queue (Spool) for reliable delivery
