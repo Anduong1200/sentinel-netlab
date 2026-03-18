@@ -118,11 +118,7 @@ def main():
     # In real scenario, this happens after confirmation_window_seconds
     # NOTE: The user requested to use CLI config, so if `--confirm-window 0` is passed,
     # the window is automatically bypassed. In the previous code this was hardcoded to 0 at the end.
-    # To maintain the demo behavior when run WITHOUT arguments, we will bypass it.
 
-    detector.config.confirmation_window_seconds = (
-        0  # Bypass for demo so it always prints something
-    )
     alerts = detector.ingest(
         {
             "bssid": "DE:AD:BE:EF:00:01",

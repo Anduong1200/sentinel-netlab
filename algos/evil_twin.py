@@ -36,8 +36,8 @@ class EvilTwinConfig:
     new_ap_window_minutes: int = 10  # AP recent appearance window
     min_duplicate_count: int = 2  # Min BSSIDs for same SSID
     sliding_window_seconds: int = 120  # Observation window
-    # Persistence check. Setting this lower will make detection more "real-time" but increase false positives.
     confirmation_window_seconds: int = 30
+    """Persistence check. Setting this lower will make detection more "real-time" but increase false positives."""
 
     # Score weights (must sum to 100)
     weight_duplicate_ssid: int = 20
