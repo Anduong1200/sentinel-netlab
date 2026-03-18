@@ -66,6 +66,7 @@ class APIConfig:
     ssl_enabled: bool = False
     ssl_cert: str | None = None
     ssl_key: str | None = None
+    hmac_secret: str | None = None
 
 
 @dataclass
@@ -230,6 +231,7 @@ class ConfigManager:
             "WIFI_SCANNER_DB_PATH": ("storage", "db_path"),
             "WIFI_SCANNER_LOG_LEVEL": ("log_level", None),
             "LOG_LEVEL": ("log_level", None),
+            "SENSOR_HMAC_SECRET": ("api", "hmac_secret"),
             # Privacy
             "SENSOR_PRIVACY_MODE": ("privacy", "mode"),
             "SENSOR_PRIVACY_STORE_RAW_MAC": (
@@ -274,11 +276,20 @@ class ConfigManager:
             value = os.environ.get(env_var)
 
             # Special handling for Fail-Fast Secrets
-            if env_var in ["WIFI_SCANNER_API_KEY", "SENSOR_AUTH_TOKEN"]:
+            if env_var in [
+                "WIFI_SCANNER_API_KEY",
+                "SENSOR_AUTH_TOKEN",
+                "SENSOR_HMAC_SECRET",
+            ]:
                 # Use require_secret to validate/enforce
+                secret_name = (
+                    "HMAC Secret"
+                    if env_var == "SENSOR_HMAC_SECRET"
+                    else "Sensor API Key"
+                )
                 try:
                     value = require_secret(
-                        "Sensor API Key",
+                        secret_name,
                         env_var,
                         min_len=16,
                         allow_dev_autogen=True,
@@ -356,6 +367,12 @@ class ConfigManager:
         if "api" in data and "api_key" in data["api"]:
             key = data["api"]["api_key"]
             data["api"]["api_key"] = (
+                key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
+            )
+        # Mask HMAC secret
+        if "api" in data and "hmac_secret" in data["api"] and data["api"]["hmac_secret"]:
+            key = data["api"]["hmac_secret"]
+            data["api"]["hmac_secret"] = (
                 key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
             )
         return data
