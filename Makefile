@@ -145,8 +145,8 @@ lab-up: compose-check
 	@# Ensure DB init works in lab context
 	cd ops && $(DOCKER_COMPOSE) $(LAB_ENV_FILE) -f docker-compose.lab.yml exec -T controller python ops/init_lab_db.py
 	@$(MAKE) lab-status
-	@echo "Dashboard:  http://127.0.0.1:8050"
-	@echo "Controller: http://127.0.0.1:5000"
+	@echo "Dashboard:  http://127.0.0.1:8080"
+	@echo "Controller: http://127.0.0.1:8080/api/v1"
 
 lab-down: compose-check
 	@echo "Stopping Sentinel NetLab..."

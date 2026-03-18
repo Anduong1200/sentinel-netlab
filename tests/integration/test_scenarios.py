@@ -167,6 +167,9 @@ class TestScenarioReplay:
         # Configure thresholds
         controller.dos_detector.threshold_per_sec = 2.0
         controller.dos_detector.window_seconds = 1.0
+        controller.dos_detector.cooldown_seconds = 0.0
+        controller.dos_detector.state_file = str(test_env / "dos_state.json")
+        controller.dos_detector.last_alert.clear()
 
         controller.start()
 

@@ -67,6 +67,7 @@ sensor = [
     "pynmea2>=1.18.0",
     "pyserial>=3.5",
     "python-dotenv>=1.0.0",
+    "PyYAML>=6.0",
 ]
 
 dashboard = [
