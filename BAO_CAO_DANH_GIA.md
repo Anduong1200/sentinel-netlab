@@ -92,6 +92,43 @@
 
 ---
 
+---
+
+## 7. Các Hạng mục Kiểm thử Hệ thống (System Testing Scenarios)
+Để bảo vệ toàn diện, dưới đây là các hạng mục từ cơ bản đến nâng cao cần chạy demo trước hội đồng:
+
+### 7.1. Kiểm thử Hệ sinh thái cốt lõi (Core Ecosystem)
+*   **Controller API (Liveness & Health)**: Gọi lệnh HTTP GET tới endpoint Health Check (`/api/v1/health`) để đảm bảo hệ thống Control Plane và các kết nối Database/Redis đang hoạt động ổn định (phản hồi `status: ok`).
+*   **Giao diện Dashboard**: Đăng nhập vào Web UI và xác minh rằng Sidebar, các biểu đồ và khung đồ thị (Cards) tải thành công, không gặp lỗi JavaScript/Plotly nào.
+
+### 7.2. Kiểm thử Luồng dữ liệu giả lập (Mock Data Pipeline)
+*   **Cách làm**: Chạy tập lệnh nạp dữ liệu mô phỏng (`seed_lab_data.py` thông qua `make lab-up`).
+*   **Kết quả kỳ vọng**: Kiểm tra trên Dashboard để xác nhận khả năng hiển thị các cảnh báo tấn công giả lập (như Deauth/DoS), điểm rủi ro (Risk Score), và biểu diễn các Access Points kèm bản đồ nhiệt (Heatmap) địa chỉ MAC chính xác.
+
+### 7.3. Kiểm thử Khả năng bắt gói tin mạng thật (Sensor Capture)
+*   **Test Sensor độc lập (CLI)**: Cắm USB WiFi đã bật Monitor Mode (`wlan0mon`) và chạy script `sensor_cli.py` để xác nhận hệ thống có thể in ra (stdout) được các thông tin phát hiện Access Point (AP) và Client liên kết từ môi trường thực tế.
+*   **Test End-to-End (E2E)**: Liên kết cấu hình Sensor với Controller thật, kiểm tra xem API `/api/v1/networks` có tăng số lượng theo thời gian thực và Dashboard có cập nhật các AP/Alert mới tương ứng hay không.
+
+### 7.4. Kiểm thử Tấn công và Tính năng Chuyên sâu
+*   **Phát hiện Tấn công Deauth (DoS)**: Sử dụng công cụ (như Kali Linux, `aireplay-ng`) để chủ động phát lệnh hủy xác thực (Deauth) vào một thiết bị mạng kiểm thử.
+    *   *Kỳ vọng*: Dashboard sẽ nháy đỏ trạng thái `DEAUTH_FLOOD_DETECTED` với mức rủi ro cao (High/Critical) trong vòng chưa đầy 15 giây.
+*   **Phát lại kịch bản mạng (PCAP Replay)**: Sử dụng các file PCAP (kịch bản mạng bình thường, Evil Twin, hoặc Deauth) nạp qua `PcapCaptureDriver` để đánh giá khả năng mô phỏng luồng tấn công mà không cần can thiệp tần số vật lý.
+*   **Định vị (Geo-Location) & Học máy (ML)**: Chạy sensor kèm các cờ `--enable-ml` và `--enable-geo` để xác minh dữ liệu Tọa độ GPS và thuật toán Autoencoder được tính toán móc nối vào hàm Risk Score.
+*   **Wardriving (Lập bản đồ di động)**: Chạy module độc lập quét mạng WiFi kết hợp bộ thu GPS (`wardrive.py`) để thu thập và trích xuất danh sách mạng trên đường phố ra file JSON/CSV.
+*   **Công cụ Audit**: Chạy script đánh giá bảo mật (`audit.py`) để quét nhanh các lỗ hổng của cấu hình WiFi (như WEP/WPA yếu) và xuất báo cáo tự động.
+
+---
+
+## 8. Các chỉ số Đánh giá Hiệu năng thuật toán (Dành cho Slide báo cáo)
+Để hội đồng thấy rõ tính khoa học của hệ thống WIDS, hãy trình bày các số liệu đo lường (Metrics) sau:
+
+*   **Precision (Độ chính xác)**: Tỷ lệ cảnh báo thực sự là tấn công thật so với tổng số cảnh báo WIDS phát ra (`TP / (TP + FP)`). Chỉ số này cao chứng tỏ hệ thống **không bị báo động giả** gây phiền nhiễu.
+*   **Recall (Tỷ lệ phát hiện)**: Xác suất cuộc tấn công bị hệ thống tóm gọn so với thực tế các cuộc tấn công đã xảy ra (`TP / (TP + FN)`). Chỉ số này cao chứng tỏ hệ thống **không bỏ lọt tội phạm**.
+*   **F1-Score**: Điểm trung bình điều hòa giữa Precision và Recall, phản ánh sức mạnh tổng hợp cân bằng của thuật toán.
+*   **MTTD (Mean Time to Detection)**: Thời gian trung bình từ lúc gói tin tấn công đầu tiên bay trong không khí đến khi hệ thống tạo ra một cảnh báo hiển thị trên giao diện (thường đo bằng giây). Yếu tố này quyết định khả năng *phản ứng thời gian thực* của NetLab.
+
+---
+
 ## Tổng kết
 
-Sentinel NetLab không phải là một bài tập lớn chắp vá, mà là một **sản phẩm phần mềm thực thụ**. Dự án tuân thủ đầy đủ các nguyên lý về Thiết kế phần mềm (Design Patterns), Kiến trúc phân tán chịu lỗi (Microservices/Edge Computing), có cơ chế Test bao phủ tự động (CI/CD Ready), và tư duy bảo mật (Security by Design) ngay từ những dòng code đầu tiên. Hội đồng có thể hoàn toàn an tâm về chất lượng kỹ thuật của hệ thống này.
+Sentinel NetLab không phải là một bài tập lớn chắp vá, mà là một **sản phẩm phần mềm thực thụ**. Dự án tuân thủ đầy đủ các nguyên lý về Thiết kế phần mềm (Design Patterns), Kiến trúc phân tán chịu lỗi (Microservices/Edge Computing), có cơ chế Test bao phủ tự động (CI/CD Ready), và tư duy bảo mật (Security by Design) ngay từ những dòng code đầu tiên. Với danh sách kịch bản kiểm thử toàn diện trên, hội đồng có thể hoàn toàn an tâm về chất lượng kỹ thuật của hệ thống này.
