@@ -95,27 +95,53 @@
 ---
 
 ## 7. Các Hạng mục Kiểm thử Hệ thống (System Testing Scenarios)
-Để bảo vệ toàn diện, dưới đây là các hạng mục từ cơ bản đến nâng cao cần chạy demo trước hội đồng:
+Để bảo vệ toàn diện, dưới đây là chi tiết các kịch bản demo (Runbook) từ cơ bản đến nâng cao cần thực hiện trực tiếp trên máy trước hội đồng:
 
 ### 7.1. Kiểm thử Hệ sinh thái cốt lõi (Core Ecosystem)
-*   **Controller API (Liveness & Health)**: Gọi lệnh HTTP GET tới endpoint Health Check (`/api/v1/health`) để đảm bảo hệ thống Control Plane và các kết nối Database/Redis đang hoạt động ổn định (phản hồi `status: ok`).
-*   **Giao diện Dashboard**: Đăng nhập vào Web UI và xác minh rằng Sidebar, các biểu đồ và khung đồ thị (Cards) tải thành công, không gặp lỗi JavaScript/Plotly nào.
+*   **Controller API (Liveness & Health)**: Chứng minh Control Plane và Database/Redis đang kết nối trơn tru.
+    *   *Lệnh thực thi*: `curl -s http://127.0.0.1:5000/api/v1/health | jq`
+    *   *Kết quả kỳ vọng*: Terminal trả về mã JSON có trường `"status": "ok"` và hiển thị phiên bản (version), thời gian (timestamp).
+*   **Giao diện Dashboard**: Chứng minh Frontend (UI/UX) không bị sập.
+    *   *Cách làm*: Mở trình duyệt truy cập `http://127.0.0.1:8050`. Chuyển đổi qua lại giữa các Tab (Overview, Threats, Global Map).
+    *   *Kết quả kỳ vọng*: Sidebar phản hồi tức thì, các biểu đồ Plotly render dữ liệu (hoặc khung trống an toàn nếu chưa có mạng) mà không hiện lỗi 404 hay trắng trang.
 
 ### 7.2. Kiểm thử Luồng dữ liệu giả lập (Mock Data Pipeline)
-*   **Cách làm**: Chạy tập lệnh nạp dữ liệu mô phỏng (`seed_lab_data.py` thông qua `make lab-up`).
-*   **Kết quả kỳ vọng**: Kiểm tra trên Dashboard để xác nhận khả năng hiển thị các cảnh báo tấn công giả lập (như Deauth/DoS), điểm rủi ro (Risk Score), và biểu diễn các Access Points kèm bản đồ nhiệt (Heatmap) địa chỉ MAC chính xác.
+*   Mục đích: Chứng minh cơ chế Pipeline (Sensor -> Controller -> Database -> Dashboard) hoạt động mượt mà khi nhận dữ liệu giả.
+*   *Cách làm*: Chạy tập lệnh nạp dữ liệu mô phỏng: `make lab-up` (lệnh này tự động gọi script `seed_lab_data.py`).
+*   *Kết quả kỳ vọng*:
+    1. Nhìn vào màn hình Terminal thấy log sinh ra hàng loạt gói tin giả mạo.
+    2. Nhìn lên Dashboard, các bộ đếm số lượng Mạng (Networks) và Điểm rủi ro (Risk Score) bắt đầu thay đổi. Bản đồ nhiệt (Heatmap) xuất hiện các điểm màu đỏ (tương ứng với cảnh báo rủi ro cao).
 
 ### 7.3. Kiểm thử Khả năng bắt gói tin mạng thật (Sensor Capture)
-*   **Test Sensor độc lập (CLI)**: Cắm USB WiFi đã bật Monitor Mode (`wlan0mon`) và chạy script `sensor_cli.py` để xác nhận hệ thống có thể in ra (stdout) được các thông tin phát hiện Access Point (AP) và Client liên kết từ môi trường thực tế.
-*   **Test End-to-End (E2E)**: Liên kết cấu hình Sensor với Controller thật, kiểm tra xem API `/api/v1/networks` có tăng số lượng theo thời gian thực và Dashboard có cập nhật các AP/Alert mới tương ứng hay không.
+*   **Test Sensor độc lập (CLI)**: Chứng minh Driver card WiFi (Monitor Mode) tương tác tốt với hệ điều hành và bắt được gói tin thực tế (Không dùng mạng WiFi của trường học để tránh vi phạm đạo đức, hãy dùng một điểm phát 4G từ điện thoại).
+    *   *Lệnh thực thi*: Khởi động Monitor mode: `sudo airmon-ng start wlan0`. Sau đó chạy Sensor: `sudo python sensor/sensor_cli.py --iface wlan0mon`.
+    *   *Kết quả kỳ vọng*: Màn hình in ra các gói tin (Beacons/Probes) với BSSID thật, SSID thật của điện thoại phát ra.
+*   **Test End-to-End (E2E)**: Chứng minh dữ liệu thực tế đẩy thành công lên Server.
+    *   *Cách làm*: Kết hợp lệnh `--config config.yaml` để bật kết nối API. Mở tab "Signals" trên Dashboard.
+    *   *Kết quả kỳ vọng*: Địa chỉ MAC của điện thoại (SSID thử nghiệm) phải xuất hiện trên bảng tín hiệu thời gian thực (Real-time signals).
 
 ### 7.4. Kiểm thử Tấn công và Tính năng Chuyên sâu
-*   **Phát hiện Tấn công Deauth (DoS)**: Sử dụng công cụ (như Kali Linux, `aireplay-ng`) để chủ động phát lệnh hủy xác thực (Deauth) vào một thiết bị mạng kiểm thử.
-    *   *Kỳ vọng*: Dashboard sẽ nháy đỏ trạng thái `DEAUTH_FLOOD_DETECTED` với mức rủi ro cao (High/Critical) trong vòng chưa đầy 15 giây.
-*   **Phát lại kịch bản mạng (PCAP Replay)**: Sử dụng các file PCAP (kịch bản mạng bình thường, Evil Twin, hoặc Deauth) nạp qua `PcapCaptureDriver` để đánh giá khả năng mô phỏng luồng tấn công mà không cần can thiệp tần số vật lý.
-*   **Định vị (Geo-Location) & Học máy (ML)**: Chạy sensor kèm các cờ `--enable-ml` và `--enable-geo` để xác minh dữ liệu Tọa độ GPS và thuật toán Autoencoder được tính toán móc nối vào hàm Risk Score.
-*   **Wardriving (Lập bản đồ di động)**: Chạy module độc lập quét mạng WiFi kết hợp bộ thu GPS (`wardrive.py`) để thu thập và trích xuất danh sách mạng trên đường phố ra file JSON/CSV.
-*   **Công cụ Audit**: Chạy script đánh giá bảo mật (`audit.py`) để quét nhanh các lỗ hổng của cấu hình WiFi (như WEP/WPA yếu) và xuất báo cáo tự động.
+
+*   **A. Tấn công Từ chối Dịch vụ (Deauth Flood)**:
+    *   *Cách làm*: Sử dụng Kali Linux. Khóa mục tiêu vào thiết bị thử nghiệm. Lệnh: `sudo aireplay-ng --deauth 100 -a [MAC_ROUTER] -c [MAC_CLIENT] wlan0mon`.
+    *   *Kết quả kỳ vọng*: Luồng dữ liệu bùng nổ, thuật toán `algos/dos.py` phát hiện tốc độ gói tin tăng vọt. Trên Dashboard tab "Threats", lập tức xuất hiện thẻ cảnh báo màu đỏ chót nhấp nháy `DEAUTH_FLOOD_DETECTED`, MTTD (Thời gian phát hiện) đo được dưới 10 giây.
+
+*   **B. Phát lại kịch bản mạng (PCAP Replay) cho Evil Twin**:
+    *   *Mục đích*: Chứng minh khả năng phát hiện AP giả mạo (Evil Twin) khi không có điều kiện mang 2 củ phát WiFi vật lý lên hội trường.
+    *   *Cách làm*: Nạp file PCAP đã ghi hình trước: `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_evil_twin_detection -v`.
+    *   *Kết quả kỳ vọng*: `PASSED`. Log sẽ chỉ ra rằng hệ thống đã "thấy" sự xuất hiện của 1 BSSID khác nhưng phát cùng SSID, chênh lệch sóng (RSSI) bất thường, và OUI Vendor sai lệch. Cảnh báo Evil Twin được bắn lên hệ thống.
+
+*   **C. Định vị (Geo-Location) & Học máy (ML)**:
+    *   *Lệnh thực thi*: `python sensor/sensor_cli.py --enable-ml --enable-geo --gps /dev/ttyUSB0`
+    *   *Kết quả kỳ vọng*: Điểm Risk Score của một Access Point sẽ bị cộng thêm 20 điểm (Anomaly Boost) nếu Autoencoder thấy hành vi dị thường. Dữ liệu GPS đẩy lên làm thay đổi vị trí ghim trên Bản đồ (Global Map).
+
+*   **D. Lập bản đồ mạng di động (Wardriving)**:
+    *   *Lệnh thực thi*: `python sensor/wardrive.py --iface wlan0mon --output session.json`
+    *   *Kết quả kỳ vọng*: File `session.json` sinh ra với danh sách các mạng, toạ độ, chuẩn mã hóa. File này có thể import lên giao diện Live Viewer (`live_wardrive_viewer.py`) để quan sát ngoại tuyến.
+
+*   **E. Công cụ Kiểm toán Bảo mật (Audit)**:
+    *   *Lệnh thực thi*: `python sensor/audit.py --profile home --output report.json`
+    *   *Kết quả kỳ vọng*: Console báo lỗi màu vàng (Warning) cảnh báo mạng WEP/WPA (tkip) đang dùng cấu hình yếu, xuất báo cáo HTML/JSON rõ ràng.
 
 ---
 
