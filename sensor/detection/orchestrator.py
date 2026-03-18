@@ -13,7 +13,6 @@ Stage scheduling priority:
 from __future__ import annotations
 
 import logging
-from collections import OrderedDict
 from typing import Any
 
 from sensor.detection.interface import BaseSensorDetector
@@ -165,7 +164,7 @@ class SensorDetectionOrchestrator:
         cls,
         config: Any,
         sensor_id: str = "",
-    ) -> "SensorDetectionOrchestrator":
+    ) -> SensorDetectionOrchestrator:
         """
         Build an orchestrator from a ``Config`` object.
 

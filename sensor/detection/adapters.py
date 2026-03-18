@@ -15,7 +15,8 @@ Config propagation:
 from __future__ import annotations
 
 import logging
-from dataclasses import asdict, fields as dc_fields
+from dataclasses import asdict
+from dataclasses import fields as dc_fields
 from typing import Any
 
 from sensor.detection.interface import BaseSensorDetector

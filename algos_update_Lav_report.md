@@ -284,7 +284,7 @@ When metadata is `None`, the detector is called for every telemetry item (conser
 
 # Update 0101 — Assessment and Current Status
 
-**Date**: 2026-03-19  
+**Date**: 2026-03-19
 **Scope**: Post-1245 evaluation of the updated implementation against the original problem statement: fragmented `algos/`, inconvenient real-time usage, and difficult detector configuration.
 
 ---
