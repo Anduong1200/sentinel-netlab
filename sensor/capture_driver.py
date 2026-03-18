@@ -346,6 +346,11 @@ class MockCaptureDriver(CaptureDriver):
 
         # Very simplified beacon structure
         frame = bytearray()
+        
+        # Radiotap header (8 bytes)
+        # version=0(1), pad=0(1), length=8(2), present=0(4)
+        frame.extend(b"\x00\x00\x08\x00\x00\x00\x00\x00")
+        
         frame.extend(b"\x80\x00")  # Frame control (beacon)
         frame.extend(b"\x00\x00")  # Duration
         frame.extend(b"\xff" * 6)  # DA (broadcast)
