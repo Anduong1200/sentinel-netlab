@@ -87,15 +87,14 @@ def merge_config(args: argparse.Namespace) -> Any:
     import os
 
     from sensor.config import init_config
-
-    config = init_config(args.config_file)
+    config = init_config(args.config_file) if getattr(args, "config_file", None) else init_config()
 
     # Apply Overrides
     if getattr(args, "sensor_id", None):
         config.sensor.id = args.sensor_id
         os.environ["SENSOR_ID"] = args.sensor_id
     if getattr(args, "iface", None):
-        config.sensor.interface = args.iface
+        config.capture.interface = args.iface
     if getattr(args, "channels", None):
         config.capture.channels = [int(c) for c in args.channels.split(",")]
     if getattr(args, "dwell_ms", None):
@@ -152,7 +151,7 @@ def print_banner(config: Any) -> None:
     print("  Lightweight Hybrid Wireless IDS")
     print("=" * 60)
     print(f"  Sensor ID:  {config.sensor.id}")
-    print(f"  Interface:  {config.sensor.interface}")
+    print(f"  Interface:  {config.capture.interface}")
     print(f"  Channels:   {config.capture.channels}")
     print(f"  Mock Mode:  {config.mock_mode}")
     print(f"  Upload URL: {config.api.host}:{config.api.port}")

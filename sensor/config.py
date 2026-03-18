@@ -141,13 +141,15 @@ class ConfigManager:
     Manages configuration loading, saving, and access.
     """
 
-    def __init__(self, config_path: str = DEFAULT_CONFIG_PATH):
+    def __init__(self, config_path: str | None = None):
         """
         Initialize configuration manager.
 
         Args:
             config_path: Path to JSON config file
         """
+        if config_path is None:
+            config_path = DEFAULT_CONFIG_PATH
         self.config_path = Path(config_path)
         self.config = Config()
         self._load_config()
@@ -379,7 +381,7 @@ def get_config_manager() -> ConfigManager:
     return _config_manager
 
 
-def init_config(config_path: str = DEFAULT_CONFIG_PATH) -> Config:
+def init_config(config_path: str | None = None) -> Config:
     """
     Initialize configuration from file.
 
