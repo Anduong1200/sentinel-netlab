@@ -3,13 +3,11 @@ from datetime import UTC, datetime
 from flask import Blueprint, g, jsonify, request
 
 from common.schemas.sensor import HeartbeatRequest
-
-from .auth import Permission, require_auth, require_signed
-from .deps import PYDANTIC_AVAILABLE, validate_json
-
 from controller.db.extensions import db
 from controller.db.models import Sensor
-from .deps import logger
+
+from .auth import Permission, require_auth, require_signed
+from .deps import PYDANTIC_AVAILABLE, logger, validate_json
 
 bp = Blueprint("sensors", __name__)
 

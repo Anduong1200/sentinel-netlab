@@ -89,8 +89,8 @@ def ingest_telemetry():
 
     # Update Registry (Last Seen)
     try:
-        from controller.db.models import Sensor
         from controller.db.extensions import db
+        from controller.db.models import Sensor
 
         sensor = Sensor.query.get(sensor_id)
         if not sensor:
