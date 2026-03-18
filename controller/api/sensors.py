@@ -21,7 +21,9 @@ def list_sensors():
     results = {}
     for s in sensors:
         results[s.id] = {
-            "last_heartbeat": s.last_heartbeat.isoformat() if s.last_heartbeat else None,
+            "last_heartbeat": s.last_heartbeat.isoformat()
+            if s.last_heartbeat
+            else None,
             "status": s.status,
             "metrics": s.config.get("metrics", {}) if s.config else {},
             "last_seen": s.config.get("last_seen") if s.config else None,
@@ -52,11 +54,11 @@ def sensor_heartbeat():
 
     sensor.last_heartbeat = datetime.now(UTC)
     sensor.status = data.get("status", "online")
-    
+
     config_dict = dict(sensor.config or {})
     config_dict["metrics"] = data.get("metrics", {})
     sensor.config = config_dict
-    
+
     try:
         db.session.commit()
     except Exception as e:
