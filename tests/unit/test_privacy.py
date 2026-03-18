@@ -3,6 +3,7 @@ import os
 from unittest.mock import patch
 import common.privacy as privacy
 
+
 class TestPrivacy(unittest.TestCase):
     def setUp(self):
         # Reset the global salt before each test
@@ -80,6 +81,7 @@ class TestPrivacy(unittest.TestCase):
         anonymized = privacy.anonymize_mac_full(mac)
         # Should look like a MAC
         import re
+
         self.assertTrue(re.match(r"^([0-9A-F]{2}:){5}[0-9A-F]{2}$", anonymized))
         self.assertNotEqual(anonymized, mac)
 
@@ -100,7 +102,9 @@ class TestPrivacy(unittest.TestCase):
         """Verify SSID anonymization"""
         ssid = "MyWiFiNetwork"
         # Keep length (asterisks)
-        self.assertEqual(privacy.anonymize_ssid(ssid, keep_length=True), "*" * len(ssid))
+        self.assertEqual(
+            privacy.anonymize_ssid(ssid, keep_length=True), "*" * len(ssid)
+        )
         # Hash SSID
         h_ssid = privacy.anonymize_ssid(ssid, keep_length=False)
         self.assertTrue(h_ssid.endswith("..."))
@@ -108,6 +112,7 @@ class TestPrivacy(unittest.TestCase):
 
         # Empty SSID
         self.assertEqual(privacy.anonymize_ssid(""), "")
+
 
 if __name__ == "__main__":
     unittest.main()

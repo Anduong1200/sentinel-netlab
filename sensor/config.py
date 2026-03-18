@@ -372,7 +372,11 @@ class ConfigManager:
                 key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
             )
         # Mask HMAC secret
-        if "api" in data and "hmac_secret" in data["api"] and data["api"]["hmac_secret"]:
+        if (
+            "api" in data
+            and "hmac_secret" in data["api"]
+            and data["api"]["hmac_secret"]
+        ):
             key = data["api"]["hmac_secret"]
             data["api"]["hmac_secret"] = (
                 key[:4] + "****" + key[-4:] if len(key) > 8 else "****"
