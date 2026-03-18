@@ -101,7 +101,7 @@ def get_alerts():
 
 
 @bp.route("/reports/generate", methods=["POST"])
-@require_auth(Permission.READ_ALERTS)
+@require_auth(Permission.GENERATE_REPORTS)
 @limiter.limit("10 per minute")
 def generate_remote_report():
     """Generate report from provided data"""

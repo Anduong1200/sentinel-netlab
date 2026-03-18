@@ -26,6 +26,7 @@ class Permission(StrEnum):
     READ_ALERTS = "alerts:read"
     WRITE_ALERTS = "alerts:write"
     MANAGE_SENSORS = "sensors:manage"
+    GENERATE_REPORTS = "reports:generate"
     ADMIN = "admin:all"
 
 
