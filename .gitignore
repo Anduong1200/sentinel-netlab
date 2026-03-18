@@ -60,7 +60,7 @@ coverage.xml
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-
+*.json
 # Sentinel NetLab Specific
 # Secrets (NEVER COMMIT)
 .env*
