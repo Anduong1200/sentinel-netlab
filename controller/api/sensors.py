@@ -3,13 +3,11 @@ from datetime import UTC, datetime
 from flask import Blueprint, g, jsonify, request
 
 from common.schemas.sensor import HeartbeatRequest
-
-from .auth import Permission, require_auth, require_signed
-from .deps import PYDANTIC_AVAILABLE, validate_json
-
 from controller.db.extensions import db
 from controller.db.models import Sensor
-from .deps import logger
+
+from .auth import Permission, require_auth, require_signed
+from .deps import PYDANTIC_AVAILABLE, logger, validate_json
 
 bp = Blueprint("sensors", __name__)
 
@@ -52,11 +50,11 @@ def sensor_heartbeat():
 
     sensor.last_heartbeat = datetime.now(UTC)
     sensor.status = data.get("status", "online")
-    
+
     config_dict = dict(sensor.config or {})
     config_dict["metrics"] = data.get("metrics", {})
     sensor.config = config_dict
-    
+
     try:
         db.session.commit()
     except Exception as e:

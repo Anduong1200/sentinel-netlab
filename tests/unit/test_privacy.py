@@ -1,7 +1,9 @@
-import unittest
 import os
+import unittest
 from unittest.mock import patch
+
 import common.privacy as privacy
+
 
 class TestPrivacy(unittest.TestCase):
     def setUp(self):
