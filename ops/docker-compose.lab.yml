@@ -218,13 +218,16 @@ services:
     image: sentinel-sensor:lab
     container_name: sentinel-lab-sensor
     restart: unless-stopped
-    # Safe Mode: No privileged access, no host network
-    privileged: false
+    user: "root"
+    # Hardware Mode: Requires privileges and host network for wlan1
+    privileged: true
+    network_mode: "host"
     environment:
-      SENSOR_ID: "lab-sensor-01"
-      SENSOR_MOCK_MODE: "true" # Simulates WiFi traffic
-      SENSOR_CONTROLLER_HOST: "controller"
-      SENSOR_CONTROLLER_PORT: "5000"
+      SENSOR_ID: "lab-sensor-wlan1"
+      SENSOR_MOCK_MODE: "false"
+      SENSOR_INTERFACE: "wlan1"
+      SENSOR_CONTROLLER_HOST: "127.0.0.1"
+      SENSOR_CONTROLLER_PORT: "8080"
       SENSOR_AUTH_TOKEN: "sensor-01-token"
       WIFI_SCANNER_API_KEY: "sensor-01-token"
     depends_on:
@@ -232,8 +235,6 @@ services:
         condition: service_healthy
     volumes:
       - sentinel-lab-sensor-data:/var/lib/wifi-scanner
-    networks:
-      - sentinel-lab-net
     env_file:
       - .env.lab
 
