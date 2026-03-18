@@ -3,7 +3,7 @@ import shutil
 import unittest
 from tempfile import mkdtemp
 
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 
 
 class TestSqliteQueue(unittest.TestCase):

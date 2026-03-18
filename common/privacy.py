@@ -33,11 +33,13 @@ MAC_PATTERN = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
 def normalize_mac(mac: str) -> str:
     """Normalize MAC address to uppercase with colons"""
-    mac = mac.upper().replace("-", ":").replace(".", ":")
-    # Handle Cisco format (1234.5678.9abc)
-    if ":" not in mac and len(mac) == 12:
-        mac = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
-    return mac
+    # Remove all common separators and convert to uppercase
+    clean = mac.upper().replace("-", "").replace(".", "").replace(":", "")
+    if len(clean) == 12:
+        return ":".join(clean[i : i + 2] for i in range(0, 12, 2))
+
+    # Fallback for non-standard formats (just uppercase and colonize separators)
+    return mac.upper().replace("-", ":").replace(".", ":")
 
 
 def hash_mac(mac: str, salt: str | None = None) -> str:

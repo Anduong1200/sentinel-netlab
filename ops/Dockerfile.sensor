@@ -51,8 +51,10 @@ RUN pip install --no-cache-dir /wheels/*.whl && \
     pip install --no-cache-dir --upgrade --force-reinstall "wheel>=0.46.2" "jaraco-context>=6.1.0" && \
     rm -rf /wheels
 
-# Change ownership of venv to sentinel user
-RUN chown -R sentinel:sentinel /opt/venv
+# Create data directory and set permissions
+RUN mkdir -p /var/lib/wifi-scanner/pcaps && \
+    chown -R sentinel:sentinel /var/lib/wifi-scanner && \
+    chown -R sentinel:sentinel /opt/venv
 
 USER sentinel
 

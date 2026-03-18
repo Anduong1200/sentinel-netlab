@@ -13,9 +13,8 @@ from typing import Any
 import yaml
 
 # Setup path
-# Add sensor and project root to path
+# Add project root to path
 SENSOR_DIR = Path(__file__).parent
-sys.path.insert(0, str(SENSOR_DIR))
 sys.path.insert(0, str(SENSOR_DIR.parent))
 
 
@@ -173,7 +172,7 @@ def run_sensor_logic(config: dict) -> int:
     """Run the sensor logic with the given config"""
     # Import and start controller
     try:
-        from sensor_controller import SensorController
+        from sensor.sensor_controller import SensorController
 
         controller = SensorController(config=config)
 

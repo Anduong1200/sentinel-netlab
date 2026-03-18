@@ -15,7 +15,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from .queue import SpoolEntry, SqliteQueue
+from .spool import SpoolEntry, SqliteQueue
 from .transport import TransportClient
 
 logger = logging.getLogger(__name__)

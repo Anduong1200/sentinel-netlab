@@ -38,7 +38,7 @@ from sensor.config import Config, get_config, init_config
 from sensor.frame_parser import FrameParser
 from sensor.monitor import SensorMonitor
 from sensor.normalizer import TelemetryNormalizer
-from sensor.queue import SqliteQueue
+from sensor.spool import SqliteQueue
 from sensor.telemetry_aggregator import TelemetryAggregator
 from sensor.transport import TransportClient
 from sensor.worker import TransportWorker
@@ -99,15 +99,11 @@ class SensorController:
             ),  # Hacky but ok
         )
 
-        # HACK: Retrieve HMAC secret from env since it's not in Config struct yet (or I missed it)
-        # It was implicit.
-        hmac_secret = os.environ.get("SENSOR_HMAC_SECRET")
-
         self.transport = TransportClient(
             upload_url=f"http://{config.api.host}:{config.api.port}/api/v1/telemetry",  # Construct URL
             auth_token=config.api.api_key,
             verify_ssl=config.api.ssl_enabled,
-            hmac_secret=hmac_secret,
+            hmac_secret=config.api.hmac_secret,
         )
 
         # Persistent Queue (Spool) for reliable delivery
@@ -635,8 +631,18 @@ class SensorController:
             try:
                 time.sleep(60)
 
-                status = self.status()
-                result = self.transport.heartbeat(status)
+                full_status = self.status()
+                # Build payload matching HeartbeatRequest schema (extra="forbid")
+                heartbeat_payload = {
+                    "sensor_id": self.sensor_id,
+                    "status": "online" if self._running else "offline",
+                    "metrics": {
+                        "frames_captured": full_status.get("frames_captured", 0),
+                        "frames_parsed": full_status.get("frames_parsed", 0),
+                        "uptime_seconds": full_status.get("uptime_seconds", 0),
+                    },
+                }
+                result = self.transport.heartbeat(heartbeat_payload)
 
                 if result.get("success"):
                     # Process commands
