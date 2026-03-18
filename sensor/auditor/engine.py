@@ -115,10 +115,13 @@ class SecurityAuditor:
 
         # Legacy built-in checks
         legacy_findings = self._run_legacy_checks(network)
-        for finding in legacy_findings:
-            # Avoid duplicates
-            if not any(f.id == finding.id for f in self.findings):
-                self.findings.append(finding)
+        if legacy_findings:
+            existing_ids = {f.id for f in self.findings}
+            for finding in legacy_findings:
+                # Avoid duplicates
+                if finding.id not in existing_ids:
+                    self.findings.append(finding)
+                    existing_ids.add(finding.id)
 
     def _run_legacy_checks(self, network: NetworkInfo) -> list[Finding]:
         """Built-in checks for backward compatibility"""
