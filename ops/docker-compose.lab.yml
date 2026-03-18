@@ -230,6 +230,7 @@ services:
       SENSOR_CONTROLLER_PORT: "8080"
       SENSOR_AUTH_TOKEN: "sensor-01-token"
       WIFI_SCANNER_API_KEY: "sensor-01-token"
+      SENSOR_HMAC_SECRET: ${CONTROLLER_HMAC_SECRET}
     depends_on:
       controller:
         condition: service_healthy
