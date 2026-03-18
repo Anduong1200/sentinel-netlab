@@ -5,7 +5,8 @@ from pathlib import Path
 import dash
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, dash_table, dcc, html
+from dash import Input, Output, dcc, html
+from dash.dash_table import DataTable
 
 # Configuration
 DATA_FILE = "wardrive_session.json"
@@ -91,7 +92,7 @@ app.layout = html.Div(
         html.Div(
             [
                 html.H3("10 Newest Networks Captured"),
-                dash_table.DataTable(
+                DataTable(  # type: ignore
                     id="recent-networks-table",
                     columns=[
                         {"name": "Timestamp", "id": "timestamp"},
