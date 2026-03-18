@@ -132,4 +132,4 @@ class SensorAnalysisOrchestrator:
         if chain_alert:
             chain_alert["sensor_id"] = self.sensor_id
             logger.critical("CHAIN DETECTED: %s", chain_alert["title"])
-        return chain_alert
+        return chain_alert  # type: ignore
