@@ -101,7 +101,6 @@ class EnhancedRiskScorer:
     def calculate_risk(
         self,
         network: dict,
-        ground_truth_label: str | None = None,  # noqa: ARG002 - reserved for future model validation
         deviation_score: float = 0.0,
     ) -> dict:
         """
@@ -378,6 +377,6 @@ if __name__ == "__main__":
         "vendor": "Unknown",
     }
 
-    result = scorer.calculate_risk(test_net, ground_truth_label="malicious")
+    result = scorer.calculate_risk(test_net)
     print(f"Risk Score: {result['risk_score']}")
     print(f"Risk Level: {result['risk_level']}")

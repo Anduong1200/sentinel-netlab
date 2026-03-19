@@ -425,7 +425,7 @@ class SentinelTUIApp(App):
     """Sentinel NetLab – Multi-Screen Terminal Dashboard."""
 
     TITLE = "Sentinel NetLab"
-    SUB_TITLE = "Terminal Control Panel v0.6.0"
+    SUB_TITLE = "Terminal Control Panel v1.0.0"
     CSS_PATH = "theme.tcss"
 
     SCREENS = {"setup": SetupScreen, "dashboard": DashboardScreen}

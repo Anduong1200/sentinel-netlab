@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # This MUST be done BEFORE creating venv since venv symlinks to base
 RUN pip install --upgrade pip setuptools "wheel>=0.46.2" "jaraco.context>=6.1.0"
 
-COPY pyproject.toml README.md sentinel.py ./
+COPY pyproject.toml README.md scripts/sentinel.py ./
 COPY controller/ controller/
 COPY common/ common/
 COPY algos/ algos/
@@ -63,7 +63,7 @@ USER sentinel
 COPY --chown=sentinel:sentinel controller/ ./controller/
 COPY --chown=sentinel:sentinel common/ ./common/
 COPY --chown=sentinel:sentinel algos/ ./algos/
-COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
+COPY --chown=sentinel:sentinel scripts/sentinel.py ./sentinel.py
 COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
 COPY --chown=sentinel:sentinel ops/ ./ops/
 

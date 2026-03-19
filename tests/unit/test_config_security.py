@@ -13,7 +13,7 @@ class TestConfigSecurity:
         """Test A: strict production check fails if secrets missing"""
         with patch.dict(os.environ, {"ENVIRONMENT": "production"}, clear=True):
             with pytest.raises(RuntimeError) as excinfo:
-                init_config(strict_production=True)
+                init_config()
             # Check for key components of error message
             assert "CONTROLLER_SECRET_KEY" in str(excinfo.value)
             assert "production" in str(excinfo.value).lower()
