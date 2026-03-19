@@ -135,10 +135,27 @@
 
 ---
 
-## 7. Các Hạng mục Kiểm thử Hệ thống (System Testing Scenarios)
+## 7. Tiêu chí Tuân thủ Quyền riêng tư và Pháp lý (Privacy & Compliance)
+
+### 📌 Nhận định từ Mã nguồn
+*   **Cơ chế Ẩn danh (Anonymization)**: Thay vì lưu trữ thô địa chỉ MAC của người dùng (có thể vi phạm GDPR hoặc các luật bảo vệ quyền riêng tư), hệ thống cung cấp module `common/privacy.py`. Module này hỗ trợ các chế độ ẩn danh:
+    *   `oui`: Giữ lại 3 octet đầu (nhận diện hãng sản xuất) nhưng băm (hash) phần định danh thiết bị cá nhân (VD: `AA:BB:CC:XX:XX:XX`).
+    *   `full`: Sử dụng hàm băm một chiều SHA-256 kết hợp với `_PRIVACY_SALT` (chìa khóa muối) sinh ngẫu nhiên theo từng phiên bản cài đặt, biến địa chỉ MAC thật thành một chuỗi giả danh không thể đảo ngược.
+*   **Bảo vệ SSID**: Tên mạng WiFi (SSID) cũng có thể bị che giấu độ dài (`*` tương ứng số ký tự) hoặc băm một phần nếu người dùng kích hoạt cờ `--anonymize-ssid`.
+
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh hệ thống bắt được dữ liệu thật nhưng không xâm phạm thông tin cá nhân.
+*   **Thao tác**:
+    1.  Chạy Sensor với cờ bảo mật: `python sensor/cli.py --privacy-mode oui`
+    2.  Chỉ vào màn hình Terminal đang in ra các gói tin bắt được.
+    3.  **Nhấn mạnh**: "Thưa hội đồng, các địa chỉ MAC thu thập được ở đây đã bị che đi một nửa (chỉ còn OUI của nhà sản xuất). Hệ thống của em phân tích hành vi tấn công dựa trên sự thay đổi cường độ sóng và tần suất gói tin, hoàn toàn không cần theo dõi danh tính cá nhân thiết bị của người dùng, tuân thủ nguyên tắc Privacy by Design."
+
+---
+
+## 8. Các Hạng mục Kiểm thử Hệ thống (System Testing Scenarios)
 Để bảo vệ toàn diện, dưới đây là chi tiết các kịch bản demo (Runbook) từ cơ bản đến nâng cao cần thực hiện trực tiếp trên máy trước hội đồng:
 
-### 7.1. Kiểm thử Hệ sinh thái cốt lõi (Core Ecosystem)
+### 8.1. Kiểm thử Hệ sinh thái cốt lõi (Core Ecosystem)
 *   **Controller API (Liveness & Health)**: Chứng minh Control Plane và Database/Redis đang kết nối trơn tru.
     *   *Lệnh thực thi*: `curl -s http://127.0.0.1:5000/api/v1/health | jq`
     *   *Kết quả kỳ vọng*: Terminal trả về mã JSON có trường `"status": "ok"` và hiển thị phiên bản (version), thời gian (timestamp).
@@ -146,14 +163,14 @@
     *   *Cách làm*: Mở trình duyệt truy cập `http://127.0.0.1:8050`. Chuyển đổi qua lại giữa các Tab (Overview, Threats, Global Map).
     *   *Kết quả kỳ vọng*: Sidebar phản hồi tức thì, các biểu đồ Plotly render dữ liệu (hoặc khung trống an toàn nếu chưa có mạng) mà không hiện lỗi 404 hay trắng trang.
 
-### 7.2. Kiểm thử Luồng dữ liệu giả lập (Mock Data Pipeline)
+### 8.2. Kiểm thử Luồng dữ liệu giả lập (Mock Data Pipeline)
 *   Mục đích: Chứng minh cơ chế Pipeline (Sensor -> Controller -> Database -> Dashboard) hoạt động mượt mà khi nhận dữ liệu giả.
 *   *Cách làm*: Chạy tập lệnh nạp dữ liệu mô phỏng: `make lab-up` (lệnh này tự động gọi script `seed_lab_data.py`).
 *   *Kết quả kỳ vọng*:
     1. Nhìn vào màn hình Terminal thấy log sinh ra hàng loạt gói tin giả mạo.
     2. Nhìn lên Dashboard, các bộ đếm số lượng Mạng (Networks) và Điểm rủi ro (Risk Score) bắt đầu thay đổi. Bản đồ nhiệt (Heatmap) xuất hiện các điểm màu đỏ (tương ứng với cảnh báo rủi ro cao).
 
-### 7.3. Kiểm thử Khả năng bắt gói tin mạng thật (Sensor Capture)
+### 8.3. Kiểm thử Khả năng bắt gói tin mạng thật (Sensor Capture)
 *   **Test Sensor độc lập (CLI)**: Chứng minh Driver card WiFi (Monitor Mode) tương tác tốt với hệ điều hành và bắt được gói tin thực tế (Không dùng mạng WiFi của trường học để tránh vi phạm đạo đức, hãy dùng một điểm phát 4G từ điện thoại).
     *   *Lệnh thực thi*: Khởi động Monitor mode: `sudo airmon-ng start wlan0`. Sau đó chạy Sensor: `sudo python sensor/cli.py --iface wlan0mon --sensor-id demo-01`.
     *   *Kết quả kỳ vọng*: Màn hình in ra các gói tin (Beacons/Probes) với BSSID thật, SSID thật của điện thoại phát ra.
@@ -161,7 +178,7 @@
     *   *Cách làm*: Kết hợp lệnh `--config config.yaml` để bật kết nối API. Mở tab "Signals" trên Dashboard.
     *   *Kết quả kỳ vọng*: Địa chỉ MAC của điện thoại (SSID thử nghiệm) phải xuất hiện trên bảng tín hiệu thời gian thực (Real-time signals).
 
-### 7.4. Kiểm thử Tấn công và Tính năng Chuyên sâu
+### 8.4. Kiểm thử Tấn công và Tính năng Chuyên sâu
 
 *   **A. Tấn công Từ chối Dịch vụ (Deauth Flood)**:
     *   *Cách làm*: Sử dụng Kali Linux. Khóa mục tiêu vào thiết bị thử nghiệm. Lệnh: `sudo aireplay-ng --deauth 100 -a [MAC_ROUTER] -c [MAC_CLIENT] wlan0mon`.
@@ -186,7 +203,7 @@
 
 ---
 
-## 8. Các chỉ số Đánh giá Hiệu năng thuật toán (Dành cho Slide báo cáo)
+## 9. Các chỉ số Đánh giá Hiệu năng thuật toán (Dành cho Slide báo cáo)
 Để hội đồng thấy rõ tính khoa học của hệ thống WIDS, hãy trình bày các số liệu đo lường (Metrics) sau:
 
 *   **Precision (Độ chính xác)**: Tỷ lệ cảnh báo thực sự là tấn công thật so với tổng số cảnh báo WIDS phát ra (`TP / (TP + FP)`). Chỉ số này cao chứng tỏ hệ thống **không bị báo động giả** gây phiền nhiễu.
@@ -196,37 +213,55 @@
 
 ---
 
-## 9. Bộ Câu Hỏi Phản Biện Dự Kiến & Gợi Ý Trả Lời (Q&A)
-Dưới đây là một số câu hỏi hội đồng có thể đặt ra dựa trên kiến trúc của Sentinel NetLab, kèm theo cách trả lời (bám sát mã nguồn và thiết kế hệ thống):
+## 10. Bộ Câu Hỏi Phản Biện Mở Rộng & Gợi Ý Trả Lời (Q&A)
+Dưới đây là một danh sách đồ sộ các câu hỏi hóc búa hội đồng có thể đặt ra, bao quát mọi ngóc ngách của dự án. Bạn hãy học thuộc logic trả lời dựa trên mã nguồn thực tế:
 
-### Q1: "Tại sao lại tách riêng Sensor và Controller? Nếu gộp lại chạy trên 1 máy tính có phải dễ hơn không?"
-*   **Gợi ý trả lời**: Việc gộp chung rất dễ cho sinh viên làm đồ án nhỏ, nhưng **không mang tính thực tiễn công nghiệp**. Trong thực tế, các doanh nghiệp hoặc tòa nhà có diện tích lớn cần đặt hàng chục thiết bị cảm biến (Sensor như Raspberry Pi) rải rác để thu thập sóng WiFi, trong khi dữ liệu cần được xử lý tập trung ở một Server mạnh (Controller). Kiến trúc phân tán (Distributed) giúp:
-    1.  **Dễ mở rộng (Scalability)**: Gắn thêm bao nhiêu Sensor cũng được mà không làm chậm Server.
-    2.  **Bảo mật (Security)**: Nếu một Sensor ở ngoài sảnh bị hacker tháo trộm, hệ thống cốt lõi vẫn an toàn vì Sensor không chứa Database hay toàn quyền quản trị.
+### Nhóm 1: Kiến trúc và Thiết kế Hệ thống
+**Q1: "Tại sao lại tách riêng Sensor và Controller? Gộp lại chạy trên 1 máy tính có phải dễ hơn không?"**
+*   **Gợi ý**: Chạy gộp chỉ hợp với đồ án môn học nhỏ. Thực tiễn doanh nghiệp cần hàng chục thiết bị cảm biến (Raspberry Pi) rải rác để phủ sóng toàn tòa nhà, trong khi xử lý dữ liệu nặng phải đẩy về máy chủ trung tâm. Kiến trúc Edge-Core giúp dễ mở rộng (Scalability) và nếu Sensor bị trộm, hệ thống CSDL trung tâm vẫn an toàn.
 
-### Q2: "Thuật toán Evil Twin của em hoạt động thế nào để tránh bắt nhầm (False Positive) các cục phát WiFi mesh (như Google WiFi, TP-Link Mesh) phát cùng tên SSID?"
-*   **Gợi ý trả lời**: Hệ thống của em không chỉ nhìn vào tên mạng (SSID) mà dùng cơ chế **Chấm điểm Đa thuộc tính (Weighted Scoring)** (có thể mở code `algos/evil_twin.py` để minh họa):
-    1.  Em kiểm tra độ chênh lệch sóng (`RSSI Delta`). Điểm Mesh hợp lệ thường có vùng phủ sóng riêng, nhưng Evil Twin thường cố ý phát sóng cực mạnh đè lên sóng thật.
-    2.  Em kiểm tra mã nhà sản xuất (Vendor OUI). Router thật của trường là Cisco, nếu có cục phát cùng tên nhưng mã OUI là Intel/TP-Link thì bị trừ điểm rủi ro rất nặng.
-    3.  Em kiểm tra độ lệch thời gian Beacon (`Beacon Jitter`) và loại mã hóa (Security Mismatch).
-    4.  Đặc biệt, hệ thống có **Confirmation Window** (Cửa sổ xác nhận), không cảnh báo ngay ở gói tin đầu tiên mà theo dõi sự kiên định của trạm phát để lọc nhiễu.
+**Q2: "Tại sao em lại dùng PostgreSQL cho Production mà bản Lab lại dùng SQLite? Không sợ lệch hành vi à?"**
+*   **Gợi ý**: Dự án dùng SQLAlchemy làm ORM trung gian. Mã nguồn ứng dụng (logic) không tương tác trực tiếp với SQL thô mà qua mô hình Object, do đó hành vi hoàn toàn đồng nhất. Dùng SQLite cho chế độ Lab giúp triển khai cực nhanh bằng 1 lệnh `make lab-up` mà không tốn RAM chạy container DB, phù hợp cho học tập.
 
-### Q3: "Vai trò của Machine Learning (Autoencoder) trong hệ thống này là gì? Có thực sự cần thiết không?"
-*   **Gợi ý trả lời**: Các thuật toán rập khuôn (Rule-based) như so sánh chữ ký rất tốt nhưng dễ bị vượt qua nếu hacker đổi thủ đoạn (Zero-day). Em áp dụng cơ chế Học máy lai (**Hybrid ML Boost**).
-    *   Mô hình Autoencoder (`ml/anomaly_model.py`) sẽ học các "hành vi bình thường" của mạng.
-    *   Khi có sự kiện mới, nó không tự mình ra quyết định cảnh báo ngay, mà nó **cộng thêm điểm bất thường (Anomaly Score)** vào Hàm Risk Score. Cơ chế này giúp hệ thống linh hoạt phát hiện rủi ro lạ mà vẫn kiểm soát được tỷ lệ báo động giả (False Positive).
+**Q3: "Cơ chế quản lý cấu hình (Config) của hệ thống được thực hiện thế nào để tránh rò rỉ?"**
+*   **Gợi ý**: (Nhắc đến `sensor/config.py` và `common/security/secrets.py`). Hệ thống áp dụng mẫu thiết kế **Fail-Fast Secrets**. Chìa khóa (API Key, HMAC Secret) bắt buộc phải truyền qua biến môi trường. Nếu quên cấu hình hoặc dùng pass yếu như `admin`, ứng dụng sẽ chủ động Crash ngay lúc khởi động chứ không chạy nhắm mắt. Các cấu hình được export ra ngoài luôn bị "Mask" (che dấu sao `***`).
 
-### Q4: "Nếu Sensor bắt được gói tin nhưng bị đứt kết nối Internet tới Controller, dữ liệu có bị mất không?"
-*   **Gợi ý trả lời**: Dạ không ạ. Trong mã nguồn phần truyền tải (`sensor/transport.py`), em đã cài đặt cơ chế **Circuit Breaker** (Ngắt mạch) và **Spooling** (Hàng đợi đệm). Khi mất mạng, Sensor tự động lưu tạm gói tin vào bộ nhớ/ổ đĩa. Cơ chế **Exponential Backoff** sẽ thử kết nối lại với độ trễ tăng dần (tránh làm sập mạng khi có lại). Khi có mạng, Sensor sẽ dội toàn bộ gói tin cũ lên Controller.
+### Nhóm 2: Hiệu năng và Thuật toán
+**Q4: "Làm sao em chứng minh hệ thống xử lý được hàng chục ngàn gói tin trong một cuộc tấn công Deauth Flood mà không bị sập CPU?"**
+*   **Gợi ý**: Em đã tối ưu ở 3 lớp:
+    1. Tầng Sensor: Gom gói tin thành cụm (**Batching**) và nén **GZIP** trước khi đẩy qua API.
+    2. Thuật toán (`algos/dos.py`): Dùng cơ chế **Cửa sổ trượt (Sliding Window)** và cấu trúc `Hash Map` (`dict`/`set`) để tra cứu tốc độ O(1) thay vì duyệt mảng tuyến tính O(N).
+    3. Hàng đợi: Dùng Redis Queue để xử lý bất đồng bộ (Asynchronous worker) tách biệt luồng nhận dữ liệu và luồng phân tích học máy.
 
-### Q5: "Làm sao em chứng minh hệ thống của em xử lý được hàng ngàn gói tin trong một cuộc tấn công từ chối dịch vụ (Deauth Flood) mà không bị sập hay giật lag (Bottleneck)?"
-*   **Gợi ý trả lời**: Em đã tối ưu ở 2 lớp:
-    1.  **Lớp Sensor**: Không gửi từng gói tin một, mà dùng cơ chế **Batching** (Gom cụm) và nén **GZIP** trước khi gửi qua API để tiết kiệm băng thông.
-    2.  **Lớp Cấu trúc dữ liệu**: Thuật toán của em (như `algos/dos.py`) dùng cấu trúc dữ liệu hiệu quả cao như Sliding Window (Cửa sổ trượt) và Hash Map để tra cứu tốc độ O(1) thay vì duyệt mảng O(N). Do đó, việc nạp 1 file PCAP chứa hàng chục ngàn gói tin vẫn được xử lý trong thời gian tính bằng mili-giây.
+**Q5: "Thuật toán Evil Twin hoạt động thế nào để không bắt nhầm (False Positive) các cục phát WiFi Mesh (ví dụ Aruba, TP-Link Mesh) cùng SSID?"**
+*   **Gợi ý**: Không chỉ dựa vào tên mạng (SSID), thuật toán dùng **Chấm điểm Đa thuộc tính (Weighted Scoring)**:
+    *   Xét `RSSI Delta`: Trạm Mesh thường có vùng phủ sóng ổn định, Evil Twin thường có sóng đè cực mạnh.
+    *   Xét `Vendor OUI`: Router Mesh thật là Cisco/Aruba, nếu thấy trạm cùng tên mã OUI là Intel/Espressif thì trừ điểm rủi ro cực nặng.
+    *   Đặc biệt, có **Confirmation Window** (Cửa sổ chờ xác nhận thời gian) để lọc bỏ nhiễu ngẫu nhiên.
+
+**Q6: "Vai trò của Machine Learning (Autoencoder) trong dự án này là gì? Có bắt buộc phải có không?"**
+*   **Gợi ý**: Không bắt buộc nhưng nâng tầm hệ thống (Hybrid ML Boost). Luật cứng (Rule-based) rất tốt nhưng dễ bị vượt qua bằng kỹ thuật mới (Zero-day). Autoencoder (`ml/anomaly_model.py`) học "nhịp độ bình thường" của mạng (Baseline). Khi có sự kiện lạ, nó không tự cảnh báo ngay mà **cộng thêm Anomaly Score** vào Hàm Risk. Cơ chế lai này giúp bắt rủi ro lạ nhưng vẫn kiểm soát tỷ lệ báo động giả.
+
+### Nhóm 3: Bảo mật, Quyền riêng tư và Phục hồi sự cố
+**Q7: "Nếu Sensor bắt được gói tin nhưng đứt cáp Internet tới Server, dữ liệu có mất trắng không?"**
+*   **Gợi ý**: Dạ không. File `sensor/transport.py` có cài **Circuit Breaker** (Ngắt mạch) và **Spooling** (Hàng đợi đệm SQLite). Mất mạng -> Lưu tạm cục bộ -> Áp dụng **Exponential Backoff** (chờ 1s, 2s, 4s, 8s để thử kết nối lại). Có mạng -> Nhả (flush) toàn bộ dữ liệu bị kẹt (In-flight Recovery) lên Server.
+
+**Q8: "Em thu thập thông tin địa chỉ MAC của điện thoại sinh viên trong trường, có vi phạm quyền riêng tư không?"**
+*   **Gợi ý**: Hệ thống tuân thủ GDPR qua file `common/privacy.py`. Có các chế độ `--privacy-mode`. Ở chế độ `oui`, 3 octet cuối của điện thoại bị xóa thành `XX:XX:XX`. Ở chế độ `full`, địa chỉ MAC bị **Hash SHA-256** (băm một chiều trộn với muối ngẫu nhiên `_PRIVACY_SALT`). Hệ thống nhận diện tần suất tấn công dựa trên các "Hash" ẩn danh này, không thể dịch ngược ra người dùng thật.
+
+**Q9: "API Server của em chặn các yêu cầu gửi dữ liệu giả mạo từ hacker như thế nào?"**
+*   **Gợi ý**: Mọi luồng API tải lên từ Sensor đều được đính kèm Header `X-Signature`. Chữ ký này sinh ra bằng thuật toán **HMAC-SHA256** băm Payload dữ liệu cùng với `SENSOR_HMAC_SECRET`. Hacker có thể thấy gói tin gửi đi nhưng không thể giả mạo chữ ký nếu không có Secret Key mã hóa trong Sensor.
+
+### Nhóm 4: Kiểm thử và Vận hành
+**Q10: "Làm sao em biết các thuật toán Evil Twin, KRACK, hay Deauth của em code đúng nếu không dùng máy tính thật để đi tấn công phá hoại?"**
+*   **Gợi ý**: Dự án có cơ chế **PCAP Replay** (tiêm gói tin ảo). Class `PcapCaptureDriver` và `MockCaptureDriver` cho phép bơm các kịch bản mạng (đã được quay lại bằng Wireshark) trực tiếp vào luồng xử lý. Em dùng `pytest` chạy tích hợp luồng (Integration Tests). Nếu đổi code mà lệnh `pytest tests/integration` báo Pass, nghĩa là logic thuật toán vẫn chuẩn 100% không bị thoái lui (Regression).
+
+**Q11: "Trong module phân quyền (RBAC), nếu muốn cấp quyền cho một Admin mới quản lý toàn bộ tính năng, em phải làm thủ công từng quyền à?"**
+*   **Gợi ý**: Đọc `controller/api/auth.py`, `Role.ADMIN` được gán động bằng `list(Permission)`. Khi em thêm một tính năng mới (Enum Permission mới), người dùng có Role Admin sẽ tự động thừa kế quyền đó mà không cần sửa DB hay ánh xạ thủ công.
 
 ---
 
-## 10. Các Bài Test Tình Huống Thực Tế (Chứng minh Hệ thống Hữu dụng)
+## 11. Các Bài Test Tình Huống Thực Tế (Chứng minh Hệ thống Hữu dụng)
 Để hội đồng hoàn toàn tin phục rằng hệ thống **thực sự hoạt động được và có giá trị ứng dụng cao**, hãy trình bày 3 bài test mô phỏng các mối đe dọa phổ biến nhất hiện nay:
 
 ### 🌟 Bài Test 1: Bảo vệ Sinh viên/Nhân viên khỏi điểm phát WiFi giả mạo (Evil Twin)
@@ -255,7 +290,7 @@ Dưới đây là một số câu hỏi hội đồng có thể đặt ra dựa 
 
 ---
 
-## 11. Cơ chế Độ tin cậy và Tự động Khôi phục (Reliability & Auto-Recovery)
+## 12. Cơ chế Độ tin cậy và Tự động Khôi phục (Reliability & Auto-Recovery)
 Bên cạnh việc phát hiện chính xác, một hệ thống an ninh mạng cấp doanh nghiệp cần phải có tính kiên cường (Resilience). Dưới đây là 4 lớp bảo vệ mà dự án đã triển khai để chống lại lỗi phần mềm và sự cố môi trường:
 
 ### 11.1. Cấp độ Quản lý Tiến trình (Process/Service)
