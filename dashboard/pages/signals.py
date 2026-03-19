@@ -72,7 +72,7 @@ layout = html.Div(
                 html.Div(
                     [
                         html.H5(
-                            "Network Discovery Rate (24h)", className="text-white mb-3"
+                            "Network Discovery Rate (Volume Chart)", className="text-white mb-3"
                         ),
                         dcc.Graph(id="discovery-graph", style={"height": "350px"}),
                     ],
@@ -138,7 +138,7 @@ def update_signals(n):
 
         # === 2. RSSI Graph ===
         if networks:
-            rssi = [n.get("rssi", -100) for n in networks if n.get("rssi")]
+            rssi = [n.get("rssi_avg", -100) for n in networks if n.get("rssi_avg") is not None]
             # Filter out errors
             rssi = [r for r in rssi if -100 <= r <= 0]
 
@@ -158,32 +158,74 @@ def update_signals(n):
             fig_rssi = go.Figure()
             fig_rssi.update_layout(**layout_override)
 
-        # === 3. Discovery Graph (Mocked Timeline) ===
-        # Since we don't have historical API yet, we simulate a "trend" based on current count
-        # In a real app, this would query `telemetry_1h`
-
+        # === 3. Discovery Graph (Financial-Style Timeline) ===
+        # Use actual 'first_seen' timestamps to calculate discovery rate per minute
         now = datetime.now()
-        times = [(now - timedelta(hours=i)).strftime("%H:00") for i in range(24, 0, -1)]
+        # Generate last 60 minutes bins (1 hour) to allow zooming
+        times = [(now - timedelta(minutes=i)).strftime("%H:%M") for i in range(60, -1, -1)]
+        
+        counts_dict = {t: 0 for t in times}
+        
+        if networks:
+            for net in networks:
+                first_seen_ts = net.get("first_seen")
+                if first_seen_ts:
+                    net_time = datetime.fromtimestamp(first_seen_ts)
+                    time_str = net_time.strftime("%H:%M")
+                    if time_str in counts_dict:
+                        counts_dict[time_str] += 1
 
-        # Mock trend: randomly fluctuate around current count / 10
-        base_count = max(len(networks) // 5, 5)
-        counts = [max(0, base_count + random.randint(-2, 5)) for _ in times]  # noqa: S311
+        # Use full datetime objects for x-axis to support Plotly's native time rangeslider properly
+        time_objs = [now - timedelta(minutes=i) for i in range(60, -1, -1)]
+        counts = [counts_dict[t.strftime("%H:%M")] for t in time_objs]
 
         fig_disc = go.Figure()
+        
+        # Add Volume-like Bar Chart (Typical for "Rate" in financial charts)
+        fig_disc.add_trace(
+            go.Bar(
+                x=time_objs,
+                y=counts,
+                marker_color="#00f2fe",  # Cyan
+                name="New Networks",
+            )
+        )
+        
+        # Add Trendline overlay (Scatter)
         fig_disc.add_trace(
             go.Scatter(
-                x=times,
+                x=time_objs,
                 y=counts,
-                mode="lines+markers",
-                fill="tozeroy",
-                line={"color": "#f7b733", "width": 3},  # Orange/Gold
-                name="New Networks",
+                mode="lines",
+                line={"color": "#f7b733", "width": 2, "shape": "spline"},  # Smooth orange line
+                name="Trend",
             )
         )
 
         fig_disc.update_layout(**layout_override)
         fig_disc.update_layout(
-            xaxis_title="Time (Last 24h)", yaxis_title="Networks Detected"
+            yaxis_title="Networks Detected/Min",
+            xaxis=dict(
+                rangeselector=dict(
+                    buttons=list([
+                        dict(count=5, label="5m", step="minute", stepmode="backward"),
+                        dict(count=15, label="15m", step="minute", stepmode="backward"),
+                        dict(count=30, label="30m", step="minute", stepmode="backward"),
+                        dict(step="all", label="1H")
+                    ]),
+                    bgcolor="rgba(0,0,0,0.6)",
+                    activecolor="rgba(0,242,254,0.4)",
+                    font=dict(color="#ffffff")
+                ),
+                rangeslider=dict(
+                    visible=True,
+                    thickness=0.1,
+                    bgcolor="rgba(255,255,255,0.05)"
+                ),
+                type="date"
+            ),
+            hovermode="x unified",
+            showlegend=False
         )
 
         return fig_ch, fig_rssi, fig_disc
