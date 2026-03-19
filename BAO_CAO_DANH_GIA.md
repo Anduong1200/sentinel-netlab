@@ -16,7 +16,7 @@
     1.  Mở Terminal 1, khởi động toàn hệ thống:
         `make lab-up`
     2.  Mở Terminal 2, chạy một Sensor độc lập đang đẩy dữ liệu:
-        `python sensor/sensor_cli.py --sensor-id demo-01 --config config.yaml`
+        `python sensor/cli.py --sensor-id demo-01 --config-file config.yaml`
     3.  *(Vừa làm vừa thuyết minh)* "Thưa hội đồng, giờ em sẽ giả lập trường hợp máy chủ trung tâm bị rớt mạng hoặc mất điện."
     4.  Mở Terminal 3, tắt ngay container của Controller:
         `docker stop ops-controller-1`
@@ -155,7 +155,7 @@
 
 ### 7.3. Kiểm thử Khả năng bắt gói tin mạng thật (Sensor Capture)
 *   **Test Sensor độc lập (CLI)**: Chứng minh Driver card WiFi (Monitor Mode) tương tác tốt với hệ điều hành và bắt được gói tin thực tế (Không dùng mạng WiFi của trường học để tránh vi phạm đạo đức, hãy dùng một điểm phát 4G từ điện thoại).
-    *   *Lệnh thực thi*: Khởi động Monitor mode: `sudo airmon-ng start wlan0`. Sau đó chạy Sensor: `sudo python sensor/sensor_cli.py --iface wlan0mon`.
+    *   *Lệnh thực thi*: Khởi động Monitor mode: `sudo airmon-ng start wlan0`. Sau đó chạy Sensor: `sudo python sensor/cli.py --iface wlan0mon --sensor-id demo-01`.
     *   *Kết quả kỳ vọng*: Màn hình in ra các gói tin (Beacons/Probes) với BSSID thật, SSID thật của điện thoại phát ra.
 *   **Test End-to-End (E2E)**: Chứng minh dữ liệu thực tế đẩy thành công lên Server.
     *   *Cách làm*: Kết hợp lệnh `--config config.yaml` để bật kết nối API. Mở tab "Signals" trên Dashboard.
@@ -173,7 +173,7 @@
     *   *Kết quả kỳ vọng*: `PASSED`. Log sẽ chỉ ra rằng hệ thống đã "thấy" sự xuất hiện của 1 BSSID khác nhưng phát cùng SSID, chênh lệch sóng (RSSI) bất thường, và OUI Vendor sai lệch. Cảnh báo Evil Twin được bắn lên hệ thống.
 
 *   **C. Định vị (Geo-Location) & Học máy (ML)**:
-    *   *Lệnh thực thi*: `python sensor/sensor_cli.py --enable-ml --enable-geo --gps /dev/ttyUSB0`
+    *   *Lệnh thực thi*: `python sensor/cli.py --enable-ml --enable-geo --gps-device /dev/ttyUSB0 --sensor-id demo-01`
     *   *Kết quả kỳ vọng*: Điểm Risk Score của một Access Point sẽ bị cộng thêm 20 điểm (Anomaly Boost) nếu Autoencoder thấy hành vi dị thường. Dữ liệu GPS đẩy lên làm thay đổi vị trí ghim trên Bản đồ (Global Map).
 
 *   **D. Lập bản đồ mạng di động (Wardriving)**:
