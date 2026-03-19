@@ -74,18 +74,18 @@ class TestScenarioReplay:
         config.privacy.mode = "normal"
         config.privacy.store_raw_mac = True
         config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
+        config.detectors.enabled = ["evil_twin"]
+        config.detectors.thresholds = {
+            "evil_twin": {
+                "confirmation_window_seconds": 0,
+                "threshold_medium": 10
+            }
+        }
 
         controller = SensorController(config=config)
         controller.driver = PcapCaptureDriver(
             iface="test_mon", pcap_path=pcap_path, realtime=False
         )
-
-        from algos.evil_twin import EvilTwinConfig
-
-        new_conf = EvilTwinConfig()
-        new_conf.confirmation_window_seconds = 0
-        new_conf.threshold_medium = 10
-        controller.et_detector.config = new_conf
 
         controller.start()
 
@@ -158,18 +158,20 @@ class TestScenarioReplay:
         config.privacy.mode = "normal"
         config.privacy.store_raw_mac = True
         config.capture.enable_channel_hop = False
+        config.detectors.enabled = ["deauth_flood"]
+        config.detectors.thresholds = {
+            "deauth_flood": {
+                "threshold_per_sec": 2.0,
+                "window_seconds": 1.0,
+                "cooldown_seconds": 0.0,
+                "state_file": str(test_env / "dos_state.json")
+            }
+        }
 
         controller = SensorController(config=config)
         controller.driver = PcapCaptureDriver(
             iface="test_mon", pcap_path=pcap_path, realtime=False
         )
-
-        # Configure thresholds
-        controller.dos_detector.threshold_per_sec = 2.0
-        controller.dos_detector.window_seconds = 1.0
-        controller.dos_detector.cooldown_seconds = 0.0
-        controller.dos_detector.state_file = str(test_env / "dos_state.json")
-        controller.dos_detector.last_alert.clear()
 
         controller.start()
 
