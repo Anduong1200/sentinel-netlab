@@ -10,6 +10,7 @@ from dashboard.components.sidebar import sidebar
 
 # Initialize Flask
 server = Flask(__name__)
+server.secret_key = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
 
 # Initialize Dash with Pages support
 app = dash.Dash(
