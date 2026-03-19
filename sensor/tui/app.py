@@ -37,6 +37,7 @@ from textual.widgets import (
 
 from sensor.config import Config, init_config
 from sensor.sensor_controller import SensorController
+from sensor.tui.bootstrap import load_tui_env
 from sensor.tui.config_store import (
     coerce_sensor_id,
     load_raw_config,
@@ -196,6 +197,7 @@ class SetupScreen(Screen):
                 # Pre-flight status
                 with Container(classes="setup-group"):
                     yield Label("🔍 PRE-FLIGHT CHECK", classes="setup-group-title")
+                    yield Label("", id="pf-env")
                     yield Label("", id="pf-wifi")
                     yield Label("", id="pf-controller")
 
@@ -275,6 +277,17 @@ class SetupScreen(Screen):
         sensor_id = coerce_sensor_id(
             defaults.get("sensor_id"),
             os.environ.get("SENSOR_ID", "tui-sensor-01"),
+        )
+
+        env_color = "green" if app.env_load_result.loaded else "yellow"
+        if app.env_load_result.loaded and app.env_load_result.path is not None:
+            env_text = app.env_load_result.path.name
+        elif app.env_load_result.path is not None:
+            env_text = f"{app.env_load_result.path.name} ({app.env_load_result.status})"
+        else:
+            env_text = app.env_load_result.status
+        self.query_one("#pf-env", Label).update(
+            f"Env: [{env_color}]{env_text}[/{env_color}]"
         )
 
         # Detect WiFi interfaces
@@ -551,6 +564,10 @@ class SentinelTUIApp(App):
         super().__init__()
         self.app_state = AppState()
         self.tui_config: dict = {}
+        self.env_load_result = load_tui_env(
+            PROJECT_ROOT,
+            os.environ.get("SENTINEL_ENV_FILE"),
+        )
         self.config_path = resolve_config_path(PROJECT_ROOT)
         self.saved_settings = load_saved_tui_settings(self.config_path)
         self.wardrive_path = resolve_wardrive_session_path(

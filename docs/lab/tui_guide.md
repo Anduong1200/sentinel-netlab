@@ -19,6 +19,7 @@ python -m sensor.tui
 ### Screen 1: Setup & Pre-flight Check
 
 When the TUI boots, it automatically:
+- **Loads repo `.env` defaults** from `.env` (or `sensor/.env`) when available
 - **Scans for WiFi interfaces** (`/sys/class/net/*/wireless`)
 - **Checks Controller status** (is the Docker lab online?)
 - **Loads previous configuration** from `config.yaml`
@@ -39,8 +40,11 @@ You then choose an operation mode:
 **Validation:** The TUI will **block start** if:
 - Live mode selected but no WiFi card detected
 - PCAP mode selected but file path is empty or invalid
+- Geo-Location enabled but Sensor X/Y coordinates are missing
 
 Press **F5** or click **START** to begin.
+
+Set `SENTINEL_ENV_FILE=/path/to/custom.env` before launch if you want the TUI to load a different env file.
 
 ### Screen 2: Live Dashboard (4 Panels)
 
