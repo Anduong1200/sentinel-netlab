@@ -76,13 +76,13 @@ class TransportClient:
             verify_ssl: Verify SSL certificates
             hmac_secret: Optional HMAC secret for payload signing
         """
-        self.upload_url = upload_url
-        self.auth_token = auth_token
-        self.timeout = timeout
-        self.max_retries = max_retries
-        self.initial_delay = initial_delay
-        self.backoff_factor = backoff_factor
-        self.max_delay = max_delay
+        self.upload_url: str = upload_url
+        self.auth_token: str = auth_token
+        self.timeout: int = timeout
+        self.max_retries: int = max_retries
+        self.initial_delay: float = initial_delay
+        self.backoff_factor: float = backoff_factor
+        self.max_delay: float = max_delay
         self.verify_ssl = verify_ssl
         self.hmac_secret = hmac_secret
 
@@ -119,11 +119,11 @@ class TransportClient:
                 base = self.upload_url.rsplit("/", 3)[0]  # remove /api/v1/telemetry
                 sync_url = f"{base}/api/v1/time"
 
-            import requests
+            import requests  # type: ignore
 
             response = requests.get(sync_url, timeout=10, verify=self.verify_ssl)
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 data = response.json()
                 server_time = data.get("unix_timestamp", time.time())
                 local_time = time.time()
@@ -147,9 +147,9 @@ class TransportClient:
     def _validate_batch(self, batch: dict[str, Any]) -> dict[str, Any] | None:
         """Validate batch against TelemetryBatch schema. Returns error dict or None."""
         try:
-            from pydantic import ValidationError
+            from pydantic import ValidationError  # type: ignore
 
-            from common.schemas.telemetry import TelemetryBatch
+            from common.schemas.telemetry import TelemetryBatch  # type: ignore
 
             TelemetryBatch(**batch)
         except ImportError:
@@ -163,11 +163,14 @@ class TransportClient:
         """Check circuit breaker state. Returns error dict if open, None if ok."""
         if not self._circuit_open:
             return None
-        if time.time() < self._circuit_reset_time:
+        reset_time = self._circuit_reset_time
+        if reset_time is None:
+            return None
+        if time.time() < reset_time:
             return {
                 "success": False,
                 "error": "Circuit breaker open",
-                "retry_after": self._circuit_reset_time - time.time(),
+                "retry_after": reset_time - time.time(),
             }
         # Half-open: reset and allow attempt
         self._circuit_open = False
@@ -234,7 +237,7 @@ class TransportClient:
         Returns:
             Response dict with success status and ack_id
         """
-        import requests
+        import requests  # type: ignore
 
         # 1. Validate
         validation_err = self._validate_batch(batch)
@@ -252,7 +255,7 @@ class TransportClient:
         payload_bytes, headers = self._prepare_payload(batch, compress)
 
         # Retry loop
-        delay = self.initial_delay
+        delay: float = self.initial_delay
         last_error = None
 
         for attempt in range(self.max_retries + 1):
@@ -281,7 +284,8 @@ class TransportClient:
                     retry_after = response.headers.get("Retry-After")
                     if retry_after:
                         try:
-                            delay = float(retry_after)
+                            parsed_delay = float(str(retry_after))
+                            delay = parsed_delay
                         except (ValueError, TypeError):
                             pass
                     last_error = "HTTP 429 (Rate Limit)"
@@ -303,7 +307,8 @@ class TransportClient:
                     retry_after = response.headers.get("Retry-After")
                     if retry_after:
                         try:
-                            delay = float(retry_after)
+                            parsed_delay = float(str(retry_after))
+                            delay = parsed_delay
                         except (ValueError, TypeError):
                             pass
                     last_error = "HTTP 503 (Backpressure)"
@@ -316,28 +321,32 @@ class TransportClient:
                     last_error = f"HTTP {response.status_code}"
                     logger.warning(f"Upload attempt {attempt + 1} failed: {last_error}")
 
-            except requests.exceptions.Timeout:
+            except requests.exceptions.Timeout:  # type: ignore
                 last_error = "Request timeout"
                 logger.warning(f"Upload timeout on attempt {attempt + 1}")
 
-            except requests.exceptions.ConnectionError as e:
-                last_error = f"Connection error: {str(e)[:100]}"
+            except requests.exceptions.ConnectionError as e:  # type: ignore
+                last_error = f"Connection error: {str(e)}"
                 logger.warning(f"Connection error on attempt {attempt + 1}")
 
             except Exception as e:
-                last_error = str(e)[:100]
+                last_error = str(e)
                 logger.error(f"Unexpected upload error: {e}")
 
             # Wait before retry
             if attempt < self.max_retries:
-                jitter = delay * 0.1 * (2 * (0.5 - time.time() % 1))  # Simple jitter
-                sleep_time = min(delay + jitter, self.max_delay)
+                current_delay: float = delay if delay is not None else 1.0
+                jitter = (
+                    current_delay * 0.1 * (2 * (0.5 - time.time() % 1))
+                )  # Simple jitter
+                sleep_time = min(current_delay + jitter, self.max_delay)
                 time.sleep(sleep_time)
-                delay *= self.backoff_factor
+                delay = current_delay * self.backoff_factor
 
         # All retries failed
-        self._on_failure(last_error)
-        return {"success": False, "error": last_error, "retries_exhausted": True}
+        error_msg = last_error if last_error is not None else "Unknown error"
+        self._on_failure(error_msg)
+        return {"success": False, "error": error_msg, "retries_exhausted": True}
 
     def _sign_payload(
         self,
@@ -377,7 +386,10 @@ class TransportClient:
 
     def _derive_sensor_key(self, sensor_id: str) -> bytes:
         """Derive per-sensor HMAC key from self.hmac_secret."""
-        return self._derive_sensor_key_from(self.hmac_secret, sensor_id)
+        secret = self.hmac_secret
+        if not secret:
+            return b""
+        return self._derive_sensor_key_from(secret, sensor_id)
 
     def _on_success(self) -> None:
         """Called on successful upload"""
@@ -409,7 +421,7 @@ class TransportClient:
         Returns:
             Response dict with success status
         """
-        import requests
+        import requests  # type: ignore
 
         # Construct alerts URL (replace /telemetry with /alerts)
         alerts_url = self.upload_url.replace("/telemetry", "/alerts")
@@ -453,7 +465,7 @@ class TransportClient:
                 verify=self.verify_ssl,
             )
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 logger.info(f"Alert uploaded successfully: {alert_data.get('title')}")
                 return {"success": True, "alert_id": response.json().get("alert_id")}
             else:
@@ -476,7 +488,7 @@ class TransportClient:
         Returns:
             Response with optional commands
         """
-        import requests
+        import requests  # type: ignore
 
         heartbeat_url = self.upload_url.replace("/telemetry", "/sensors/heartbeat")
         if "/sensors/heartbeat" not in heartbeat_url:
@@ -512,7 +524,7 @@ class TransportClient:
                 verify=self.verify_ssl,
             )
 
-            if response.status_code == 200:
+            if response.status_code in (200, 202):
                 return {
                     "success": True,
                     "commands": response.json().get("commands", []),
@@ -526,6 +538,11 @@ class TransportClient:
     def get_stats(self) -> dict[str, Any]:
         """Get transport statistics"""
         with self._lock:
+            last_upload = self._last_upload_time
+            last_upload_str = None
+            if last_upload is not None:
+                last_upload_str = last_upload.isoformat()
+
             return {
                 "uploads_total": self._uploads_total,
                 "uploads_success": self._uploads_success,
@@ -535,11 +552,7 @@ class TransportClient:
                     if self._uploads_total > 0
                     else 0
                 ),
-                "last_upload": (
-                    self._last_upload_time.isoformat()
-                    if self._last_upload_time
-                    else None
-                ),
+                "last_upload": last_upload_str,
                 "last_error": self._last_error,
                 "circuit_open": self._circuit_open,
                 "circuit_failures": self._circuit_failures,

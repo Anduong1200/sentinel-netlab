@@ -136,14 +136,14 @@ def update_map(n, filter_val):
             if filter_val == "WPA" and "WPA" not in sec:
                 continue
 
-            # Compute Color
-            color = "#00dbde"  # Cyan (Safe)
+            # Compute Category for color mapping
+            sec_type = "WPA"  # Cyan (Safe)
             if "WEP" in sec:
-                color = "#f7b733"  # Orange
+                sec_type = "WEP"  # Orange
             if "OPEN" in sec:
-                color = "#ff0844"  # Red
+                sec_type = "OPEN"  # Red
 
-            net["color"] = color
+            net["sec_type"] = sec_type
             net["risk"] = net.get("risk_score", 0)
             filtered_nets.append(net)
 
@@ -154,31 +154,17 @@ def update_map(n, filter_val):
 
         df = pd.DataFrame(filtered_nets)
 
-        # Plot
+        # Plot using sec_type for accurate coloring
         fig = px.scatter_mapbox(
             df,
             lat="lat",
             lon="lon",
-            hover_name="ssid",
-            hover_data=["bssid", "security", "channel", "risk"],
-            color_discrete_sequence=[df.iloc[0]["color"]]
-            if len(df) == 1
-            else df["color"],  # Simple hack, better to map
-            zoom=12,
-            height=600,
-        )
-
-        # Manually set colors scatter for multiple traces?
-        # px.scatter_mapbox with 'color' column requires careful mapping.
-        # Let's use graph_objects for precise control if needed, but PX is easier.
-        # PX with 'color_discrete_sequence' is tricky if we don't use 'color' dim.
-
-        # Better: Use 'risk' for color or 'security' category.
-        fig = px.scatter_mapbox(
-            df,
-            lat="lat",
-            lon="lon",
-            color="risk",  # Color by Risk Score
+            color="sec_type",
+            color_discrete_map={
+                "OPEN": "#ff0844",  # Red chấm đỏ
+                "WEP": "#f7b733",  # Orange
+                "WPA": "#00dbde",  # Cyan
+            },
             size="risk",  # Size by Risk Score
             size_max=15,
             hover_name="ssid",
@@ -188,8 +174,8 @@ def update_map(n, filter_val):
                 "bssid": True,
                 "security": True,
                 "risk": True,
+                "sec_type": False,
             },
-            color_continuous_scale=["#00dbde", "#ff0844"],  # Cyan -> Red
             mapbox_style="carto-darkmatter",
             zoom=12,
         )

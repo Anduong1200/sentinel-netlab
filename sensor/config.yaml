@@ -51,6 +51,12 @@ logging:
   format: "json" # json | text
   file: null # Log file path (null = stdout)
 
+# Detection Orchestrator
+detectors:
+  default_profile: "lite_realtime"  # lite_realtime | full_wids | audit_offline
+  # enabled: []  # Explicit list overrides profile
+  thresholds: {}  # Per-detector config overrides
+
 # Safety flags
 lab:
   allow_active_attacks: false
