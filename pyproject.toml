@@ -197,7 +197,10 @@ exclude = ["tests/", "venv/", ".venv/", "ml/", "dashboard/", "build/"]
 [[tool.mypy.overrides]]
 module = "scapy.*"
 ignore_missing_imports = true
-ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "requests"
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [

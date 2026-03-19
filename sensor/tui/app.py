@@ -67,11 +67,13 @@ def detect_wifi_interfaces() -> list[str]:
 def check_controller_online() -> bool:
     """Quick check if the Controller API is reachable."""
     try:
-        import requests
+        import urllib.request
 
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
-        resp = requests.get(f"{url}/api/v1/sensors", timeout=1)
-        return resp.status_code == 200
+        if not url.startswith(("http://", "https://")):
+            return False
+        resp = urllib.request.urlopen(f"{url}/api/v1/sensors", timeout=1)  # noqa: S310 # nosec B310
+        return bool(resp.getcode() == 200)
     except Exception:  # noqa: S110
         return False
 
@@ -277,7 +279,8 @@ class SetupScreen(Screen):
         anonymize = self.query_one("#chk-anon", Checkbox).value
 
         # Push config into app state
-        app: SentinelTUIApp = self.app  # type: ignore
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
         state = app.app_state
         state.mode = mode
         state.interface = iface if mode == "live" else "mock0"
@@ -343,7 +346,7 @@ class DashboardScreen(Screen):
             with Vertical(id="center-area"):
                 with Container(id="network-panel"):
                     yield Label("[b]📶  LIVE NETWORK FEED[/b]", classes="panel-title")
-                    table = DataTable(id="net-table")
+                    table: DataTable = DataTable(id="net-table")
                     table.cursor_type = "row"
                     table.zebra_stripes = True
                     yield table
@@ -377,19 +380,22 @@ class DashboardScreen(Screen):
         self.app.pop_screen()
 
     def action_toggle_pause(self) -> None:
-        app: SentinelTUIApp = self.app  # type: ignore
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
         app.log_paused = not app.log_paused
         status = "⏸ PAUSED" if app.log_paused else "▶ RESUMED"
         app.app_state.push_log(f"[System] Log scroll {status}")
 
     def action_force_channel_hop(self) -> None:
         """Force WiFi channel hop (sends signal to channel hopper)."""
-        app: SentinelTUIApp = self.app  # type: ignore
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
         app.app_state.push_log("[System] ⚡ Force channel hop requested")
 
     def action_mark_bssid(self) -> None:
         """Mark the currently selected BSSID as suspicious."""
-        app: SentinelTUIApp = self.app  # type: ignore
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
         try:
             table = self.query_one("#net-table", DataTable)
             row_key = table.cursor_row
@@ -413,7 +419,8 @@ class DashboardScreen(Screen):
 
     def action_graceful_quit(self) -> None:
         """Graceful shutdown with visual feedback."""
-        app: SentinelTUIApp = self.app  # type: ignore
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
         app._stop_event.set()
         app.push_screen(ShutdownModal())
 
@@ -669,7 +676,7 @@ class SentinelTUIApp(App):
                     break
 
             while table.row_count > 50:
-                table.remove_row(table.rows[next(iter(table.rows))])
+                table.remove_row(next(iter(table.rows)))
         except Exception:  # noqa: S110
             pass
 
