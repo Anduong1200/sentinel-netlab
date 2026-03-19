@@ -51,7 +51,6 @@ sidebar = html.Div(
                     [html.I(className="fas fa-cogs nav-icon"), "Audit"],
                     href="/dashboard/audit",
                     active="exact",
-                    disabled=True,
                 ),
             ],
             vertical=True,
