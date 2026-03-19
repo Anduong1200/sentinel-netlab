@@ -72,7 +72,7 @@ def check_controller_online() -> bool:
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
         if not url.startswith(("http://", "https://")):
             return False
-        resp = urllib.request.urlopen(f"{url}/api/v1/sensors", timeout=1)  # noqa: S310
+        resp = urllib.request.urlopen(f"{url}/api/v1/sensors", timeout=1)  # noqa: S310 # nosec B310
         return bool(resp.getcode() == 200)
     except Exception:  # noqa: S110
         return False
