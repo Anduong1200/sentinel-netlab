@@ -18,7 +18,7 @@ class PcapStream:
     def stream(self) -> Generator[dict[str, Any], None, None]:
         """Yields telemetry dicts."""
         try:
-            from scapy.all import (  # type: ignore[attr-defined]
+            from scapy.all import (
                 Dot11,
                 Dot11Beacon,
                 Dot11Elt,
