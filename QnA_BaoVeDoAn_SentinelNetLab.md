@@ -158,7 +158,14 @@ Dự án giải quyết bằng cách áp dụng **Dependency Injection (Mocking)
 2. **Nén (Compression):** Nén bằng thuật toán `gzip` để tiết kiệm băng thông khi truyền qua mạng (nhất là mạng di động/4G cho Sensor xa).
 3. **Chữ ký điện tử (Signature):** Máy chủ tính mã băm HMAC-SHA256 trên nội dung gói tin nén cộng với `X-Timestamp` để chống lại tấn công Replay (phát lại) và giả mạo dữ liệu.
 
-**Câu 35: Nếu nâng cấp hệ thống trong tương lai, em sẽ cải thiện điều gì?**
+**Câu 35: (Siêu Khó) Đảm bảo tính sẵn sàng cao (High Availability), hệ thống Sentinel NetLab thiết kế cơ chế tự phục hồi (Auto-recovery) như thế nào khi gặp sự cố?**
+**Trả lời:** Hệ thống có thiết kế chống chịu lỗi (fault-tolerant) trên 4 cấp độ:
+1. **Cấp độ Process (Tiến trình):** Sensor dùng `Systemd` (Restart=on-failure, có delay 5s chống bão restart), còn Controller dùng `Docker Compose` (restart: unless-stopped) kết hợp Healthchecks.
+2. **Cấp độ Application (Ứng dụng):** Sensor áp dụng mô hình "Fail-fast". Nó liên tục kiểm tra trạng thái Monitor mode và luồng gói tin đến. Nếu phát hiện card mạng bị treo (không có gói mới trong 30s), tiến trình sẽ tự chủ động thoát (crash) để ép Systemd khởi động lại toàn bộ sạch sẽ.
+3. **Cấp độ Hardware (Phần cứng):** Có module `USBWatchdog` giám sát card mạng rời. Nếu nhận thấy USB WiFi bị ngắt/lỗi, nó tự động khôi phục driver mạng (modprobe -r và modprobe) mà không cần con người can thiệp.
+4. **Cấp độ Data (Khôi phục Dữ liệu):** Sử dụng hàng đợi Persistent Queue (SQLite Spool) lưu tạm dữ liệu. Nếu rớt mạng hoặc crash giữa chừng lúc gửi, các gói tin "inflight" sẽ được phục hồi và gửi lại (drain backlog) khi hệ thống kết nối lại.
+
+**Câu 36: Nếu nâng cấp hệ thống trong tương lai, em sẽ cải thiện điều gì?**
 **Trả lời:** (Gợi ý trả lời)
 1. Thêm hỗ trợ phân tích khung bảo mật WPA3 PMF (Protected Management Frames), vì hiện tại PMF mã hóa khung quản lý khiến việc bắt gói tin thụ động gặp khó khăn.
 2. Tối ưu hóa mô hình ML chạy trực tiếp trên các chip NPU/TPU nhúng của Raspberry Pi.
