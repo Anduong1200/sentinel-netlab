@@ -199,3 +199,36 @@ Dự án giải quyết bằng cách áp dụng **Dependency Injection (Mocking)
 2. Tối ưu hóa mô hình ML chạy trực tiếp trên các chip NPU/TPU nhúng của Raspberry Pi.
 3. Cải thiện độ chính xác tính năng định vị vị trí địa lý của nguồn tấn công (Geo-Location trilateration) trực tiếp trên bản đồ web.
 4. Triển khai Kafka thay cho REST API nếu quy mô lên đến hàng nghìn cảm biến.
+
+---
+
+## Phần 7: Dữ liệu Thực nghiệm & Đánh giá Báo cáo Đồ án (Capstone Project)
+
+**Câu 44: Mặc dù đã có các cơ chế bảo mật mạnh mẽ như WPA2-AES hay WPA3, tại sao mạng WiFi vẫn tồn tại lỗ hổng cho các cuộc tấn công nhắm vào tính sẵn sàng (Deauth Flood)?**
+**Trả lời:** Điểm yếu chí mạng của chuẩn 802.11 b/g/n (và thường cả ac) nằm ở việc thiếu cơ chế xác thực gốc cho "Management Frames" (Khung quản lý). Những khung như Deauthentication, Probe Request, Beacon được truyền dưới dạng bản rõ (cleartext). Do đó, kể cả Data Plane có mã hóa WPA3 mạnh đến đâu, kẻ tấn công vẫn có thể giả mạo (MAC Spoofing) các khung quản lý này để gây ngắt kết nối.
+
+**Câu 45: Tại sao WIDS lại vượt trội hơn Firewall truyền thống trong việc phát hiện tấn công WiFi?**
+**Trả lời:** Firewall truyền thống thường hoạt động ở Tầng 3 (Network Layer - IP) trở lên và hoàn toàn "mù" trước các bất thường xảy ra ở Tầng 2 (Data Link Layer) của môi trường sóng vô tuyến (Radio). WIDS bắt gói tin trực tiếp ở Tầng 2 nên có thể phát hiện các hành vi dò tìm (Probe), nhân bản BSSID (Evil Twin) hay ngắt kết nối (Deauth) mà Firewall không thể nhìn thấy.
+
+**Câu 46: Trong quá trình đánh giá (Benchmark), các chỉ số Precision, Recall và F1-Score mang ý nghĩa gì?**
+**Trả lời:**
+- **Precision:** Tỉ lệ phát hiện đúng (Bao nhiêu % trong số các cảnh báo hệ thống phát ra là tấn công thật sự).
+- **Recall:** Tỉ lệ bắt trúng (Hệ thống không bỏ lọt bao nhiêu % trong tổng số các cuộc tấn công đã xảy ra).
+- **F1-Score:** Là trung bình điều hòa của Precision và Recall, đặc biệt quan trọng trong tập dữ liệu mất cân bằng (imbalanced) khi số lượng gói tin "Benign" (Bình thường) nhiều gấp hàng triệu lần số lượng gói tin tấn công.
+
+**Câu 47: (Quan trọng) Chỉ số FPR (False Positive Rate) là gì và tại sao "Very Low FPR" (Tỉ lệ báo động giả rất thấp) là yếu tố sống còn của một WIDS?**
+**Trả lời:** FPR là tỉ lệ hệ thống nhận diện nhầm một hành vi hợp lệ thành một cuộc tấn công. Nếu FPR cao, hệ thống sẽ gây ra "Alert Fatigue" (Hội chứng kiệt sức vì báo động) khiến người quản trị bỏ qua hoặc tắt luôn WIDS. Kiến trúc Hybrid của Sentinel đạt FPR rất thấp nhờ việc "xác thực chéo" (cross-referencing) giữa luật tĩnh và các chỉ số vật lý như tín hiệu (RSSI) và phần cứng (OUI).
+
+**Câu 48: Bộ dữ liệu (Test Dataset) để kiểm thử hệ thống được xây dựng như thế nào?**
+**Trả lời:** Để đảm bảo tính khách quan và kiểm thử trên mọi môi trường độc lập, dự án dùng:
+- **Golden/Synthetic PCAP:** Các file ghi lại gói tin chứa kịch bản tấn công kinh điển (Deauth, Evil Twin) để mô phỏng.
+- **Sample Labeled Dataset:** Tập dữ liệu có dán nhãn (Benign, rogue_ap, evil_twin, deauth_flood) trích xuất trực tiếp từ các bài test chạy trên Lab để đo đạc độ chính xác của ML và Rules.
+
+**Câu 49: So sánh hiệu năng của 3 phương pháp tiếp cận: Rule-only, ML-only và Hybrid (Lai ghép)?**
+**Trả lời:** Dựa trên kết quả thực nghiệm:
+- **Rule-only:** Precision cao, bắt rất nhanh các dạng tấn công đã biết (MDK4 Deauth) nhưng Recall trung bình vì dễ bỏ lọt các biến thể tấn công mới.
+- **ML-only:** Recall cao vì tìm ra được bất thường Zero-day, nhưng Precision thấp và FPR (báo động giả) cao vì mọi biến động nhiễu sóng hợp lệ đều bị coi là bất thường.
+- **Hybrid (Đề xuất):** Giao thoa điểm mạnh. Tốc độ của Rule cộng với chiều sâu phân tích của ML (cùng kiểm tra dấu vân tay vật lý RSSI/BSSID) đem lại F1-Score rất cao và FPR cực thấp.
+
+**Câu 50: Yếu tố MTTD (Mean Time To Detect) trong dự án đạt được là bao nhiêu và được tối ưu nhờ thiết kế nào?**
+**Trả lời:** Hệ thống đạt MTTD rất thấp (độ trễ dưới 1 giây - sub-second thresholds). Điều này có được là nhờ kiến trúc Edge Computing: Thay vì phải đóng gói toàn bộ Raw PCAP gửi về Backend gây nghẽn cổ chai mạng, việc phân tích, trích xuất đặc trưng và đối chiếu luật diễn ra ngay tại Raspberry Pi (Sensor), sau đó chỉ tải một khối lượng nhỏ metadata (JSON) về Controller để hiển thị cảnh báo ngay lập tức.
