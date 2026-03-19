@@ -25,8 +25,6 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -149,8 +147,9 @@ class TransportClient:
     def _validate_batch(self, batch: dict[str, Any]) -> dict[str, Any] | None:
         """Validate batch against TelemetryBatch schema. Returns error dict or None."""
         try:
-            from common.schemas.telemetry import TelemetryBatch  # type: ignore
             from pydantic import ValidationError  # type: ignore
+
+            from common.schemas.telemetry import TelemetryBatch  # type: ignore
 
             TelemetryBatch(**batch)
         except ImportError:
