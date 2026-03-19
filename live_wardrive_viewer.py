@@ -1,12 +1,11 @@
 import json
 import logging
 from pathlib import Path
-import traceback
 
 import dash
-from dash import dcc, html, Input, Output, dash_table
 import pandas as pd
 import plotly.express as px
+from dash import Input, Output, dash_table, dcc, html
 
 # Configuration
 DATA_FILE = "wardrive_session.json"
@@ -127,7 +126,7 @@ def load_data():
         )
 
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             data = json.load(f)
             return data, None
     except json.JSONDecodeError:
