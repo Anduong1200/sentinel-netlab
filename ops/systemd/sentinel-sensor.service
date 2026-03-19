@@ -19,10 +19,10 @@ WorkingDirectory=/opt/sentinel
 EnvironmentFile=/etc/sentinel/sensor.env
 
 # Fail-fast: app nên tự kiểm tra token/secret thiếu -> exit 2
-# Chạy entrypoint chuẩn của repo (ưu tiên sentinel.py nếu repo dùng file này)
-ExecStart=/opt/sentinel/.venv/bin/python /opt/sentinel/sentinel.py sensor --config /etc/sentinel/sensor.yaml
+# Chạy entrypoint chuẩn của repo (ưu tiên scripts/sentinel.py nếu repo dùng file này)
+ExecStart=/opt/sentinel/.venv/bin/python /opt/sentinel/scripts/sentinel.py sensor --config /etc/sentinel/sensor.yaml
 
-# Nếu repo của bạn dùng module entrypoint thay vì sentinel.py, dùng dòng dưới:
+# Nếu repo của bạn dùng module entrypoint thay vì scripts/sentinel.py, dùng dòng dưới:
 # ExecStart=/opt/sentinel/.venv/bin/python -m sensor.main --config /etc/sentinel/sensor.yaml
 
 # --- Self-heal policy (quan trọng) ---

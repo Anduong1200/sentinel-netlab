@@ -41,7 +41,7 @@ services:
     image: ghcr.io/anduong1200/sentinel-controller:${VERSION:-latest}
     container_name: sentinel-controller
     restart: unless-stopped
-    command: python sentinel.py controller
+    command: python scripts/sentinel.py controller
     
     environment:
       <<: *common-env
