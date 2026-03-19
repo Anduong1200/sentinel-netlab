@@ -47,19 +47,20 @@ from sensor.tui.config_store import (
     resolve_config_path,
     validate_tui_settings,
 )
-from sensor.tui.wardrive_store import (
-    WardriveSnapshot,
-    load_wardrive_snapshot,
-    resolve_wardrive_session_path,
-)
 from sensor.tui.state_manager import (
     AlertEntry,
     AppState,
     NetworkEntry,
     TUILogHandler,
 )
+from sensor.tui.wardrive_store import (
+    WardriveSnapshot,
+    load_wardrive_snapshot,
+    resolve_wardrive_session_path,
+)
 
 # ─── Constants ───────────────────────────────────────────────────────────────
+logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
 REFRESH_INTERVAL = 0.8  # seconds
 
@@ -780,7 +781,7 @@ class SentinelTUIApp(App):
         try:
             self.app_state.update_from_status(controller.status())
         except Exception:
-            pass
+            logger.debug("Failed to sync controller status", exc_info=True)
 
     def force_channel_hop(self) -> bool:
         controller = self._controller

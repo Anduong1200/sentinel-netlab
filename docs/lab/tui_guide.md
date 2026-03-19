@@ -7,12 +7,80 @@ The **Sentinel NetLab TUI** (Text-based User Interface) is a professional termin
 ## Quick Start
 
 ```bash
+# From the project root
+cd /home/m1nkvpm/Desktop/ancongchuacute123/sentinel-netlab
+
 # Activate virtual environment
 source venv/bin/activate
+
+# Install dependencies if needed
+pip install -e .
 
 # Launch the TUI
 python -m sensor.tui
 ```
+
+## Practical Usage
+
+### Before You Start
+
+- Run from the **project root** so the TUI can find `config.yaml` and `wardrive_session.json`
+- Activate the same virtual environment used by the repo
+- If `textual` or `python-dotenv` is missing, install project dependencies first with `pip install -e .`
+
+### Typical Workflows
+
+**1. Quick UI / pipeline check without hardware**
+
+```bash
+source venv/bin/activate
+python -m sensor.tui
+```
+
+Then choose **Mock / Test** and press **F5**.
+
+**2. Live capture with a real WiFi interface**
+
+```bash
+source venv/bin/activate
+python -m sensor.tui
+```
+
+Then choose **Live Combat**, set your real interface (for example `wlan0mon`), and press **F5**.
+
+**3. Replay a saved PCAP**
+
+```bash
+source venv/bin/activate
+python -m sensor.tui
+```
+
+Then choose **PCAP Replay**, enter the `.pcap` path, and press **F5**.
+
+### Optional Environment Overrides
+
+Use a custom env file:
+
+```bash
+SENTINEL_ENV_FILE=/path/to/custom.env python -m sensor.tui
+```
+
+Watch a different wardrive session file:
+
+```bash
+WARDRIVE_SESSION_FILE=/path/to/wardrive_session.json python -m sensor.tui
+```
+
+### Pairing With Wardrive Mode
+
+If you want the `Wardrive / GPS` panel to show live data, run wardrive in another terminal:
+
+```bash
+source venv/bin/activate
+python sensor/wardrive.py --sensor-id mobile-01 --iface wlan1 --output wardrive_session.json
+```
+
+The TUI will follow `wardrive_session.json` automatically when it exists in the project root.
 
 ## Screen Flow
 

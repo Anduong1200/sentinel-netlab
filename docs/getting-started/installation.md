@@ -168,6 +168,7 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
         --upload-url "http://<CONTROLLER_IP>:5000/api/v1/telemetry"
     ```
     *Note: `sudo` is required to control the network interface.*
+    *If you prefer the terminal dashboard flow instead of raw CLI flags, see [`docs/lab/tui_guide.md`](../lab/tui_guide.md) and run `python -m sensor.tui`.*
 
 3.  **Verify**:
     You should see logs indicating frames captured and batches uploaded.

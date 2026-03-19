@@ -23,6 +23,7 @@ def test_resolve_prefers_real_config(tmp_path: Path):
 
 def test_persist_tui_settings_creates_project_config(tmp_path: Path):
     example = tmp_path / "config.example.yaml"
+    sample_pcap = tmp_path / "sample.pcap"
     example.write_text("sensor:\n  id: demo\n")
 
     target = persist_tui_settings(
@@ -32,7 +33,7 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
             "mode": "pcap",
             "sensor_id": "lab-01",
             "interface": "wlan1mon",
-            "pcap_path": "/tmp/sample.pcap",
+            "pcap_path": str(sample_pcap),
             "ml_enabled": True,
             "geo_enabled": False,
             "anonymize": True,
@@ -43,7 +44,7 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
     data = yaml.safe_load(target.read_text())
     assert data["sensor"]["id"] == "lab-01"
     assert data["capture"]["interface"] == "wlan1mon"
-    assert data["capture"]["pcap_file"] == "/tmp/sample.pcap"
+    assert data["capture"]["pcap_file"] == str(sample_pcap)
     assert data["mock_mode"] is False
     assert data["ml"]["enabled"] is True
     assert data["privacy"]["anonymize_ssid"] is True
