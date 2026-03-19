@@ -142,10 +142,7 @@ def persist_tui_settings(
 
 
 def _choose_write_target(project_root: Path, current_config_path: Path | None) -> Path:
-    if (
-        current_config_path is None
-        or current_config_path.name == "config.example.yaml"
-    ):
+    if current_config_path is None or current_config_path.name == "config.example.yaml":
         return project_root / "config.yaml"
     return current_config_path
 
@@ -217,9 +214,7 @@ def validate_tui_settings(
             return "Geo coordinates must be valid numbers (meters)."
 
         if x_coord is None or y_coord is None:
-            return (
-                "Geo-Location requires Sensor X/Y coordinates before startup."
-            )
+            return "Geo-Location requires Sensor X/Y coordinates before startup."
 
     return None
 

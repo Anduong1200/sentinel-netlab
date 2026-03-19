@@ -95,7 +95,9 @@ def check_controller_online() -> bool:
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
         if not url.startswith(("http://", "https://")):
             return False
-        resp = urllib.request.urlopen(f"{url}/api/v1/sensors", timeout=1)  # noqa: S310 # nosec B310
+        resp = urllib.request.urlopen(  # noqa: S310 # nosec B310
+            f"{url}/api/v1/sensors", timeout=1
+        )
         return bool(resp.getcode() == 200)
     except Exception:  # noqa: S110
         return False
@@ -398,7 +400,9 @@ class SetupScreen(Screen):
         state.reset_session(mode=mode, sensor_id=sensor_id, interface=runtime_iface)
 
         app.tui_config = tui_settings
-        app.config_path = persist_tui_settings(PROJECT_ROOT, app.config_path, app.tui_config)
+        app.config_path = persist_tui_settings(
+            PROJECT_ROOT, app.config_path, app.tui_config
+        )
         app.saved_settings = load_saved_tui_settings(app.config_path)
         app.app_state.push_log(f"[System] Saved config to {app.config_path.name}")
 
@@ -851,14 +855,17 @@ class SentinelTUIApp(App):
         # ── System Health ──
         try:
             screen.query_one("#sys-cpu", Label).update(
-                f"CPU:    [{self._color_pct(state.cpu_percent)}]{state.cpu_percent:.0f}%[/]"
+                f"CPU:    [{self._color_pct(state.cpu_percent)}]"
+                f"{state.cpu_percent:.0f}%[/]"
             )
             screen.query_one("#sys-mem", Label).update(
-                f"RAM:    [{self._color_pct(state.mem_percent)}]{state.mem_percent:.0f}%[/]"
+                f"RAM:    [{self._color_pct(state.mem_percent)}]"
+                f"{state.mem_percent:.0f}%[/]"
             )
             screen.query_one("#sys-usb", Label).update(
                 (
-                    f"USB:    [{'red' if 'Disconnected' in state.usb_status else 'green'}]"
+                    "USB:    "
+                    f"[{'red' if 'Disconnected' in state.usb_status else 'green'}]"
                     f"{state.usb_status or state.interface}[/]"
                 )
                 if state.running
@@ -889,7 +896,8 @@ class SentinelTUIApp(App):
                 f"Open: [{'red' if state.sec_open else 'green'}]{state.sec_open}[/]"
             )
             screen.query_one("#sec-wep", Label).update(
-                f"WEP:  [{'dark_orange' if state.sec_wep else 'green'}]{state.sec_wep}[/]"
+                f"WEP:  [{'dark_orange' if state.sec_wep else 'green'}]"
+                f"{state.sec_wep}[/]"
             )
             screen.query_one("#sec-wpa2", Label).update(
                 f"WPA2: [cyan]{state.sec_wpa2}[/cyan]"
@@ -903,7 +911,8 @@ class SentinelTUIApp(App):
                 f"ID:    [cyan]{state.sensor_id}[/cyan]"
             )
             screen.query_one("#sen-mode", Label).update(
-                f"Mode:  [{'green' if state.running else 'yellow'}]{state.mode.upper()}[/]"
+                f"Mode:  [{'green' if state.running else 'yellow'}]"
+                f"{state.mode.upper()}[/]"
             )
             screen.query_one("#sen-iface", Label).update(
                 f"Iface: {state.interface}  [dim]{state.channel_current}[/dim]"
@@ -916,10 +925,16 @@ class SentinelTUIApp(App):
 
         # ── Wardrive / GPS ──
         try:
+            waiting_for_wardrive = "Waiting" in wardrive.status
+            wardrive_updating = "updating" in wardrive.status.lower()
             status_color = (
                 "green"
                 if wardrive.recent_sightings
-                else ("yellow" if "Waiting" in wardrive.status or "updating" in wardrive.status.lower() else "red")
+                else (
+                    "yellow"
+                    if waiting_for_wardrive or wardrive_updating
+                    else "red"
+                )
             )
             screen.query_one("#wardrive-status", Label).update(
                 f"Status: [{status_color}]{wardrive.status}[/{status_color}]"
@@ -935,7 +950,8 @@ class SentinelTUIApp(App):
                 f"GPS [cyan]{wardrive.gps_points}[/cyan]"
             )
             screen.query_one("#wardrive-last-fix", Label).update(
-                f"Last: [dim]{wardrive.last_update}[/dim]  Fix: [cyan]{wardrive.last_fix}[/cyan]"
+                f"Last: [dim]{wardrive.last_update}[/dim]  "
+                f"Fix: [cyan]{wardrive.last_fix}[/cyan]"
             )
 
             if wardrive.recent_sightings:
@@ -1026,7 +1042,8 @@ class SentinelTUIApp(App):
 
                     alert_log.write(
                         Text.from_markup(
-                            f"[dim]{debounced.timestamp}[/dim] [{sev_color}]🚨 {debounced.severity.upper()}[/{sev_color}] "
+                            f"[dim]{debounced.timestamp}[/dim] "
+                            f"[{sev_color}]🚨 {debounced.severity.upper()}[/{sev_color}] "
                             f"{debounced.title}: {debounced.description[:80]}"
                         )
                     )

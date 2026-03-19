@@ -22,7 +22,12 @@ def test_systemd_units_use_supported_sensor_entrypoint():
 
 def test_unified_script_monitor_command_loads_cli_help():
     result = subprocess.run(
-        [sys.executable, str(PROJECT_ROOT / "scripts" / "sentinel.py"), "monitor", "--help"],
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "scripts" / "sentinel.py"),
+            "monitor",
+            "--help",
+        ],
         capture_output=True,
         text=True,
         cwd=PROJECT_ROOT,

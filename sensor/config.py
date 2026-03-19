@@ -239,9 +239,7 @@ class ConfigManager:
             apply_section(
                 self.config.capture,
                 data["capture"],
-                aliases={
-                    "dwell_ms": ("dwell_time", lambda v: float(v) / 1000.0),
-                },
+                aliases={"dwell_ms": ("dwell_time", lambda v: float(v) / 1000.0)},
             )
 
         if "storage" in data:
@@ -254,9 +252,7 @@ class ConfigManager:
             apply_section(
                 self.config.api,
                 data["transport"],
-                aliases={
-                    "auth_token": "api_key",
-                },
+                aliases={"auth_token": "api_key"},
             )
 
         if "risk" in data:

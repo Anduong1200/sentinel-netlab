@@ -340,7 +340,9 @@ class SensorController:
         self._heartbeat_thread.start()
 
         # Start lightweight self-check loop for live capture.
-        if not self.config.mock_mode and not getattr(self.config.capture, "pcap_file", None):
+        if not self.config.mock_mode and not getattr(
+            self.config.capture, "pcap_file", None
+        ):
             self._start_usb_watchdog()
             self._self_check_thread = threading.Thread(
                 target=self._self_check_loop,

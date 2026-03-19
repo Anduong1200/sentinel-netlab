@@ -186,6 +186,59 @@ When pressing **Q** on the Dashboard, the TUI does NOT exit immediately. It show
 
 This ensures no data is lost during shutdown.
 
+## Troubleshooting
+
+### `ModuleNotFoundError: No module named 'yaml'`
+
+Your current virtual environment is missing TUI runtime dependencies.
+
+```bash
+cd /home/m1nkvpm/Desktop/ancongchuacute123/sentinel-netlab
+source venv/bin/activate
+pip install -e .[sensor]
+python -m sensor.tui
+```
+
+If you only want the minimal quick fix:
+
+```bash
+pip install PyYAML python-dotenv textual
+python -m sensor.tui
+```
+
+### `ModuleNotFoundError: No module named 'textual'`
+
+Install the TUI package set in the active venv:
+
+```bash
+source venv/bin/activate
+pip install -e .[sensor]
+```
+
+### `ModuleNotFoundError: No module named 'dotenv'`
+
+The TUI can still run without loading `.env`, but the recommended fix is:
+
+```bash
+source venv/bin/activate
+pip install -e .[sensor]
+```
+
+### TUI starts but `Wardrive / GPS` is empty
+
+The panel only shows live data when a wardrive session file exists. Start wardrive in another terminal:
+
+```bash
+source venv/bin/activate
+python sensor/wardrive.py --sensor-id mobile-01 --iface wlan1 --output wardrive_session.json
+```
+
+Or point the TUI to another file:
+
+```bash
+WARDRIVE_SESSION_FILE=/path/to/wardrive_session.json python -m sensor.tui
+```
+
 ## Architecture
 
 ```
