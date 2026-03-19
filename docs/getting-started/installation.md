@@ -160,6 +160,9 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
     ```bash
     # Ensure you are in venv
     source venv/bin/activate
+
+    # Install runtime dependencies if this is a fresh venv
+    pip install -e .[sensor]
     
     # Run via legacy unified entry point (or use TUI: python -m sensor.tui)
     sudo ./venv/bin/python scripts/sentinel.py monitor \

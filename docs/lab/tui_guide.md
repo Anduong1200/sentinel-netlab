@@ -13,8 +13,8 @@ cd /home/m1nkvpm/Desktop/ancongchuacute123/sentinel-netlab
 # Activate virtual environment
 source venv/bin/activate
 
-# Install dependencies if needed
-pip install -e .
+# Install dependencies
+pip install -e .[sensor]
 
 # Launch the TUI
 python -m sensor.tui
@@ -26,7 +26,7 @@ python -m sensor.tui
 
 - Run from the **project root** so the TUI can find `config.yaml` and `wardrive_session.json`
 - Activate the same virtual environment used by the repo
-- If `textual` or `python-dotenv` is missing, install project dependencies first with `pip install -e .`
+- If TUI dependencies are missing, refresh the environment with `pip install -e .[sensor]`
 
 ### Typical Workflows
 
