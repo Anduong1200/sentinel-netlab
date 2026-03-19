@@ -25,7 +25,7 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-import requests  # type: ignore
+
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +149,8 @@ class TransportClient:
     def _validate_batch(self, batch: dict[str, Any]) -> dict[str, Any] | None:
         """Validate batch against TelemetryBatch schema. Returns error dict or None."""
         try:
-            from pydantic import ValidationError  # type: ignore
             from common.schemas.telemetry import TelemetryBatch  # type: ignore
+            from pydantic import ValidationError  # type: ignore
 
             TelemetryBatch(**batch)
         except ImportError:
@@ -541,7 +541,7 @@ class TransportClient:
             last_upload_str = None
             if last_upload is not None:
                 last_upload_str = last_upload.isoformat()
-                
+
             return {
                 "uploads_total": self._uploads_total,
                 "uploads_success": self._uploads_success,
