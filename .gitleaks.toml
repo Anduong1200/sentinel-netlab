@@ -41,4 +41,6 @@ regexes = [
     '''SENSOR_AUTH_TOKEN.*test_token''',
     '''CONTROLLER_SECRET_KEY.*super_secret''',
     '''CONTROLLER_HMAC_SECRET.*super_hmac''',
+    '''DUMMY_TOKEN_NOT_FOR_PRODUCTION_123''',
+    '''DUMMY_SECRET_NOT_FOR_PRODUCTION_123''',
 ]
