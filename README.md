@@ -58,7 +58,7 @@ Sentinel NetLab is a distributed wireless intrusion detection system designed fo
 ```
 sentinel-netlab/
 ├── sensor/                     # 🔊 Capture Agent
-│   ├── sensor_cli.py          # Unified entry point & CLI
+│   ├── cli.py                 # Unified entry point & CLI
 │   ├── sensor_controller.py   # Main orchestrator
 │   ├── capture_driver.py      # Monitor mode driver
 │   ├── capture_tshark.py      # High-performance tshark engine
@@ -71,7 +71,8 @@ sentinel-netlab/
 │   ├── geo_mapping.py         # Trilateration & heatmaps
 │   ├── wardrive.py            # GPS-correlated wardriving CLI
 │   ├── audit.py               # Security audit CLI
-│   └── schema/                # JSON schemas
+│   ├── schema/                # JSON schemas
+│   └── tui/                   # 🖥️ Terminal Control Panel
 │
 ├── algos/                      # 🧠 Detection Algorithms
 │   ├── evil_twin.py           # Evil Twin V2
@@ -110,7 +111,7 @@ sentinel-netlab/
 │
 ├── dashboard/                  # 📊 Web UI (Dash Multi-Page App)
 │   ├── app.py                 # Entry point
-│   ├── pages/                 # overview, map, threats, signals
+│   ├── pages/                 # overview, map, threats, signals, audit
 │   └── components/            # sidebar, cards
 │
 ├── ml/                         # 🧠 Machine Learning
@@ -142,6 +143,13 @@ sentinel-netlab/
 │   ├── sample_telemetry.json  # Telemetry example
 │   └── sample_alert.json      # Alert example
 │
+├── scripts/                    # 🛠️ Helper Scripts
+│   ├── sentinel-setup.sh      # Interactive setup wizard
+│   └── sentinel.py            # Legacy unified entry point
+│
+├── tools/                      # 🔧 Standalone Utilities
+│   └── live_wardrive_viewer.py # Dash Wardrive Viewer
+│
 ├── pyproject.toml              # Modern Python build config
 └── Makefile                    # Build/test commands
 ```
@@ -157,7 +165,7 @@ git clone https://github.com/anduong1200/sentinel-netlab.git
 cd sentinel-netlab
 
 # Option 1: Interactive GUI Setup (Recommended)
-bash sentinel-setup.sh
+bash scripts/sentinel-setup.sh
 
 # Option 2: Manual Makefile (Advanced)
 make lab-up

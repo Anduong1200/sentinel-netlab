@@ -161,8 +161,8 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
     # Ensure you are in venv
     source venv/bin/activate
     
-    # Run via unified entry point
-    sudo ./venv/bin/python sentinel.py monitor \
+    # Run via legacy unified entry point (or use TUI: python -m sensor.tui)
+    sudo ./venv/bin/python scripts/sentinel.py monitor \
         --sensor-id "sensor-01" \
         --iface wlan1 \
         --upload-url "http://<CONTROLLER_IP>:5000/api/v1/telemetry"

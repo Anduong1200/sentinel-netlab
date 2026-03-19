@@ -42,6 +42,7 @@ Sentinel NetLab is a specialized platform for WiFi security research and intrusi
 *   **[Hardware & Software Requirements](reference/hardware_requirements.md)**: Detailed specs for CPU, RAM, OS Kernel, Storage, and Virtual Machines.
 *   **[Database Schema](reference/schema.md)**: Data models and schema definitions.
 *   **[Detection Pipeline](detection/overview.md)**: 11-detector architecture and pipeline diagram.
+*   **[TUI Command Center](lab/tui_guide.md)**: Terminal dashboard user guide and architecture.
 *   **[Legal & Ethics](reference/legal_ethics.md)**: Authorization, consent, and data handling.
 
 ---

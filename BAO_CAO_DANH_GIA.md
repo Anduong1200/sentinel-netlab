@@ -178,7 +178,7 @@
 
 *   **D. Lập bản đồ mạng di động (Wardriving)**:
     *   *Lệnh thực thi*: `python sensor/wardrive.py --iface wlan0mon --output session.json`
-    *   *Kết quả kỳ vọng*: File `session.json` sinh ra với danh sách các mạng, toạ độ, chuẩn mã hóa. File này có thể import lên giao diện Live Viewer (`live_wardrive_viewer.py`) để quan sát ngoại tuyến.
+    *   *Kết quả kỳ vọng*: File `session.json` sinh ra với danh sách các mạng, toạ độ, chuẩn mã hóa. File này có thể import lên giao diện Live Viewer (`tools/live_wardrive_viewer.py`) để quan sát ngoại tuyến.
 
 *   **E. Công cụ Kiểm toán Bảo mật (Audit)**:
     *   *Lệnh thực thi*: `python sensor/audit.py --profile home --output report.json`
