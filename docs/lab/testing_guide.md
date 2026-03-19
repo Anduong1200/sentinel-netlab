@@ -190,3 +190,19 @@ docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml ps
   # [QUAN TRỌNG] Gọi sudo kèm đường dẫn python CỦA VENV thay vì gõ python không!
   sudo venv/bin/python sensor/wardrive.py --sensor-id alfa-01 --iface wlan0 --output wardrive_session.json
   ```
+
+---
+
+## Phụ lục: Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+
+Nếu bạn chuẩn bị demo dự án trước hội đồng kiểm định, hãy sử dụng kịch bản thao tác Dashboard sau nhằm phô diễn tối đa các tính năng Real-time và tối ưu luồng dữ liệu:
+
+*   **Mục đích**: Trình diễn Dashboard cập nhật tự động (Real-time), hệ thống Audit Log và công cụ trực quan hóa vị trí (Heatmap).
+*   **Thao tác**:
+    1.  Mở trình duyệt, truy cập Dashboard: `http://localhost:8050/dashboard/` (hoặc `http://127.0.0.1:8080/dashboard/` qua proxy).
+    2.  Vào Tab **Overview**, chỉ cho hội đồng xem các thẻ `Card` (Tổng số mạng, Cảnh báo). Giải thích rằng nhờ cơ chế `dcc.Interval` trong code, các số này tự động làm mới **mỗi 3 giây** (đứng yên không cần F5 trình duyệt).
+    3.  Chuyển sang Tab **Global Map** trên thanh điều hướng bên trái.
+    4.  Nhấp vào thanh xổ xuống (Dropdown) góc trên bên phải, chọn lọc `"Open / Insecure"`.
+    5.  Chỉ vào bản đồ: Các đốm màu rải rác thay đổi lập tức, hệ thống tự động lọc ra những mạng WiFi không cài mật khẩu và đánh dấu nổi bật bằng màu viền cảnh báo (**Red chấm đỏ**).
+    6.  **Nhấn mạnh**: Giao diện được thiết kế UI/UX theo chuẩn Dark Mode chuyên nghiệp dành cho bộ phận giám sát bảo mật (SOC), Plotly xử lý hàng ngàn điểm dữ liệu bản đồ mà không hề gây giật lag trình duyệt.
+    7.  Vào Tab **Audit**: Hiển thị bảng chi tiết **System Audit Logs**. Giải thích rằng hệ thống tự động ghi nhận minh bạch các thao tác khởi tạo môi trường, xác thực Sensor hay đẩy Telemetry nhằm đảm bảo tính truy vết (Non-repudiation) trong Security.

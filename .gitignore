@@ -85,3 +85,4 @@ site/
 *.img
 *.iso
 *.output
+run_sensor_local.sh
