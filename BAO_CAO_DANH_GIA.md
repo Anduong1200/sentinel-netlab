@@ -226,6 +226,35 @@ Dưới đây là một số câu hỏi hội đồng có thể đặt ra dựa 
 
 ---
 
+## 10. Các Bài Test Tình Huống Thực Tế (Chứng minh Hệ thống Hữu dụng)
+Để hội đồng hoàn toàn tin phục rằng hệ thống **thực sự hoạt động được và có giá trị ứng dụng cao**, hãy trình bày 3 bài test mô phỏng các mối đe dọa phổ biến nhất hiện nay:
+
+### 🌟 Bài Test 1: Bảo vệ Sinh viên/Nhân viên khỏi điểm phát WiFi giả mạo (Evil Twin)
+*   **Ngữ cảnh thực tế**: Một hacker ngồi ở quán cà phê trước cổng trường, mở laptop phát ra một mạng WiFi không mật khẩu tên là `Truong_DH_Khach`. Sinh viên thấy WiFi miễn phí liền ấn kết nối. Khi sinh viên đăng nhập vào Facebook/Ngân hàng, hacker sẽ dùng Wireshark bắt trọn mật khẩu.
+*   **Cách Sentinel NetLab giải quyết (Thực hành)**:
+    1.  Cài đặt 1 Sensor (Raspberry Pi) của dự án tại sảnh trường.
+    2.  Dùng điện thoại phát 1 mạng tên là `Truong_DH_Khach` (để giả làm hacker).
+    3.  **Kết quả**: Chỉ trong vòng 30 giây, thuật toán của NetLab lập tức báo động trên màn hình quản trị của phòng IT: **"Cảnh báo: Phát hiện trạm phát sóng bất thường trùng tên SSID, mã thiết bị (OUI) không thuộc tài sản nhà trường, cường độ sóng cao bất thường"**.
+    4.  **Kết luận**: Nhờ có NetLab, bộ phận IT phát hiện ngay lập tức có kẻ xấu đang giăng bẫy trước khi có bất kỳ sinh viên nào bị mất tài khoản.
+
+### 🌟 Bài Test 2: Chống Phá sóng Camera An ninh (Camera Jamming / Deauth Flood)
+*   **Ngữ cảnh thực tế**: Kẻ gian muốn đột nhập vào nhà xưởng nhưng sợ bị Camera WiFi ghi hình. Kẻ gian dùng 1 chiếc đồng hồ thông minh hoặc NodeMCU ESP8266 (giá chưa tới 100k VNĐ) liên tục phát ra gói tin "Deauth" (hủy xác thực) ép chiếc Camera văng khỏi mạng WiFi. Camera mất mạng, ngừng ghi hình, và kẻ gian thản nhiên hành động.
+*   **Cách Sentinel NetLab giải quyết (Thực hành)**:
+    1.  Cho 1 laptop kết nối vào mạng WiFi.
+    2.  Bật Kali Linux, chạy lệnh `aireplay-ng --deauth 1000` nhắm thẳng vào MAC của laptop đó. Laptop lập tức bị rớt mạng.
+    3.  **Kết quả**: Ngay giây thứ 2 sau khi cuộc tấn công bắt đầu, Dashboard của NetLab chớp đỏ liên hồi: **"Cảnh báo: Tấn công Deauth Flood. Mục tiêu: [MAC_Laptop]. Tốc độ: 150 gói/giây"**.
+    4.  **Kết luận**: NetLab chứng minh nó đóng vai trò như một chiếc "Hệ thống báo trộm vô hình", ngay khi sóng WiFi bị can thiệp phá hoại, bảo vệ hoặc chủ nhà lập tức nhận được cảnh báo để kiểm tra hiện trường.
+
+### 🌟 Bài Test 3: Rà soát Định kỳ và Lập bản đồ Bảo mật (Wardriving & Audit)
+*   **Ngữ cảnh thực tế**: Công ty mới thuê một tòa nhà làm văn phòng. Giám đốc IT muốn biết xung quanh tòa nhà có những mạng WiFi nào, có mạng nào của hàng xóm đang xài chuẩn WEP cũ (rất dễ bị hack mật khẩu trong 5 phút) và vô tình làm lộ lọt dữ liệu nội bộ hay không.
+*   **Cách Sentinel NetLab giải quyết (Thực hành)**:
+    1.  Mang laptop chạy NetLab đi một vòng quanh hành lang công ty, gõ lệnh `python sensor/wardrive.py --iface wlan0mon`.
+    2.  Sau 10 phút, chạy lệnh kiểm toán `python sensor/audit.py --output report.json`.
+    3.  **Kết quả**: Hệ thống tự động vẽ ra bản đồ vị trí các điểm phát sóng (Geo-Mapping) và xuất 1 file báo cáo chỉ đích danh: "Mạng WiFi tầng 3 đang dùng mã hóa TKIP lỗi thời, rủi ro cao bị bẻ khóa".
+    4.  **Kết luận**: Hệ thống không chỉ ngồi đợi hacker tới tấn công (Bị động), mà còn cung cấp công cụ để kỹ sư IT chủ động rà soát, dọn dẹp các "lỗ hổng" bảo mật xung quanh không gian làm việc.
+
+---
+
 ## Tổng kết
 
 Sentinel NetLab không phải là một bài tập lớn chắp vá, mà là một **sản phẩm phần mềm thực thụ**. Dự án tuân thủ đầy đủ các nguyên lý về Thiết kế phần mềm (Design Patterns), Kiến trúc phân tán chịu lỗi (Microservices/Edge Computing), có cơ chế Test bao phủ tự động (CI/CD Ready), và tư duy bảo mật (Security by Design) ngay từ những dòng code đầu tiên. Với danh sách kịch bản kiểm thử toàn diện trên, hội đồng có thể hoàn toàn an tâm về chất lượng kỹ thuật của hệ thống này.
