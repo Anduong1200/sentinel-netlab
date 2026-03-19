@@ -71,7 +71,8 @@ layout = html.Div(
                 html.Div(
                     [
                         html.H5(
-                            "Network Discovery Rate (Volume Chart)", className="text-white mb-3"
+                            "Network Discovery Rate (Volume Chart)",
+                            className="text-white mb-3",
                         ),
                         dcc.Graph(id="discovery-graph", style={"height": "350px"}),
                     ],
@@ -137,7 +138,11 @@ def update_signals(n):
 
         # === 2. RSSI Graph ===
         if networks:
-            rssi = [n.get("rssi_avg", -100) for n in networks if n.get("rssi_avg") is not None]
+            rssi = [
+                n.get("rssi_avg", -100)
+                for n in networks
+                if n.get("rssi_avg") is not None
+            ]
             # Filter out errors
             rssi = [r for r in rssi if -100 <= r <= 0]
 
@@ -161,7 +166,9 @@ def update_signals(n):
         # Use actual 'first_seen' timestamps to calculate discovery rate per minute
         now = datetime.now()
         # Generate last 60 minutes bins (1 hour) to allow zooming
-        times = [(now - timedelta(minutes=i)).strftime("%H:%M") for i in range(60, -1, -1)]
+        times = [
+            (now - timedelta(minutes=i)).strftime("%H:%M") for i in range(60, -1, -1)
+        ]
 
         counts_dict = dict.fromkeys(times, 0)
 
@@ -196,7 +203,11 @@ def update_signals(n):
                 x=time_objs,
                 y=counts,
                 mode="lines",
-                line={"color": "#f7b733", "width": 2, "shape": "spline"},  # Smooth orange line
+                line={
+                    "color": "#f7b733",
+                    "width": 2,
+                    "shape": "spline",
+                },  # Smooth orange line
                 name="Trend",
             )
         )
@@ -207,24 +218,39 @@ def update_signals(n):
             xaxis={
                 "rangeselector": {
                     "buttons": [
-                        {"count": 5, "label": "5m", "step": "minute", "stepmode": "backward"},
-                        {"count": 15, "label": "15m", "step": "minute", "stepmode": "backward"},
-                        {"count": 30, "label": "30m", "step": "minute", "stepmode": "backward"},
-                        {"step": "all", "label": "1H"}
+                        {
+                            "count": 5,
+                            "label": "5m",
+                            "step": "minute",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "count": 15,
+                            "label": "15m",
+                            "step": "minute",
+                            "stepmode": "backward",
+                        },
+                        {
+                            "count": 30,
+                            "label": "30m",
+                            "step": "minute",
+                            "stepmode": "backward",
+                        },
+                        {"step": "all", "label": "1H"},
                     ],
                     "bgcolor": "rgba(0,0,0,0.6)",
                     "activecolor": "rgba(0,242,254,0.4)",
-                    "font": {"color": "#ffffff"}
+                    "font": {"color": "#ffffff"},
                 },
                 "rangeslider": {
                     "visible": True,
                     "thickness": 0.1,
-                    "bgcolor": "rgba(255,255,255,0.05)"
+                    "bgcolor": "rgba(255,255,255,0.05)",
                 },
-                "type": "date"
+                "type": "date",
             },
             hovermode="x unified",
-            showlegend=False
+            showlegend=False,
         )
 
         return fig_ch, fig_rssi, fig_disc

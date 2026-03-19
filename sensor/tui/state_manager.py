@@ -16,6 +16,7 @@ from typing import Any
 @dataclass
 class NetworkEntry:
     """A single detected network for display."""
+
     timestamp: str
     bssid: str
     ssid: str
@@ -27,6 +28,7 @@ class NetworkEntry:
 @dataclass
 class AlertEntry:
     """A single alert for display."""
+
     timestamp: str
     severity: str
     title: str
@@ -123,6 +125,7 @@ class AppState:
         """Update CPU/RAM from psutil if available."""
         try:
             import psutil
+
             self.cpu_percent = psutil.cpu_percent(interval=0)
             self.mem_percent = psutil.virtual_memory().percent
         except ImportError:
