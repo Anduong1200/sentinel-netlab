@@ -142,12 +142,9 @@ def _parse_sensor_positions(raw_json: str) -> dict[str, dict[str, float]]:
     return parsed
 
 
-def init_config(strict_production: bool = True) -> ControllerConfig:  # noqa: ARG001
+def init_config() -> ControllerConfig:
     """
     Initialize configuration from environment variables.
-
-    Args:
-        strict_production: If True, raises RuntimeError if secrets are missing in production.
     """
     env = os.getenv("ENVIRONMENT", "production").lower()
     is_prod = env == "production"

@@ -3,7 +3,7 @@ from celery import Celery
 from controller.config import init_config
 
 # Initialize Config
-config = init_config(strict_production=False)
+config = init_config()
 
 
 def make_celery():

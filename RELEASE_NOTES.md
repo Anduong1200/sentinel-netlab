@@ -1,6 +1,6 @@
-# Release Notes — v0.6.0 (2026-03-19)
+# Release Notes — v1.0.0 (2026-03-19)
 
-**Sentinel NetLab v0.6.0** introduces a professional Text-based User Interface (TUI) for terminal-only environments, fixes critical dashboard rendering issues, and adds financial-style real-time analytics.
+**Sentinel NetLab v1.0.0** introduces a professional Text-based User Interface (TUI) for terminal-only environments, fixes critical dashboard rendering issues, adds financial-style real-time analytics, and marks the first major stable release.
 
 ## 🚀 Highlights
 
@@ -49,7 +49,7 @@ python -m sensor.tui
 
 ## 📚 Documentation
 - [Testing Guide](docs/lab/testing_guide.md) — Updated with presentation script
-- [CHANGELOG](CHANGELOG.md) — Full v0.6.0 entry
+- [CHANGELOG](CHANGELOG.md) — Full v1.0.0 entry
 
 ---
 
