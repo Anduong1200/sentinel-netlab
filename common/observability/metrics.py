@@ -19,8 +19,8 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    generate_latest: Any = None
-    REGISTRY: Any = None
+    generate_latest: Any = None  # type: ignore[no-redef]
+    REGISTRY: Any = None  # type: ignore[no-redef]
     CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
 
 
