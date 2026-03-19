@@ -37,7 +37,7 @@ from textual.widgets import (
 
 from sensor.config import Config, init_config
 from sensor.sensor_controller import SensorController
-from sensor.tui.bootstrap import load_tui_env
+from sensor.tui.bootstrap import EnvLoadResult, load_tui_env
 from sensor.tui.config_store import (
     coerce_sensor_id,
     load_raw_config,
@@ -46,6 +46,14 @@ from sensor.tui.config_store import (
     persist_tui_settings,
     resolve_config_path,
     validate_tui_settings,
+)
+from sensor.tui.setup_wizard import (
+    build_bootstrap_env,
+    build_quick_profile,
+    build_upload_url,
+    normalize_controller_url,
+    request_sensor_token,
+    upsert_env_file,
 )
 from sensor.tui.state_manager import (
     AlertEntry,
@@ -87,12 +95,12 @@ def detect_wifi_interfaces() -> list[str]:
     return interfaces or ["(none detected)"]
 
 
-def check_controller_online() -> bool:
+def check_controller_online(base_url: str | None = None) -> bool:
     """Quick check if the Controller API is reachable."""
     try:
         import urllib.request
 
-        url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
+        url = normalize_controller_url(base_url or os.environ.get("CONTROLLER_URL"))
         if not url.startswith(("http://", "https://")):
             return False
         resp = urllib.request.urlopen(  # noqa: S310 # nosec B310
@@ -119,6 +127,12 @@ def _format_event_time(raw_value: Any) -> str:
             return text[-8:] if len(text) >= 8 else text
 
     return datetime.now().strftime("%H:%M:%S")
+
+
+class SetupScroll(VerticalScroll):
+    """Scrollable setup form that keeps focus on actionable widgets."""
+
+    can_focus = False
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -184,17 +198,14 @@ class SetupScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Container(id="setup-screen"):
-            with VerticalScroll(id="setup-container"):
+            with SetupScroll(id="setup-container"):
                 yield Label(
-                    r"""[bold cyan]
-  ____  _____ _   _ _____ ___ _   _ _____ _
- / ___|| ____| \ | |_   _|_ _| \ | | ____| |
- \___ \|  _| |  \| | | |  | ||  \| |  _| | |
-  ___) | |___| |\  | | |  | || |\  | |___| |___
- |____/|_____|_| \_| |_| |___|_| \_|_____|_____|
-         N E T L A B  —  T U I[/bold cyan]
-""",
+                    "[bold cyan]Sentinel NetLab[/bold cyan]",
                     classes="panel-title",
+                )
+                yield Label(
+                    "[dim]Quick sensor bootstrap for demo, replay, and live capture.[/dim]",
+                    classes="setup-subtitle",
                 )
 
                 # Pre-flight status
@@ -203,6 +214,33 @@ class SetupScreen(Screen):
                     yield Label("", id="pf-env")
                     yield Label("", id="pf-wifi")
                     yield Label("", id="pf-controller")
+
+                with Container(classes="setup-group"):
+                    yield Label("🚀 QUICK SETUP", classes="setup-group-title")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Demo Bundle", id="btn-quick-demo")
+                        yield Button("Live Bundle", id="btn-quick-live")
+                        yield Button("Gen Token/Keys", id="btn-gen-secrets")
+                    with Horizontal(classes="setup-row", id="row-controller-url"):
+                        yield Label("Controller URL", classes="setup-label")
+                        yield Input(
+                            value="http://127.0.0.1:8080",
+                            placeholder="http://127.0.0.1:8080",
+                            id="input-controller-url",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-admin-token"):
+                        yield Label("Admin Token", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="Optional, used to auto-create sensor token",
+                            password=True,
+                            id="input-admin-token",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    yield Label("", id="quick-setup-status")
 
                 # Mode Selection
                 with Container(classes="setup-group"):
@@ -221,36 +259,51 @@ class SetupScreen(Screen):
                 # Interface
                 with Container(classes="setup-group"):
                     yield Label("🔌 CONFIGURATION", classes="setup-group-title")
-                    yield Label("Sensor ID:")
-                    yield Input(
-                        value="tui-sensor-01",
-                        placeholder="Unique sensor identifier",
-                        id="input-sensor-id",
-                    )
-                    yield Label("Interface (auto-detected):")
-                    yield Input(
-                        value="wlan0mon",
-                        placeholder="WiFi interface",
-                        id="input-iface",
-                    )
-                    yield Label("PCAP Path (for Replay mode):")
-                    yield Input(
-                        value="",
-                        placeholder="/path/to/capture.pcap",
-                        id="input-pcap",
-                    )
-                    yield Label("Geo Sensor X (m):")
-                    yield Input(
-                        value="",
-                        placeholder="e.g. 12.5",
-                        id="input-geo-x",
-                    )
-                    yield Label("Geo Sensor Y (m):")
-                    yield Input(
-                        value="",
-                        placeholder="e.g. 4.0",
-                        id="input-geo-y",
-                    )
+                    with Horizontal(classes="setup-row", id="row-sensor-id"):
+                        yield Label("Sensor ID", classes="setup-label")
+                        yield Input(
+                            value="tui-sensor-01",
+                            placeholder="Unique sensor identifier",
+                            id="input-sensor-id",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-interface"):
+                        yield Label("Interface", classes="setup-label")
+                        yield Input(
+                            value="wlan0mon",
+                            placeholder="WiFi interface",
+                            id="input-iface",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-pcap"):
+                        yield Label("PCAP Path", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="/path/to/capture.pcap",
+                            id="input-pcap",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-geo-x"):
+                        yield Label("Geo Sensor X", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="e.g. 12.5",
+                            id="input-geo-x",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-geo-y"):
+                        yield Label("Geo Sensor Y", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="e.g. 4.0",
+                            id="input-geo-y",
+                            classes="setup-input",
+                            compact=True,
+                        )
 
                 # Toggles
                 with Container(classes="setup-group"):
@@ -277,41 +330,33 @@ class SetupScreen(Screen):
         app = self.app
         assert isinstance(app, SentinelTUIApp)
         defaults = app.saved_settings
+        self._available_ifaces = detect_wifi_interfaces()
         sensor_id = coerce_sensor_id(
             defaults.get("sensor_id"),
             os.environ.get("SENSOR_ID", "tui-sensor-01"),
         )
 
-        env_color = "green" if app.env_load_result.loaded else "yellow"
-        if app.env_load_result.loaded and app.env_load_result.path is not None:
-            env_text = app.env_load_result.path.name
-        elif app.env_load_result.path is not None:
-            env_text = f"{app.env_load_result.path.name} ({app.env_load_result.status})"
-        else:
-            env_text = app.env_load_result.status
-        self.query_one("#pf-env", Label).update(
-            f"Env: [{env_color}]{env_text}[/{env_color}]"
-        )
-
-        # Detect WiFi interfaces
-        ifaces = detect_wifi_interfaces()
-        iface_text = ", ".join(ifaces)
-        has_wifi = ifaces[0] != "(none detected)"
-        color = "green" if has_wifi else "yellow"
-        self.query_one("#pf-wifi", Label).update(
-            f"WiFi Cards: [{color}]{iface_text}[/{color}]"
-        )
-
         # Auto-fill best interface
         if defaults.get("interface"):
             self.query_one("#input-iface", Input).value = str(defaults["interface"])
-        elif has_wifi:
+        elif self._available_ifaces[0] != "(none detected)":
             # Prefer monitor mode interfaces
-            best = next((i for i in ifaces if "mon" in i), ifaces[0])
+            best = next(
+                (i for i in self._available_ifaces if "mon" in i),
+                self._available_ifaces[0],
+            )
             self.query_one("#input-iface", Input).value = best
 
         self.query_one("#input-sensor-id", Input).value = sensor_id
         self.query_one("#input-pcap", Input).value = str(defaults.get("pcap_path", ""))
+        self.query_one("#input-controller-url", Input).value = str(
+            defaults.get("controller_url")
+            or os.environ.get("CONTROLLER_URL")
+            or "http://127.0.0.1:8080"
+        )
+        self.query_one("#input-admin-token", Input).value = str(
+            os.environ.get("SENTINEL_ADMIN_TOKEN", "")
+        )
         self.query_one("#input-geo-x", Input).value = str(
             defaults.get("geo_sensor_x_m", "")
         )
@@ -329,27 +374,80 @@ class SetupScreen(Screen):
         self.query_one("#mode-mock", RadioButton).value = mode == "mock"
         self.query_one("#mode-pcap", RadioButton).value = mode == "pcap"
 
-        # Check controller
-        ctrl_ok = check_controller_online()
-        ctrl_color = "green" if ctrl_ok else "red"
-        ctrl_text = "ONLINE ✓" if ctrl_ok else "OFFLINE ✗ (make lab-up?)"
-        self.query_one("#pf-controller", Label).update(
-            f"Controller: [{ctrl_color}]{ctrl_text}[/{ctrl_color}]"
+        self._sync_dynamic_rows()
+        self._refresh_preflight()
+        self.call_after_refresh(
+            lambda: self.set_focus(self.query_one("#input-sensor-id", Input))
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-start":
             self.action_start_sensor()
+        elif event.button.id == "btn-quick-demo":
+            self._apply_quick_bundle("demo")
+        elif event.button.id == "btn-quick-live":
+            self._apply_quick_bundle("live")
+        elif event.button.id == "btn-gen-secrets":
+            self._generate_token_and_keys()
 
-    def action_start_sensor(self) -> None:
-        """Gather config, validate, and switch to Dashboard."""
-        # Determine mode
-        mode = "mock"  # default
+    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if event.checkbox.id == "chk-geo":
+            self._sync_dynamic_rows()
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        if event.radio_set.id == "mode-select":
+            self._sync_dynamic_rows()
+
+    def _refresh_preflight(self) -> None:
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+
+        env_color = "green" if app.env_load_result.loaded else "yellow"
+        if app.env_load_result.loaded and app.env_load_result.path is not None:
+            env_text = app.env_load_result.path.name
+        elif app.env_load_result.path is not None:
+            env_text = f"{app.env_load_result.path.name} ({app.env_load_result.status})"
+        else:
+            env_text = app.env_load_result.status
+        self.query_one("#pf-env", Label).update(
+            f"Env: [{env_color}]{env_text}[/{env_color}]"
+        )
+
+        iface_text = ", ".join(self._available_ifaces)
+        has_wifi = self._available_ifaces[0] != "(none detected)"
+        color = "green" if has_wifi else "yellow"
+        self.query_one("#pf-wifi", Label).update(
+            f"WiFi Cards: [{color}]{iface_text}[/{color}]"
+        )
+
+        ctrl_ok = check_controller_online(self._controller_url())
+        ctrl_color = "green" if ctrl_ok else "red"
+        ctrl_text = "ONLINE ✓" if ctrl_ok else "OFFLINE ✗ (check controller URL)"
+        self.query_one("#pf-controller", Label).update(
+            f"Controller: [{ctrl_color}]{ctrl_text}[/{ctrl_color}]"
+        )
+
+    def _sync_dynamic_rows(self) -> None:
+        mode = self._selected_mode()
+        geo_enabled = self.query_one("#chk-geo", Checkbox).value
+        self.query_one("#row-pcap", Horizontal).display = mode == "pcap"
+        self.query_one("#row-geo-x", Horizontal).display = geo_enabled
+        self.query_one("#row-geo-y", Horizontal).display = geo_enabled
+
+    def _selected_mode(self) -> str:
         if self.query_one("#mode-live", RadioButton).value:
-            mode = "live"
-        elif self.query_one("#mode-pcap", RadioButton).value:
-            mode = "pcap"
+            return "live"
+        if self.query_one("#mode-pcap", RadioButton).value:
+            return "pcap"
+        return "mock"
 
+    def _controller_url(self) -> str:
+        return normalize_controller_url(
+            self.query_one("#input-controller-url", Input).value
+        )
+
+    def _collect_settings(self) -> dict[str, Any]:
+        mode = self._selected_mode()
         iface = self.query_one("#input-iface", Input).value.strip()
         pcap_path = self.query_one("#input-pcap", Input).value
         sensor_id = coerce_sensor_id(
@@ -358,28 +456,146 @@ class SetupScreen(Screen):
             or self.app.saved_settings.get("sensor_id")
             or "tui-sensor-01",
         )
-        geo_x = self.query_one("#input-geo-x", Input).value.strip()
-        geo_y = self.query_one("#input-geo-y", Input).value.strip()
-        ml_enabled = self.query_one("#chk-ml", Checkbox).value
-        geo_enabled = self.query_one("#chk-geo", Checkbox).value
-        anonymize = self.query_one("#chk-anon", Checkbox).value
-
-        # ── Pre-flight Validation (Fool-proof) ──
-        err_label = self.query_one("#validation-error", Label)
-        tui_settings = {
+        return {
             "mode": mode,
             "sensor_id": sensor_id,
             "interface": iface,
             "pcap_path": pcap_path,
-            "ml_enabled": ml_enabled,
-            "geo_enabled": geo_enabled,
-            "geo_sensor_x_m": geo_x,
-            "geo_sensor_y_m": geo_y,
-            "anonymize": anonymize,
+            "controller_url": self._controller_url(),
+            "ml_enabled": self.query_one("#chk-ml", Checkbox).value,
+            "geo_enabled": self.query_one("#chk-geo", Checkbox).value,
+            "geo_sensor_x_m": self.query_one("#input-geo-x", Input).value.strip(),
+            "geo_sensor_y_m": self.query_one("#input-geo-y", Input).value.strip(),
+            "anonymize": self.query_one("#chk-anon", Checkbox).value,
         }
+
+    def _persist_setup_state(
+        self,
+        tui_settings: dict[str, Any],
+        *,
+        status_message: str | None = None,
+    ) -> None:
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+        app.tui_config = tui_settings
+        app.config_path = persist_tui_settings(
+            PROJECT_ROOT, app.config_path, app.tui_config
+        )
+        app.saved_settings = load_saved_tui_settings(app.config_path)
+        app.app_state.push_log(f"[System] Saved config to {app.config_path.name}")
+        if status_message:
+            self.query_one("#quick-setup-status", Label).update(status_message)
+
+    def _apply_settings_to_inputs(self, settings: dict[str, Any]) -> None:
+        self.query_one("#input-sensor-id", Input).value = str(settings["sensor_id"])
+        self.query_one("#input-iface", Input).value = str(settings["interface"])
+        self.query_one("#input-pcap", Input).value = str(settings["pcap_path"])
+        self.query_one("#input-controller-url", Input).value = str(
+            settings["controller_url"]
+        )
+        self.query_one("#input-admin-token", Input).value = str(
+            settings.get("admin_token", "")
+        )
+        self.query_one("#input-geo-x", Input).value = str(settings["geo_sensor_x_m"])
+        self.query_one("#input-geo-y", Input).value = str(settings["geo_sensor_y_m"])
+        self.query_one("#chk-ml", Checkbox).value = bool(settings["ml_enabled"])
+        self.query_one("#chk-geo", Checkbox).value = bool(settings["geo_enabled"])
+        self.query_one("#chk-anon", Checkbox).value = bool(settings["anonymize"])
+        self.query_one("#mode-live", RadioButton).value = settings["mode"] == "live"
+        self.query_one("#mode-mock", RadioButton).value = settings["mode"] == "mock"
+        self.query_one("#mode-pcap", RadioButton).value = settings["mode"] == "pcap"
+        self._sync_dynamic_rows()
+
+    def _write_runtime_env(
+        self,
+        profile: str,
+        sensor_id: str,
+        *,
+        sensor_token: str | None = None,
+    ) -> Path:
+        admin_token = self.query_one("#input-admin-token", Input).value.strip()
+        env_updates = build_bootstrap_env(
+            profile,
+            sensor_id,
+            self._controller_url(),
+            os.environ,
+            sensor_token=sensor_token,
+            admin_token=admin_token,
+        )
+        env_path = upsert_env_file(PROJECT_ROOT / ".env", env_updates)
+        os.environ.update(env_updates)
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+        app.env_load_result = EnvLoadResult(
+            loaded=True,
+            path=env_path,
+            status=f"Updated {env_path.name}",
+        )
+        return env_path
+
+    def _apply_quick_bundle(self, profile: str) -> None:
+        current_sensor_id = self.query_one("#input-sensor-id", Input).value
+        controller_url = self.query_one("#input-controller-url", Input).value
+        settings = build_quick_profile(
+            profile,
+            available_ifaces=self._available_ifaces,
+            current_sensor_id=current_sensor_id,
+            controller_url=controller_url,
+        )
+        self._apply_settings_to_inputs(settings)
+        env_path = self._write_runtime_env(profile, str(settings["sensor_id"]))
+        self._persist_setup_state(
+            self._collect_settings(),
+            status_message=(
+                f"[green]Prepared {profile} bundle and wrote {env_path.name}.[/green]"
+            ),
+        )
+        self._refresh_preflight()
+
+    def _generate_token_and_keys(self) -> None:
+        settings = self._collect_settings()
+        profile = "demo" if settings["mode"] == "mock" else "live"
+        sensor_token = None
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+        token_source = "local-generated"  # noqa: S105 - status label, not a secret
+        try:
+            if check_controller_online(settings["controller_url"]):
+                sensor_token = request_sensor_token(
+                    settings["controller_url"],
+                    self.query_one("#input-admin-token", Input).value,
+                    settings["sensor_id"],
+                )
+                token_source = "controller-api"  # noqa: S105 - status label
+        except RuntimeError as exc:
+            app.app_state.push_log(f"[Warn] Token bootstrap fallback: {exc}")
+            token_source = "local-generated"  # noqa: S105 - status label
+
+        if profile == "demo" and sensor_token is None:
+            token_source = "demo-default"  # noqa: S105 - status label
+
+        env_path = self._write_runtime_env(
+            profile,
+            settings["sensor_id"],
+            sensor_token=sensor_token,
+        )
+        self._persist_setup_state(
+            settings,
+            status_message=(
+                f"[green]Generated token/keys via {token_source} and updated "
+                f"{env_path.name}.[/green]"
+            ),
+        )
+        self._refresh_preflight()
+
+    def action_start_sensor(self) -> None:
+        """Gather config, validate, and switch to Dashboard."""
+        # ── Pre-flight Validation (Fool-proof) ──
+        err_label = self.query_one("#validation-error", Label)
+        tui_settings = self._collect_settings()
         validation_error = validate_tui_settings(
             tui_settings,
-            available_ifaces=detect_wifi_interfaces(),
+            available_ifaces=self._available_ifaces,
             file_exists=os.path.isfile,
         )
         if validation_error:
@@ -392,19 +608,14 @@ class SetupScreen(Screen):
         app = self.app
         assert isinstance(app, SentinelTUIApp)
         state = app.app_state
+        mode = str(tui_settings["mode"])
+        iface = str(tui_settings["interface"])
+        sensor_id = str(tui_settings["sensor_id"])
         runtime_iface = (
-            iface
-            if mode == "live"
-            else ("pcap0" if mode == "pcap" else "mock0")
+            iface if mode == "live" else ("pcap0" if mode == "pcap" else "mock0")
         )
         state.reset_session(mode=mode, sensor_id=sensor_id, interface=runtime_iface)
-
-        app.tui_config = tui_settings
-        app.config_path = persist_tui_settings(
-            PROJECT_ROOT, app.config_path, app.tui_config
-        )
-        app.saved_settings = load_saved_tui_settings(app.config_path)
-        app.app_state.push_log(f"[System] Saved config to {app.config_path.name}")
+        self._persist_setup_state(tui_settings)
 
         # Switch to dashboard & start
         app.push_screen("dashboard")
@@ -626,7 +837,8 @@ class SentinelTUIApp(App):
             self.app_state.start_time = time.time()
             self.app_state.running = True
             self.app_state.push_log(
-                f"[System] Starting SensorController mode={self.tui_config.get('mode', 'mock')} "
+                "[System] Starting SensorController "
+                f"mode={self.tui_config.get('mode', 'mock')} "
                 f"iface={config.capture.interface}"
             )
 
@@ -689,6 +901,7 @@ class SentinelTUIApp(App):
         else:
             config.capture.interface = cfg.get("interface", config.capture.interface)
         config.capture.pcap_file = cfg.get("pcap_path") if mode == "pcap" else None
+        config.api.upload_url = build_upload_url(cfg.get("controller_url"))
         config.ml.enabled = bool(cfg.get("ml_enabled"))
         config.geo.enabled = bool(cfg.get("geo_enabled"))
         config.geo.sensor_x_m = parse_geo_coordinate(cfg.get("geo_sensor_x_m"))
@@ -930,11 +1143,7 @@ class SentinelTUIApp(App):
             status_color = (
                 "green"
                 if wardrive.recent_sightings
-                else (
-                    "yellow"
-                    if waiting_for_wardrive or wardrive_updating
-                    else "red"
-                )
+                else ("yellow" if waiting_for_wardrive or wardrive_updating else "red")
             )
             screen.query_one("#wardrive-status", Label).update(
                 f"Status: [{status_color}]{wardrive.status}[/{status_color}]"
@@ -1043,7 +1252,8 @@ class SentinelTUIApp(App):
                     alert_log.write(
                         Text.from_markup(
                             f"[dim]{debounced.timestamp}[/dim] "
-                            f"[{sev_color}]🚨 {debounced.severity.upper()}[/{sev_color}] "
+                            f"[{sev_color}]🚨 "
+                            f"{debounced.severity.upper()}[/{sev_color}] "
                             f"{debounced.title}: {debounced.description[:80]}"
                         )
                     )

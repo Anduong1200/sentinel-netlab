@@ -388,11 +388,7 @@ class SensorController:
                 self._heartbeat_thread,
                 self._self_check_thread,
             ]:
-                if (
-                    thread
-                    and thread.is_alive()
-                    and thread is not current_thread
-                ):
+                if thread and thread.is_alive() and thread is not current_thread:
                     thread.join(timeout=5)
 
             # Flush remaining buffer to queue

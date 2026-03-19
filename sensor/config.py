@@ -211,6 +211,7 @@ class ConfigManager:
 
     def _apply_dict(self, data: dict[str, Any]):
         """Apply dictionary values to config."""
+
         def apply_section(
             target: Any,
             values: dict[str, Any],
@@ -374,8 +375,8 @@ class ConfigManager:
                         env=env,
                     )
                 except RuntimeError as e:
-                    # ConfigManager usually shouldn't crash the app on init unless critical,
-                    # but for this specific "fail-fast" requirement, we propagate the error.
+                    # ConfigManager usually shouldn't crash the app on init.
+                    # This specific fail-fast requirement is the exception.
                     raise e
 
             if value is not None:

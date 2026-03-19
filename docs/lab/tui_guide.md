@@ -114,6 +114,24 @@ Press **F5** or click **START** to begin.
 
 Set `SENTINEL_ENV_FILE=/path/to/custom.env` before launch if you want the TUI to load a different env file.
 
+### Quick Setup Buttons
+
+The Setup screen now includes a **Quick Setup** block so you do not have to hand-edit `.env` before every demo:
+
+- **Demo Bundle**: fills the screen for safe mock/demo usage, writes repo `.env`, enables `ALLOW_DEV_TOKENS=true`, and uses the default demo sensor token `sensor-01-token`
+- **Live Bundle**: fills the screen for real capture, prefers a detected monitor interface, turns on safer defaults like anonymization, and writes a stronger local runtime bundle to `.env`
+- **Gen Token/Keys**: refreshes `.env` with generated keys and tries to create a sensor token from the Controller API when `Controller URL` is reachable and `Admin Token` is provided
+
+The quick bundle flow writes:
+- `config.yaml` for the TUI/runtime settings
+- `.env` for fast local startup and token/key reuse
+
+Two new inputs are available in Setup:
+- **Controller URL**: base URL such as `http://127.0.0.1:8080`
+- **Admin Token**: optional controller admin token used by **Gen Token/Keys** to call `/api/v1/tokens`
+
+If the controller is offline, **Gen Token/Keys** falls back to a locally generated sensor token and still updates `.env`.
+
 ### Screen 2: Live Dashboard (4 Panels)
 
 ```
@@ -222,6 +240,20 @@ The TUI can still run without loading `.env`, but the recommended fix is:
 ```bash
 source venv/bin/activate
 pip install -e .[sensor]
+```
+
+### Setup screen opens but feels "stuck" or hard to use
+
+Recent TUI builds move focus directly to **Sensor ID** instead of the scroll container, and hide optional rows until they are relevant:
+- `PCAP Path` only appears in **PCAP Replay**
+- `Geo Sensor X/Y` only appear when **Enable Geo-Location** is checked
+
+If you are still seeing an older layout, refresh the environment and restart:
+
+```bash
+source venv/bin/activate
+pip install -e .[sensor]
+python -m sensor.tui
 ```
 
 ### TUI starts but `Wardrive / GPS` is empty

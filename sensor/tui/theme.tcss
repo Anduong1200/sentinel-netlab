@@ -19,28 +19,35 @@ Footer {
 
 /* ─── Setup Screen ─────────────────────────────────────────────────────── */
 #setup-screen {
-    align: center middle;
+    align: center top;
+    padding: 1 1;
 }
 
 #setup-container {
-    width: 72;
+    width: 1fr;
+    max-width: 92;
     height: auto;
-    max-height: 85%;
+    max-height: 1fr;
     border: heavy #30363d;
     background: #161b22;
-    padding: 2 4;
+    padding: 1 2;
 }
 
 #setup-container .panel-title {
     text-style: bold;
     color: #58a6ff;
-    margin-bottom: 1;
     text-align: center;
+}
+
+.setup-subtitle {
+    color: #8b949e;
+    text-align: center;
+    margin-bottom: 1;
 }
 
 .setup-group {
     margin-bottom: 1;
-    padding: 1 2;
+    padding: 1;
     border: round #30363d;
 }
 
@@ -50,9 +57,42 @@ Footer {
     margin-bottom: 1;
 }
 
+.quick-actions {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.quick-actions Button {
+    width: 1fr;
+    margin-right: 1;
+}
+
+.setup-row {
+    height: auto;
+    align: left middle;
+    margin-bottom: 1;
+}
+
+.setup-label {
+    width: 18;
+    color: #8b949e;
+    padding-top: 1;
+}
+
+.setup-input {
+    width: 1fr;
+}
+
+#quick-setup-status {
+    min-height: 2;
+}
+
+#validation-error {
+    min-height: 2;
+}
+
 #btn-start {
     width: 100%;
-    margin-top: 1;
     background: #238636;
     color: white;
     text-style: bold;

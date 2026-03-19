@@ -14,6 +14,8 @@ from typing import Any
 
 import yaml
 
+from sensor.tui.setup_wizard import build_upload_url, normalize_controller_url
+
 DEFAULT_CONFIG_FILENAMES = ("config.yaml", "config.yml", "config.example.yaml")
 DEFAULT_SENSOR_ID = "tui-sensor-01"
 
@@ -55,6 +57,10 @@ def load_saved_tui_settings(config_path: Path | None) -> dict[str, Any]:
     ml = data.get("ml", {}) if isinstance(data.get("ml"), dict) else {}
     geo = data.get("geo", {}) if isinstance(data.get("geo"), dict) else {}
     sensor = data.get("sensor", {}) if isinstance(data.get("sensor"), dict) else {}
+    api = data.get("api", {}) if isinstance(data.get("api"), dict) else {}
+    transport = (
+        data.get("transport", {}) if isinstance(data.get("transport"), dict) else {}
+    )
 
     interface = capture.get("interface") or sensor.get("interface") or ""
     mode = "mock" if data.get("mock_mode") else "live"
@@ -62,10 +68,19 @@ def load_saved_tui_settings(config_path: Path | None) -> dict[str, Any]:
     if pcap_path:
         mode = "pcap"
 
+    upload_url = api.get("upload_url") or transport.get("upload_url")
+    if upload_url:
+        controller_url = normalize_controller_url(upload_url)
+    elif api.get("host") and api.get("port"):
+        controller_url = normalize_controller_url(f"http://{api['host']}:{api['port']}")
+    else:
+        controller_url = normalize_controller_url(None)
+
     return {
         "sensor_id": sensor.get("id", DEFAULT_SENSOR_ID),
         "interface": interface,
         "pcap_path": pcap_path or "",
+        "controller_url": controller_url,
         "ml_enabled": bool(ml.get("enabled")),
         "geo_enabled": bool(geo.get("enabled")),
         "geo_sensor_x_m": _stringify_optional_number(geo.get("sensor_x_m")),
@@ -91,9 +106,11 @@ def persist_tui_settings(
 
     sensor = data.setdefault("sensor", {})
     capture = data.setdefault("capture", {})
+    api = data.setdefault("api", {})
     ml = data.setdefault("ml", {})
     geo = data.setdefault("geo", {})
     privacy = data.setdefault("privacy", {})
+    transport = data.get("transport")
 
     if not isinstance(sensor, dict):
         sensor = {}
@@ -101,6 +118,9 @@ def persist_tui_settings(
     if not isinstance(capture, dict):
         capture = {}
         data["capture"] = capture
+    if not isinstance(api, dict):
+        api = {}
+        data["api"] = api
     if not isinstance(ml, dict):
         ml = {}
         data["ml"] = ml
@@ -136,6 +156,10 @@ def persist_tui_settings(
     geo["sensor_x_m"] = parse_geo_coordinate(settings.get("geo_sensor_x_m"))
     geo["sensor_y_m"] = parse_geo_coordinate(settings.get("geo_sensor_y_m"))
     privacy["anonymize_ssid"] = bool(settings.get("anonymize"))
+    controller_url = normalize_controller_url(settings.get("controller_url"))
+    api["upload_url"] = build_upload_url(controller_url)
+    if isinstance(transport, dict):
+        transport["upload_url"] = build_upload_url(controller_url)
 
     _write_config(target, data)
     return target
@@ -187,9 +211,13 @@ def validate_tui_settings(
     mode = str(settings.get("mode", "mock")).strip().lower() or "mock"
     iface = str(settings.get("interface", "")).strip()
     pcap_path = str(settings.get("pcap_path", "")).strip()
+    controller_url = normalize_controller_url(settings.get("controller_url"))
     geo_enabled = bool(settings.get("geo_enabled"))
     available = list(available_ifaces or [])
     file_exists = file_exists or (lambda path: Path(path).is_file())
+
+    if not controller_url.startswith(("http://", "https://")):
+        return "Controller URL must start with http:// or https://"
 
     if mode == "live":
         if not available or available[0] == "(none detected)":

@@ -46,6 +46,7 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
     assert data["capture"]["interface"] == "wlan1mon"
     assert data["capture"]["pcap_file"] == str(sample_pcap)
     assert data["mock_mode"] is False
+    assert data["api"]["upload_url"] == "http://127.0.0.1:8080/api/v1/telemetry"
     assert data["ml"]["enabled"] is True
     assert data["privacy"]["anonymize_ssid"] is True
 
@@ -60,6 +61,7 @@ def test_load_saved_tui_settings_round_trip(tmp_path: Path):
             "sensor_id": "lab-02",
             "interface": "wlan9mon",
             "pcap_path": "",
+            "controller_url": "https://controller.lab:9443",
             "ml_enabled": False,
             "geo_enabled": True,
             "geo_sensor_x_m": "12.5",
@@ -73,6 +75,7 @@ def test_load_saved_tui_settings_round_trip(tmp_path: Path):
     assert settings["mode"] == "mock"
     assert settings["sensor_id"] == "lab-02"
     assert settings["interface"] == "wlan9mon"
+    assert settings["controller_url"] == "https://controller.lab:9443"
     assert settings["geo_enabled"] is True
     assert settings["geo_sensor_x_m"] == "12.5"
     assert settings["geo_sensor_y_m"] == "4.0"
@@ -99,6 +102,7 @@ def test_validate_tui_settings_requires_geo_coordinates():
             "sensor_id": "lab-geo",
             "interface": "",
             "pcap_path": "",
+            "controller_url": "http://127.0.0.1:8080",
             "geo_enabled": True,
             "geo_sensor_x_m": "",
             "geo_sensor_y_m": "",
@@ -115,6 +119,7 @@ def test_validate_tui_settings_accepts_valid_live_and_geo_inputs():
             "sensor_id": "lab-live",
             "interface": "wlan0mon",
             "pcap_path": "",
+            "controller_url": "https://controller.lab:9443",
             "geo_enabled": True,
             "geo_sensor_x_m": "1.5",
             "geo_sensor_y_m": "-2.0",
