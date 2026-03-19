@@ -26,8 +26,11 @@ class CaptureConfig:
     """Capture engine settings."""
 
     interface: str = "wlan0"
+    method: str = "scapy"
     channels: list = field(default_factory=lambda: [1, 6, 11])
     dwell_time: float = 0.4  # seconds per channel
+    settle_ms: int = 50
+    adaptive_hopping: bool = False
     enable_channel_hop: bool = True
     scan_duration: int = 10  # seconds for single scan
     packet_filter: str = "type mgt"  # Scapy BPF filter
@@ -53,6 +56,16 @@ class StorageConfig:
     pcap_max_age_days: int = 7
     pcap_max_size_mb: int = 100
     history_retention_days: int = 30
+
+
+@dataclass
+class BufferConfig:
+    """Telemetry buffer settings."""
+
+    max_items: int = 10000
+    drop_policy: str = "oldest"
+    storage_path: str = "/var/lib/sentinel/journal"
+    max_disk_mb: int = 100
 
 
 @dataclass
@@ -102,6 +115,7 @@ class PrivacyConfig:
     mode: str = "anonymized"  # normal, anonymized, private
     store_raw_mac: bool = False
     anonymize_ssid: bool = False
+    scrub_probe_requests: bool = False
     retention_days: int = 30
 
 
@@ -151,6 +165,7 @@ class Config:
 
     sensor: SensorConfig = field(default_factory=SensorConfig)
     capture: CaptureConfig = field(default_factory=CaptureConfig)
+    buffer: BufferConfig = field(default_factory=BufferConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     api: APIConfig = field(default_factory=APIConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
@@ -245,6 +260,9 @@ class ConfigManager:
 
         if "storage" in data:
             apply_section(self.config.storage, data["storage"])
+
+        if "buffer" in data:
+            apply_section(self.config.buffer, data["buffer"])
 
         if "api" in data:
             apply_section(self.config.api, data["api"])
@@ -414,6 +432,7 @@ class ConfigManager:
         # Convert to dictionary
         data = {
             "capture": asdict(self.config.capture),
+            "buffer": asdict(self.config.buffer),
             "storage": asdict(self.config.storage),
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
@@ -436,6 +455,7 @@ class ConfigManager:
         """Export configuration as dictionary."""
         return {
             "capture": asdict(self.config.capture),
+            "buffer": asdict(self.config.buffer),
             "storage": asdict(self.config.storage),
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),

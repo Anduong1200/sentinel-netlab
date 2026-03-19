@@ -132,6 +132,22 @@ Two new inputs are available in Setup:
 
 If the controller is offline, **Gen Token/Keys** falls back to a locally generated sensor token and still updates `.env`.
 
+### Profiles & Tactical Presets
+
+The Setup screen now also includes a **Profiles & Presets** block so operators can keep repeatable SOC layouts without retyping everything:
+
+- **Balanced Live**: safer live monitoring defaults with `lite_realtime`, a smaller buffer, and probe scrubbing enabled
+- **SOC Tactical**: higher-visibility preset for dense triage with `full_wids`, larger buffers, `spill_to_disk`, and adaptive hopping enabled
+- **PCAP Forensics**: replay-oriented preset for offline case review with `audit_offline` and the heavier forensic buffer policy
+
+You can also manage named custom profiles directly in the TUI:
+
+- **Save Profile** stores the current setup as a reusable project-local profile
+- **Load Profile** reapplies a saved named profile back into the form
+- **Delete Profile** removes a saved custom profile from the local profile library
+
+Custom profiles are stored in the repo-local file `.sentinel_tui_profiles.json`, while the currently active setup is still written to `config.yaml`.
+
 ### Screen 2: Live Dashboard (4 Panels)
 
 ```

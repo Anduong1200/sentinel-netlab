@@ -21,6 +21,7 @@ Footer {
 #setup-screen {
     align: center top;
     padding: 1 1;
+    overflow-y: auto;
 }
 
 #setup-container {
@@ -46,12 +47,16 @@ Footer {
 }
 
 .setup-group {
+    width: 1fr;
+    height: auto;
+    min-height: 3;
     margin-bottom: 1;
     padding: 1;
     border: round #30363d;
 }
 
 .setup-group-title {
+    height: auto;
     text-style: bold;
     color: #8b949e;
     margin-bottom: 1;
@@ -81,10 +86,28 @@ Footer {
 
 .setup-input {
     width: 1fr;
+    min-width: 24;
 }
 
 #quick-setup-status {
     min-height: 2;
+}
+
+#preset-summary {
+    min-height: 2;
+    color: #58a6ff;
+}
+
+#profile-status {
+    min-height: 2;
+}
+
+#profile-inventory {
+    min-height: 1;
+}
+
+.setup-hint {
+    color: #8b949e;
 }
 
 #validation-error {

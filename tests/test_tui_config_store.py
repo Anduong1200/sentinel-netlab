@@ -1,13 +1,19 @@
+import json
 from pathlib import Path
 
 import yaml
 
 from sensor.tui.config_store import (
+    apply_tui_preset,
     coerce_sensor_id,
+    delete_tui_profile,
     load_saved_tui_settings,
+    load_tui_profile,
     parse_geo_coordinate,
     persist_tui_settings,
     resolve_config_path,
+    resolve_profile_store_path,
+    save_tui_profile,
     validate_tui_settings,
 )
 
@@ -34,9 +40,18 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
             "sensor_id": "lab-01",
             "interface": "wlan1mon",
             "pcap_path": str(sample_pcap),
+            "capture_method": "tshark",
+            "capture_channels": "1, 6, 11, 36, 40, 44",
+            "dwell_ms": "250",
+            "adaptive_hopping": True,
+            "buffer_max_items": "50000",
+            "buffer_drop_policy": "spill_to_disk",
             "ml_enabled": True,
             "geo_enabled": False,
             "anonymize": True,
+            "scrub_probe_requests": False,
+            "detector_profile": "full_wids",
+            "preset_id": "soc_tactical",
         },
     )
 
@@ -45,10 +60,18 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
     assert data["sensor"]["id"] == "lab-01"
     assert data["capture"]["interface"] == "wlan1mon"
     assert data["capture"]["pcap_file"] == str(sample_pcap)
+    assert data["capture"]["method"] == "tshark"
+    assert data["capture"]["channels"] == [1, 6, 11, 36, 40, 44]
+    assert data["capture"]["adaptive_hopping"] is True
+    assert data["buffer"]["max_items"] == 50000
+    assert data["buffer"]["drop_policy"] == "spill_to_disk"
     assert data["mock_mode"] is False
     assert data["api"]["upload_url"] == "http://127.0.0.1:8080/api/v1/telemetry"
     assert data["ml"]["enabled"] is True
     assert data["privacy"]["anonymize_ssid"] is True
+    assert data["privacy"]["scrub_probe_requests"] is False
+    assert data["detectors"]["default_profile"] == "full_wids"
+    assert data["tui"]["preset_id"] == "soc_tactical"
 
 
 def test_load_saved_tui_settings_round_trip(tmp_path: Path):
@@ -67,6 +90,16 @@ def test_load_saved_tui_settings_round_trip(tmp_path: Path):
             "geo_sensor_x_m": "12.5",
             "geo_sensor_y_m": "4.0",
             "anonymize": False,
+            "capture_method": "tshark",
+            "capture_channels": "1, 6, 11, 36, 40, 44",
+            "dwell_ms": "250",
+            "adaptive_hopping": True,
+            "buffer_max_items": "50000",
+            "buffer_drop_policy": "spill_to_disk",
+            "scrub_probe_requests": False,
+            "detector_profile": "full_wids",
+            "profile_name": "SOC Tactical Lab",
+            "preset_id": "soc_tactical",
         },
     )
 
@@ -80,6 +113,47 @@ def test_load_saved_tui_settings_round_trip(tmp_path: Path):
     assert settings["geo_sensor_x_m"] == "12.5"
     assert settings["geo_sensor_y_m"] == "4.0"
     assert settings["anonymize"] is False
+    assert settings["capture_method"] == "tshark"
+    assert settings["capture_channels"] == "1, 6, 11, 36, 40, 44"
+    assert settings["dwell_ms"] == "250"
+    assert settings["adaptive_hopping"] is True
+    assert settings["buffer_max_items"] == "50000"
+    assert settings["buffer_drop_policy"] == "spill_to_disk"
+    assert settings["scrub_probe_requests"] is False
+    assert settings["detector_profile"] == "full_wids"
+    assert settings["profile_name"] == "SOC Tactical Lab"
+    assert settings["preset_id"] == "soc_tactical"
+
+
+def test_builtin_preset_can_be_saved_loaded_and_deleted(tmp_path: Path):
+    settings = apply_tui_preset(
+        "soc_tactical",
+        {
+            "sensor_id": "field-alpha",
+            "interface": "wlan1mon",
+            "controller_url": "https://controller.lab",
+        },
+    )
+
+    saved_name = save_tui_profile(tmp_path, "SOC Tactical Lab", settings)
+
+    assert saved_name == "SOC Tactical Lab"
+    profile_store = json.loads(
+        resolve_profile_store_path(tmp_path).read_text(encoding="utf-8")
+    )
+    assert "SOC Tactical Lab" in profile_store["profiles"]
+
+    loaded = load_tui_profile(tmp_path, "SOC Tactical Lab")
+
+    assert loaded is not None
+    assert loaded["sensor_id"] == "field-alpha"
+    assert loaded["capture_method"] == "tshark"
+    assert loaded["buffer_drop_policy"] == "spill_to_disk"
+    assert loaded["detector_profile"] == "full_wids"
+    assert loaded["preset_id"] == "soc_tactical"
+
+    assert delete_tui_profile(tmp_path, "SOC Tactical Lab") is True
+    assert load_tui_profile(tmp_path, "SOC Tactical Lab") is None
 
 
 def test_coerce_sensor_id_uses_fallback_for_blank_values():

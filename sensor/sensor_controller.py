@@ -88,10 +88,14 @@ class SensorController:
         )
 
         self.buffer = BufferManager(
-            max_memory_items=10000,
-            storage_path=config.storage.pcap_dir.replace(
-                "pcaps", "journal"
-            ),  # Hacky but ok
+            max_memory_items=int(getattr(config.buffer, "max_items", 10000)),
+            storage_path=getattr(
+                config.buffer,
+                "storage_path",
+                config.storage.pcap_dir.replace("pcaps", "journal"),
+            ),
+            max_disk_mb=int(getattr(config.buffer, "max_disk_mb", 100)),
+            drop_policy=str(getattr(config.buffer, "drop_policy", "oldest")),
         )
 
         upload_url = config.api.upload_url or (
@@ -128,6 +132,8 @@ class SensorController:
             driver=self.driver,
             channels=config.capture.channels,
             dwell_ms=int(config.capture.dwell_time * 1000),
+            settle_ms=int(getattr(config.capture, "settle_ms", 50)),
+            adaptive=bool(getattr(config.capture, "adaptive_hopping", False)),
         )
 
         # Stateful Aggregator

@@ -1,8 +1,10 @@
 import asyncio
+import json
 import os
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytest.importorskip("textual")
 
@@ -160,6 +162,60 @@ def test_generate_token_and_keys_uses_controller_when_available(
             env_text = (tmp_path / ".env").read_text(encoding="utf-8")
             assert "SENSOR_AUTH_TOKEN=controller-issued-token" in env_text
             assert "SENTINEL_ADMIN_TOKEN=admin-token" in env_text
+
+    try:
+        asyncio.run(run_case())
+    finally:
+        _restore_env(snapshot)
+
+
+def test_config_preset_can_be_saved_and_loaded_as_named_profile(
+    monkeypatch, tmp_path: Path
+):
+    snapshot = _snapshot_env()
+
+    async def run_case():
+        monkeypatch.setattr(app_mod, "PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(app_mod, "detect_wifi_interfaces", lambda: ["wlan0mon"])
+        monkeypatch.setattr(
+            app_mod,
+            "check_controller_online",
+            lambda base_url=None: False,
+        )
+
+        app = app_mod.SentinelTUIApp()
+        app.saved_settings = {}
+        app.config_path = None
+
+        async with app.run_test(size=(100, 34)):
+            screen = app.screen
+            screen.query_one("#input-sensor-id", Input).value = "field-alpha"
+            screen.query_one("#input-iface", Input).value = "wlan0mon"
+
+            screen._apply_config_preset("soc_tactical")
+
+            config_data = yaml.safe_load((tmp_path / "config.yaml").read_text())
+            assert config_data["capture"]["method"] == "tshark"
+            assert config_data["buffer"]["drop_policy"] == "spill_to_disk"
+            assert config_data["detectors"]["default_profile"] == "full_wids"
+
+            screen.query_one("#input-profile-name", Input).value = "SOC Lab"
+            screen._save_named_profile()
+
+            profile_data = json.loads(
+                (tmp_path / ".sentinel_tui_profiles.json").read_text(encoding="utf-8")
+            )
+            assert "SOC Lab" in profile_data["profiles"]
+
+            screen.query_one("#input-sensor-id", Input).value = "temp-sensor"
+            screen._apply_quick_bundle("demo")
+            screen.query_one("#input-profile-name", Input).value = "SOC Lab"
+            screen._load_named_profile()
+
+            assert screen.query_one("#input-sensor-id", Input).value == "field-alpha"
+            loaded_config = yaml.safe_load((tmp_path / "config.yaml").read_text())
+            assert loaded_config["tui"]["profile_name"] == "SOC Lab"
+            assert loaded_config["tui"]["preset_id"] == "soc_tactical"
 
     try:
         asyncio.run(run_case())

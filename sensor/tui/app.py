@@ -39,12 +39,20 @@ from sensor.config import Config, init_config
 from sensor.sensor_controller import SensorController
 from sensor.tui.bootstrap import EnvLoadResult, load_tui_env
 from sensor.tui.config_store import (
+    BUILTIN_TUI_PRESETS,
+    apply_tui_preset,
     coerce_sensor_id,
+    delete_tui_profile,
+    list_saved_tui_profiles,
     load_raw_config,
     load_saved_tui_settings,
+    load_tui_profile,
+    normalize_tui_settings,
+    parse_channel_list,
     parse_geo_coordinate,
     persist_tui_settings,
     resolve_config_path,
+    save_tui_profile,
     validate_tui_settings,
 )
 from sensor.tui.setup_wizard import (
@@ -242,6 +250,29 @@ class SetupScreen(Screen):
                         )
                     yield Label("", id="quick-setup-status")
 
+                with Container(classes="setup-group"):
+                    yield Label("🗂️ PROFILES & PRESETS", classes="setup-group-title")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Balanced Live", id="btn-preset-balanced-live")
+                        yield Button("SOC Tactical", id="btn-preset-soc-tactical")
+                        yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
+                    with Horizontal(classes="setup-row", id="row-profile-name"):
+                        yield Label("Profile Name", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="soc-lab, replay-case-01, field-team-a",
+                            id="input-profile-name",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Save Profile", id="btn-save-profile")
+                        yield Button("Load Profile", id="btn-load-profile")
+                        yield Button("Delete Profile", id="btn-delete-profile")
+                    yield Label("", id="preset-summary")
+                    yield Label("", id="profile-status")
+                    yield Label("", id="profile-inventory", classes="setup-hint")
+
                 # Mode Selection
                 with Container(classes="setup-group"):
                     yield Label("⚡ OPERATION MODE", classes="setup-group-title")
@@ -329,7 +360,8 @@ class SetupScreen(Screen):
         """Auto-detect environment on screen load."""
         app = self.app
         assert isinstance(app, SentinelTUIApp)
-        defaults = app.saved_settings
+        defaults = normalize_tui_settings(app.saved_settings)
+        self._advanced_settings = self._extract_advanced_settings(defaults)
         self._available_ifaces = detect_wifi_interfaces()
         sensor_id = coerce_sensor_id(
             defaults.get("sensor_id"),
@@ -357,6 +389,9 @@ class SetupScreen(Screen):
         self.query_one("#input-admin-token", Input).value = str(
             os.environ.get("SENTINEL_ADMIN_TOKEN", "")
         )
+        self.query_one("#input-profile-name", Input).value = str(
+            defaults.get("profile_name", "")
+        )
         self.query_one("#input-geo-x", Input).value = str(
             defaults.get("geo_sensor_x_m", "")
         )
@@ -376,6 +411,8 @@ class SetupScreen(Screen):
 
         self._sync_dynamic_rows()
         self._refresh_preflight()
+        self._refresh_profile_inventory()
+        self._refresh_profile_summary(defaults)
         self.call_after_refresh(
             lambda: self.set_focus(self.query_one("#input-sensor-id", Input))
         )
@@ -389,6 +426,18 @@ class SetupScreen(Screen):
             self._apply_quick_bundle("live")
         elif event.button.id == "btn-gen-secrets":
             self._generate_token_and_keys()
+        elif event.button.id == "btn-preset-balanced-live":
+            self._apply_config_preset("balanced_live")
+        elif event.button.id == "btn-preset-soc-tactical":
+            self._apply_config_preset("soc_tactical")
+        elif event.button.id == "btn-preset-pcap-forensics":
+            self._apply_config_preset("pcap_forensics")
+        elif event.button.id == "btn-save-profile":
+            self._save_named_profile()
+        elif event.button.id == "btn-load-profile":
+            self._load_named_profile()
+        elif event.button.id == "btn-delete-profile":
+            self._delete_named_profile()
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "chk-geo":
@@ -447,6 +496,7 @@ class SetupScreen(Screen):
         )
 
     def _collect_settings(self) -> dict[str, Any]:
+        settings = normalize_tui_settings(self._advanced_settings)
         mode = self._selected_mode()
         iface = self.query_one("#input-iface", Input).value.strip()
         pcap_path = self.query_one("#input-pcap", Input).value
@@ -456,18 +506,22 @@ class SetupScreen(Screen):
             or self.app.saved_settings.get("sensor_id")
             or "tui-sensor-01",
         )
-        return {
-            "mode": mode,
-            "sensor_id": sensor_id,
-            "interface": iface,
-            "pcap_path": pcap_path,
-            "controller_url": self._controller_url(),
-            "ml_enabled": self.query_one("#chk-ml", Checkbox).value,
-            "geo_enabled": self.query_one("#chk-geo", Checkbox).value,
-            "geo_sensor_x_m": self.query_one("#input-geo-x", Input).value.strip(),
-            "geo_sensor_y_m": self.query_one("#input-geo-y", Input).value.strip(),
-            "anonymize": self.query_one("#chk-anon", Checkbox).value,
-        }
+        settings.update(
+            {
+                "mode": mode,
+                "sensor_id": sensor_id,
+                "interface": iface,
+                "pcap_path": pcap_path,
+                "controller_url": self._controller_url(),
+                "ml_enabled": self.query_one("#chk-ml", Checkbox).value,
+                "geo_enabled": self.query_one("#chk-geo", Checkbox).value,
+                "geo_sensor_x_m": self.query_one("#input-geo-x", Input).value.strip(),
+                "geo_sensor_y_m": self.query_one("#input-geo-y", Input).value.strip(),
+                "anonymize": self.query_one("#chk-anon", Checkbox).value,
+                "profile_name": self.query_one("#input-profile-name", Input).value,
+            }
+        )
+        return normalize_tui_settings(settings)
 
     def _persist_setup_state(
         self,
@@ -482,29 +536,38 @@ class SetupScreen(Screen):
             PROJECT_ROOT, app.config_path, app.tui_config
         )
         app.saved_settings = load_saved_tui_settings(app.config_path)
+        self._advanced_settings = self._extract_advanced_settings(app.saved_settings)
         app.app_state.push_log(f"[System] Saved config to {app.config_path.name}")
+        self._refresh_profile_summary(app.saved_settings)
         if status_message:
             self.query_one("#quick-setup-status", Label).update(status_message)
 
     def _apply_settings_to_inputs(self, settings: dict[str, Any]) -> None:
-        self.query_one("#input-sensor-id", Input).value = str(settings["sensor_id"])
-        self.query_one("#input-iface", Input).value = str(settings["interface"])
-        self.query_one("#input-pcap", Input).value = str(settings["pcap_path"])
+        merged = normalize_tui_settings({**self._advanced_settings, **settings})
+        self._advanced_settings = self._extract_advanced_settings(merged)
+
+        self.query_one("#input-sensor-id", Input).value = str(merged["sensor_id"])
+        self.query_one("#input-iface", Input).value = str(merged["interface"])
+        self.query_one("#input-pcap", Input).value = str(merged["pcap_path"])
         self.query_one("#input-controller-url", Input).value = str(
-            settings["controller_url"]
+            merged["controller_url"]
         )
         self.query_one("#input-admin-token", Input).value = str(
-            settings.get("admin_token", "")
+            merged.get("admin_token", "")
         )
-        self.query_one("#input-geo-x", Input).value = str(settings["geo_sensor_x_m"])
-        self.query_one("#input-geo-y", Input).value = str(settings["geo_sensor_y_m"])
-        self.query_one("#chk-ml", Checkbox).value = bool(settings["ml_enabled"])
-        self.query_one("#chk-geo", Checkbox).value = bool(settings["geo_enabled"])
-        self.query_one("#chk-anon", Checkbox).value = bool(settings["anonymize"])
-        self.query_one("#mode-live", RadioButton).value = settings["mode"] == "live"
-        self.query_one("#mode-mock", RadioButton).value = settings["mode"] == "mock"
-        self.query_one("#mode-pcap", RadioButton).value = settings["mode"] == "pcap"
+        self.query_one("#input-profile-name", Input).value = str(
+            merged.get("profile_name", "")
+        )
+        self.query_one("#input-geo-x", Input).value = str(merged["geo_sensor_x_m"])
+        self.query_one("#input-geo-y", Input).value = str(merged["geo_sensor_y_m"])
+        self.query_one("#chk-ml", Checkbox).value = bool(merged["ml_enabled"])
+        self.query_one("#chk-geo", Checkbox).value = bool(merged["geo_enabled"])
+        self.query_one("#chk-anon", Checkbox).value = bool(merged["anonymize"])
+        self.query_one("#mode-live", RadioButton).value = merged["mode"] == "live"
+        self.query_one("#mode-mock", RadioButton).value = merged["mode"] == "mock"
+        self.query_one("#mode-pcap", RadioButton).value = merged["mode"] == "pcap"
         self._sync_dynamic_rows()
+        self._refresh_profile_summary(merged)
 
     def _write_runtime_env(
         self,
@@ -587,6 +650,117 @@ class SetupScreen(Screen):
             ),
         )
         self._refresh_preflight()
+
+    def _apply_config_preset(self, preset_id: str) -> None:
+        preset = BUILTIN_TUI_PRESETS[preset_id]
+        merged = apply_tui_preset(preset_id, self._collect_settings())
+        self._apply_settings_to_inputs(merged)
+        self._persist_setup_state(self._collect_settings())
+        self.query_one("#profile-status", Label).update(
+            f"[green]Applied preset {preset['label']}.[/green]"
+        )
+
+    def _save_named_profile(self) -> None:
+        name = self.query_one("#input-profile-name", Input).value
+        try:
+            saved_name = save_tui_profile(PROJECT_ROOT, name, self._collect_settings())
+        except ValueError as exc:
+            self.query_one("#profile-status", Label).update(
+                f"[bold red]❌ {exc}[/bold red]"
+            )
+            return
+
+        self.query_one("#input-profile-name", Input).value = saved_name
+        self._persist_setup_state(self._collect_settings())
+        self._refresh_profile_inventory()
+        self.query_one("#profile-status", Label).update(
+            f"[green]Saved custom profile '{saved_name}'.[/green]"
+        )
+
+    def _load_named_profile(self) -> None:
+        name = self.query_one("#input-profile-name", Input).value
+        profile = load_tui_profile(PROJECT_ROOT, name)
+        if profile is None:
+            self.query_one("#profile-status", Label).update(
+                "[bold red]❌ Saved profile not found.[/bold red]"
+            )
+            return
+
+        self._apply_settings_to_inputs(profile)
+        self._persist_setup_state(self._collect_settings())
+        self.query_one("#profile-status", Label).update(
+            f"[green]Loaded custom profile '{profile['profile_name']}'.[/green]"
+        )
+
+    def _delete_named_profile(self) -> None:
+        name = self.query_one("#input-profile-name", Input).value
+        if not delete_tui_profile(PROJECT_ROOT, name):
+            self.query_one("#profile-status", Label).update(
+                "[bold red]❌ Nothing to delete for that profile name.[/bold red]"
+            )
+            return
+
+        current_settings = self._collect_settings()
+        current_settings["profile_name"] = ""
+        self.query_one("#input-profile-name", Input).value = ""
+        self._persist_setup_state(current_settings)
+        self._refresh_profile_inventory()
+        self.query_one("#profile-status", Label).update(
+            f"[green]Deleted custom profile '{name.strip()}'.[/green]"
+        )
+
+    def _refresh_profile_inventory(self) -> None:
+        saved_profiles = list_saved_tui_profiles(PROJECT_ROOT)
+        if not saved_profiles:
+            self.query_one("#profile-inventory", Label).update(
+                "[dim]Saved profiles: none yet.[/dim]"
+            )
+            return
+
+        preview = ", ".join(saved_profiles[:6])
+        if len(saved_profiles) > 6:
+            preview += ", ..."
+        self.query_one("#profile-inventory", Label).update(
+            f"[dim]Saved profiles:[/dim] {preview}"
+        )
+
+    def _refresh_profile_summary(self, settings: dict[str, Any]) -> None:
+        normalized = normalize_tui_settings(settings)
+        preset_id = str(normalized.get("preset_id", ""))
+        preset_label = (
+            BUILTIN_TUI_PRESETS[preset_id]["label"]
+            if preset_id in BUILTIN_TUI_PRESETS
+            else "Custom"
+        )
+        scrub_status = "scrub probes" if normalized["scrub_probe_requests"] else "keep probes"
+        adaptive_status = (
+            "adaptive hop" if normalized["adaptive_hopping"] else "fixed hop"
+        )
+        self.query_one("#preset-summary", Label).update(
+            "[cyan]Preset:[/cyan] "
+            f"{preset_label} | Capture {normalized['capture_method']} | "
+            f"Channels {normalized['capture_channels']} | "
+            f"Dwell {normalized['dwell_ms']}ms | Buffer "
+            f"{normalized['buffer_max_items']} ({normalized['buffer_drop_policy']}) | "
+            f"Detector {normalized['detector_profile']} | "
+            f"{adaptive_status} | {scrub_status}"
+        )
+
+    @staticmethod
+    def _extract_advanced_settings(settings: dict[str, Any]) -> dict[str, Any]:
+        normalized = normalize_tui_settings(settings)
+        keys = (
+            "capture_method",
+            "capture_channels",
+            "dwell_ms",
+            "adaptive_hopping",
+            "buffer_max_items",
+            "buffer_drop_policy",
+            "scrub_probe_requests",
+            "detector_profile",
+            "preset_id",
+        )
+        return {key: normalized[key] for key in keys}
 
     def action_start_sensor(self) -> None:
         """Gather config, validate, and switch to Dashboard."""
@@ -907,6 +1081,30 @@ class SentinelTUIApp(App):
         config.geo.sensor_x_m = parse_geo_coordinate(cfg.get("geo_sensor_x_m"))
         config.geo.sensor_y_m = parse_geo_coordinate(cfg.get("geo_sensor_y_m"))
         config.privacy.anonymize_ssid = bool(cfg.get("anonymize"))
+        if hasattr(config.capture, "method"):
+            config.capture.method = str(cfg.get("capture_method", config.capture.method))
+        if hasattr(config.capture, "channels"):
+            config.capture.channels = parse_channel_list(
+                cfg.get("capture_channels", config.capture.channels)
+            )
+        if hasattr(config.capture, "dwell_time"):
+            config.capture.dwell_time = (
+                float(str(cfg.get("dwell_ms", "200")).strip()) / 1000.0
+            )
+        if hasattr(config.capture, "adaptive_hopping"):
+            config.capture.adaptive_hopping = bool(cfg.get("adaptive_hopping"))
+        if hasattr(config, "buffer"):
+            config.buffer.max_items = int(str(cfg.get("buffer_max_items", "10000")))
+            config.buffer.drop_policy = str(
+                cfg.get("buffer_drop_policy", config.buffer.drop_policy)
+            )
+        if hasattr(config.privacy, "scrub_probe_requests"):
+            config.privacy.scrub_probe_requests = bool(
+                cfg.get("scrub_probe_requests")
+            )
+        config.detectors.default_profile = str(
+            cfg.get("detector_profile", config.detectors.default_profile)
+        )
 
         return config
 
@@ -914,6 +1112,7 @@ class SentinelTUIApp(App):
     def _apply_raw_config(config: Config, data: dict[str, Any]) -> None:
         """Apply a minimal YAML/JSON mapping onto the runtime Config object."""
         section_map = {
+            "buffer": config.buffer,
             "storage": config.storage,
             "api": config.api,
             "risk": config.risk,

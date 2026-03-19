@@ -1,60 +1,30 @@
+sensor:
+  id: tui-sensor-01
 capture:
   interface: wlan0
+  pcap_file: null
+  method: scapy
   channels:
   - 1
   - 6
   - 11
-  dwell_time: 0.4
-  enable_channel_hop: true
-  scan_duration: 10
-  packet_filter: type mgt
-  pcap_file: null
-storage:
-  db_path: ./data/wifi_scans.db
-  pcap_dir: ./data/pcaps
-  pcap_enabled: true
-  pcap_max_age_days: 7
-  pcap_max_size_mb: 100
-  history_retention_days: 30
+  dwell_ms: 200
+  adaptive_hopping: false
 api:
-  host: 0.0.0.0
-  port: 5000
-  debug: false
-  api_key: change-me-in-production
-  rate_limit: 60/minute
-  cors_enabled: true
-  ssl_enabled: true
-  ssl_cert: /etc/ssl/certs/sentinel.crt
-  ssl_key: /etc/ssl/private/sentinel.key
-risk:
-  encryption_weight: 0.45
-  signal_weight: 0.2
-  ssid_weight: 0.15
-  vendor_weight: 0.1
-  channel_weight: 0.1
-  high_risk_threshold: 70
-  critical_risk_threshold: 90
-privacy:
-  mode: anonymized
-  store_raw_mac: false
-  anonymize_ssid: false
-  retention_days: 30
-detectors:
-  default_profile: lite_realtime
-  thresholds:
-    deauth_flood:
-      threshold_per_sec: 10.0
-      window_seconds: 2.0
-    beacon_flood:
-      unique_ssid_threshold: 50
-      time_window: 30
-mock_mode: false
-log_level: INFO
-sensor:
-  id: tui-sensor-01
+  upload_url: http://127.0.0.1:8080/api/v1/telemetry
 ml:
   enabled: false
 geo:
   enabled: false
   sensor_x_m: null
   sensor_y_m: null
+privacy:
+  anonymize_ssid: true
+  scrub_probe_requests: false
+buffer:
+  max_items: 10000
+  drop_policy: oldest
+detectors:
+  default_profile: lite_realtime
+tui: {}
+mock_mode: true
