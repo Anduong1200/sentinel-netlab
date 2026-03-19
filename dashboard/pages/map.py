@@ -1,5 +1,5 @@
-import os
 import hashlib
+import os
 
 import dash
 import dash_bootstrap_components as dbc
@@ -130,7 +130,9 @@ def update_map(n, filter_val):
             bssid = net.get("bssid", "00:00:00:00:00:00")
 
             if not (lat and lon):
-                h = int(hashlib.md5(bssid.encode(), usedforsecurity=False).hexdigest(), 16)
+                h = int(
+                    hashlib.md5(bssid.encode(), usedforsecurity=False).hexdigest(), 16
+                )
                 lat = 40.7128 + ((h % 2000) / 100000.0 - 0.01)
                 lon = -74.0060 + (((h // 2000) % 2000) / 100000.0 - 0.01)
                 net["lat"] = lat
