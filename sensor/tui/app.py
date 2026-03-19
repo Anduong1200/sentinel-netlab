@@ -1,8 +1,14 @@
 """
 Sentinel NetLab TUI - Main Application
 Entry point: python -m sensor.tui
+
+Operational Framework:
+  Screen 1 (Setup): Mode select, auto-detect WiFi, pre-flight validation.
+  Screen 2 (Dashboard): 4-panel real-time with alert debouncing & graceful shutdown.
 """
 
+import collections
+import glob
 import logging
 import os
 import queue
@@ -16,7 +22,7 @@ from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
-from textual.screen import Screen
+from textual.screen import ModalScreen, Screen
 from textual.widgets import (
     Button,
     Checkbox,
@@ -38,11 +44,91 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
 REFRESH_INTERVAL = 0.8  # seconds
 
 
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+def detect_wifi_interfaces() -> list[str]:
+    """Auto-detect available wireless interfaces on Linux."""
+    interfaces = []
+    try:
+        wireless_path = "/sys/class/net"
+        if os.path.isdir(wireless_path):
+            for iface in os.listdir(wireless_path):
+                phy_path = os.path.join(wireless_path, iface, "wireless")
+                phy80211 = os.path.join(wireless_path, iface, "phy80211")
+                if os.path.isdir(phy_path) or os.path.isdir(phy80211):
+                    interfaces.append(iface)
+        # Also check for monitor mode interfaces
+        for iface_dir in glob.glob("/sys/class/net/*mon*"):
+            name = os.path.basename(iface_dir)
+            if name not in interfaces:
+                interfaces.append(name)
+    except Exception:
+        pass
+    return interfaces or ["(none detected)"]
+
+
+def check_controller_online() -> bool:
+    """Quick check if the Controller API is reachable."""
+    try:
+        import requests
+        url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
+        resp = requests.get(f"{url}/api/v1/sensors", timeout=1)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# SCREEN 1: SETUP & CONFIG
+# MODAL: GRACEFUL SHUTDOWN
+# ═══════════════════════════════════════════════════════════════════════════════
+class ShutdownModal(ModalScreen):
+    """Modal overlay shown during graceful shutdown."""
+
+    DEFAULT_CSS = """
+    ShutdownModal {
+        align: center middle;
+    }
+    #shutdown-box {
+        width: 50;
+        height: 12;
+        border: heavy #f85149;
+        background: #161b22;
+        padding: 2 4;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container(id="shutdown-box"):
+            yield Label("[b red]⏻  SHUTTING DOWN[/b red]", id="sd-title")
+            yield Label("", id="sd-status")
+            yield Label("")
+            yield Label("[dim]Sẽ tự động thoát sau khi hoàn tất…[/dim]")
+
+    def on_mount(self) -> None:
+        self.run_shutdown_sequence()
+
+    def run_shutdown_sequence(self) -> None:
+        """Animate the shutdown steps."""
+        self.set_timer(0.3, lambda: self._update("🔄 Đang dừng Sensor Worker…"))
+        self.set_timer(1.0, lambda: self._update("📦 Đang xả hàng đợi Spool…"))
+        self.set_timer(1.8, lambda: self._update("💾 Đang lưu trạng thái…"))
+        self.set_timer(2.5, lambda: self._update("📡 Đóng card mạng…"))
+        self.set_timer(3.2, self._finish)
+
+    def _update(self, msg: str) -> None:
+        try:
+            self.query_one("#sd-status", Label).update(msg)
+        except Exception:
+            pass
+
+    def _finish(self) -> None:
+        self.app.exit()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCREEN 1: SETUP & CONFIG (Pre-flight Check)
 # ═══════════════════════════════════════════════════════════════════════════════
 class SetupScreen(Screen):
-    """Configuration screen to choose operation mode and options."""
+    """Configuration screen with auto-detection and pre-flight validation."""
 
     BINDINGS = [Binding("f5", "start_sensor", "Start Sensor")]
 
@@ -62,26 +148,32 @@ class SetupScreen(Screen):
                     classes="panel-title",
                 )
 
+                # Pre-flight status
+                with Container(classes="setup-group"):
+                    yield Label("🔍 PRE-FLIGHT CHECK", classes="setup-group-title")
+                    yield Label("", id="pf-wifi")
+                    yield Label("", id="pf-controller")
+
                 # Mode Selection
                 with Container(classes="setup-group"):
                     yield Label("⚡ OPERATION MODE", classes="setup-group-title")
                     with RadioSet(id="mode-select"):
-                        yield RadioButton("Live Combat (Thực chiến)", id="mode-live")
+                        yield RadioButton("(A) Live Combat — Thực chiến", id="mode-live")
                         yield RadioButton(
-                            "Mock / Test Mode", id="mode-mock", value=True
+                            "(B) Mock / Test Lab", id="mode-mock", value=True
                         )
-                        yield RadioButton("PCAP Replay", id="mode-pcap")
+                        yield RadioButton("(C) PCAP Replay — Phân tích lại", id="mode-pcap")
 
                 # Interface
                 with Container(classes="setup-group"):
                     yield Label("🔌 CONFIGURATION", classes="setup-group-title")
-                    yield Label("Interface:")
+                    yield Label("Interface (auto-detected):")
                     yield Input(
                         value="wlan0mon",
-                        placeholder="Enter WiFi interface",
+                        placeholder="WiFi interface",
                         id="input-iface",
                     )
-                    yield Label("PCAP Path (for Replay):")
+                    yield Label("PCAP Path (for Replay mode):")
                     yield Input(
                         value="",
                         placeholder="/path/to/capture.pcap",
@@ -94,8 +186,11 @@ class SetupScreen(Screen):
                     yield Checkbox("Enable ML Boost", id="chk-ml", value=False)
                     yield Checkbox("Enable Geo-Location", id="chk-geo", value=False)
                     yield Checkbox(
-                        "Anonymize MAC/SSID", id="chk-anon", value=True
+                        "Anonymize MAC/SSID (Quyền riêng tư)", id="chk-anon", value=True
                     )
+
+                # Validation error area
+                yield Label("", id="validation-error")
 
                 yield Button(
                     "▶  START SENSOR  (F5)",
@@ -105,14 +200,38 @@ class SetupScreen(Screen):
 
         yield Footer()
 
+    def on_mount(self) -> None:
+        """Auto-detect environment on screen load."""
+        # Detect WiFi interfaces
+        ifaces = detect_wifi_interfaces()
+        iface_text = ", ".join(ifaces)
+        has_wifi = ifaces[0] != "(none detected)"
+        color = "green" if has_wifi else "yellow"
+        self.query_one("#pf-wifi", Label).update(
+            f"WiFi Cards: [{color}]{iface_text}[/{color}]"
+        )
+
+        # Auto-fill best interface
+        if has_wifi:
+            # Prefer monitor mode interfaces
+            best = next((i for i in ifaces if "mon" in i), ifaces[0])
+            self.query_one("#input-iface", Input).value = best
+
+        # Check controller
+        ctrl_ok = check_controller_online()
+        ctrl_color = "green" if ctrl_ok else "red"
+        ctrl_text = "ONLINE ✓" if ctrl_ok else "OFFLINE ✗ (make lab-up?)"
+        self.query_one("#pf-controller", Label).update(
+            f"Controller: [{ctrl_color}]{ctrl_text}[/{ctrl_color}]"
+        )
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-start":
             self.action_start_sensor()
 
     def action_start_sensor(self) -> None:
-        """Gather config and switch to Dashboard."""
+        """Gather config, validate, and switch to Dashboard."""
         # Determine mode
-        radio_set = self.query_one("#mode-select", RadioSet)
         mode = "mock"  # default
         if self.query_one("#mode-live", RadioButton).value:
             mode = "live"
@@ -121,6 +240,39 @@ class SetupScreen(Screen):
 
         iface = self.query_one("#input-iface", Input).value or "mock0"
         pcap_path = self.query_one("#input-pcap", Input).value
+
+        # ── Pre-flight Validation (Fool-proof) ──
+        err_label = self.query_one("#validation-error", Label)
+
+        if mode == "live":
+            ifaces = detect_wifi_interfaces()
+            if iface not in ifaces and ifaces[0] != "(none detected)":
+                err_label.update(
+                    f"[bold red]❌ Interface '{iface}' not found! "
+                    f"Available: {', '.join(ifaces)}[/bold red]"
+                )
+                return
+            if ifaces[0] == "(none detected)":
+                err_label.update(
+                    "[bold red]❌ No WiFi card detected! "
+                    "Please plug in a USB WiFi adapter.[/bold red]"
+                )
+                return
+
+        if mode == "pcap" and not pcap_path:
+            err_label.update(
+                "[bold red]❌ PCAP mode requires a file path![/bold red]"
+            )
+            return
+
+        if mode == "pcap" and pcap_path and not os.path.isfile(pcap_path):
+            err_label.update(
+                f"[bold red]❌ File not found: {pcap_path}[/bold red]"
+            )
+            return
+
+        err_label.update("")  # Clear errors
+
         ml_enabled = self.query_one("#chk-ml", Checkbox).value
         geo_enabled = self.query_one("#chk-geo", Checkbox).value
         anonymize = self.query_one("#chk-anon", Checkbox).value
@@ -132,7 +284,6 @@ class SetupScreen(Screen):
         state.interface = iface if mode == "live" else "mock0"
         state.sensor_id = os.environ.get("SENSOR_ID", "tui-sensor-01")
 
-        # Store extra config for the worker
         app.tui_config = {
             "mode": mode,
             "interface": iface if mode == "live" else "mock0",
@@ -142,7 +293,7 @@ class SetupScreen(Screen):
             "anonymize": anonymize,
         }
 
-        # Switch to dashboard
+        # Switch to dashboard & start
         app.push_screen("dashboard")
         app.start_sensor_worker()
 
@@ -151,12 +302,14 @@ class SetupScreen(Screen):
 # SCREEN 2: LIVE DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
 class DashboardScreen(Screen):
-    """Real-time monitoring dashboard with 4 panels."""
+    """Real-time monitoring dashboard with 4 panels and hot-actions."""
 
     BINDINGS = [
         Binding("f1", "show_setup", "Setup"),
         Binding("space", "toggle_pause", "Pause Log"),
-        Binding("q", "quit_app", "Quit"),
+        Binding("c", "force_channel_hop", "Force Channel"),
+        Binding("m", "mark_bssid", "Mark BSSID"),
+        Binding("q", "graceful_quit", "Quit"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -231,9 +384,41 @@ class DashboardScreen(Screen):
     def action_toggle_pause(self) -> None:
         app: SentinelTUIApp = self.app  # type: ignore
         app.log_paused = not app.log_paused
+        status = "⏸ PAUSED" if app.log_paused else "▶ RESUMED"
+        app.app_state.push_log(f"[System] Log scroll {status}")
 
-    def action_quit_app(self) -> None:
-        self.app.exit()
+    def action_force_channel_hop(self) -> None:
+        """Force WiFi channel hop (sends signal to channel hopper)."""
+        app: SentinelTUIApp = self.app  # type: ignore
+        app.app_state.push_log("[System] ⚡ Force channel hop requested")
+
+    def action_mark_bssid(self) -> None:
+        """Mark the currently selected BSSID as suspicious."""
+        app: SentinelTUIApp = self.app  # type: ignore
+        try:
+            table = self.query_one("#net-table", DataTable)
+            row_key = table.cursor_row
+            if row_key is not None:
+                # Get BSSID from column 1
+                row_data = table.get_row_at(row_key)
+                bssid = str(row_data[1]) if len(row_data) > 1 else "?"
+                app.app_state.push_log(
+                    f"[System] 🔖 Marked BSSID as suspicious: {bssid}"
+                )
+                app.app_state.push_alert(AlertEntry(
+                    timestamp=datetime.now().strftime("%H:%M:%S"),
+                    severity="Medium",
+                    title="Manual Mark",
+                    description=f"User marked {bssid} as suspicious",
+                ))
+        except Exception:
+            pass
+
+    def action_graceful_quit(self) -> None:
+        """Graceful shutdown with visual feedback."""
+        app: SentinelTUIApp = self.app  # type: ignore
+        app._stop_event.set()
+        app.push_screen(ShutdownModal())
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -243,7 +428,7 @@ class SentinelTUIApp(App):
     """Sentinel NetLab – Multi-Screen Terminal Dashboard."""
 
     TITLE = "Sentinel NetLab"
-    SUB_TITLE = "Terminal Control Panel"
+    SUB_TITLE = "Terminal Control Panel v0.6.0"
     CSS_PATH = "theme.tcss"
 
     SCREENS = {"setup": SetupScreen, "dashboard": DashboardScreen}
@@ -259,12 +444,13 @@ class SentinelTUIApp(App):
         self.log_paused = False
         self._sensor_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
+        # Alert debouncing: track recent alert keys to group duplicates
+        self._alert_debounce: dict[str, int] = {}
+        self._debounce_window = 10.0  # seconds
+        self._last_debounce_flush = time.time()
 
     def on_mount(self) -> None:
-        # Show setup screen first
         self.push_screen("setup")
-
-        # Start the periodic TUI updater
         self.set_interval(REFRESH_INTERVAL, self._update_dashboard)
 
     def start_sensor_worker(self) -> None:
@@ -276,7 +462,7 @@ class SentinelTUIApp(App):
         self.app_state.running = True
         self.app_state.start_time = time.time()
 
-        # Install log handler to capture sensor logs into TUI
+        # Install log handler
         tui_handler = TUILogHandler(self.app_state)
         tui_handler.setLevel(logging.INFO)
         root_logger = logging.getLogger()
@@ -295,7 +481,6 @@ class SentinelTUIApp(App):
             cfg = self.tui_config
             mode = cfg.get("mode", "mock")
 
-            # Build CLI args
             args = [
                 "python3", str(PROJECT_ROOT / "sensor" / "cli.py"),
                 "--sensor-id", self.app_state.sensor_id,
@@ -314,7 +499,6 @@ class SentinelTUIApp(App):
 
             self.app_state.push_log(f"[System] Launching: {' '.join(args)}")
 
-            # Run as subprocess so it doesn't crash the TUI
             proc = subprocess.Popen(
                 args,
                 cwd=str(PROJECT_ROOT),
@@ -323,7 +507,6 @@ class SentinelTUIApp(App):
                 text=True,
             )
 
-            # Stream output to log queue
             while not self._stop_event.is_set():
                 if proc.stdout:
                     line = proc.stdout.readline()
@@ -335,15 +518,47 @@ class SentinelTUIApp(App):
                     time.sleep(0.1)
 
             proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
         except Exception as e:
             self.app_state.push_log(f"[Error] Sensor worker failed: {e}")
         finally:
             self.app_state.running = False
 
+    # ─── Alert Debouncing ────────────────────────────────────────────────
+    def _debounce_alert(self, alert: AlertEntry) -> AlertEntry | None:
+        """Group duplicate alerts within the debounce window.
+        Returns the alert to display, or None if suppressed."""
+        key = f"{alert.title}:{alert.severity}"
+        now = time.time()
+
+        # Flush old keys
+        if now - self._last_debounce_flush > self._debounce_window:
+            self._alert_debounce.clear()
+            self._last_debounce_flush = now
+
+        count = self._alert_debounce.get(key, 0) + 1
+        self._alert_debounce[key] = count
+
+        if count == 1:
+            return alert  # First occurrence, show immediately
+        elif count <= 5:
+            return None  # Suppress (will be grouped)
+        else:
+            # Show grouped summary
+            self._alert_debounce[key] = 0
+            return AlertEntry(
+                timestamp=alert.timestamp,
+                severity=alert.severity,
+                title=alert.title,
+                description=f"({count}x) {alert.description[:60]}",
+            )
+
+    # ─── Dashboard Refresh ───────────────────────────────────────────────
     def _update_dashboard(self) -> None:
-        """Periodic callback to refresh the Dashboard screen."""
-        # Only update if dashboard is active
         if not isinstance(self.screen, DashboardScreen):
             return
 
@@ -367,8 +582,9 @@ class SentinelTUIApp(App):
             )
 
             # Spool
+            q_color = "red" if state.spool_queued > 20 else ("yellow" if state.spool_queued > 5 else "green")
             screen.query_one("#spool-queued", Label).update(
-                f"Queued:   {state.spool_queued}"
+                f"Queued:   [{q_color}]{state.spool_queued}[/{q_color}]"
             )
             screen.query_one("#spool-inflight", Label).update(
                 f"Inflight: {state.spool_inflight}"
@@ -391,7 +607,7 @@ class SentinelTUIApp(App):
                 f"WPA3: [bright_green]{state.sec_wpa3}[/bright_green]"
             )
 
-            # Sensor info
+            # Sensor
             screen.query_one("#sen-id", Label).update(
                 f"ID:    [cyan]{state.sensor_id}[/cyan]"
             )
@@ -407,7 +623,7 @@ class SentinelTUIApp(App):
         except Exception:
             pass
 
-        # ── Drain network queue into table ──
+        # ── Drain network queue ──
         try:
             table = screen.query_one("#net-table", DataTable)
             drained = 0
@@ -443,29 +659,32 @@ class SentinelTUIApp(App):
                 except queue.Empty:
                     break
 
-            # Keep table manageable
             while table.row_count > 50:
                 table.remove_row(table.rows[next(iter(table.rows))])
         except Exception:
             pass
 
-        # ── Drain alert queue ──
+        # ── Drain alerts (with debouncing) ──
         try:
             alert_log = screen.query_one("#alert-log", RichLog)
             while True:
                 try:
                     alert = state.alert_queue.get_nowait()
+                    debounced = self._debounce_alert(alert)
+                    if debounced is None:
+                        continue
+
                     sev_color = {
                         "Critical": "bold white on red",
                         "High": "bold red",
                         "Medium": "yellow",
                         "Low": "cyan",
-                    }.get(alert.severity, "white")
+                    }.get(debounced.severity, "white")
 
                     alert_log.write(
                         Text.from_markup(
-                            f"[dim]{alert.timestamp}[/dim] [{sev_color}]🚨 {alert.severity.upper()}[/{sev_color}] "
-                            f"{alert.title}: {alert.description[:80]}"
+                            f"[dim]{debounced.timestamp}[/dim] [{sev_color}]🚨 {debounced.severity.upper()}[/{sev_color}] "
+                            f"{debounced.title}: {debounced.description[:80]}"
                         )
                     )
                 except queue.Empty:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sentinel-netlab"
-version = "1.0.0"
+version = "0.6.0"
 description = "Lightweight Hybrid Wireless Intrusion Detection System"
 readme = "README.md"
 license = {text = "MIT"}

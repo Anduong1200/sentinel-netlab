@@ -86,3 +86,19 @@ site/
 *.iso
 *.output
 run_sensor_local.sh
+
+# TUI / Textual
+.textual/
+sentinel_tui.py
+sentinel_tui.tcss
+
+# Wardrive Sessions
+wardrive_session*.json
+wardrive_*.json
+
+# Spool Data
+data/spool.db
+data/spool.db-wal
+data/spool.db-shm
+data/journal/
+

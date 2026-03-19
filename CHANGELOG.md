@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-02-25
+## [0.6.0] - 2026-03-19
+
+### Added
+- **Text-based User Interface (TUI)**: Full Textual-based terminal dashboard (`sensor/tui/`).
+  - **Setup Screen**: Operation mode selection (Live Combat / Mock Test / PCAP Replay), WiFi interface auto-detection, feature toggles (ML Boost, Geo-Location, MAC Anonymization).
+  - **Dashboard Screen**: 4-panel real-time monitoring — System Health (CPU/RAM/USB), Live Network Feed (color-coded DataTable), Threat Alerts (RichLog streaming), System Log Stream.
+  - **State Manager**: Thread-safe `AppState` with Queue-based communication between SensorController worker and TUI renderer.
+  - **TUI Log Handler**: Custom `logging.Handler` routing sensor logs to TUI panel without disrupting packet capture.
+  - **Dark SOC Theme**: Professional `theme.tcss` stylesheet inspired by GitHub Dark mode.
+  - Entry point: `python -m sensor.tui`.
+- **Dashboard Audit Page** (`dashboard/pages/audit.py`): System Audit Logs table for presentation/demo.
+- **Deterministic Fallback Coordinates**: Heatmap and Global Map now generate GPS coordinates from BSSID hash when sensors lack real GPS, ensuring maps always render.
+- Added `textual>=0.50.0` and `rich>=13.0.0` to project dependencies.
+
+### Changed
+- **Signal Analysis Redesign** (`dashboard/pages/signals.py`):
+  - Replaced random mock 24h graph with real `first_seen` timestamp binning.
+  - Network Discovery Rate now uses financial-style Plotly charts with `rangeselector` (5m/15m/30m/1H) and `rangeslider`.
+  - Fixed RSSI field mapping from `rssi` → `rssi_avg`.
+- **Dashboard Auto-Refresh**: Fixed Overview and Global Map pages that failed to update when networks lacked GPS coordinates.
+- **Security Pie Chart**: Added zero-value guard to prevent Plotly crash on empty datasets.
+- **Flask Secret Key**: Added `server.secret_key` to `dashboard/app.py` to resolve session warnings.
+- Sidebar: Re-enabled the Audit navigation link.
+- `run_sensor_local.sh`: Dynamic token fetching from `.env.lab` instead of hardcoded values.
+
+### Fixed
+- `SensorController`: Fixed `frame_type` vs `frame_subtype` mismatch for deauth detection.
+- `DeauthFloodDetector`: Fixed state persistence across test runs causing false negatives.
+- Integration test `test_replay_deauth_flood_detection` now passes reliably.
+
+### Documentation
+- Appended presentation script ("Kịch bản Trình bày Trước Hội đồng") to `docs/lab/testing_guide.md`.
+
+
 
 ### Added
 - **Disassociation Flood Detector** (`algos/disassoc_detector.py`): Sliding-window rate analysis with multi-client severity escalation. MITRE ATT&CK T1499.001.
@@ -176,7 +209,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MINOR**: New features, significant improvements
 - **PATCH**: Bug fixes, documentation updates
 
-[Unreleased]: https://github.com/anduong1200/sentinel-netlab/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/anduong1200/sentinel-netlab/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/anduong1200/sentinel-netlab/compare/v0.1.0...v0.2.0

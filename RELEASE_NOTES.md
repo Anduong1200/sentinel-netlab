@@ -1,3 +1,58 @@
+# Release Notes — v0.6.0 (2026-03-19)
+
+**Sentinel NetLab v0.6.0** introduces a professional Text-based User Interface (TUI) for terminal-only environments, fixes critical dashboard rendering issues, and adds financial-style real-time analytics.
+
+## 🚀 Highlights
+
+### 1. Terminal Command Center (TUI)
+- Full **Textual** framework TUI at `sensor/tui/` — run via `python -m sensor.tui`.
+- **Setup Screen (Pre-flight Check)**: Choose operation mode (Live Combat / Mock Test / PCAP Replay), configure WiFi interface, toggle ML/Geo/Anonymization — all without CLI flags.
+- **Dashboard Screen (4 Panels)**:
+  - 🖥️ System Health: CPU%, RAM%, USB Watchdog, Spool Queue (queued/inflight/dropped).
+  - 📶 Live Network Feed: Color-coded DataTable (RSSI: 🟢>-50 / 🟡-50~-70 / 🔴<-70; Security: Red=Open, Orange=WEP, Cyan=WPA2, Green=WPA3).
+  - 🚨 Threat Alerts: Real-time streaming with severity color-coding.
+  - 📄 Log Stream: Full sensor log routing via custom `QueueHandler`.
+- **Keybindings**: `F1` Setup / `F5` Start / `Space` Pause / `Q` Quit.
+- **Dark SOC Theme**: GitHub-style dark stylesheet.
+
+### 2. Dashboard Signal Analysis Redesign
+- Replaced random mock 24h network discovery graph with **real `first_seen` timestamp binning**.
+- Added **Plotly financial-style charts**: `rangeselector` (5m/15m/30m/1H) + `rangeslider` for interactive time zoom.
+- Fixed RSSI chart by correcting field mapping `rssi` → `rssi_avg`.
+
+### 3. Map & Heatmap Rendering Fix
+- Overview Heatmap and Global Intelligence Map now **always render** even when sensors lack GPS hardware.
+- Deterministic fallback coordinates generated from BSSID MD5 hash.
+- Security Pie Chart crash on empty data fixed.
+
+### 4. Dashboard Hardening
+- Added Flask `secret_key` to resolve auth session warnings.
+- Re-enabled Audit tab navigation.
+- Added `dashboard/pages/audit.py` for System Audit Logs.
+
+### 5. Detection Fixes
+- Fixed `frame_type` vs `frame_subtype` mismatch for deauth detection in `SensorController`.
+- Fixed `DeauthFloodDetector` state persistence causing false negatives across test runs.
+
+## 🛠 Upgrade Notes
+
+### From v0.5.x
+- **New dependency**: `pip install textual rich` (or `pip install -e ".[sensor]"`)
+- **No breaking changes** — TUI is additive, all existing CLI and web dashboard functionality preserved.
+- Run `cd ops && docker compose --env-file .env.lab -f docker-compose.lab.yml up --build -d dashboard` to apply dashboard fixes.
+
+## 📝 Quick Start — TUI
+```bash
+source venv/bin/activate
+python -m sensor.tui
+```
+
+## 📚 Documentation
+- [Testing Guide](docs/lab/testing_guide.md) — Updated with presentation script
+- [CHANGELOG](CHANGELOG.md) — Full v0.6.0 entry
+
+---
+
 # Release Notes — v0.5.0 (2026-02-25)
 
 **Sentinel NetLab v0.5.0** expands the detection pipeline from 8 to 11 detectors, adds 39 new unit tests, and completes comprehensive documentation cleanup for release.
