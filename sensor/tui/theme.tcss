@@ -84,10 +84,19 @@ Footer {
     border-bottom: solid #30363d;
 }
 
-#alert-panel {
+#bottom-row {
     height: 1fr;
+}
+
+#alert-panel {
+    width: 1fr;
     padding: 0 1;
-    border-bottom: solid #30363d;
+    border-right: solid #30363d;
+}
+
+#wardrive-panel {
+    width: 42;
+    padding: 0 1;
 }
 
 #right-panel {

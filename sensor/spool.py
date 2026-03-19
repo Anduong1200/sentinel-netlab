@@ -6,6 +6,7 @@ Implementation follows 'Sensor local spool' specification.
 
 import json
 import logging
+import math
 import random
 import sqlite3
 import threading
@@ -237,7 +238,7 @@ class SqliteQueue:
 
             # Backoff calculation
             backoff = self._calculate_backoff(attempts)
-            next_attempt = int(time.time() + backoff)
+            next_attempt = math.ceil(time.time() + backoff)
 
             state = "queued"
             # Optional: Dead letter if too many attempts? User didn't specify strict max,
@@ -258,6 +259,20 @@ class SqliteQueue:
             logger.warning(
                 f"NACK: {batch_id} retry #{attempts} in {backoff:.1f}s. Error: {error}"
             )
+
+    def _get_by_id(self, batch_id: str) -> sqlite3.Row | None:
+        """Internal helper used by acceptance tests and diagnostics."""
+        with self._lock:
+            conn = self._get_conn()
+            cursor = conn.execute(
+                """
+                SELECT id, batch_id, created_at, state, attempts, next_attempt_at, last_error
+                FROM spool
+                WHERE batch_id = ?
+            """,
+                (batch_id,),
+            )
+            return cursor.fetchone()
 
     def mark_dead(self, batch_id: str, error: str) -> None:
         """Mark batch as dead (non-retryable failure)."""
@@ -298,6 +313,7 @@ class SqliteQueue:
                     COUNT(*) as total,
                     SUM(CASE WHEN state='queued' THEN 1 ELSE 0 END) as queued,
                     SUM(CASE WHEN state='inflight' THEN 1 ELSE 0 END) as inflight,
+                    SUM(CASE WHEN state='dead' THEN 1 ELSE 0 END) as dropped,
                     SUM(LENGTH(payload_json)) as bytes
                 FROM spool
             """)
@@ -306,6 +322,7 @@ class SqliteQueue:
                 "total": row["total"] or 0,
                 "queued": row["queued"] or 0,
                 "inflight": row["inflight"] or 0,
+                "dropped": row["dropped"] or 0,
                 "bytes": row["bytes"] or 0,
             }
 

@@ -251,7 +251,7 @@ The core Distributed Wireless Intrusion Detection System.
 Starts the continuous monitoring daemon.
 ```bash
 # Fail-fast check for config and connectivity
-python sensor/sensor_cli.py --sensor-id sensor-01 --iface wlan0mon --config config.yaml
+python -m sensor.cli --sensor-id sensor-01 --iface wlan0mon --config-file config.yaml
 ```
 
 **2. Deploy Controller (Production)**

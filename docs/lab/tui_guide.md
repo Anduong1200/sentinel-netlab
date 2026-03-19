@@ -52,19 +52,19 @@ Press **F5** or click **START** to begin.
 │ RAM: 45%         │ 10:45  AA:BB..  MyWiFi  -42    │ Batch #42 sent    │
 │ USB: wlan0mon    │ 10:44  CC:DD..  Guest   -68    │ [10:45:02] WARN   │
 │ Uptime: 00:15:32 │ 10:44  EE:FF..  OPEN    -81    │ Spool backlog: 5  │
-│                  │                                │                   │
-│ 📦 SPOOL QUEUE   ├────────────────────────────────┤                   │
-│ Queued: 3        │ 🚨 THREAT ALERTS               │                   │
-│ Inflight: 1      │                                │                   │
-│ Dropped: 0       │ [10:44] 🚨 CRITICAL            │                   │
-│                  │ Evil Twin Detected - AA:BB...   │                   │
-│ 🔒 SECURITY      │                                │                   │
-│ Open: 2 (RED)    │ [10:43] ⚠️ MEDIUM              │                   │
-│ WEP: 1 (ORANGE)  │ Deauth Burst (50x)             │                   │
-│ WPA2: 15 (CYAN)  │                                │                   │
-│ WPA3: 3 (GREEN)  │                                │                   │
-└──────────────────┴────────────────────────────────┴───────────────────┘
-                         [ F1 Setup  SPACE Pause  M Mark  C Channel  Q Quit ]
+│                  ├──────────────────┬─────────────┤                   │
+│ 📦 SPOOL QUEUE   │ 🚨 THREAT ALERTS │ 🛰️ WARDRIVE │                   │
+│ Queued: 3        │ [10:44] CRITICAL │ walker-01   │                   │
+│ Inflight: 1      │ Evil Twin...     │ Nets: 24    │                   │
+│ Dropped: 0       │ [10:43] MEDIUM   │ GPS: 18     │                   │
+│                  │ Deauth Burst     │ Last fix... │                   │
+│ 🔒 SECURITY      │                  │ Recent APs  │                   │
+│ Open: 2 (RED)    │                  │             │                   │
+│ WEP: 1 (ORANGE)  │                  │             │                   │
+│ WPA2: 15 (CYAN)  │                  │             │                   │
+│ WPA3: 3 (GREEN)  │                  │             │                   │
+└──────────────────┴──────────────────┴─────────────┴───────────────────┘
+                    [ F1 Setup  F2/C Channel  SPACE Pause  M Mark  Q Quit ]
 ```
 
 ## Keybindings
@@ -75,8 +75,17 @@ Press **F5** or click **START** to begin.
 | **F5** | Start sensor (on Setup screen) |
 | **Space** | Pause/Resume log scrolling |
 | **M** | Mark selected BSSID as suspicious |
-| **C** | Force WiFi channel hop |
+| **F2 / C** | Force WiFi channel hop |
 | **Q** | Graceful shutdown (animated) |
+
+## Wardrive Feed
+
+If `wardrive_session.json` exists in the project root, the dashboard follows it automatically and shows:
+- Session sensor ID, unique networks, total sightings, and GPS-point count
+- Last GPS fix and last sighting timestamp
+- The newest wardrive sightings with security color hints
+
+Set `WARDRIVE_SESSION_FILE=/path/to/session.json` before launching the TUI to watch a different session file.
 
 ## Alert Debouncing
 
@@ -108,16 +117,18 @@ This ensures no data is lost during shutdown.
 ## Architecture
 
 ```
-[ TUI Main Thread ]  ←── Queues ───  [ SensorController Worker Thread ]
-        ↓                                        ↓
-  Textual Widgets                         sensor/cli.py
-  (DataTable, RichLog)                    (Capture, Parse, Upload)
+[ TUI Main Thread ]  ←── Queues / Callbacks ───  [ SensorController Worker Thread ]
+        ↓                                                  ↓
+  Textual Widgets                                   Capture, Parse, Upload
+  (DataTable, RichLog)                              Live status + alerts
 ```
 
-The TUI runs as the **main process**. When you press START, it spawns a background subprocess running `sensor/cli.py`. Communication happens via:
+The TUI runs as the **main process**. When you press START, it boots a background worker thread that instantiates `SensorController` directly with the selected mode and feature toggles. Communication happens via:
 - **Log Queue** — `TUILogHandler` captures Python logging output
-- **Alert Queue** — Threat alerts pushed by `AlertManager`
-- **Network Queue** — New network discoveries
+- **Alert Queue** — Alerts are forwarded from the controller callback bridge
+- **Network Queue** — Live network discoveries are pushed from the exporter path
+- **Wardrive File Watch** — `wardrive_session.json` is reloaded on refresh to surface GPS/mobile capture data
+- **Status Sync** — The dashboard polls `controller.status()` for spool, channel, and USB health
 
 ## Files
 

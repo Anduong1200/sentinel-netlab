@@ -52,7 +52,7 @@ It captures 802.11 management frames, processes them locally, and uploads teleme
 
 | File | Purpose |
 |------|---------|
-| `cli.py` / `sensor_cli.py` | Unified entry point and CLI for sensor |
+| `cli.py` | Unified entry point and CLI for sensor |
 | `sensor_controller.py` | Main orchestrator, lifecycle management |
 | `capture_driver.py` | Abstract capture driver (Mock, Pcap, Scapy) |
 | `capture_tshark.py` | High-performance tshark capture engine |
@@ -84,7 +84,7 @@ python cli.py --sensor-id dev-01 --iface mock0 --mock-mode
 
 ```bash
 cd sensor
-sudo python cli.py --sensor-id prod-01 --iface wlan0mon --config config.yaml
+sudo python cli.py --sensor-id prod-01 --iface wlan0mon --config-file config.yaml
 ```
 
 ---

@@ -11,6 +11,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,6 +69,7 @@ class APIConfig:
     ssl_cert: str | None = None
     ssl_key: str | None = None
     hmac_secret: str | None = None
+    upload_url: str | None = None
 
 
 @dataclass
@@ -122,6 +125,14 @@ class GeoConfig:
 
 
 @dataclass
+class UploadConfig:
+    """Batch upload pacing settings."""
+
+    batch_size: int = 200
+    interval_sec: float = 5.0
+
+
+@dataclass
 class DetectorsConfig:
     """Detector orchestration settings."""
 
@@ -146,6 +157,7 @@ class Config:
     ml: MLConfig = field(default_factory=MLConfig)
     privacy: PrivacyConfig = field(default_factory=PrivacyConfig)
     geo: GeoConfig = field(default_factory=GeoConfig)
+    upload: UploadConfig = field(default_factory=UploadConfig)
     detectors: DetectorsConfig = field(default_factory=DetectorsConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
@@ -173,8 +185,7 @@ class ConfigManager:
         """Load configuration from file or use defaults."""
         if self.config_path.exists():
             try:
-                with open(self.config_path) as f:
-                    data = json.load(f)
+                data = self._read_config_file()
                 self._apply_dict(data)
                 logger.info(f"Config loaded from {self.config_path}")
             except Exception as e:
@@ -185,48 +196,96 @@ class ConfigManager:
         # Also check for environment variables
         self._apply_env_vars()
 
+    def _read_config_file(self) -> dict[str, Any]:
+        """Read JSON or YAML config from disk."""
+        suffix = self.config_path.suffix.lower()
+        with open(self.config_path) as f:
+            if suffix in {".yaml", ".yml"}:
+                data = yaml.safe_load(f) or {}
+            else:
+                data = json.load(f)
+
+        if not isinstance(data, dict):
+            raise ValueError("Configuration file must contain a mapping object")
+        return data
+
     def _apply_dict(self, data: dict[str, Any]):
         """Apply dictionary values to config."""
+        def apply_section(
+            target: Any,
+            values: dict[str, Any],
+            aliases: dict[str, str | tuple[str, Any]] | None = None,
+        ) -> None:
+            aliases = aliases or {}
+            for key, value in values.items():
+                alias = aliases.get(key)
+                if isinstance(alias, tuple):
+                    target_key, converter = alias
+                    value = converter(value)
+                else:
+                    target_key = alias or key
+
+                if hasattr(target, target_key):
+                    setattr(target, target_key, value)
+
         if "sensor" in data:
-            for key, value in data["sensor"].items():
-                if hasattr(self.config.sensor, key):
-                    setattr(self.config.sensor, key, value)
+            sensor_values = dict(data["sensor"])
+            legacy_interface = sensor_values.pop("interface", None)
+            apply_section(self.config.sensor, sensor_values)
+            if legacy_interface is not None:
+                self.config.capture.interface = legacy_interface
 
         if "capture" in data:
-            for key, value in data["capture"].items():
-                if hasattr(self.config.capture, key):
-                    setattr(self.config.capture, key, value)
+            apply_section(
+                self.config.capture,
+                data["capture"],
+                aliases={
+                    "dwell_ms": ("dwell_time", lambda v: float(v) / 1000.0),
+                },
+            )
 
         if "storage" in data:
-            for key, value in data["storage"].items():
-                if hasattr(self.config.storage, key):
-                    setattr(self.config.storage, key, value)
+            apply_section(self.config.storage, data["storage"])
 
         if "api" in data:
-            for key, value in data["api"].items():
-                if hasattr(self.config.api, key):
-                    setattr(self.config.api, key, value)
+            apply_section(self.config.api, data["api"])
+
+        if "transport" in data and isinstance(data["transport"], dict):
+            apply_section(
+                self.config.api,
+                data["transport"],
+                aliases={
+                    "auth_token": "api_key",
+                },
+            )
 
         if "risk" in data:
-            for key, value in data["risk"].items():
-                if hasattr(self.config.risk, key):
-                    setattr(self.config.risk, key, value)
+            apply_section(self.config.risk, data["risk"])
+
+        if "ml" in data:
+            apply_section(self.config.ml, data["ml"])
+
+        if "privacy" in data:
+            apply_section(self.config.privacy, data["privacy"])
 
         if "geo" in data:
-            for key, value in data["geo"].items():
-                if hasattr(self.config.geo, key):
-                    setattr(self.config.geo, key, value)
+            apply_section(self.config.geo, data["geo"])
+
+        if "upload" in data:
+            apply_section(self.config.upload, data["upload"])
 
         if "detectors" in data:
-            for key, value in data["detectors"].items():
-                if hasattr(self.config.detectors, key):
-                    setattr(self.config.detectors, key, value)
+            apply_section(self.config.detectors, data["detectors"])
 
         if "mock_mode" in data:
             self.config.mock_mode = data["mock_mode"]
 
         if "log_level" in data:
             self.config.log_level = data["log_level"]
+        elif "logging" in data and isinstance(data["logging"], dict):
+            level = data["logging"].get("level")
+            if level:
+                self.config.log_level = level
 
     def _apply_env_vars(self):
         """Override config with environment variables."""
@@ -362,6 +421,7 @@ class ConfigManager:
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
             "geo": asdict(self.config.geo),
+            "upload": asdict(self.config.upload),
             "detectors": asdict(self.config.detectors),
             "sensor": asdict(self.config.sensor),
             "privacy": asdict(self.config.privacy),
@@ -383,6 +443,7 @@ class ConfigManager:
             "api": asdict(self.config.api),
             "risk": asdict(self.config.risk),
             "geo": asdict(self.config.geo),
+            "upload": asdict(self.config.upload),
             "detectors": asdict(self.config.detectors),
             "sensor": asdict(self.config.sensor),
             "privacy": asdict(self.config.privacy),
@@ -458,6 +519,7 @@ def generate_sample_config(output_path: str = "./sample_config.json"):
         "api": asdict(config.api),
         "risk": asdict(config.risk),
         "geo": asdict(config.geo),
+        "upload": asdict(config.upload),
         "mock_mode": False,
         "log_level": "INFO",
     }

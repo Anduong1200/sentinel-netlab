@@ -196,8 +196,11 @@ class WardriveSession:
         }
 
         try:
-            with open(self.output_path, "w") as f:
+            self.output_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = self.output_path.with_suffix(f"{self.output_path.suffix}.tmp")
+            with open(temp_path, "w") as f:
                 json.dump(data, f, indent=2)
+            temp_path.replace(self.output_path)
             logger.info(f"Session saved to {self.output_path}")
         except Exception as e:
             logger.error(f"Failed to save session: {e}")
@@ -250,6 +253,7 @@ def run_wardrive(args):
 
     # Main loop
     scan_count = 0
+    last_save_at = 0.0
     while True:
         try:
             # Get GPS fix
@@ -283,6 +287,10 @@ def run_wardrive(args):
                 logger.info(
                     f"Scans: {scan_count}, Networks: {len(session.unique_bssids)}"
                 )
+
+            if time.monotonic() - last_save_at >= args.save_interval:
+                session.save()
+                last_save_at = time.monotonic()
 
             # Wait before next scan
             time.sleep(args.interval)
@@ -322,6 +330,12 @@ See ETHICS.md for legal guidelines.
     )
     parser.add_argument(
         "--interval", type=float, default=1.0, help="Scan interval in seconds"
+    )
+    parser.add_argument(
+        "--save-interval",
+        type=float,
+        default=3.0,
+        help="How often to flush wardrive_session.json while running",
     )
     parser.add_argument(
         "--mock-capture", action="store_true", help="Use mock capture (no hardware)"

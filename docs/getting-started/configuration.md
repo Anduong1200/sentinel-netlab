@@ -113,20 +113,20 @@ Override configuration via command line:
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--config` | Config file path | `config.yaml` |
+| `--config-file` | Config file path | `config.yaml` |
 | `--sensor-id` | Sensor identifier | from config |
 | `--iface` | WiFi interface | from config |
 | `--channels` | Channel list (comma-separated) | `1,6,11` |
 | `--dwell-ms` | Channel dwell time | `200` |
 | `--upload-url` | Controller endpoint | from config |
-| `--mock` | Use mock capture driver | `false` |
+| `--mock-mode` | Use mock capture driver | `false` |
 | `--log-level` | Logging level | `INFO` |
 
 ### Examples
 
 ```bash
 # Basic operation
-python sentinel.py monitor --sensor-id rpi-01 --iface wlan0
+python scripts/sentinel.py monitor --sensor-id rpi-01 --iface wlan0 --config-file config.yaml
 
 # Custom channels
 python sentinel.py monitor --sensor-id rpi-01 --iface wlan0 --channels 1,6,11,36,40,44

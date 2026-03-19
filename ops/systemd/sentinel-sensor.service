@@ -2,6 +2,8 @@
 Description=Sentinel NetLab Sensor (WIDS)
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
 
 # Nếu máy dùng NetworkManager dễ giành interface, cân nhắc:
 # After=NetworkManager.service
@@ -20,18 +22,14 @@ EnvironmentFile=/etc/sentinel/sensor.env
 
 # Fail-fast: app nên tự kiểm tra token/secret thiếu -> exit 2
 # Chạy entrypoint chuẩn của repo (ưu tiên scripts/sentinel.py nếu repo dùng file này)
-ExecStart=/opt/sentinel/.venv/bin/python /opt/sentinel/scripts/sentinel.py sensor --config /etc/sentinel/sensor.yaml
+ExecStart=/opt/sentinel/.venv/bin/python /opt/sentinel/scripts/sentinel.py monitor --config-file /etc/sentinel/config.yaml
 
 # Nếu repo của bạn dùng module entrypoint thay vì scripts/sentinel.py, dùng dòng dưới:
-# ExecStart=/opt/sentinel/.venv/bin/python -m sensor.main --config /etc/sentinel/sensor.yaml
+# ExecStart=/opt/sentinel/.venv/bin/python -m sensor.cli --config-file /etc/sentinel/config.yaml
 
 # --- Self-heal policy (quan trọng) ---
 Restart=on-failure
 RestartSec=5s
-
-# Chặn restart storm
-StartLimitIntervalSec=300
-StartLimitBurst=3
 
 # --- Hardening (đủ dùng) ---
 NoNewPrivileges=true

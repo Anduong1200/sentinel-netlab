@@ -74,6 +74,63 @@ class TestAppState:
         assert state.spool_queued == 10
         assert state.spool_inflight == 2
 
+    def test_record_network_updates_security_counters(self):
+        state = AppState()
+
+        state.record_network(
+            NetworkEntry(
+                timestamp="10:00:00",
+                bssid="AA:BB:CC:DD:EE:01",
+                ssid="OpenNet",
+                rssi=-55,
+                channel=6,
+                security="OPEN",
+            )
+        )
+        state.record_network(
+            NetworkEntry(
+                timestamp="10:00:01",
+                bssid="AA:BB:CC:DD:EE:02",
+                ssid="SecureNet",
+                rssi=-42,
+                channel=1,
+                security="WPA3",
+            )
+        )
+        state.record_network(
+            NetworkEntry(
+                timestamp="10:00:02",
+                bssid="AA:BB:CC:DD:EE:01",
+                ssid="OpenNet",
+                rssi=-50,
+                channel=11,
+                security="WPA2",
+            )
+        )
+
+        assert state.total_networks == 2
+        assert state.sec_open == 0
+        assert state.sec_wpa2 == 1
+        assert state.sec_wpa3 == 1
+
+    def test_update_from_status_sets_usb_and_channel(self):
+        state = AppState()
+        state.update_from_status(
+            {
+                "running": True,
+                "interface": "wlan0mon",
+                "current_channel": 11,
+                "queue": {"queued": 4, "inflight": 1, "dropped": 0},
+                "usb_watchdog": {"connected": True, "in_monitor_mode": True},
+            }
+        )
+
+        assert state.running is True
+        assert state.interface == "wlan0mon"
+        assert state.channel_current == "Ch 11"
+        assert state.spool_queued == 4
+        assert state.usb_status == "Connected (monitor)"
+
     def test_thread_safety(self):
         """Multiple threads pushing data concurrently."""
         state = AppState()

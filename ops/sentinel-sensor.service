@@ -2,6 +2,8 @@
 Description=Sentinel Sensor
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -10,10 +12,10 @@ Group=sentinel
 # Environment Config
 EnvironmentFile=-/etc/sentinel/sensor.env
 # Main Execution
-ExecStart=/usr/bin/python3 -m sensor.cli --config /etc/sentinel/config.yaml
+ExecStart=/usr/bin/python3 -m sensor.cli --config-file /etc/sentinel/config.yaml
 # Restart Policy
-Restart=always
-RestartSec=3
+Restart=on-failure
+RestartSec=5s
 TimeoutStopSec=20
 KillSignal=SIGTERM
 

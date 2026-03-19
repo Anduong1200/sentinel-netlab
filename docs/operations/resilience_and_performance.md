@@ -38,7 +38,7 @@ Sensors often experience functional failures without process crashes (e.g., inte
 
 **Correct Approach**:
 *   **Application-Level Self-Check**: The sensor app should run a lightweight loop:
-    *   **Implemented**: `sensor/sensor_cli.py` checks `last_packet_ts`.
+    *   **Implemented**: `sensor/sensor_controller.py` tracks `last_packet_ts` and live monitor-mode health.
     *   **Condition**: If uptime > 60s AND no packets > 30s -> `sys.exit(2)` (Triggers `Restart=on-failure`).
     *   Check: "Is interface in monitor mode?"
     *   Check: "Have we received frames recently?"

@@ -11,11 +11,11 @@ import glob
 import logging
 import os
 import queue
-import subprocess
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from rich.text import Text
 from textual.app import App, ComposeResult
@@ -35,7 +35,28 @@ from textual.widgets import (
     RichLog,
 )
 
-from sensor.tui.state_manager import AlertEntry, AppState, TUILogHandler
+from sensor.config import Config, init_config
+from sensor.sensor_controller import SensorController
+from sensor.tui.config_store import (
+    coerce_sensor_id,
+    load_raw_config,
+    load_saved_tui_settings,
+    parse_geo_coordinate,
+    persist_tui_settings,
+    resolve_config_path,
+    validate_tui_settings,
+)
+from sensor.tui.wardrive_store import (
+    WardriveSnapshot,
+    load_wardrive_snapshot,
+    resolve_wardrive_session_path,
+)
+from sensor.tui.state_manager import (
+    AlertEntry,
+    AppState,
+    NetworkEntry,
+    TUILogHandler,
+)
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -76,6 +97,24 @@ def check_controller_online() -> bool:
         return bool(resp.getcode() == 200)
     except Exception:  # noqa: S110
         return False
+
+
+def _format_event_time(raw_value: Any) -> str:
+    """Render timestamps consistently for the TUI widgets."""
+    if isinstance(raw_value, datetime):
+        return raw_value.strftime("%H:%M:%S")
+
+    if isinstance(raw_value, str):
+        text = raw_value.strip()
+        if not text:
+            return datetime.now().strftime("%H:%M:%S")
+        try:
+            normalized = text.replace("Z", "+00:00")
+            return datetime.fromisoformat(normalized).strftime("%H:%M:%S")
+        except ValueError:
+            return text[-8:] if len(text) >= 8 else text
+
+    return datetime.now().strftime("%H:%M:%S")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -122,7 +161,12 @@ class ShutdownModal(ModalScreen):
             pass  # noqa: S110
 
     def _finish(self) -> None:
-        self.app.exit()
+        app = self.app
+        if isinstance(app, SentinelTUIApp) and not app.is_shutdown_complete():
+            self._update("⏳ Đang chờ Sensor dừng an toàn…")
+            self.set_timer(0.5, self._finish)
+            return
+        app.exit()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -172,6 +216,12 @@ class SetupScreen(Screen):
                 # Interface
                 with Container(classes="setup-group"):
                     yield Label("🔌 CONFIGURATION", classes="setup-group-title")
+                    yield Label("Sensor ID:")
+                    yield Input(
+                        value="tui-sensor-01",
+                        placeholder="Unique sensor identifier",
+                        id="input-sensor-id",
+                    )
                     yield Label("Interface (auto-detected):")
                     yield Input(
                         value="wlan0mon",
@@ -183,6 +233,18 @@ class SetupScreen(Screen):
                         value="",
                         placeholder="/path/to/capture.pcap",
                         id="input-pcap",
+                    )
+                    yield Label("Geo Sensor X (m):")
+                    yield Input(
+                        value="",
+                        placeholder="e.g. 12.5",
+                        id="input-geo-x",
+                    )
+                    yield Label("Geo Sensor Y (m):")
+                    yield Input(
+                        value="",
+                        placeholder="e.g. 4.0",
+                        id="input-geo-y",
                     )
 
                 # Toggles
@@ -207,6 +269,14 @@ class SetupScreen(Screen):
 
     def on_mount(self) -> None:
         """Auto-detect environment on screen load."""
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+        defaults = app.saved_settings
+        sensor_id = coerce_sensor_id(
+            defaults.get("sensor_id"),
+            os.environ.get("SENSOR_ID", "tui-sensor-01"),
+        )
+
         # Detect WiFi interfaces
         ifaces = detect_wifi_interfaces()
         iface_text = ", ".join(ifaces)
@@ -217,10 +287,31 @@ class SetupScreen(Screen):
         )
 
         # Auto-fill best interface
-        if has_wifi:
+        if defaults.get("interface"):
+            self.query_one("#input-iface", Input).value = str(defaults["interface"])
+        elif has_wifi:
             # Prefer monitor mode interfaces
             best = next((i for i in ifaces if "mon" in i), ifaces[0])
             self.query_one("#input-iface", Input).value = best
+
+        self.query_one("#input-sensor-id", Input).value = sensor_id
+        self.query_one("#input-pcap", Input).value = str(defaults.get("pcap_path", ""))
+        self.query_one("#input-geo-x", Input).value = str(
+            defaults.get("geo_sensor_x_m", "")
+        )
+        self.query_one("#input-geo-y", Input).value = str(
+            defaults.get("geo_sensor_y_m", "")
+        )
+        self.query_one("#chk-ml", Checkbox).value = bool(defaults.get("ml_enabled"))
+        self.query_one("#chk-geo", Checkbox).value = bool(defaults.get("geo_enabled"))
+        self.query_one("#chk-anon", Checkbox).value = bool(
+            defaults.get("anonymize", True)
+        )
+
+        mode = defaults.get("mode", "mock")
+        self.query_one("#mode-live", RadioButton).value = mode == "live"
+        self.query_one("#mode-mock", RadioButton).value = mode == "mock"
+        self.query_one("#mode-pcap", RadioButton).value = mode == "pcap"
 
         # Check controller
         ctrl_ok = check_controller_online()
@@ -243,57 +334,59 @@ class SetupScreen(Screen):
         elif self.query_one("#mode-pcap", RadioButton).value:
             mode = "pcap"
 
-        iface = self.query_one("#input-iface", Input).value or "mock0"
+        iface = self.query_one("#input-iface", Input).value.strip()
         pcap_path = self.query_one("#input-pcap", Input).value
-
-        # ── Pre-flight Validation (Fool-proof) ──
-        err_label = self.query_one("#validation-error", Label)
-
-        if mode == "live":
-            ifaces = detect_wifi_interfaces()
-            if iface not in ifaces and ifaces[0] != "(none detected)":
-                err_label.update(
-                    f"[bold red]❌ Interface '{iface}' not found! "
-                    f"Available: {', '.join(ifaces)}[/bold red]"
-                )
-                return
-            if ifaces[0] == "(none detected)":
-                err_label.update(
-                    "[bold red]❌ No WiFi card detected! "
-                    "Please plug in a USB WiFi adapter.[/bold red]"
-                )
-                return
-
-        if mode == "pcap" and not pcap_path:
-            err_label.update("[bold red]❌ PCAP mode requires a file path![/bold red]")
-            return
-
-        if mode == "pcap" and pcap_path and not os.path.isfile(pcap_path):
-            err_label.update(f"[bold red]❌ File not found: {pcap_path}[/bold red]")
-            return
-
-        err_label.update("")  # Clear errors
-
+        sensor_id = coerce_sensor_id(
+            self.query_one("#input-sensor-id", Input).value,
+            os.environ.get("SENSOR_ID")
+            or self.app.saved_settings.get("sensor_id")
+            or "tui-sensor-01",
+        )
+        geo_x = self.query_one("#input-geo-x", Input).value.strip()
+        geo_y = self.query_one("#input-geo-y", Input).value.strip()
         ml_enabled = self.query_one("#chk-ml", Checkbox).value
         geo_enabled = self.query_one("#chk-geo", Checkbox).value
         anonymize = self.query_one("#chk-anon", Checkbox).value
+
+        # ── Pre-flight Validation (Fool-proof) ──
+        err_label = self.query_one("#validation-error", Label)
+        tui_settings = {
+            "mode": mode,
+            "sensor_id": sensor_id,
+            "interface": iface,
+            "pcap_path": pcap_path,
+            "ml_enabled": ml_enabled,
+            "geo_enabled": geo_enabled,
+            "geo_sensor_x_m": geo_x,
+            "geo_sensor_y_m": geo_y,
+            "anonymize": anonymize,
+        }
+        validation_error = validate_tui_settings(
+            tui_settings,
+            available_ifaces=detect_wifi_interfaces(),
+            file_exists=os.path.isfile,
+        )
+        if validation_error:
+            err_label.update(f"[bold red]❌ {validation_error}[/bold red]")
+            return
+
+        err_label.update("")  # Clear errors
 
         # Push config into app state
         app = self.app
         assert isinstance(app, SentinelTUIApp)
         state = app.app_state
-        state.mode = mode
-        state.interface = iface if mode == "live" else "mock0"
-        state.sensor_id = os.environ.get("SENSOR_ID", "tui-sensor-01")
+        runtime_iface = (
+            iface
+            if mode == "live"
+            else ("pcap0" if mode == "pcap" else "mock0")
+        )
+        state.reset_session(mode=mode, sensor_id=sensor_id, interface=runtime_iface)
 
-        app.tui_config = {
-            "mode": mode,
-            "interface": iface if mode == "live" else "mock0",
-            "pcap_path": pcap_path,
-            "ml_enabled": ml_enabled,
-            "geo_enabled": geo_enabled,
-            "anonymize": anonymize,
-        }
+        app.tui_config = tui_settings
+        app.config_path = persist_tui_settings(PROJECT_ROOT, app.config_path, app.tui_config)
+        app.saved_settings = load_saved_tui_settings(app.config_path)
+        app.app_state.push_log(f"[System] Saved config to {app.config_path.name}")
 
         # Switch to dashboard & start
         app.push_screen("dashboard")
@@ -304,10 +397,11 @@ class SetupScreen(Screen):
 # SCREEN 2: LIVE DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
 class DashboardScreen(Screen):
-    """Real-time monitoring dashboard with 4 panels and hot-actions."""
+    """Real-time monitoring dashboard with live wardrive context."""
 
     BINDINGS = [
         Binding("f1", "show_setup", "Setup"),
+        Binding("f2", "force_channel_hop", "Force Channel"),
         Binding("space", "toggle_pause", "Pause Log"),
         Binding("c", "force_channel_hop", "Force Channel"),
         Binding("m", "mark_bssid", "Mark BSSID"),
@@ -351,14 +445,23 @@ class DashboardScreen(Screen):
                     table.zebra_stripes = True
                     yield table
 
-                with Container(id="alert-panel"):
-                    yield Label("[b]🚨  THREAT ALERTS[/b]", classes="panel-title")
-                    yield RichLog(
-                        id="alert-log",
-                        max_lines=100,
-                        highlight=True,
-                        markup=True,
-                    )
+                with Horizontal(id="bottom-row"):
+                    with Container(id="alert-panel"):
+                        yield Label("[b]🚨  THREAT ALERTS[/b]", classes="panel-title")
+                        yield RichLog(
+                            id="alert-log",
+                            max_lines=100,
+                            highlight=True,
+                            markup=True,
+                        )
+
+                    with Vertical(id="wardrive-panel"):
+                        yield Label("[b]🛰️  WARDRIVE / GPS[/b]", classes="panel-title")
+                        yield Label("", id="wardrive-status")
+                        yield Label("", id="wardrive-source")
+                        yield Label("", id="wardrive-summary")
+                        yield Label("", id="wardrive-last-fix")
+                        yield Label("", id="wardrive-recent")
 
             # ── RIGHT: Log Stream ──
             with Vertical(id="right-panel"):
@@ -390,7 +493,10 @@ class DashboardScreen(Screen):
         """Force WiFi channel hop (sends signal to channel hopper)."""
         app = self.app
         assert isinstance(app, SentinelTUIApp)
-        app.app_state.push_log("[System] ⚡ Force channel hop requested")
+        if app.force_channel_hop():
+            app.app_state.push_log("[System] ⚡ Forced channel hop")
+        else:
+            app.app_state.push_log("[System] Channel hop unavailable in current mode")
 
     def action_mark_bssid(self) -> None:
         """Mark the currently selected BSSID as suspicious."""
@@ -421,7 +527,7 @@ class DashboardScreen(Screen):
         """Graceful shutdown with visual feedback."""
         app = self.app
         assert isinstance(app, SentinelTUIApp)
-        app._stop_event.set()
+        app.begin_shutdown()
         app.push_screen(ShutdownModal())
 
 
@@ -445,9 +551,19 @@ class SentinelTUIApp(App):
         super().__init__()
         self.app_state = AppState()
         self.tui_config: dict = {}
+        self.config_path = resolve_config_path(PROJECT_ROOT)
+        self.saved_settings = load_saved_tui_settings(self.config_path)
+        self.wardrive_path = resolve_wardrive_session_path(
+            PROJECT_ROOT,
+            os.environ.get("WARDRIVE_SESSION_FILE"),
+        )
+        self._wardrive_snapshot = WardriveSnapshot(source_path=self.wardrive_path)
         self.log_paused = False
         self._sensor_thread: threading.Thread | None = None
+        self._controller: SensorController | None = None
+        self._tui_handler: TUILogHandler | None = None
         self._stop_event = threading.Event()
+        self._shutdown_complete = threading.Event()
         # Alert debouncing: track recent alert keys to group duplicates
         self._alert_debounce: dict[str, int] = {}
         self._debounce_window = 10.0  # seconds
@@ -463,15 +579,10 @@ class SentinelTUIApp(App):
             return
 
         self._stop_event.clear()
-        self.app_state.running = True
-        self.app_state.start_time = time.time()
+        self._shutdown_complete.clear()
 
         # Install log handler
-        tui_handler = TUILogHandler(self.app_state)
-        tui_handler.setLevel(logging.INFO)
-        root_logger = logging.getLogger()
-        root_logger.addHandler(tui_handler)
-        root_logger.setLevel(logging.INFO)
+        self._ensure_log_handler()
 
         self._sensor_thread = threading.Thread(
             target=self._run_sensor, daemon=True, name="SensorWorker"
@@ -481,60 +592,203 @@ class SentinelTUIApp(App):
 
     def _run_sensor(self) -> None:
         """Run the SensorController in a background thread."""
+        controller: SensorController | None = None
         try:
-            cfg = self.tui_config
-            mode = cfg.get("mode", "mock")
-
-            args = [
-                "python3",
-                str(PROJECT_ROOT / "sensor" / "cli.py"),
-                "--sensor-id",
-                self.app_state.sensor_id,
-            ]
-
-            if mode == "mock":
-                os.environ["SENSOR_MOCK_MODE"] = "true"
-                args.extend(["--config-file", "config.yaml"])
-            elif mode == "live":
-                os.environ.setdefault(
-                    "SENSOR_INTERFACE", cfg.get("interface", "wlan0mon")
-                )
-                args.extend(["--config-file", "config.yaml"])
-            elif mode == "pcap":
-                pcap = cfg.get("pcap_path", "")
-                if pcap:
-                    args.extend(["--pcap", pcap])
-
-            self.app_state.push_log(f"[System] Launching: {' '.join(args)}")
-
-            proc = subprocess.Popen(
-                args,
-                cwd=str(PROJECT_ROOT),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
+            config = self._build_runtime_config()
+            controller = SensorController(
+                config=config,
+                on_network=self._handle_network_event,
+                on_alert=self._handle_alert_event,
+            )
+            self._controller = controller
+            self.app_state.start_time = time.time()
+            self.app_state.running = True
+            self.app_state.push_log(
+                f"[System] Starting SensorController mode={self.tui_config.get('mode', 'mock')} "
+                f"iface={config.capture.interface}"
             )
 
-            while not self._stop_event.is_set():
-                if proc.stdout:
-                    line = proc.stdout.readline()
-                    if line:
-                        self.app_state.push_log(line.strip())
-                    elif proc.poll() is not None:
-                        break
-                else:
-                    time.sleep(0.1)
+            if not controller.start():
+                self.app_state.push_log("[Error] Sensor failed to start.")
+                return
 
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+            while not self._stop_event.is_set() and controller._running:
+                time.sleep(0.2)
+
+            if controller._running:
+                controller.stop()
+
+            if controller._fatal_exit_code is not None:
+                self.app_state.push_log(
+                    f"[Error] Sensor stopped by fail-fast policy "
+                    f"(exit={controller._fatal_exit_code})"
+                )
 
         except Exception as e:
             self.app_state.push_log(f"[Error] Sensor worker failed: {e}")
         finally:
             self.app_state.running = False
+            self._controller = None
+            self._shutdown_complete.set()
+
+    def _ensure_log_handler(self) -> None:
+        if self._tui_handler is not None:
+            return
+
+        self._tui_handler = TUILogHandler(self.app_state)
+        self._tui_handler.setLevel(logging.INFO)
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self._tui_handler)
+        root_logger.setLevel(logging.INFO)
+
+    def _build_runtime_config(self):
+        try:
+            config = (
+                init_config(str(self.config_path))
+                if self.config_path is not None
+                else init_config()
+            )
+        except Exception as e:
+            self.app_state.push_log(
+                f"[Warn] Falling back to local config defaults: {e}"
+            )
+            config = Config()
+            self._apply_raw_config(config, load_raw_config(self.config_path))
+
+        cfg = self.tui_config
+        mode = cfg.get("mode", "mock")
+
+        config.sensor.id = cfg.get("sensor_id", config.sensor.id)
+        config.mock_mode = mode == "mock"
+        if mode == "mock":
+            config.capture.interface = "mock0"
+        elif mode == "pcap":
+            config.capture.interface = cfg.get("interface", config.capture.interface)
+        else:
+            config.capture.interface = cfg.get("interface", config.capture.interface)
+        config.capture.pcap_file = cfg.get("pcap_path") if mode == "pcap" else None
+        config.ml.enabled = bool(cfg.get("ml_enabled"))
+        config.geo.enabled = bool(cfg.get("geo_enabled"))
+        config.geo.sensor_x_m = parse_geo_coordinate(cfg.get("geo_sensor_x_m"))
+        config.geo.sensor_y_m = parse_geo_coordinate(cfg.get("geo_sensor_y_m"))
+        config.privacy.anonymize_ssid = bool(cfg.get("anonymize"))
+
+        return config
+
+    @staticmethod
+    def _apply_raw_config(config: Config, data: dict[str, Any]) -> None:
+        """Apply a minimal YAML/JSON mapping onto the runtime Config object."""
+        section_map = {
+            "storage": config.storage,
+            "api": config.api,
+            "risk": config.risk,
+            "privacy": config.privacy,
+            "ml": config.ml,
+            "geo": config.geo,
+            "detectors": config.detectors,
+        }
+
+        sensor_section = data.get("sensor", {})
+        if isinstance(sensor_section, dict):
+            if "id" in sensor_section:
+                config.sensor.id = sensor_section["id"]
+            legacy_interface = sensor_section.get("interface")
+            if legacy_interface:
+                config.capture.interface = legacy_interface
+
+        capture_section = data.get("capture", {})
+        if isinstance(capture_section, dict):
+            for key, value in capture_section.items():
+                if key == "dwell_ms":
+                    config.capture.dwell_time = float(value) / 1000.0
+                elif hasattr(config.capture, key):
+                    setattr(config.capture, key, value)
+
+        for section_name, section_obj in section_map.items():
+            values = data.get(section_name, {})
+            if not isinstance(values, dict):
+                continue
+            for key, value in values.items():
+                if hasattr(section_obj, key):
+                    setattr(section_obj, key, value)
+
+        if "mock_mode" in data:
+            config.mock_mode = bool(data["mock_mode"])
+        if "log_level" in data:
+            config.log_level = str(data["log_level"])
+        logging_section = data.get("logging", {})
+        if isinstance(logging_section, dict) and logging_section.get("level"):
+            config.log_level = str(logging_section["level"])
+
+    def _handle_network_event(self, net_dict: dict[str, Any]) -> None:
+        network = self._network_entry_from_payload(net_dict)
+        self.app_state.record_network(network)
+
+    def _handle_alert_event(self, alert_dict: dict[str, Any]) -> None:
+        alert = AlertEntry(
+            timestamp=_format_event_time(
+                alert_dict.get("timestamp") or alert_dict.get("timestamp_utc")
+            ),
+            severity=str(alert_dict.get("severity", "Low")).title(),
+            title=str(alert_dict.get("title", "Alert")),
+            description=str(
+                alert_dict.get("description")
+                or alert_dict.get("message")
+                or alert_dict.get("alert_type", "Sensor event")
+            ),
+        )
+        self.app_state.record_alert(alert)
+
+    def _network_entry_from_payload(self, net_dict: dict[str, Any]) -> NetworkEntry:
+        raw_rssi = net_dict.get("rssi_dbm")
+        rssi = int(raw_rssi) if isinstance(raw_rssi, (int, float)) else None
+        raw_channel = net_dict.get("channel")
+        channel = int(raw_channel) if isinstance(raw_channel, (int, float)) else None
+        security = str(net_dict.get("security") or "UNKNOWN").upper()
+
+        return NetworkEntry(
+            timestamp=_format_event_time(net_dict.get("timestamp_utc")),
+            bssid=str(net_dict.get("bssid", "—")),
+            ssid=str(net_dict.get("ssid") or "<hidden>"),
+            rssi=rssi,
+            channel=channel,
+            security=security,
+        )
+
+    def _sync_controller_state(self) -> None:
+        controller = self._controller
+        if controller is None:
+            return
+
+        try:
+            self.app_state.update_from_status(controller.status())
+        except Exception:
+            pass
+
+    def force_channel_hop(self) -> bool:
+        controller = self._controller
+        if controller is None:
+            return False
+        try:
+            return controller.force_channel_hop()
+        except Exception as e:
+            self.app_state.push_log(f"[Error] Channel hop failed: {e}")
+            return False
+
+    def _sync_wardrive_snapshot(self) -> WardriveSnapshot:
+        self._wardrive_snapshot = load_wardrive_snapshot(self.wardrive_path)
+        return self._wardrive_snapshot
+
+    def begin_shutdown(self) -> None:
+        if self._stop_event.is_set():
+            return
+        self.app_state.push_log("[System] Graceful shutdown requested")
+        self._stop_event.set()
+        if self._sensor_thread is None or not self._sensor_thread.is_alive():
+            self._shutdown_complete.set()
+
+    def is_shutdown_complete(self) -> bool:
+        return self._shutdown_complete.is_set()
 
     # ─── Alert Debouncing ────────────────────────────────────────────────
     def _debounce_alert(self, alert: AlertEntry) -> AlertEntry | None:
@@ -570,6 +824,8 @@ class SentinelTUIApp(App):
         if not isinstance(self.screen, DashboardScreen):
             return
 
+        self._sync_controller_state()
+        wardrive = self._sync_wardrive_snapshot()
         state = self.app_state
         state.update_resources()
         screen = self.screen
@@ -583,7 +839,10 @@ class SentinelTUIApp(App):
                 f"RAM:    [{self._color_pct(state.mem_percent)}]{state.mem_percent:.0f}%[/]"
             )
             screen.query_one("#sys-usb", Label).update(
-                f"USB:    [green]{state.interface}[/green]"
+                (
+                    f"USB:    [{'red' if 'Disconnected' in state.usb_status else 'green'}]"
+                    f"{state.usb_status or state.interface}[/]"
+                )
                 if state.running
                 else "USB:    [yellow]Idle[/yellow]"
             )
@@ -628,10 +887,60 @@ class SentinelTUIApp(App):
             screen.query_one("#sen-mode", Label).update(
                 f"Mode:  [{'green' if state.running else 'yellow'}]{state.mode.upper()}[/]"
             )
-            screen.query_one("#sen-iface", Label).update(f"Iface: {state.interface}")
+            screen.query_one("#sen-iface", Label).update(
+                f"Iface: {state.interface}  [dim]{state.channel_current}[/dim]"
+            )
             screen.query_one("#sen-nets", Label).update(
                 f"Nets:  [cyan]{state.total_networks}[/cyan]"
             )
+        except Exception:  # noqa: S110
+            pass
+
+        # ── Wardrive / GPS ──
+        try:
+            status_color = (
+                "green"
+                if wardrive.recent_sightings
+                else ("yellow" if "Waiting" in wardrive.status or "updating" in wardrive.status.lower() else "red")
+            )
+            screen.query_one("#wardrive-status", Label).update(
+                f"Status: [{status_color}]{wardrive.status}[/{status_color}]"
+            )
+            screen.query_one("#wardrive-source", Label).update(
+                f"Source: [dim]{wardrive.source_path.name}[/dim]"
+            )
+            screen.query_one("#wardrive-summary", Label).update(
+                "Session: "
+                f"[cyan]{wardrive.sensor_id}[/cyan]  "
+                f"Nets [cyan]{wardrive.unique_networks}[/cyan]  "
+                f"Sightings [cyan]{wardrive.total_sightings}[/cyan]  "
+                f"GPS [cyan]{wardrive.gps_points}[/cyan]"
+            )
+            screen.query_one("#wardrive-last-fix", Label).update(
+                f"Last: [dim]{wardrive.last_update}[/dim]  Fix: [cyan]{wardrive.last_fix}[/cyan]"
+            )
+
+            if wardrive.recent_sightings:
+                lines = []
+                for sighting in wardrive.recent_sightings:
+                    sec_color = self._security_color(sighting.security)
+                    rssi_text = (
+                        f"{sighting.rssi_dbm}dBm"
+                        if sighting.rssi_dbm is not None
+                        else "—"
+                    )
+                    lines.append(
+                        f"[dim]{sighting.timestamp}[/dim] "
+                        f"[{sec_color}]{sighting.security}[/{sec_color}] "
+                        f"{sighting.ssid} "
+                        f"[dim]{rssi_text}[/dim]\n"
+                        f"[dim]{sighting.bssid} @ {sighting.gps_label}[/dim]"
+                    )
+                recent_markup = "\n".join(lines)
+            else:
+                recent_markup = "[dim]No wardrive sightings yet.[/dim]"
+
+            screen.query_one("#wardrive-recent", Label).update(recent_markup)
         except Exception:  # noqa: S110
             pass
 
@@ -730,6 +1039,17 @@ class SentinelTUIApp(App):
         elif pct > 50:
             return "yellow"
         return "green"
+
+    @staticmethod
+    def _security_color(security: str) -> str:
+        sec = security.upper()
+        if "OPEN" in sec:
+            return "red"
+        if "WEP" in sec:
+            return "dark_orange"
+        if "WPA3" in sec:
+            return "bright_green"
+        return "cyan"
 
 
 # ─── Entry Point ─────────────────────────────────────────────────────────────

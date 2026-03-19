@@ -14,7 +14,6 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

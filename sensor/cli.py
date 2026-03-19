@@ -192,6 +192,14 @@ def run_sensor_logic(config: dict) -> int:
 
             while controller._running:
                 time.sleep(1)
+
+            if controller._fatal_exit_code is not None:
+                print(
+                    f"ERROR: Sensor stopped by fail-fast policy "
+                    f"(exit={controller._fatal_exit_code})",
+                    file=sys.stderr,
+                )
+                return controller._fatal_exit_code
         else:
             print("ERROR: Failed to start sensor", file=sys.stderr)
             return 1

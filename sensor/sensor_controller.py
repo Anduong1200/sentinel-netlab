@@ -11,6 +11,7 @@ import signal
 import sys
 import threading
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -47,6 +48,8 @@ class SensorController:
     def __init__(
         self,
         config: Config = None,
+        on_network: Callable[[dict[str, Any]], None] | None = None,
+        on_alert: Callable[[dict[str, Any]], None] | None = None,
     ):
         """
         Initialize sensor controller.
@@ -59,14 +62,16 @@ class SensorController:
 
         self.config = config
         self.sensor_id = config.sensor.id
+        self.on_network = on_network
+        self.on_alert = on_alert
 
         self.iface = config.capture.interface
-        self.upload_interval = 5.0
-        self.batch_size = 200
+        self.upload_interval = float(getattr(config.upload, "interval_sec", 5.0))
+        self.batch_size = int(getattr(config.upload, "batch_size", 200))
 
         # Initialize components
         if getattr(config.capture, "pcap_file", None):
-            self.driver = PcapCaptureDriver(config.capture.pcap_file)
+            self.driver = PcapCaptureDriver(self.iface, config.capture.pcap_file)
         elif config.mock_mode:
             self.driver = MockCaptureDriver(self.iface)
         else:
@@ -89,8 +94,11 @@ class SensorController:
             ),  # Hacky but ok
         )
 
+        upload_url = config.api.upload_url or (
+            f"http://{config.api.host}:{config.api.port}/api/v1/telemetry"
+        )
         self.transport = TransportClient(
-            upload_url=f"http://{config.api.host}:{config.api.port}/api/v1/telemetry",  # Construct URL
+            upload_url=upload_url,
             auth_token=config.api.api_key,
             verify_ssl=config.api.ssl_enabled,
             hmac_secret=config.api.hmac_secret,
@@ -160,18 +168,25 @@ class SensorController:
         self._capture_thread: threading.Thread | None = None
         self._upload_thread: threading.Thread | None = None
         self._heartbeat_thread: threading.Thread | None = None
+        self._self_check_thread: threading.Thread | None = None
         self._start_time: datetime | None = None
+        self._stop_lock = threading.Lock()
+        self._shutdown_complete = False
+        self._fatal_exit_code: int | None = None
 
         # Stats
         self._frames_captured = 0
         self._frames_parsed = 0
         self._frames_duplicates = 0
+        self._last_packet_ts = time.monotonic()
+        self._self_check_failures = 0
 
         # Geo pipeline (optional)
         self.geo_mapper = None
         self._geo_sample_cls = None
         self._last_heatmap_export_ts = 0.0
         self._init_geo_pipeline()
+        self._usb_watchdog = None
 
     def _init_geo_pipeline(self) -> None:
         """Initialize geo-mapping dependencies and sensor position."""
@@ -292,7 +307,10 @@ class SensorController:
             return False
 
         self._running = True
+        self._shutdown_complete = False
+        self._fatal_exit_code = None
         self._start_time = datetime.now(UTC)
+        self._last_packet_ts = time.monotonic()
 
         # Start channel hopping
         self.hopper.start()
@@ -321,6 +339,16 @@ class SensorController:
         )
         self._heartbeat_thread.start()
 
+        # Start lightweight self-check loop for live capture.
+        if not self.config.mock_mode and not getattr(self.config.capture, "pcap_file", None):
+            self._start_usb_watchdog()
+            self._self_check_thread = threading.Thread(
+                target=self._self_check_loop,
+                daemon=True,
+                name="SelfCheck",
+            )
+            self._self_check_thread.start()
+
         # Start health server
         self.health_server.start()
 
@@ -332,40 +360,52 @@ class SensorController:
 
     def stop(self) -> None:
         """Stop sensor gracefully"""
-        logger.info("Stopping sensor...")
+        with self._stop_lock:
+            if self._shutdown_complete:
+                return
 
-        self._running = False
+            logger.info("Stopping sensor...")
+            self._running = False
+            current_thread = threading.current_thread()
 
-        # Stop components
-        self.hopper.stop()
-        self.health_server.stop()
-        self.monitor.stop()
-        self.driver.stop_capture()
+            # Stop components
+            if self._usb_watchdog:
+                self._usb_watchdog.stop()
+            self.hopper.stop()
+            self.health_server.stop()
+            self.monitor.stop()
+            self.driver.stop_capture()
 
-        # Stop upload worker (graceful - finishes current upload)
-        self.upload_worker.stop(timeout=10.0)
+            # Stop upload worker (graceful - finishes current upload)
+            self.upload_worker.stop(timeout=10.0)
 
-        # Wait for threads
-        for thread in [
-            self._capture_thread,
-            self._upload_thread,
-            self._heartbeat_thread,
-        ]:
-            if thread and thread.is_alive():
-                thread.join(timeout=5)
+            # Wait for threads
+            for thread in [
+                self._capture_thread,
+                self._upload_thread,
+                self._heartbeat_thread,
+                self._self_check_thread,
+            ]:
+                if (
+                    thread
+                    and thread.is_alive()
+                    and thread is not current_thread
+                ):
+                    thread.join(timeout=5)
 
-        # Flush remaining buffer to queue
-        self.buffer.flush_to_disk()
+            # Flush remaining buffer to queue
+            self.buffer.flush_to_disk()
 
-        # Close queue (persists any remaining data)
-        self.queue.close()
-        # Close baseline DB connection
-        self.baseline.close()
+            # Close queue (persists any remaining data)
+            self.queue.close()
+            # Close baseline DB connection
+            self.baseline.close()
 
-        # Restore interface
-        self.driver.disable_monitor_mode()
+            # Restore interface
+            self.driver.disable_monitor_mode()
+            self._shutdown_complete = True
 
-        logger.info("Sensor stopped")
+            logger.info("Sensor stopped")
 
     def status(self) -> dict[str, Any]:
         """Get sensor status"""
@@ -380,6 +420,8 @@ class SensorController:
             "monitor_mode": self.driver.is_monitor_mode,
             "current_channel": self.hopper.get_current_channel(),
             "uptime_seconds": uptime,
+            "fatal_exit_code": self._fatal_exit_code,
+            "last_packet_age_sec": round(time.monotonic() - self._last_packet_ts, 2),
             "frames_captured": self._frames_captured,
             "frames_parsed": self._frames_parsed,
             "buffer": self.buffer.get_stats(),
@@ -398,6 +440,7 @@ class SensorController:
             "baseline": {
                 "learning_mode": self.baseline.learning_mode,
             },
+            "usb_watchdog": self._get_usb_watchdog_status(),
         }
 
     def _capture_loop(self) -> None:
@@ -429,6 +472,7 @@ class SensorController:
             return None
 
         self._frames_captured += 1
+        self._last_packet_ts = time.monotonic()
 
         parsed = self.parser.parse(raw_frame.data, raw_frame.timestamp)
         if parsed is None or parsed.frame_type == "other":
@@ -462,8 +506,10 @@ class SensorController:
 
     def _export_telemetry(self, parsed: Any, telemetry: Any, net_dict: dict) -> None:
         """Route data to buffers, metrics, risk, and geo enrichment. (Exporter)"""
+        net_dict.setdefault("security", self._derive_security(parsed, net_dict))
         self._geo_ingest_sample(net_dict)
         self.buffer.append(net_dict)
+        self._emit_network(net_dict)
 
         self.aggregator.record_frame(
             telemetry.frame_type,
@@ -569,6 +615,7 @@ class SensorController:
         if not self.alert_manager.process(alert_dict):
             return
 
+        self._emit_alert(alert_dict)
         logger.warning(
             f"Detection: [{alert_dict.get('severity')}] {alert_dict.get('title')}"
         )
@@ -604,6 +651,155 @@ class SensorController:
             batch = self.buffer.get_batch(max_count=1000)
             if batch:
                 self.transport.upload(batch)
+
+    def force_channel_hop(self) -> bool:
+        """Advance to the next configured channel immediately."""
+        channels = self.hopper.channels
+        if not channels:
+            return False
+
+        next_idx = (self.hopper._current_idx + 1) % len(channels)
+        channel = channels[next_idx]
+        if self.driver.set_channel(channel):
+            self.hopper._current_idx = next_idx
+            logger.info("Forced channel hop to %s", channel)
+            return True
+        return False
+
+    def request_fail_fast(self, reason: str, exit_code: int = 2) -> None:
+        """Stop the controller and signal the wrapper to exit non-zero."""
+        if self._fatal_exit_code is not None:
+            return
+
+        self._fatal_exit_code = exit_code
+        logger.error("Fail-fast triggered: %s", reason)
+        self._emit_alert(
+            {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "severity": "High",
+                "title": "Sensor Fail-Fast",
+                "description": reason,
+                "sensor_id": self.sensor_id,
+                "alert_type": "sensor_health",
+            }
+        )
+        self.stop()
+
+    def _self_check_loop(self) -> None:
+        """Verify live capture integrity and request restart on persistent failure."""
+        while self._running:
+            time.sleep(5)
+            if not self._running:
+                break
+
+            try:
+                self._run_live_self_check()
+            except Exception as e:
+                logger.debug("Self-check error: %s", e)
+
+    def _run_live_self_check(self) -> None:
+        """Check monitor mode and packet freshness for live capture."""
+        uptime_seconds = 0.0
+        if self._start_time:
+            uptime_seconds = (datetime.now(UTC) - self._start_time).total_seconds()
+
+        monitor_ok = self.driver.is_monitor_mode
+        if self._usb_watchdog:
+            usb_status = self._usb_watchdog.get_status()
+            monitor_ok = usb_status.get("connected", monitor_ok) and usb_status.get(
+                "in_monitor_mode", monitor_ok
+            )
+
+        if not monitor_ok:
+            self._self_check_failures += 1
+            logger.warning("Self-check: interface left monitor mode")
+            if self._self_check_failures == 1:
+                success, error = self.driver.enable_monitor_mode()
+                if success:
+                    logger.info("Self-check recovered monitor mode")
+                    self._self_check_failures = 0
+                    return
+                logger.warning("Monitor mode recovery failed: %s", error)
+            if self._self_check_failures >= 2:
+                self.request_fail_fast("Interface left monitor mode repeatedly")
+            return
+
+        last_packet_age = time.monotonic() - self._last_packet_ts
+        if uptime_seconds > 60 and last_packet_age > 30:
+            self._self_check_failures += 1
+            logger.warning(
+                "Self-check: no packets seen for %.1fs on %s",
+                last_packet_age,
+                self.iface,
+            )
+            if self._self_check_failures >= 2:
+                self.request_fail_fast(
+                    f"No packets captured for {int(last_packet_age)}s on {self.iface}"
+                )
+            return
+
+        self._self_check_failures = 0
+
+    def _start_usb_watchdog(self) -> None:
+        """Attach USB adapter monitoring for live captures."""
+        if self._usb_watchdog is not None:
+            return
+
+        try:
+            from sensor.usb_watchdog import USBWatchdog
+
+            self._usb_watchdog = USBWatchdog(
+                interface=self.iface,
+                on_disconnect=lambda: logger.warning(
+                    "USB watchdog: adapter disconnected"
+                ),
+                on_reconnect=lambda: logger.info("USB watchdog: adapter reconnected"),
+            )
+            self._usb_watchdog.start()
+        except Exception as e:
+            logger.warning("USB watchdog unavailable: %s", e)
+            self._usb_watchdog = None
+
+    def _get_usb_watchdog_status(self) -> dict[str, Any]:
+        if not self._usb_watchdog:
+            return {}
+
+        try:
+            return self._usb_watchdog.get_status()
+        except Exception as e:
+            logger.debug("USB watchdog status failed: %s", e)
+            return {}
+
+    def _emit_network(self, net_dict: dict[str, Any]) -> None:
+        if self.on_network is None:
+            return
+
+        try:
+            self.on_network(dict(net_dict))
+        except Exception as e:
+            logger.debug("Network callback failed: %s", e)
+
+    def _emit_alert(self, alert_dict: dict[str, Any]) -> None:
+        if self.on_alert is None:
+            return
+
+        try:
+            self.on_alert(dict(alert_dict))
+        except Exception as e:
+            logger.debug("Alert callback failed: %s", e)
+
+    @staticmethod
+    def _derive_security(parsed: Any, net_dict: dict[str, Any]) -> str:
+        security = str(net_dict.get("security") or "").upper()
+        if security:
+            return security
+        if getattr(parsed, "rsn_info", None):
+            return "WPA3" if getattr(parsed, "pmf_required", False) else "WPA2"
+        if getattr(parsed, "wpa_info", None):
+            return "WPA"
+        if getattr(parsed, "privacy", False):
+            return "WEP"
+        return "OPEN"
 
 
 def main():
@@ -705,6 +901,8 @@ Examples:
         # Keep running
         while controller._running:
             time.sleep(1)
+        if controller._fatal_exit_code is not None:
+            sys.exit(controller._fatal_exit_code)
     else:
         print("Failed to start sensor")
         sys.exit(1)
