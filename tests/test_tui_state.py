@@ -2,7 +2,6 @@
 Tests for the Sentinel NetLab TUI state manager and helpers.
 """
 
-import queue
 import threading
 import time
 

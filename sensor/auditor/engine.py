@@ -17,6 +17,8 @@ class SecurityAuditor:
         self.sensor_id = sensor_id
         self.profile = profile
         self.findings: list[Finding] = []
+        # O(1) lookup set to avoid recreating lists of finding IDs during deduplication
+        self._finding_ids: set[str] = set()
         self.networks: list[NetworkInfo] = []
         self.manual_findings: list[Finding] = []
         self.policies = [OpenNetworkPolicy(), WEPPolicy()]
@@ -109,6 +111,7 @@ class SecurityAuditor:
         network_findings = self.evaluate_network(network)
         for finding in network_findings:
             self.findings.append(finding)
+            self._finding_ids.add(finding.id)
             logger.warning(
                 f"[{finding.severity}] {finding.title}: {finding.evidence_summary}"
             )
@@ -116,12 +119,11 @@ class SecurityAuditor:
         # Legacy built-in checks
         legacy_findings = self._run_legacy_checks(network)
         if legacy_findings:
-            existing_ids = {f.id for f in self.findings}
             for finding in legacy_findings:
                 # Avoid duplicates
-                if finding.id not in existing_ids:
+                if finding.id not in self._finding_ids:
                     self.findings.append(finding)
-                    existing_ids.add(finding.id)
+                    self._finding_ids.add(finding.id)
 
     def _run_legacy_checks(self, network: NetworkInfo) -> list[Finding]:
         """Built-in checks for backward compatibility"""
@@ -136,6 +138,7 @@ class SecurityAuditor:
         """Add manually-observed finding (e.g., from admin UI screenshot)"""
         self.manual_findings.append(finding)
         self.findings.append(finding)
+        self._finding_ids.add(finding.id)
 
     def generate_report_data(self, duration_sec: float) -> dict[str, Any]:
         """Generate report data structure for template rendering"""

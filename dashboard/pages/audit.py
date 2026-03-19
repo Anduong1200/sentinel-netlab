@@ -1,6 +1,6 @@
-import pandas as pd
 import dash
 import dash_bootstrap_components as dbc
+import pandas as pd
 from dash import html
 
 from dashboard.components.cards import GLASS_STYLE

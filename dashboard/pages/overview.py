@@ -1,5 +1,5 @@
-import os
 import hashlib
+import os
 from datetime import datetime
 
 import dash
@@ -262,7 +262,7 @@ def update_metrics(n):
                     security_counts["WEP"] += 1
                 else:
                     security_counts["OPEN"] += 1
-                    
+
                 # Map Data - Use fallback coords if missing so the demo works
                 lat = n.get("lat")
                 lon = n.get("lon")

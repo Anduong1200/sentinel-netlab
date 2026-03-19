@@ -1,5 +1,4 @@
 import os
-import random
 from datetime import datetime, timedelta
 
 import dash
@@ -163,9 +162,9 @@ def update_signals(n):
         now = datetime.now()
         # Generate last 60 minutes bins (1 hour) to allow zooming
         times = [(now - timedelta(minutes=i)).strftime("%H:%M") for i in range(60, -1, -1)]
-        
-        counts_dict = {t: 0 for t in times}
-        
+
+        counts_dict = dict.fromkeys(times, 0)
+
         if networks:
             for net in networks:
                 first_seen_ts = net.get("first_seen")
@@ -180,7 +179,7 @@ def update_signals(n):
         counts = [counts_dict[t.strftime("%H:%M")] for t in time_objs]
 
         fig_disc = go.Figure()
-        
+
         # Add Volume-like Bar Chart (Typical for "Rate" in financial charts)
         fig_disc.add_trace(
             go.Bar(
@@ -190,7 +189,7 @@ def update_signals(n):
                 name="New Networks",
             )
         )
-        
+
         # Add Trendline overlay (Scatter)
         fig_disc.add_trace(
             go.Scatter(

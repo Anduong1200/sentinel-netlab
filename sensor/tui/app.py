@@ -7,7 +7,6 @@ Operational Framework:
   Screen 2 (Dashboard): 4-panel real-time with alert debouncing & graceful shutdown.
 """
 
-import collections
 import glob
 import logging
 import os
@@ -34,10 +33,9 @@ from textual.widgets import (
     RadioButton,
     RadioSet,
     RichLog,
-    Static,
 )
 
-from sensor.tui.state_manager import AlertEntry, AppState, NetworkEntry, TUILogHandler
+from sensor.tui.state_manager import AlertEntry, AppState, TUILogHandler
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
