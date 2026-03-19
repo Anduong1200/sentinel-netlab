@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml README.md sentinel.py ./
+COPY pyproject.toml README.md scripts/sentinel.py ./
 COPY dashboard/ dashboard/
 COPY common/ common/
 
@@ -32,7 +32,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --chown=sentinel:sentinel dashboard/ ./dashboard/
 COPY --chown=sentinel:sentinel common/ ./common/
-COPY --chown=sentinel:sentinel sentinel.py ./sentinel.py
+COPY --chown=sentinel:sentinel scripts/sentinel.py ./sentinel.py
 COPY --chown=sentinel:sentinel config.example.yaml ./config.yaml
 
 # Security: Enforce Production Mode

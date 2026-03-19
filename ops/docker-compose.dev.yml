@@ -50,7 +50,7 @@ services:
     container_name: sentinel-controller
     restart: unless-stopped
     # Run migrations before starting
-    command: sh -c "python -m alembic -c controller/alembic.ini upgrade head && python sentinel.py controller"
+    command: sh -c "python -m alembic -c controller/alembic.ini upgrade head && python scripts/sentinel.py controller"
 
     environment:
       <<: *common-env

@@ -68,53 +68,51 @@ def seed_data():
             )
             session.add(sensor)
 
-        # 2. Seed Telemetry
         # 2. Seed Telemetry (Deterministic)
-        if True:  # Always use deterministic for now to simplify
-            # Fallback: Deterministic Generation
-            logger.warning("Generating deterministic mock data.")
-            random.seed(42)  # Ensure every student gets the same "random" data
+        # Always use deterministic for now to simplify
+        logger.warning("Generating deterministic mock data.")
+        random.seed(42)  # Ensure every student gets the same "random" data
 
-            # 1. Deterministic Telemetry
-            logger.info("Generating deterministic telemetry...")
-            telemetry_batch = []
-            start_time = datetime.now(UTC) - timedelta(hours=1)
-            for i in range(100):  # Generate 100 frames
-                t = start_time + timedelta(seconds=i * 2)
-                telemetry_batch.append(
-                    Telemetry(
-                        timestamp=t,
-                        sensor_id=sensor_id,
-                        batch_id=f"seed-batch-{i // 20}",
-                        ingested_at=datetime.now(UTC),
-                        bssid="AA:BB:CC:DD:EE:FF",
-                        ssid="LabNet_Guest",
-                        channel=6,
-                        rssi_dbm=-50 - (i % 20),
-                        frequency_mhz=2437,
-                        security="WPA2",
-                        raw_data={"seq": i, "simulated": True},
-                    )
+        # 1. Deterministic Telemetry
+        logger.info("Generating deterministic telemetry...")
+        telemetry_batch = []
+        start_time = datetime.now(UTC) - timedelta(hours=1)
+        for i in range(100):  # Generate 100 frames
+            t = start_time + timedelta(seconds=i * 2)
+            telemetry_batch.append(
+                Telemetry(
+                    timestamp=t,
+                    sensor_id=sensor_id,
+                    batch_id=f"seed-batch-{i // 20}",
+                    ingested_at=datetime.now(UTC),
+                    bssid="AA:BB:CC:DD:EE:FF",
+                    ssid="LabNet_Guest",
+                    channel=6,
+                    rssi_dbm=-50 - (i % 20),
+                    frequency_mhz=2437,
+                    security="WPA2",
+                    raw_data={"seq": i, "simulated": True},
                 )
-            session.add_all(telemetry_batch)
-            logger.info(f"Seeded {len(telemetry_batch)} telemetry records.")
-
-            # specific "Evil Twin" alert for consistency with Quickstart
-            alert = Alert(
-                id="generated-evil-twin-001",
-                sensor_id=sensor_id,
-                created_at=datetime.now(UTC) - timedelta(minutes=5),
-                alert_type="evil_twin",
-                severity="high",
-                title="Evil Twin Access Point Detected",
-                description="A rogue Access Point is broadcasting a trusted SSID (Corporate-WiFi) with a mismatched BSSID.",
-                ssid="Corporate-WiFi",
-                bssid="AA:BB:CC:DD:EE:FF",
-                confidence=0.95,
-                status="open",
             )
-            session.merge(alert)
-            logger.info("Seeded 1 generated alert.")
+        session.add_all(telemetry_batch)
+        logger.info(f"Seeded {len(telemetry_batch)} telemetry records.")
+
+        # specific "Evil Twin" alert for consistency with Quickstart
+        alert = Alert(
+            id="generated-evil-twin-001",
+            sensor_id=sensor_id,
+            created_at=datetime.now(UTC) - timedelta(minutes=5),
+            alert_type="evil_twin",
+            severity="high",
+            title="Evil Twin Access Point Detected",
+            description="A rogue Access Point is broadcasting a trusted SSID (Corporate-WiFi) with a mismatched BSSID.",
+            ssid="Corporate-WiFi",
+            bssid="AA:BB:CC:DD:EE:FF",
+            confidence=0.95,
+            status="open",
+        )
+        session.merge(alert)
+        logger.info("Seeded 1 generated alert.")
 
         session.commit()
         logger.info("Seeding complete.")

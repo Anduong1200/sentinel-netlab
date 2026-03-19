@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sentinel-netlab"
-version = "0.6.0"
+version = "1.0.0"
 description = "Lightweight Hybrid Wireless Intrusion Detection System"
 readme = "README.md"
 license = {text = "MIT"}
@@ -201,6 +201,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
+    "sensor.replay.pcap_reader",
     "sensor.wardrive",
     "sensor.parser",
     "sensor.forensics",

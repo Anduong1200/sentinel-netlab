@@ -1,5 +1,5 @@
-import os
 import hashlib
+import os
 from datetime import datetime
 
 import dash
@@ -262,14 +262,17 @@ def update_metrics(n):
                     security_counts["WEP"] += 1
                 else:
                     security_counts["OPEN"] += 1
-                    
+
                 # Map Data - Use fallback coords if missing so the demo works
                 lat = n.get("lat")
                 lon = n.get("lon")
                 bssid = n.get("bssid", "00:00:00:00:00:00")
                 if not (lat and lon):
                     # Deterministic fallback around NYC
-                    h = int(hashlib.md5(bssid.encode()).hexdigest(), 16)
+                    h = int(
+                        hashlib.md5(bssid.encode(), usedforsecurity=False).hexdigest(),
+                        16,
+                    )
                     lat = 40.7128 + ((h % 2000) / 100000.0 - 0.01)
                     lon = -74.0060 + (((h // 2000) % 2000) / 100000.0 - 0.01)
 

@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-COPY pyproject.toml README.md sentinel.py ./
+COPY pyproject.toml README.md scripts/sentinel.py ./
 COPY sensor/ sensor/
 COPY common/ common/
 COPY algos/ algos/

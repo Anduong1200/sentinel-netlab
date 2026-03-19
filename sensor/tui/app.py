@@ -7,7 +7,6 @@ Operational Framework:
   Screen 2 (Dashboard): 4-panel real-time with alert debouncing & graceful shutdown.
 """
 
-import collections
 import glob
 import logging
 import os
@@ -34,10 +33,9 @@ from textual.widgets import (
     RadioButton,
     RadioSet,
     RichLog,
-    Static,
 )
 
-from sensor.tui.state_manager import AlertEntry, AppState, NetworkEntry, TUILogHandler
+from sensor.tui.state_manager import AlertEntry, AppState, TUILogHandler
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -61,8 +59,8 @@ def detect_wifi_interfaces() -> list[str]:
             name = os.path.basename(iface_dir)
             if name not in interfaces:
                 interfaces.append(name)
-    except Exception:
-        pass
+    except Exception as e:
+        logging.debug(f"Error enumerating interfaces: {e}")
     return interfaces or ["(none detected)"]
 
 
@@ -70,6 +68,7 @@ def check_controller_online() -> bool:
     """Quick check if the Controller API is reachable."""
     try:
         import requests
+
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
         resp = requests.get(f"{url}/api/v1/sensors", timeout=1)
         return resp.status_code == 200
@@ -117,8 +116,8 @@ class ShutdownModal(ModalScreen):
     def _update(self, msg: str) -> None:
         try:
             self.query_one("#sd-status", Label).update(msg)
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"Error updating status: {e}")
 
     def _finish(self) -> None:
         self.app.exit()
@@ -158,11 +157,15 @@ class SetupScreen(Screen):
                 with Container(classes="setup-group"):
                     yield Label("⚡ OPERATION MODE", classes="setup-group-title")
                     with RadioSet(id="mode-select"):
-                        yield RadioButton("(A) Live Combat — Thực chiến", id="mode-live")
+                        yield RadioButton(
+                            "(A) Live Combat — Thực chiến", id="mode-live"
+                        )
                         yield RadioButton(
                             "(B) Mock / Test Lab", id="mode-mock", value=True
                         )
-                        yield RadioButton("(C) PCAP Replay — Phân tích lại", id="mode-pcap")
+                        yield RadioButton(
+                            "(C) PCAP Replay — Phân tích lại", id="mode-pcap"
+                        )
 
                 # Interface
                 with Container(classes="setup-group"):
@@ -260,15 +263,11 @@ class SetupScreen(Screen):
                 return
 
         if mode == "pcap" and not pcap_path:
-            err_label.update(
-                "[bold red]❌ PCAP mode requires a file path![/bold red]"
-            )
+            err_label.update("[bold red]❌ PCAP mode requires a file path![/bold red]")
             return
 
         if mode == "pcap" and pcap_path and not os.path.isfile(pcap_path):
-            err_label.update(
-                f"[bold red]❌ File not found: {pcap_path}[/bold red]"
-            )
+            err_label.update(f"[bold red]❌ File not found: {pcap_path}[/bold red]")
             return
 
         err_label.update("")  # Clear errors
@@ -343,18 +342,14 @@ class DashboardScreen(Screen):
             # ── CENTER: Networks + Alerts ──
             with Vertical(id="center-area"):
                 with Container(id="network-panel"):
-                    yield Label(
-                        "[b]📶  LIVE NETWORK FEED[/b]", classes="panel-title"
-                    )
-                    table = DataTable(id="net-table")
+                    yield Label("[b]📶  LIVE NETWORK FEED[/b]", classes="panel-title")
+                    table: DataTable = DataTable(id="net-table")
                     table.cursor_type = "row"
                     table.zebra_stripes = True
                     yield table
 
                 with Container(id="alert-panel"):
-                    yield Label(
-                        "[b]🚨  THREAT ALERTS[/b]", classes="panel-title"
-                    )
+                    yield Label("[b]🚨  THREAT ALERTS[/b]", classes="panel-title")
                     yield RichLog(
                         id="alert-log",
                         max_lines=100,
@@ -405,14 +400,16 @@ class DashboardScreen(Screen):
                 app.app_state.push_log(
                     f"[System] 🔖 Marked BSSID as suspicious: {bssid}"
                 )
-                app.app_state.push_alert(AlertEntry(
-                    timestamp=datetime.now().strftime("%H:%M:%S"),
-                    severity="Medium",
-                    title="Manual Mark",
-                    description=f"User marked {bssid} as suspicious",
-                ))
-        except Exception:
-            pass
+                app.app_state.push_alert(
+                    AlertEntry(
+                        timestamp=datetime.now().strftime("%H:%M:%S"),
+                        severity="Medium",
+                        title="Manual Mark",
+                        description=f"User marked {bssid} as suspicious",
+                    )
+                )
+        except Exception as e:
+            logging.debug(f"Error manual marking BSSID: {e}")
 
     def action_graceful_quit(self) -> None:
         """Graceful shutdown with visual feedback."""
@@ -428,7 +425,7 @@ class SentinelTUIApp(App):
     """Sentinel NetLab – Multi-Screen Terminal Dashboard."""
 
     TITLE = "Sentinel NetLab"
-    SUB_TITLE = "Terminal Control Panel v0.6.0"
+    SUB_TITLE = "Terminal Control Panel v1.0.0"
     CSS_PATH = "theme.tcss"
 
     SCREENS = {"setup": SetupScreen, "dashboard": DashboardScreen}
@@ -482,15 +479,19 @@ class SentinelTUIApp(App):
             mode = cfg.get("mode", "mock")
 
             args = [
-                "python3", str(PROJECT_ROOT / "sensor" / "cli.py"),
-                "--sensor-id", self.app_state.sensor_id,
+                "python3",
+                str(PROJECT_ROOT / "sensor" / "cli.py"),
+                "--sensor-id",
+                self.app_state.sensor_id,
             ]
 
             if mode == "mock":
                 os.environ["SENSOR_MOCK_MODE"] = "true"
                 args.extend(["--config-file", "config.yaml"])
             elif mode == "live":
-                os.environ.setdefault("SENSOR_INTERFACE", cfg.get("interface", "wlan0mon"))
+                os.environ.setdefault(
+                    "SENSOR_INTERFACE", cfg.get("interface", "wlan0mon")
+                )
                 args.extend(["--config-file", "config.yaml"])
             elif mode == "pcap":
                 pcap = cfg.get("pcap_path", "")
@@ -575,14 +576,20 @@ class SentinelTUIApp(App):
                 f"RAM:    [{self._color_pct(state.mem_percent)}]{state.mem_percent:.0f}%[/]"
             )
             screen.query_one("#sys-usb", Label).update(
-                f"USB:    [green]{state.interface}[/green]" if state.running else "USB:    [yellow]Idle[/yellow]"
+                f"USB:    [green]{state.interface}[/green]"
+                if state.running
+                else "USB:    [yellow]Idle[/yellow]"
             )
             screen.query_one("#sys-uptime", Label).update(
                 f"Uptime: [dim]{state.uptime}[/dim]"
             )
 
             # Spool
-            q_color = "red" if state.spool_queued > 20 else ("yellow" if state.spool_queued > 5 else "green")
+            q_color = (
+                "red"
+                if state.spool_queued > 20
+                else ("yellow" if state.spool_queued > 5 else "green")
+            )
             screen.query_one("#spool-queued", Label).update(
                 f"Queued:   [{q_color}]{state.spool_queued}[/{q_color}]"
             )
@@ -614,14 +621,12 @@ class SentinelTUIApp(App):
             screen.query_one("#sen-mode", Label).update(
                 f"Mode:  [{'green' if state.running else 'yellow'}]{state.mode.upper()}[/]"
             )
-            screen.query_one("#sen-iface", Label).update(
-                f"Iface: {state.interface}"
-            )
+            screen.query_one("#sen-iface", Label).update(f"Iface: {state.interface}")
             screen.query_one("#sen-nets", Label).update(
                 f"Nets:  [cyan]{state.total_networks}[/cyan]"
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"Error updating net count: {e}")
 
         # ── Drain network queue ──
         try:
@@ -652,17 +657,22 @@ class SentinelTUIApp(App):
                         sec_display = Text(sec, style="bold cyan")
 
                     table.add_row(
-                        net.timestamp, net.bssid, net.ssid,
-                        rssi_display, str(net.channel or "—"), sec_display,
+                        net.timestamp,
+                        net.bssid,
+                        net.ssid,
+                        rssi_display,
+                        str(net.channel or "—"),
+                        sec_display,
                     )
                     drained += 1
                 except queue.Empty:
                     break
 
             while table.row_count > 50:
-                table.remove_row(table.rows[next(iter(table.rows))])
-        except Exception:
-            pass
+                # Remove the first (oldest) row's key
+                table.remove_row(next(iter(table.rows)))
+        except Exception as e:
+            logging.debug(f"Error draining network queue: {e}")
 
         # ── Drain alerts (with debouncing) ──
         try:
@@ -689,8 +699,8 @@ class SentinelTUIApp(App):
                     )
                 except queue.Empty:
                     break
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"Error draining alerts: {e}")
 
         # ── Drain system log ──
         if not self.log_paused:
@@ -704,8 +714,8 @@ class SentinelTUIApp(App):
                         drained += 1
                     except queue.Empty:
                         break
-            except Exception:
-                pass
+            except Exception as e:
+                logging.debug(f"Error draining system log: {e}")
 
     @staticmethod
     def _color_pct(pct: float) -> str:
