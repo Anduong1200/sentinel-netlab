@@ -10,15 +10,22 @@
 *   **Kiến trúc Phân tán (Edge - Core)**: Dự án thể hiện rất rõ sự tách biệt giữa Sensor (thu thập) và Controller (xử lý). Sensor (`sensor/sensor_controller.py`) chỉ đóng vai trò đẩy dữ liệu lên qua API mà không nắm quyền quyết định, giúp bảo vệ lớp lõi (Core) kể cả khi phần cứng ở biên bị xâm phạm.
 *   **Tính chịu lỗi (Fault Tolerance)**: File `sensor/transport.py` được triển khai theo tiêu chuẩn công nghiệp với cơ chế **Exponential Backoff** (thử lại với độ trễ tăng dần) và **Circuit Breaker** (ngắt mạch khi lỗi liên tục). Nếu kết nối mạng giữa RPi và Server bị đứt, Sensor sẽ không bị crash mà tự động đệm dữ liệu (Spooling/Queue) và gửi lại khi mạng ổn định.
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Chứng minh khả năng sống sót của Sensor khi mất mạng.
-*   **Cách làm**:
-    1. Chạy hệ thống bằng lệnh `make lab-up`.
-    2. Chạy một Sensor thật hoặc Mock Sensor đẩy dữ liệu.
-    3. Tắt Controller (giả lập rớt mạng): `docker stop ops-controller-1`.
-    4. Quan sát log của Sensor: Sẽ thấy các dòng cảnh báo *Circuit breaker opened due to repeated failures* hoặc *Retry after X seconds*. Sensor không bị sập.
-    5. Bật lại Controller: `docker start ops-controller-1`.
-    6. Quan sát log: Sensor tự động khôi phục kết nối và đẩy tiếp gói tin.
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh khả năng sống sót của thiết bị thu thập (Sensor) khi mất mạng, không bị crash làm mất dữ liệu.
+*   **Thao tác**:
+    1.  Mở Terminal 1, khởi động toàn hệ thống:
+        `make lab-up`
+    2.  Mở Terminal 2, chạy một Sensor độc lập đang đẩy dữ liệu:
+        `python sensor/sensor_cli.py --sensor-id demo-01 --config config.yaml`
+    3.  *(Vừa làm vừa thuyết minh)* "Thưa hội đồng, giờ em sẽ giả lập trường hợp máy chủ trung tâm bị rớt mạng hoặc mất điện."
+    4.  Mở Terminal 3, tắt ngay container của Controller:
+        `docker stop ops-controller-1`
+    5.  Chỉ vào **Terminal 2 (Log Sensor)** cho hội đồng xem:
+        *   Log hiện: `Upload attempt 1 failed: Connection error...`
+        *   Log tiếp theo: `Retry after 1.0s` -> `Retry after 2.0s` (Đây là cơ chế Exponential Backoff).
+        *   Log báo đỏ: `Circuit breaker opened due to repeated failures` (Hệ thống ngắt mạch bảo vệ CPU, không spam request nữa).
+        *   **Nhấn mạnh**: Sensor vẫn đang chạy, không hề văng lỗi (crash) thoát chương trình.
+    6.  Khôi phục mạng: `docker start ops-controller-1`. Chỉ vào Terminal 2 thấy Sensor nối lại thành công `Time sync: offset=...` và tiếp tục đẩy hàng đợi (Spooling) bị kẹt.
 
 ---
 
@@ -29,12 +36,17 @@
     *   Ví dụ ở Evil Twin: Hệ thống không vội vàng cảnh báo chỉ vì có 2 trạm phát cùng tên (SSID). Nó yêu cầu hội đủ điểm (Score > 80) thông qua việc xét chênh lệch sóng (RSSI Delta), độ trễ báo hiệu (Beacon Jitter), mã OUI của thiết bị và có thời gian xác nhận (Confirmation Window) để loại bỏ hoàn toàn báo động giả (False Positives).
 *   **Hỗ trợ Học máy lai (Hybrid ML)**: Cơ sở tính điểm Rủi ro (`algos/risk.py`) không chỉ dựa trên luật cứng (Rule-based) mà còn hỗ trợ đẩy vector thuộc tính vào một mô hình Autoencoder (`ml/anomaly_model.py`) để cộng thêm "điểm bất thường", giúp phát hiện những kiểu tấn công Zero-day hoặc hành vi lạ chưa có chữ ký (Signature).
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Kiểm tra độ chính xác của cảnh báo (Tránh False Positives).
-*   **Cách làm**:
-    1. Chạy một luồng dữ liệu giả lập mạng bình thường (Normal Traffic) thông qua PCAP Replay bằng lệnh test:
-       `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_normal_traffic_no_alerts`
-    2. Chỉ ra cho hội đồng thấy: Mặc dù hệ thống "ngửi" hàng chục gói tin, nhưng **không có bất kỳ cảnh báo rác nào được sinh ra**. Hệ thống không bị "nhạy cảm quá mức".
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh khả năng lọc nhiễu, tỷ lệ False Positive bằng 0% đối với lưu lượng mạng sạch (Normal Traffic).
+*   **Thao tác**:
+    1.  *(Thuyết minh)* "Để chứng minh hệ thống em không cảnh báo rác, em sẽ bơm một luồng dữ liệu mạng sinh hoạt bình thường vào thẳng đường ống phân tích (Pipeline)."
+    2.  Mở Terminal, gõ lệnh chạy bài test Integration chuyên biệt:
+        `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_normal_traffic_no_alerts -v -s`
+    3.  Chỉ vào Output cho hội đồng xem:
+        *   Code sinh ra 1 file PCAP chứa các gói tin Beacon chuẩn, không có dấu hiệu tấn công.
+        *   Dòng chữ xanh lá cây in ra: `PASSED tests/integration/test_scenarios.py...`
+        *   Kèm log: `Scenario passed: Normal traffic processed without false positives.`
+        *   **Nhấn mạnh**: Hệ thống đọc hơn 10 gói tin nhưng thuật toán đã nhận diện an toàn tuyệt đối, không có bất kỳ `upload_alert` nào bị kích hoạt.
 
 ---
 
@@ -44,12 +56,17 @@
 *   **Công cụ Replay Mạnh mẽ**: Dự án xây dựng sẵn `PcapCaptureDriver` và `MockCaptureDriver`, cho phép bơm các file PCAP (gói tin đã bắt) chạy thẳng qua toàn bộ đường ống hệ thống (Pipeline) y hệt như đang dùng card WiFi thật.
 *   **Test Integration Cấu trúc tốt**: Thư mục `tests/integration/` có các kịch bản kiểm thử từ đầu đến cuối (End-to-End). Việc sinh file PCAP giả tấn công (Evil Twin, Deauth) được tự động hóa.
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Demo bắt tấn công Deauth Flood hoặc Evil Twin bằng dữ liệu giả lập (Không cần dùng card WiFi thật để tấn công phá hoại môi trường trường học).
-*   **Cách làm**:
-    1. Sử dụng lệnh: `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_evil_twin_detection -v`
-    2. Lệnh này sẽ tự động tạo file PCAP chứa tấn công Evil Twin, đẩy vào hệ thống.
-    3. Log bài Test sẽ in ra chữ `PASSED` và thông báo đã đẩy cảnh báo lên Controller, chứng minh thuật toán hoạt động hoàn hảo 100%.
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh khả năng giả lập tấn công phần mềm (PCAP Replay) thay vì phải hack vật lý rủi ro trên giảng đường.
+*   **Thao tác**:
+    1.  *(Thuyết minh)* "Giờ em sẽ bơm trực tiếp một luồng gói tin đã được tiêm mã tấn công Evil Twin (trạm phát giả mạo) vào hệ thống."
+    2.  Mở Terminal, chạy lệnh:
+        `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_evil_twin_detection -v -s`
+    3.  Chỉ vào Output cho hội đồng xem:
+        *   Dòng chữ xanh lá cây: `PASSED` xuất hiện.
+        *   Chỉ vào đoạn Code Mock: Giải thích rằng Driver ảo (`PcapCaptureDriver`) đã đọc 25 frames (5 thật + 20 giả mạo).
+        *   Hàm `mock_transport.upload_alert` đã được gọi, mang theo Payload chứa chữ `"Evil Twin"`.
+        *   **Nhấn mạnh**: Quy trình QA được tự động hóa 100% bằng Pytest, bất cứ khi nào code thuật toán bị lỗi, lệnh test này sẽ fail ngay lập tức, đảm bảo chất lượng phần mềm không bị thoái lui (Regression).
 
 ---
 
@@ -59,9 +76,15 @@
 *   **Dashboard Hiện đại (Dash/Plotly)**: Giao diện web được xây dựng dựa trên Python Dash kết hợp Bootstrap.
 *   **Cập nhật Thời gian thực**: Mã nguồn `dashboard/pages/map.py` (và các file khác) sử dụng `dcc.Interval` để gọi callback lấy dữ liệu mới mỗi 3 giây, tạo cảm giác các chỉ số và tọa độ trên Bản đồ Heatmap liên tục nhảy số mà không cần người dùng F5 tải lại trang.
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Xem Bản đồ đe dọa trực quan hóa (Threat Map).
-*   **Cách làm**: Mở giao diện `http://127.0.0.1:8050` (hoặc cổng cấu hình tương ứng). Vào tab "Global Map", chuyển đổi giữa các bộ lọc bảo mật ("All", "Open", "WEP"). Các đốm màu (Heatmap) trên giao diện sẽ thay đổi dựa vào thuật toán đánh giá rủi ro (`color="risk"`).
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Trình diễn Dashboard cập nhật tự động (Real-time) và công cụ trực quan hóa vị trí (Heatmap).
+*   **Thao tác**:
+    1.  Mở trình duyệt, truy cập Dashboard: `http://localhost:8050`
+    2.  Vào Tab **Overview**, chỉ cho hội đồng xem các thẻ `Card` (Tổng số mạng, Cảnh báo). Giải thích rằng nhờ `dcc.Interval` trong code, các số này tự động làm mới mỗi 3 giây (đứng yên không cần F5).
+    3.  Chuyển sang Tab **Global Map**.
+    4.  Nhấp vào thanh xổ xuống (Dropdown) góc trên bên phải, chọn lọc `"Open / Insecure"`.
+    5.  Chỉ vào bản đồ: Các đốm màu (Heatmap) thay đổi, lọc ra những mạng WiFi không cài mật khẩu (Red chấm đỏ).
+    6.  **Nhấn mạnh**: Giao diện được tối ưu Dark Mode chuyên nghiệp cho bộ phận giám sát bảo mật (SOC), Plotly xử lý hàng ngàn điểm dữ liệu mà không giật lag trình duyệt.
 
 ---
 
@@ -71,9 +94,20 @@
 *   **Tự động hóa hoàn toàn**: Thông qua `Makefile`, toàn bộ vòng đời ứng dụng (từ build Docker, chạy linter `ruff`, test `pytest` đến quét bảo mật `bandit`) đều chỉ cần 1 cú click. Lệnh `make lab-up` kết nối nhiều container lại qua `docker-compose`.
 *   **Tài liệu phân mảnh chuẩn**: Cấu trúc `docs/` rất chi tiết, phân định rõ `lab/` (cho giáo dục, dễ dùng, chạy SQLite) và `prod/` (cho vận hành doanh nghiệp, bắt buộc PostgreSQL).
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Triển khai nhanh từ con số 0.
-*   **Cách làm**: Xóa toàn bộ container hiện có. Gõ lệnh `make lab-reset`. Hội đồng sẽ thấy các kịch bản tự sinh secret (`gen_lab_secrets.py`), khởi tạo database, và chạy lên cụm ứng dụng trong chưa tới 30 giây một cách vô cùng gọn gàng.
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh khả năng đóng gói "Công nghiệp", người mới tải code về triển khai lên hệ thống chỉ tốn 30 giây.
+*   **Thao tác**:
+    1.  *(Thuyết minh)* "Thưa hội đồng, để triển khai toàn bộ cụm Server, Database, Message Queue và Dashboard này, người vận hành không cần cài đặt lẻ tẻ."
+    2.  Mở Terminal, gõ lệnh "Hủy diệt" toàn bộ môi trường cũ:
+        `make lab-down`
+    3.  Kiểm tra trình duyệt `http://localhost:8050` -> Lỗi không kết nối được (Đã sập sạch).
+    4.  Gõ lệnh tái thiết lập từ đầu:
+        `make lab-reset`
+    5.  Cho hội đồng xem Terminal tự động làm các việc:
+        *   Tự sinh chìa khóa bảo mật mới (`Generating fresh secrets...`).
+        *   Build lại Docker (`Starting stack...`).
+        *   Tự động nạp dữ liệu mẫu ban đầu (`Seeding data...`).
+    6.  Chờ khoảng 15 giây, thông báo xanh `✅ Lab Reset Complete` hiện ra. F5 trình duyệt, Dashboard sống lại với dữ liệu mới tinh.
 
 ---
 
@@ -83,12 +117,19 @@
 *   **Tiếp cận "Fail-Fast"**: Đọc file `common/security/secrets.py`, hàm `require_secret` được thiết kế cực kỳ gắt gao. Trong môi trường `Production`, nếu quản trị viên quên khai báo biến môi trường hoặc dùng mật khẩu dễ đoán (như "admin", "123456"), ứng dụng sẽ lập tức Crash (chủ động sập) kèm log `CRITICAL: Weak production secret`. Hệ thống từ chối chạy ở trạng thái không an toàn.
 *   **Chữ ký Điện tử HMAC**: Toàn bộ luồng giao tiếp API giữa Sensor và Controller đều được ký xác thực bằng thuật toán HMAC-SHA256 (`_sign_payload`). Hacker không thể chen ngang để gửi log giả vào Controller.
 
-### 🧪 Kịch bản Kiểm chứng Thực tế (Demo)
-*   **Kịch bản**: Kịch bản ngăn chặn vận hành sai cấu hình bảo mật.
-*   **Cách làm**:
-    1. Cố tình thiết lập biến môi trường `ENVIRONMENT=production` và `DASH_PASSWORD=admin`.
-    2. Chạy Dashboard.
-    3. Ngay lập tức Dashboard sẽ văng lỗi `CRITICAL: Weak production secret... Application refused to start.` Chứng tỏ hệ thống tự bảo vệ chính nó rất tốt.
+### 🧪 Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+*   **Mục đích**: Chứng minh hệ thống có cơ chế "Fail-fast" (Thà chết chứ không chạy nếu cấu hình ẩu).
+*   **Thao tác**:
+    1.  Mở Terminal, set nhanh 2 biến môi trường nguy hiểm để chạy file Dashboard độc lập (không qua Docker):
+        `export ENVIRONMENT=production`
+        `export DASH_PASSWORD=123456`
+        `export DASH_USERNAME=admin`
+    2.  Chạy thử Dashboard:
+        `python dashboard/app.py`
+    3.  Chỉ vào đoạn log đỏ chót văng ra ngay tắp lự:
+        `CRITICAL: Weak production secret 'DASH_PASSWORD': Value is in blacklist of common weak passwords. Application refused to start.`
+        Kèm theo đó là lỗi `RuntimeError` thoát ngay lập tức.
+    4.  **Nhấn mạnh**: "Nếu một người quản trị IT cấu hình mật khẩu yếu là '123456', hệ thống em sẽ thẳng thừng từ chối khởi động để bảo vệ máy chủ, thay vì nhắm mắt chạy rủi ro như các đồ án sinh viên thông thường."
 
 ---
 
