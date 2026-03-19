@@ -92,7 +92,7 @@ app.layout = html.Div(
         html.Div(
             [
                 html.H3("10 Newest Networks Captured"),
-                DataTable(  # type: ignore
+                DataTable(  # type: ignore[unused-ignore]
                     id="recent-networks-table",
                     columns=[
                         {"name": "Timestamp", "id": "timestamp"},
