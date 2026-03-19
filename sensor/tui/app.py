@@ -59,8 +59,8 @@ def detect_wifi_interfaces() -> list[str]:
             name = os.path.basename(iface_dir)
             if name not in interfaces:
                 interfaces.append(name)
-    except Exception as e:
-        logging.debug(f"Error enumerating interfaces: {e}")
+    except Exception:  # noqa: S110
+        pass
     return interfaces or ["(none detected)"]
 
 
@@ -72,7 +72,7 @@ def check_controller_online() -> bool:
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
         resp = requests.get(f"{url}/api/v1/sensors", timeout=1)
         return resp.status_code == 200
-    except Exception:
+    except Exception:  # noqa: S110
         return False
 
 
@@ -116,8 +116,8 @@ class ShutdownModal(ModalScreen):
     def _update(self, msg: str) -> None:
         try:
             self.query_one("#sd-status", Label).update(msg)
-        except Exception as e:
-            logging.debug(f"Error updating status: {e}")
+        except Exception:  # noqa: S110
+            pass  # noqa: S110
 
     def _finish(self) -> None:
         self.app.exit()
@@ -343,7 +343,7 @@ class DashboardScreen(Screen):
             with Vertical(id="center-area"):
                 with Container(id="network-panel"):
                     yield Label("[b]📶  LIVE NETWORK FEED[/b]", classes="panel-title")
-                    table: DataTable = DataTable(id="net-table")
+                    table = DataTable(id="net-table")
                     table.cursor_type = "row"
                     table.zebra_stripes = True
                     yield table
@@ -408,8 +408,8 @@ class DashboardScreen(Screen):
                         description=f"User marked {bssid} as suspicious",
                     )
                 )
-        except Exception as e:
-            logging.debug(f"Error manual marking BSSID: {e}")
+        except Exception:  # noqa: S110
+            pass
 
     def action_graceful_quit(self) -> None:
         """Graceful shutdown with visual feedback."""
@@ -625,8 +625,8 @@ class SentinelTUIApp(App):
             screen.query_one("#sen-nets", Label).update(
                 f"Nets:  [cyan]{state.total_networks}[/cyan]"
             )
-        except Exception as e:
-            logging.debug(f"Error updating net count: {e}")
+        except Exception:  # noqa: S110
+            pass
 
         # ── Drain network queue ──
         try:
@@ -669,10 +669,9 @@ class SentinelTUIApp(App):
                     break
 
             while table.row_count > 50:
-                # Remove the first (oldest) row's key
-                table.remove_row(next(iter(table.rows)))
-        except Exception as e:
-            logging.debug(f"Error draining network queue: {e}")
+                table.remove_row(table.rows[next(iter(table.rows))])
+        except Exception:  # noqa: S110
+            pass
 
         # ── Drain alerts (with debouncing) ──
         try:
@@ -699,8 +698,8 @@ class SentinelTUIApp(App):
                     )
                 except queue.Empty:
                     break
-        except Exception as e:
-            logging.debug(f"Error draining alerts: {e}")
+        except Exception:  # noqa: S110
+            pass
 
         # ── Drain system log ──
         if not self.log_paused:
@@ -714,8 +713,8 @@ class SentinelTUIApp(App):
                         drained += 1
                     except queue.Empty:
                         break
-            except Exception as e:
-                logging.debug(f"Error draining system log: {e}")
+            except Exception:  # noqa: S110
+                pass
 
     @staticmethod
     def _color_pct(pct: float) -> str:

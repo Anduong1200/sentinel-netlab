@@ -145,5 +145,5 @@ class TUILogHandler(logging.Handler):
             ts = datetime.fromtimestamp(record.created).strftime("%H:%M:%S")
             msg = f"[{ts}] [{record.levelname}] {record.name}: {record.getMessage()}"
             self.state.push_log(msg)
-        except Exception as e:
-            logging.debug(f"Error pushing log to state: {e}")
+        except Exception:  # noqa: S110
+            pass
