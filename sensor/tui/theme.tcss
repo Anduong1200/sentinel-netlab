@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sentinel NetLab TUI - Dark SOC Theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+Screen {
+    background: #0d1117;
+    color: #c9d1d9;
+}
+
+Header {
+    background: #161b22;
+    color: #58a6ff;
+    text-style: bold;
+}
+
+Footer {
+    background: #161b22;
+}
+
+/* ─── Setup Screen ─────────────────────────────────────────────────────── */
+#setup-screen {
+    align: center middle;
+}
+
+#setup-container {
+    width: 72;
+    height: auto;
+    max-height: 85%;
+    border: heavy #30363d;
+    background: #161b22;
+    padding: 2 4;
+}
+
+#setup-container .panel-title {
+    text-style: bold;
+    color: #58a6ff;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+.setup-group {
+    margin-bottom: 1;
+    padding: 1 2;
+    border: round #30363d;
+}
+
+.setup-group-title {
+    text-style: bold;
+    color: #8b949e;
+    margin-bottom: 1;
+}
+
+#btn-start {
+    width: 100%;
+    margin-top: 1;
+    background: #238636;
+    color: white;
+    text-style: bold;
+}
+
+#btn-start:hover {
+    background: #2ea043;
+}
+
+/* ─── Dashboard Screen ─────────────────────────────────────────────────── */
+#dashboard-area {
+    height: 1fr;
+}
+
+#left-panel {
+    width: 30;
+    border-right: solid #30363d;
+    padding: 1 2;
+    background: #0d1117;
+}
+
+#center-area {
+    width: 1fr;
+}
+
+#network-panel {
+    height: 2fr;
+    padding: 0 1;
+    border-bottom: solid #30363d;
+}
+
+#alert-panel {
+    height: 1fr;
+    padding: 0 1;
+    border-bottom: solid #30363d;
+}
+
+#right-panel {
+    width: 40;
+    border-left: solid #30363d;
+    padding: 0 1;
+}
+
+/* ─── Common ───────────────────────────────────────────────────────────── */
+.panel-title {
+    text-style: bold;
+    color: #58a6ff;
+    margin-bottom: 1;
+}
+
+.stat-row {
+    height: 1;
+}
+
+.stat-label {
+    color: #8b949e;
+}
+
+.stat-value {
+    text-style: bold;
+    color: #c9d1d9;
+}
+
+.stat-ok {
+    color: #3fb950;
+    text-style: bold;
+}
+
+.stat-warn {
+    color: #d29922;
+    text-style: bold;
+}
+
+.stat-danger {
+    color: #f85149;
+    text-style: bold;
+}
+
+DataTable {
+    background: #0d1117;
+}
+
+DataTable > .datatable--header {
+    background: #161b22;
+    color: #8b949e;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #1f6feb33;
+}
+
+RichLog {
+    background: #0d1117;
+    scrollbar-background: #0d1117;
+    scrollbar-color: #30363d;
+}
+
+RadioButton {
+    background: transparent;
+    color: #c9d1d9;
+}
+
+Checkbox {
+    background: transparent;
+    color: #c9d1d9;
+}
+
+Input {
+    background: #0d1117;
+    color: #c9d1d9;
+    border: tall #30363d;
+}
