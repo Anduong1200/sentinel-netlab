@@ -59,7 +59,7 @@ def detect_wifi_interfaces() -> list[str]:
             name = os.path.basename(iface_dir)
             if name not in interfaces:
                 interfaces.append(name)
-    except Exception:
+    except Exception:  # noqa: S110
         pass
     return interfaces or ["(none detected)"]
 
@@ -71,7 +71,7 @@ def check_controller_online() -> bool:
         url = os.environ.get("CONTROLLER_URL", "http://127.0.0.1:8080")
         resp = requests.get(f"{url}/api/v1/sensors", timeout=1)
         return resp.status_code == 200
-    except Exception:
+    except Exception:  # noqa: S110
         return False
 
 
@@ -115,8 +115,8 @@ class ShutdownModal(ModalScreen):
     def _update(self, msg: str) -> None:
         try:
             self.query_one("#sd-status", Label).update(msg)
-        except Exception:
-            pass
+        except Exception:  # noqa: S110
+            pass  # noqa: S110
 
     def _finish(self) -> None:
         self.app.exit()
@@ -409,7 +409,7 @@ class DashboardScreen(Screen):
                     title="Manual Mark",
                     description=f"User marked {bssid} as suspicious",
                 ))
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
     def action_graceful_quit(self) -> None:
@@ -618,7 +618,7 @@ class SentinelTUIApp(App):
             screen.query_one("#sen-nets", Label).update(
                 f"Nets:  [cyan]{state.total_networks}[/cyan]"
             )
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
         # ── Drain network queue ──
@@ -659,7 +659,7 @@ class SentinelTUIApp(App):
 
             while table.row_count > 50:
                 table.remove_row(table.rows[next(iter(table.rows))])
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
         # ── Drain alerts (with debouncing) ──
@@ -687,7 +687,7 @@ class SentinelTUIApp(App):
                     )
                 except queue.Empty:
                     break
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
         # ── Drain system log ──
@@ -702,7 +702,7 @@ class SentinelTUIApp(App):
                         drained += 1
                     except queue.Empty:
                         break
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
 
     @staticmethod

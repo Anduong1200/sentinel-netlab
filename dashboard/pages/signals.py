@@ -204,25 +204,25 @@ def update_signals(n):
         fig_disc.update_layout(**layout_override)
         fig_disc.update_layout(
             yaxis_title="Networks Detected/Min",
-            xaxis=dict(
-                rangeselector=dict(
-                    buttons=list([
-                        dict(count=5, label="5m", step="minute", stepmode="backward"),
-                        dict(count=15, label="15m", step="minute", stepmode="backward"),
-                        dict(count=30, label="30m", step="minute", stepmode="backward"),
-                        dict(step="all", label="1H")
-                    ]),
-                    bgcolor="rgba(0,0,0,0.6)",
-                    activecolor="rgba(0,242,254,0.4)",
-                    font=dict(color="#ffffff")
-                ),
-                rangeslider=dict(
-                    visible=True,
-                    thickness=0.1,
-                    bgcolor="rgba(255,255,255,0.05)"
-                ),
-                type="date"
-            ),
+            xaxis={
+                "rangeselector": {
+                    "buttons": [
+                        {"count": 5, "label": "5m", "step": "minute", "stepmode": "backward"},
+                        {"count": 15, "label": "15m", "step": "minute", "stepmode": "backward"},
+                        {"count": 30, "label": "30m", "step": "minute", "stepmode": "backward"},
+                        {"step": "all", "label": "1H"}
+                    ],
+                    "bgcolor": "rgba(0,0,0,0.6)",
+                    "activecolor": "rgba(0,242,254,0.4)",
+                    "font": {"color": "#ffffff"}
+                },
+                "rangeslider": {
+                    "visible": True,
+                    "thickness": 0.1,
+                    "bgcolor": "rgba(255,255,255,0.05)"
+                },
+                "type": "date"
+            },
             hovermode="x unified",
             showlegend=False
         )
