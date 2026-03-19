@@ -76,10 +76,7 @@ class TestScenarioReplay:
         config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
         config.detectors.enabled = ["evil_twin"]
         config.detectors.thresholds = {
-            "evil_twin": {
-                "confirmation_window_seconds": 0,
-                "threshold_medium": 10
-            }
+            "evil_twin": {"confirmation_window_seconds": 0, "threshold_medium": 10}
         }
 
         controller = SensorController(config=config)
@@ -164,7 +161,7 @@ class TestScenarioReplay:
                 "threshold_per_sec": 2.0,
                 "window_seconds": 1.0,
                 "cooldown_seconds": 0.0,
-                "state_file": str(test_env / "dos_state.json")
+                "state_file": str(test_env / "dos_state.json"),
             }
         }
 
