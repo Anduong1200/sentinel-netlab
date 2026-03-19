@@ -161,9 +161,9 @@ def update_map(n, filter_val):
             lon="lon",
             color="sec_type",
             color_discrete_map={
-                "OPEN": "#ff0844",   # Red chấm đỏ
-                "WEP": "#f7b733",    # Orange
-                "WPA": "#00dbde",    # Cyan
+                "OPEN": "#ff0844",  # Red chấm đỏ
+                "WEP": "#f7b733",  # Orange
+                "WPA": "#00dbde",  # Cyan
             },
             size="risk",  # Size by Risk Score
             size_max=15,
@@ -174,7 +174,7 @@ def update_map(n, filter_val):
                 "bssid": True,
                 "security": True,
                 "risk": True,
-                "sec_type": False
+                "sec_type": False,
             },
             mapbox_style="carto-darkmatter",
             zoom=12,
