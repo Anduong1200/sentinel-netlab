@@ -77,8 +77,7 @@ def build_detector(
     registry = get_registry()
     if detector_id not in registry:
         raise KeyError(
-            f"Unknown detector '{detector_id}'. "
-            f"Available: {sorted(registry.keys())}"
+            f"Unknown detector '{detector_id}'. Available: {sorted(registry.keys())}"
         )
     cls = registry[detector_id]
     return cls(config=config)

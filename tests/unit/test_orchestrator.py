@@ -386,8 +386,13 @@ class TestOrchestrator:
                 loaded.append(det_id)
 
         assert set(loaded) == {
-            "deauth_flood", "disassoc_flood", "beacon_flood",
-            "krack", "pmkid", "wep_iv", "rules",
+            "deauth_flood",
+            "disassoc_flood",
+            "beacon_flood",
+            "krack",
+            "pmkid",
+            "wep_iv",
+            "rules",
         }
 
     def test_process_returns_list(self):
@@ -419,9 +424,13 @@ class TestOrchestrator:
 
         NarrowDetector.call_count = 0
         det = NarrowDetector()
-        orch = SensorDetectionOrchestrator(detectors={"narrow": det}, sensor_id="s-test")
+        orch = SensorDetectionOrchestrator(
+            detectors={"narrow": det}, sensor_id="s-test"
+        )
         orch.process({"frame_type": "beacon"})
-        assert NarrowDetector.call_count == 0, "Detector should have been skipped by prefilter"
+        assert NarrowDetector.call_count == 0, (
+            "Detector should have been skipped by prefilter"
+        )
 
     def test_alert_normalization_on_output(self):
         from sensor.detection.interface import BaseSensorDetector
@@ -431,7 +440,14 @@ class TestOrchestrator:
             detector_id = "alert_gen"
 
             def process(self, telemetry, context=None):
-                return [{"alert_type": "test", "severity": "HIGH", "title": "T", "description": "D"}]
+                return [
+                    {
+                        "alert_type": "test",
+                        "severity": "HIGH",
+                        "title": "T",
+                        "description": "D",
+                    }
+                ]
 
         orch = SensorDetectionOrchestrator(
             detectors={"alert_gen": AlertDetector()}, sensor_id="s-norm"

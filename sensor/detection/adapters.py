@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 # ── helpers ──────────────────────────────────────────────────────────────
 
+
 def _build_dataclass_config(dc_class: type, overrides: dict[str, Any]):
     """
     Build a dataclass instance from *overrides*, silently ignoring keys
@@ -50,7 +51,12 @@ class DeauthFloodDetectorAdapter(BaseSensorDetector):
     supported_frame_subtypes = {12}
 
     # DeauthFloodDetector accepts explicit kwargs, not a config dataclass.
-    _SUPPORTED_KEYS = {"threshold_per_sec", "window_seconds", "cooldown_seconds", "state_file"}
+    _SUPPORTED_KEYS = {
+        "threshold_per_sec",
+        "window_seconds",
+        "cooldown_seconds",
+        "state_file",
+    }
 
     def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
@@ -96,7 +102,11 @@ class DisassocFloodDetectorAdapter(BaseSensorDetector):
         super().__init__(config)
         from algos.disassoc_detector import DisassocConfig, DisassocFloodDetector
 
-        cfg = _build_dataclass_config(DisassocConfig, self.config) if self.config else None
+        cfg = (
+            _build_dataclass_config(DisassocConfig, self.config)
+            if self.config
+            else None
+        )
         self._det = DisassocFloodDetector(config=cfg)
 
     def process(
@@ -122,7 +132,11 @@ class BeaconFloodDetectorAdapter(BaseSensorDetector):
         super().__init__(config)
         from algos.beacon_flood_detector import BeaconFloodConfig, BeaconFloodDetector
 
-        cfg = _build_dataclass_config(BeaconFloodConfig, self.config) if self.config else None
+        cfg = (
+            _build_dataclass_config(BeaconFloodConfig, self.config)
+            if self.config
+            else None
+        )
         self._det = BeaconFloodDetector(config=cfg)
 
     def process(
@@ -231,7 +245,11 @@ class EvilTwinDetectorAdapter(BaseSensorDetector):
         super().__init__(config)
         from algos.evil_twin import AdvancedEvilTwinDetector, EvilTwinConfig
 
-        cfg = _build_dataclass_config(EvilTwinConfig, self.config) if self.config else None
+        cfg = (
+            _build_dataclass_config(EvilTwinConfig, self.config)
+            if self.config
+            else None
+        )
         self._det = AdvancedEvilTwinDetector(config=cfg)
 
     def process(
@@ -304,7 +322,9 @@ class JammingDetectorAdapter(BaseSensorDetector):
         super().__init__(config)
         from algos.jamming_detector import JammingConfig, JammingDetector
 
-        cfg = _build_dataclass_config(JammingConfig, self.config) if self.config else None
+        cfg = (
+            _build_dataclass_config(JammingConfig, self.config) if self.config else None
+        )
         self._det = JammingDetector(config=cfg)
 
     def process(
@@ -329,7 +349,11 @@ class WardriveDetectorAdapter(BaseSensorDetector):
         super().__init__(config)
         from algos.wardrive_detector import WardriveConfig, WardriveDetector
 
-        cfg = _build_dataclass_config(WardriveConfig, self.config) if self.config else None
+        cfg = (
+            _build_dataclass_config(WardriveConfig, self.config)
+            if self.config
+            else None
+        )
         self._det = WardriveDetector(config=cfg)
 
     def process(

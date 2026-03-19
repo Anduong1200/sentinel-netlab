@@ -488,7 +488,9 @@ class SensorController:
             if not self.baseline.learning_mode:
                 dev = self.baseline.check_deviation(risk_dict)
                 dev_score = dev["score"] if dev else 0.0
-                rr = self.risk_engine.calculate_risk(risk_dict, deviation_score=dev_score)
+                rr = self.risk_engine.calculate_risk(
+                    risk_dict, deviation_score=dev_score
+                )
                 self.metrics.set_risk_score(telemetry.bssid, rr.get("risk_score", 0))
 
         self.hopper.record_activity(parsed.channel, 1)

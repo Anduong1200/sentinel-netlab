@@ -336,7 +336,9 @@ class TransportClient:
             # Wait before retry
             if attempt < self.max_retries:
                 current_delay: float = delay if delay is not None else 1.0
-                jitter = current_delay * 0.1 * (2 * (0.5 - time.time() % 1))  # Simple jitter
+                jitter = (
+                    current_delay * 0.1 * (2 * (0.5 - time.time() % 1))
+                )  # Simple jitter
                 sleep_time = min(current_delay + jitter, self.max_delay)
                 time.sleep(sleep_time)
                 delay = current_delay * self.backoff_factor

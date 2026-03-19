@@ -40,9 +40,7 @@ def normalize_alert(
     out["alert_type"] = raw.get("alert_type", defaults.get("alert_type", "unknown"))
     out["severity"] = raw.get("severity", defaults.get("severity", "MEDIUM"))
     out["title"] = raw.get("title", defaults.get("title", "Detection Alert"))
-    out["description"] = raw.get(
-        "description", defaults.get("description", "")
-    )
+    out["description"] = raw.get("description", defaults.get("description", ""))
     out["sensor_id"] = raw.get("sensor_id", defaults.get("sensor_id", ""))
 
     # Timestamp — always present

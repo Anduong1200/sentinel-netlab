@@ -49,6 +49,7 @@ STAGE_ORDER = ("fast_path", "stateful_path", "correlation_path")
 
 # ── Validation helpers ──────────────────────────────────────────────────
 
+
 def _validate_detector_ids(
     ids: list[str],
     label: str,
@@ -104,7 +105,9 @@ def _build_stage_map(
 
     for det_id in enabled_ids:
         if det_id not in assigned:
-            logger.info("Auto-placing unassigned detector '%s' into correlation_path", det_id)
+            logger.info(
+                "Auto-placing unassigned detector '%s' into correlation_path", det_id
+            )
             stage_map["correlation_path"].append(det_id)
 
     return stage_map
@@ -195,7 +198,9 @@ class SensorDetectionOrchestrator:
         enabled_ids = _validate_detector_ids(enabled_ids, "enabled", registry)
 
         if not enabled_ids:
-            logger.warning("No valid detectors enabled; falling back to default profile")
+            logger.warning(
+                "No valid detectors enabled; falling back to default profile"
+            )
             enabled_ids = get_profile(DEFAULT_PROFILE)
 
         # Per-detector threshold overrides.
@@ -250,11 +255,11 @@ class SensorDetectionOrchestrator:
                     alerts = detector.process(telemetry, context=ctx)
                     for alert in alerts:
                         all_alerts.append(
-                            normalize_alert(alert, {"sensor_id": ctx.get("sensor_id", "")})
+                            normalize_alert(
+                                alert, {"sensor_id": ctx.get("sensor_id", "")}
+                            )
                         )
                 except Exception:
-                    logger.exception(
-                        "Detector '%s' raised during process()", det_id
-                    )
+                    logger.exception("Detector '%s' raised during process()", det_id)
 
         return all_alerts
