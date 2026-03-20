@@ -300,6 +300,10 @@ Input > .input--cursor {
     color: #0d1117;
 }
 
+#select-profile {
+    height: auto;
+}
+
 Select {
     background: #0d1117;
     color: #c9d1d9;

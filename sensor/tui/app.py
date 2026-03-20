@@ -144,7 +144,7 @@ def check_controller_online(base_url: str | None = None) -> bool:
                 )
                 if resp.getcode() == 200:
                     return True
-            except Exception:  # noqa: S110
+            except Exception:  # noqa: S110, S112
                 continue
         return False
     except Exception:  # noqa: S110

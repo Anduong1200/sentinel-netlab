@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import secrets
 import shutil
@@ -890,12 +891,16 @@ def set_interface_monitor_mode(
         )
 
     switch_result = _run_command(
-        _privileged_command(["iw", "dev", normalized_interface, "set", "type", desired_mode]),
+        _privileged_command(
+            ["iw", "dev", normalized_interface, "set", "type", desired_mode]
+        ),
         timeout=15,
     )
     if not switch_result.ok and shutil.which("iwconfig") is not None:
         switch_result = _run_command(
-            _privileged_command(["iwconfig", normalized_interface, "mode", desired_mode]),
+            _privileged_command(
+                ["iwconfig", normalized_interface, "mode", desired_mode]
+            ),
             timeout=15,
         )
     if not switch_result.ok:
