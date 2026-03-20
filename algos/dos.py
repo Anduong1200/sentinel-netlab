@@ -70,7 +70,7 @@ class DeauthFloodDetector:
         Record a deauth frame and check for flood.
         Returns alert if flood detected.
         """
-        now = time.time()
+        now = time.monotonic()
         key = (bssid, client_mac)
 
         # Add timestamp (setdefault returns existing list or creates new)
@@ -195,7 +195,7 @@ class DeauthFloodDetector:
             with open(self.state_file) as f:
                 state = json.load(f)
 
-            now = time.time()
+            now = time.monotonic()
             for k_str, timestamp in state.items():
                 # Only load if still in cooldown window (plus buffer)
                 if now - timestamp < self.cooldown_seconds:

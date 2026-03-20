@@ -9,7 +9,7 @@ capture:
   - 11
   dwell_ms: 250
   adaptive_hopping: false
-  pcap_file: /run/media/m1nkvpm/A2CC3E66CC3E353F/sentinel-netlab/data/pcap_annotated/sample_beacon_flood.pcap
+  pcap_file: null
   pcap_loop: true
   pcap_realtime: true
 buffer:
@@ -34,8 +34,7 @@ detectors:
 mock_mode: false
 tui:
   preset_id: balanced_live
-  profile_name: anduong
   audit_profile: home
   audit_output: artifacts/audit_report.json
-  audit_use_mock: false
+  audit_use_mock: true
   prod_health_url: http://127.0.0.1/health

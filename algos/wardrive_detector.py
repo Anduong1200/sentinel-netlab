@@ -53,7 +53,7 @@ class WardriveDetector:
         self.config = config or WardriveConfig()
         self.sources: dict[str, SourceStats] = {}  # MAC -> Stats
         self.alerted_macs: set[str] = set()  # MACs that already fired
-        self.last_cleanup = time.time()
+        self.last_cleanup = time.monotonic()
 
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
         """
@@ -73,7 +73,7 @@ class WardriveDetector:
             return None
 
         ssid = frame.get("ssid")
-        now = time.time()
+        now = time.monotonic()
 
         # Periodic cleanup
         self._cleanup(now)

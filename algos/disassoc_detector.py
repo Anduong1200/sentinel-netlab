@@ -92,7 +92,7 @@ class DisassocFloodDetector:
         client = frame.get(
             "mac_dst", frame.get("dst_addr", "ff:ff:ff:ff:ff:ff")
         ).upper()
-        now = time.time()
+        now = time.monotonic()
         key = (bssid, client)
 
         # Record frame

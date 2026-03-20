@@ -82,13 +82,13 @@ class BeaconFloodDetector:
         if not bssid:
             return None
 
-        now = time.time()
+        now = time.monotonic()
 
         # Cleanup old entries
         self._cleanup(now)
 
         # Track SSID (only non-empty, non-hidden)
-        if ssid and ssid not in self.state.ssid_timestamps:
+        if ssid:
             self.state.ssid_timestamps[ssid] = now
 
         # Track BSSID diversity
@@ -127,8 +127,11 @@ class BeaconFloodDetector:
         unique_ssids = len(self.state.ssid_timestamps)
         unique_bssids = len(self.state.bssid_set)
 
-        # Primary: unique SSID count exceeds threshold
-        if unique_ssids < self.config.unique_ssid_threshold:
+        # Primary: unique SSID count exceeds threshold OR high BSSID diversity
+        if (
+            unique_ssids < self.config.unique_ssid_threshold
+            and unique_bssids < self.config.min_unique_bssids * 2
+        ):
             return None
 
         # Confirmed: we have a flood
@@ -167,7 +170,7 @@ class BeaconFloodDetector:
             "evidence": {
                 "unique_ssid_count": unique_ssids,
                 "unique_bssid_count": unique_bssids,
-                "beacon_rate_per_sec": round(beacon_rate, 1),
+                "beacon_rate_per_sec": float(round(beacon_rate, 1)),
                 "oui_prefix_count": len(self.state.oui_prefixes),
                 "window_seconds": self.config.time_window,
                 "sample_ssids": list(self.state.ssid_timestamps.keys())[:10],
