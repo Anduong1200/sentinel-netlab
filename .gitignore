@@ -91,6 +91,9 @@ run_sensor_local.sh
 .textual/
 sentinel_tui.py
 sentinel_tui.tcss
+run_tui.sh
+open_dashboard.sh
+.sentinel_one_run_state.json
 
 # Wardrive Sessions
 wardrive_session*.json

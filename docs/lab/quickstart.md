@@ -8,8 +8,8 @@
 ## 🚀 What You Will Get
 
 By following this guide (approx. 10 minutes), you will have:
-1.  **Web UI (Dashboard)** running at `http://localhost:8050`.
-2.  **Controller API** receiving telemetry at `http://localhost:5000`.
+1.  **Web UI (Dashboard)** running at `http://127.0.0.1:8080/dashboard/`.
+2.  **Controller API** receiving telemetry at `http://127.0.0.1:8080/api/v1`.
 3.  **Demo Data**: A pre-loaded scenario with simulated threats.
 4.  **No Hardware Required**: The lab runs entirely in Docker with mock sensors.
 
@@ -34,9 +34,36 @@ By following this guide (approx. 10 minutes), you will have:
 
 ---
 
-## 2. Start the Lab in 2 Steps
+## 2. Fastest Path: One Run Only
 
-This lab runs safely on your localhost.
+This lab runs safely on your localhost, and the fastest bootstrap is a single command from the repo root:
+
+```bash
+python one_run.py --open-browser
+```
+
+What this does for you:
+- creates or reuses `venv/`
+- installs the runtime dependencies for sensor + controller + dashboard
+- generates `ops/.env.lab` if it does not exist yet
+- starts the lab stack and initializes the database
+- seeds the demo scenario on the first run
+- generates runtime tokens for the dashboard and TUI
+- writes local helper files: `.env`, `config.yaml`, `.sentinel_tui_profiles.json`, `run_tui.sh`, `open_dashboard.sh`
+- if Docker Compose is unavailable, or Docker is installed but your current shell cannot access the daemon yet, it still prepares a TUI-only mock bundle so you can keep working and rerun the full lab later
+
+After the first bootstrap, your normal entrypoints are:
+
+```bash
+./run_tui.sh
+./open_dashboard.sh
+```
+
+If you rerun bootstrap later, it reuses the local state file `.sentinel_one_run_state.json` to skip dependency reinstall and demo reseed. Use `python one_run.py --force` if you want a full rebuild.
+
+## 3. Manual Lab Start (Advanced)
+
+If you prefer the explicit Docker flow, you can still do it step by step.
 
 ### Step 1: Generate Secrets (Once)
 ```bash
@@ -58,7 +85,7 @@ docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm se
 
 ---
 
-## 3. Access the Lab
+## 4. Access the Lab
 
 The entire lab is exposed on **ONE** localhost port:
 
@@ -69,7 +96,7 @@ The entire lab is exposed on **ONE** localhost port:
 
 ---
 
-## 4. Optional: Use a Real Sensor (No Mock)
+## 5. Optional: Use a Real Sensor (No Mock)
 
 By default, `ops/docker-compose.lab.yml` starts a mock sensor (`SENSOR_MOCK_MODE=true`).
 If you want real telemetry from a physical adapter:
@@ -90,7 +117,7 @@ See **[Testing Guide](testing_guide.md)** for the end-to-end command flow.
 
 ---
 
-## 5. Resetting the Lab
+## 6. Resetting the Lab
 
 To wipe all data and start fresh:
 
@@ -107,7 +134,7 @@ docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml run --rm se
 
 ---
 
-## 6. Stop (Keep Data)
+## 7. Stop (Keep Data)
 
 ```bash
 docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml down

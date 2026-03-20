@@ -8,13 +8,13 @@ The **Sentinel NetLab TUI** (Text-based User Interface) is a professional termin
 
 ```bash
 # From the project root
-cd /home/m1nkvpm/Desktop/ancongchuacute123/sentinel-netlab
+cd /path/to/sentinel-netlab
 
 # Activate virtual environment
 source venv/bin/activate
 
 # Install dependencies
-pip install -e .[sensor]
+python -m pip install -e .[sensor]
 
 # Launch the TUI
 python -m sensor.tui
@@ -26,7 +26,8 @@ python -m sensor.tui
 
 - Run from the **project root** so the TUI can find `config.yaml` and `wardrive_session.json`
 - Activate the same virtual environment used by the repo
-- If TUI dependencies are missing, refresh the environment with `pip install -e .[sensor]`
+- If TUI dependencies are missing, refresh the environment with `python -m pip install -e .[sensor]`
+- If you see `venv/bin/pip: bad interpreter`, the repo was likely moved; recreate `venv/` in the current project path before launching the TUI
 
 ### Typical Workflows
 
@@ -227,16 +228,16 @@ This ensures no data is lost during shutdown.
 Your current virtual environment is missing TUI runtime dependencies.
 
 ```bash
-cd /home/m1nkvpm/Desktop/ancongchuacute123/sentinel-netlab
+cd /path/to/sentinel-netlab
 source venv/bin/activate
-pip install -e .[sensor]
+python -m pip install -e .[sensor]
 python -m sensor.tui
 ```
 
 If you only want the minimal quick fix:
 
 ```bash
-pip install PyYAML python-dotenv textual
+python -m pip install PyYAML python-dotenv textual
 python -m sensor.tui
 ```
 
@@ -246,7 +247,7 @@ Install the TUI package set in the active venv:
 
 ```bash
 source venv/bin/activate
-pip install -e .[sensor]
+python -m pip install -e .[sensor]
 ```
 
 ### `ModuleNotFoundError: No module named 'dotenv'`
@@ -255,7 +256,7 @@ The TUI can still run without loading `.env`, but the recommended fix is:
 
 ```bash
 source venv/bin/activate
-pip install -e .[sensor]
+python -m pip install -e .[sensor]
 ```
 
 ### Setup screen opens but feels "stuck" or hard to use
@@ -268,7 +269,7 @@ If you are still seeing an older layout, refresh the environment and restart:
 
 ```bash
 source venv/bin/activate
-pip install -e .[sensor]
+python -m pip install -e .[sensor]
 python -m sensor.tui
 ```
 

@@ -25,7 +25,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # Bùa 3: Cài đặt tất cả các thiết bị radar (mất khoảng 1-2 phút)
-pip install ".[dev,sensor,controller,dashboard]"
+python -m pip install ".[dev,sensor,controller,dashboard]"
 ```
 
 ## 3. Khởi Động Trạm Gác!

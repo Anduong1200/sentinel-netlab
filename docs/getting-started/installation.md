@@ -100,22 +100,22 @@ We use `pyproject.toml` with optional dependencies ("extras") to keep installs l
 
 **For Controller (Server):**
 ```bash
-pip install ".[controller]"
+python -m pip install ".[controller]"
 ```
 
 **For Sensor (Node):**
 ```bash
-pip install ".[sensor]"
+python -m pip install ".[sensor]"
 ```
 
 **For Dashboard (UI):**
 ```bash
-pip install ".[dashboard]"
+python -m pip install ".[dashboard]"
 ```
 
 **For Development (All tools):**
 ```bash
-pip install ".[dev]"
+python -m pip install ".[dev]"
 ```
 
 ---
@@ -162,7 +162,7 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
     source venv/bin/activate
 
     # Install runtime dependencies if this is a fresh venv
-    pip install -e .[sensor]
+    python -m pip install -e .[sensor]
     
     # Run via legacy unified entry point (or use TUI: python -m sensor.tui)
     sudo ./venv/bin/python scripts/sentinel.py monitor \
@@ -180,11 +180,28 @@ Sensors are the eyes and ears. They run directly on hardware to access the WiFi 
 
 ## Troubleshooting
 
+### "venv/bin/pip: bad interpreter"
+If the repo was moved to a new folder or a removable drive, the existing `venv/` may still point to the old path. Rebuild it cleanly:
+```bash
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install -e ".[sensor,controller,dashboard]"
+```
+
 ### "Operation not permitted" (Sensor)
 Ensure you run with `sudo`. Typical valid WiFi operations need root.
 
 ### "No such device"
 Check your interface name with `ip link` or `iwconfig`. It might be `wlan0`, `wlan1`, or `wlx...`.
+
+### "permission denied while trying to connect to the Docker daemon socket"
+Docker is installed, but your current shell cannot access the daemon yet. Add your user to the `docker` group, then re-open the session:
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+docker info
+```
 
 ### "Database connection failed" (Controller)
 Ensure Docker containers are running (`docker ps`). Check if `postgres` is healthy.

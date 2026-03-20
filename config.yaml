@@ -1,35 +1,42 @@
 sensor:
-  id: sensor-01
+  id: "lab-sensor-01"
+
 capture:
-  interface: wlan0
-  pcap_file: null
-  method: tshark
-  channels:
-  - 1
-  - 6
-  - 11
-  - 36
-  - 40
-  - 44
+  interface: "wlan0mon"
+  method: "scapy"
+  channels: [1, 6, 11]
   dwell_ms: 250
-  adaptive_hopping: true
+  adaptive_hopping: false
+  pcap_file: null
+
+buffer:
+  max_items: 12000
+  drop_policy: "oldest"
+
 api:
-  upload_url: http:////127.0.0.1:8080a/api/v1/telemetry
+  upload_url: "http://127.0.0.1:8080/api/v1/telemetry"
+
+upload:
+  batch_size: 200
+  interval_sec: 5.0
+
 ml:
   enabled: false
+
 geo:
   enabled: false
   sensor_x_m: null
   sensor_y_m: null
+
 privacy:
-  anonymize_ssid: false
-  scrub_probe_requests: false
-buffer:
-  max_items: 50000
-  drop_policy: spill_to_disk
+  anonymize_ssid: true
+  scrub_probe_requests: true
+
 detectors:
-  default_profile: full_wids
+  default_profile: "lite_realtime"
+
+mock_mode: true
+
 tui:
-  preset_id: soc_tactical
-  profile_name: q
-mock_mode: false
+  profile_name: "Lab Demo"
+  preset_id: ""

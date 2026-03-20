@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,8 @@ DEFAULT_DASHBOARD_URL = f"{DEFAULT_CONTROLLER_URL}/dashboard/"
 DEFAULT_SENSOR_ID = "lab-sensor-01"
 DEFAULT_INTERFACE = "wlan0mon"
 DEFAULT_RUNTIME_PROFILE = "Lab Demo"
+STATE_FILENAME = ".sentinel_one_run_state.json"
+STATE_VERSION = 1
 
 
 def repo_root() -> Path:
@@ -73,12 +76,34 @@ def run_command(command: list[str], cwd: Path) -> None:
     subprocess.run(command, cwd=cwd, check=True)
 
 
+def _entrypoint_matches_venv(script_path: Path, expected_python: Path) -> bool:
+    """Return True when a venv launcher script still targets this repo-local Python."""
+    if not script_path.exists():
+        return False
+
+    first_lines = script_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    if not first_lines:
+        return False
+    return first_lines[0].strip() == f"#!{expected_python}"
+
+
 def ensure_venv(root: Path, python_executable: str) -> Path:
-    """Create the repo venv if missing and return its Python path."""
+    """Create or repair the repo venv and return its Python path."""
     venv_dir = root / "venv"
     venv_python = venv_dir / "bin" / "python"
-    if not venv_python.exists():
-        run_command([python_executable, "-m", "venv", str(venv_dir)], cwd=root)
+    pip_launcher = venv_dir / "bin" / "pip"
+
+    needs_rebuild = not venv_python.exists()
+    if not needs_rebuild and not _entrypoint_matches_venv(pip_launcher, venv_python):
+        print("[one-run] Detected a stale moved venv. Rebuilding local virtualenv...")
+        needs_rebuild = True
+
+    if needs_rebuild:
+        command = [python_executable, "-m", "venv"]
+        if venv_dir.exists():
+            command.append("--clear")
+        command.append(str(venv_dir))
+        run_command(command, cwd=root)
     return venv_python
 
 
@@ -302,7 +327,151 @@ def write_profile_store(path: Path, payload: dict[str, object]) -> None:
     )
 
 
-def write_helper_launchers(root: Path) -> None:
+def build_local_only_lab_env() -> dict[str, str]:
+    """Generate a local-only env bundle for mock/TUI bootstrap."""
+    return {
+        "CONTROLLER_SECRET_KEY": secrets.token_hex(16),
+        "CONTROLLER_HMAC_SECRET": secrets.token_hex(32),
+        "DASHBOARD_API_TOKEN": secrets.token_hex(16),
+        "SENSOR_AUTH_TOKEN": secrets.token_hex(16),
+        "DASH_USERNAME": "admin",
+        "DASH_PASSWORD": "",
+    }
+
+
+def has_python_module(python_executable: Path, module_name: str) -> bool:
+    """Return True when a module is importable inside the repo venv."""
+    result = subprocess.run(
+        [str(python_executable), "-c", f"import {module_name}"],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
+
+
+def docker_daemon_accessible() -> tuple[bool, str]:
+    """Return whether the current user can talk to the Docker daemon."""
+    docker = shutil.which("docker")
+    if not docker:
+        return False, "Docker Engine is not installed on this host."
+
+    result = subprocess.run(
+        [docker, "info"],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode == 0:
+        return True, ""
+
+    detail = (result.stderr or "").strip() or "docker info failed"
+    return False, detail
+
+
+def build_state_payload(
+    *,
+    sensor_id: str,
+    interface: str,
+    controller_url: str,
+    lab_env_path: Path,
+    bootstrap_mode: str = "full",
+) -> dict[str, object]:
+    """Serialize the local bootstrap state so reruns can stay lightweight."""
+    return {
+        "version": STATE_VERSION,
+        "bootstrap_mode": bootstrap_mode,
+        "sensor_id": sensor_id,
+        "interface": interface,
+        "controller_url": controller_url.rstrip("/"),
+        "dashboard_url": f"{controller_url.rstrip('/')}/dashboard/",
+        "lab_env_path": str(lab_env_path),
+        "generated_files": [
+            ".env",
+            "config.yaml",
+            ".sentinel_tui_profiles.json",
+            "run_tui.sh",
+            "open_dashboard.sh",
+        ],
+    }
+
+
+def write_local_runtime_bundle(
+    *,
+    root: Path,
+    sensor_id: str,
+    interface: str,
+    controller_url: str,
+    lab_env: dict[str, str],
+    bootstrap_mode: str,
+) -> None:
+    """Write host-side runtime files for either full or TUI-only bootstrap."""
+    write_env_file(
+        root / ".env",
+        build_root_env(
+            lab_env,
+            sensor_id=sensor_id,
+            controller_url=controller_url,
+        ),
+    )
+    (root / "config.yaml").write_text(
+        render_config_yaml(
+            sensor_id=sensor_id,
+            controller_url=controller_url,
+            interface=interface,
+        ),
+        encoding="utf-8",
+    )
+    write_profile_store(
+        root / ".sentinel_tui_profiles.json",
+        build_tui_profile_store(
+            sensor_id=sensor_id,
+            controller_url=controller_url,
+            interface=interface,
+        ),
+    )
+    write_helper_launchers(
+        root, dashboard_url=f"{controller_url.rstrip('/')}/dashboard/"
+    )
+    write_state_file(
+        root / STATE_FILENAME,
+        build_state_payload(
+            sensor_id=sensor_id,
+            interface=interface,
+            controller_url=controller_url,
+            lab_env_path=root / "ops" / ".env.lab",
+            bootstrap_mode=bootstrap_mode,
+        ),
+    )
+
+
+def write_state_file(path: Path, payload: dict[str, object]) -> None:
+    """Persist bootstrap metadata for later reruns and support checks."""
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def has_bootstrap_state(root: Path) -> bool:
+    """Return True when a previous one-run bootstrap is already present."""
+    state_path = root / STATE_FILENAME
+    if not state_path.exists():
+        return False
+
+    required_paths = (
+        root / ".env",
+        root / "config.yaml",
+        root / ".sentinel_tui_profiles.json",
+        root / "run_tui.sh",
+        root / "open_dashboard.sh",
+    )
+    return all(path.exists() for path in required_paths)
+
+
+def write_helper_launchers(
+    root: Path, *, dashboard_url: str = DEFAULT_DASHBOARD_URL
+) -> None:
     run_tui = root / "run_tui.sh"
     run_tui.write_text(
         textwrap.dedent(
@@ -326,7 +495,7 @@ def write_helper_launchers(root: Path) -> None:
             set -euo pipefail
             python - <<'PY'
             import webbrowser
-            url = "{DEFAULT_DASHBOARD_URL}"
+            url = "{dashboard_url}"
             print(f"Opening {{url}}")
             webbrowser.open(url)
             PY
@@ -347,10 +516,71 @@ def bootstrap_lab(
     build_images: bool,
     open_browser: bool,
     launch_tui: bool,
+    force: bool,
 ) -> None:
-    compose = detect_compose_command()
     venv_python = ensure_venv(root, sys.executable)
-    install_runtime(root, venv_python)
+    reuse_existing = has_bootstrap_state(root) and not force
+    if reuse_existing:
+        print(
+            "[one-run] Existing bootstrap detected. Reusing local files and skipping "
+            "dependency reinstall/demo reseed. Pass --force to rebuild everything."
+        )
+    else:
+        install_runtime(root, venv_python)
+
+    if not has_python_module(venv_python, "pytest"):
+        print(
+            "[one-run] Preflight: pytest/dev tooling is not installed in this venv. "
+            'Install `python -m pip install -e ".[dev,controller,sensor,dashboard]"` '
+            "if you want local tests, linting, and mypy."
+        )
+
+    compose_error: str | None = None
+    try:
+        compose = detect_compose_command()
+    except RuntimeError as exc:
+        compose = None
+        compose_error = str(exc)
+    else:
+        docker_ready, docker_error = docker_daemon_accessible()
+        if not docker_ready:
+            compose = None
+            compose_error = docker_error
+
+    if compose is None:
+        write_local_runtime_bundle(
+            root=root,
+            sensor_id=sensor_id,
+            interface=interface,
+            controller_url=controller_url,
+            lab_env=build_local_only_lab_env(),
+            bootstrap_mode="tui_only",
+        )
+        print("")
+        print(
+            f"[one-run] {compose_error or 'Docker Compose is not available on this host.'}"
+        )
+        print(
+            "[one-run] Falling back to a TUI-only bootstrap so you can still use "
+            "Mock / Test mode right away."
+        )
+        print(f"[one-run] TUI launcher: {root / 'run_tui.sh'}")
+        print(
+            "[one-run] Install Docker Desktop or docker-compose later, then rerun "
+            "`python one_run.py --force` for the full dashboard/controller stack."
+        )
+        if compose_error and "permission denied" in compose_error.lower():
+            print(
+                "[one-run] Hint: add your user to the `docker` group with "
+                "`sudo usermod -aG docker $USER`, then re-login or run `newgrp docker`."
+            )
+        if open_browser:
+            print(
+                "[one-run] Skipping browser launch because the dashboard stack is offline."
+            )
+        if launch_tui:
+            run_command([str(root / "run_tui.sh")], cwd=root)
+        return
 
     run_command([str(venv_python), "ops/gen_lab_secrets.py"], cwd=root)
 
@@ -381,7 +611,7 @@ def bootstrap_lab(
     ]
     run_command(exec_prefix + ["controller", "python", "ops/init_lab_db.py"], cwd=root)
 
-    if seed_data:
+    if seed_data and not reuse_existing:
         run_command(
             compose
             + [
@@ -424,8 +654,6 @@ def bootstrap_lab(
         cwd=root,
     )
 
-    # The host-side TUI will drive the sensor, so keep the compose sensor stopped
-    # by default to avoid hardware assumptions on a fresh clone.
     subprocess.run(
         compose
         + [
@@ -440,38 +668,21 @@ def bootstrap_lab(
         check=False,
     )
 
-    lab_env = parse_env_file(lab_env_path)
-    write_env_file(
-        root / ".env",
-        build_root_env(
-            lab_env,
-            sensor_id=sensor_id,
-            controller_url=controller_url,
-        ),
+    write_local_runtime_bundle(
+        root=root,
+        sensor_id=sensor_id,
+        interface=interface,
+        controller_url=controller_url,
+        lab_env=parse_env_file(lab_env_path),
+        bootstrap_mode="full",
     )
-    (root / "config.yaml").write_text(
-        render_config_yaml(
-            sensor_id=sensor_id,
-            controller_url=controller_url,
-            interface=interface,
-        ),
-        encoding="utf-8",
-    )
-    write_profile_store(
-        root / ".sentinel_tui_profiles.json",
-        build_tui_profile_store(
-            sensor_id=sensor_id,
-            controller_url=controller_url,
-            interface=interface,
-        ),
-    )
-    write_helper_launchers(root)
 
     print("")
     print("[one-run] Bootstrap complete.")
     print(f"[one-run] Dashboard: {controller_url}/dashboard/")
     print(f"[one-run] TUI launcher: {root / 'run_tui.sh'}")
     print(f"[one-run] Browser launcher: {root / 'open_dashboard.sh'}")
+    print(f"[one-run] State file: {root / STATE_FILENAME}")
     print("[one-run] Next time you usually only need: ./run_tui.sh")
 
     if open_browser:
@@ -508,6 +719,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Launch the TUI automatically when bootstrap completes.",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reinstall dependencies and reseed demo data even if local bootstrap files already exist.",
+    )
     return parser.parse_args(argv)
 
 
@@ -523,6 +739,7 @@ def main(argv: list[str] | None = None) -> int:
             build_images=not args.no_build,
             open_browser=args.open_browser,
             launch_tui=args.launch_tui,
+            force=args.force,
         )
     except subprocess.CalledProcessError as exc:
         print(f"[one-run] Command failed with exit code {exc.returncode}: {exc.cmd}")

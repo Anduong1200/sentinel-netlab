@@ -174,7 +174,9 @@ make lab-up
 python one_run.py --open-browser
 ```
 
-Then open [http://127.0.0.1:8050](http://127.0.0.1:8050) in your browser.
+The bootstrap writes `run_tui.sh`, `open_dashboard.sh`, `.env`, `config.yaml`, and `.sentinel_tui_profiles.json` for you.
+After that, your usual entrypoint is `./run_tui.sh` and the dashboard lives at [http://127.0.0.1:8080/dashboard/](http://127.0.0.1:8080/dashboard/).
+If Docker Compose is missing, or Docker is installed but your current shell cannot reach the daemon yet, the bootstrap now falls back to a TUI-only mock setup and tells you how to rerun the full lab later.
 
 📖 **Full Guide**: [docs/lab/quickstart.md](docs/lab/quickstart.md)
 🔧 **Troubleshooting**: [docs/lab/troubleshooting.md](docs/lab/troubleshooting.md)
@@ -201,10 +203,10 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install Dependencies (Pick your role)
-pip install ".[controller]"  # For Controller only
-pip install ".[sensor]"      # For Sensor only
-pip install ".[dashboard]"   # For Dashboard only
-pip install ".[dev]"         # For Development (Tests, Linting)
+python -m pip install ".[controller]"  # For Controller only
+python -m pip install ".[sensor]"      # For Sensor only
+python -m pip install ".[dashboard]"   # For Dashboard only
+python -m pip install ".[dev]"         # For Development (Tests, Linting)
 ```
 
 ### 2. Deployment (Docker)
@@ -265,7 +267,7 @@ docker compose -f ops/docker-compose.prod.yml up -d
 ```
 
 **3. Dashboard**
-View real-time alerts and heatmaps at http://localhost:8050
+View real-time alerts and heatmaps at http://127.0.0.1:8080/dashboard/
 
 **Run Tests:**
 ```bash

@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "an": {
+    "Lab Demo": {
       "adaptive_hopping": false,
       "anonymize": true,
       "buffer_drop_policy": "oldest",
@@ -13,36 +13,36 @@
       "geo_enabled": false,
       "geo_sensor_x_m": "",
       "geo_sensor_y_m": "",
-      "interface": "wlan0",
-      "ml_enabled": true,
-      "mode": "live",
+      "interface": "wlan0mon",
+      "ml_enabled": false,
+      "mode": "mock",
       "pcap_path": "",
-      "preset_id": "balanced_live",
-      "profile_name": "an",
+      "preset_id": "",
+      "profile_name": "Lab Demo",
       "scrub_probe_requests": true,
-      "sensor_id": "sensor-01"
+      "sensor_id": "lab-sensor-01"
     },
-    "anaa": {
+    "Lab Live": {
       "adaptive_hopping": false,
-      "anonymize": false,
-      "buffer_drop_policy": "spill_to_disk",
-      "buffer_max_items": "50000",
-      "capture_channels": "1, 6, 11, 36, 40, 44",
-      "capture_method": "tshark",
-      "controller_url": "http://127.0.0.1:8080a",
-      "detector_profile": "audit_offline",
+      "anonymize": true,
+      "buffer_drop_policy": "oldest",
+      "buffer_max_items": "12000",
+      "capture_channels": "1, 6, 11",
+      "capture_method": "scapy",
+      "controller_url": "http://127.0.0.1:8080",
+      "detector_profile": "lite_realtime",
       "dwell_ms": "250",
       "geo_enabled": false,
       "geo_sensor_x_m": "",
       "geo_sensor_y_m": "",
-      "interface": "wlan0",
+      "interface": "wlan0mon",
       "ml_enabled": true,
       "mode": "live",
       "pcap_path": "",
-      "preset_id": "pcap_forensics",
-      "profile_name": "anaa",
-      "scrub_probe_requests": false,
-      "sensor_id": "sensor-01"
+      "preset_id": "balanced_live",
+      "profile_name": "Lab Live",
+      "scrub_probe_requests": true,
+      "sensor_id": "lab-sensor-01"
     }
   },
   "version": 1
