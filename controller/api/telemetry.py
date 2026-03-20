@@ -91,6 +91,7 @@ def ingest_telemetry():
     try:
         from controller.db.extensions import db
         from controller.db.models import Sensor
+
         sensor = Sensor.query.get(sensor_id)
         if not sensor:
             sensor = Sensor(id=sensor_id, name=sensor_id)
