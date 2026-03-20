@@ -13,6 +13,7 @@ import os
 import queue
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -56,11 +57,21 @@ from sensor.tui.config_store import (
     validate_tui_settings,
 )
 from sensor.tui.setup_wizard import (
+    BackendCheckReport,
+    CommandResult,
+    LabActionReport,
+    WirelessInventoryReport,
     build_bootstrap_env,
     build_quick_profile,
     build_upload_url,
+    collect_backend_health,
+    detect_wireless_inventory,
+    install_python_component,
     normalize_controller_url,
+    open_dashboard_gui,
     request_sensor_token,
+    run_lab_action,
+    set_interface_monitor_mode,
     upsert_env_file,
 )
 from sensor.tui.state_manager import (
@@ -224,6 +235,26 @@ class SetupScreen(Screen):
                     yield Label("", id="pf-controller")
 
                 with Container(classes="setup-group"):
+                    yield Label("⚙️ BACKEND & LAB", classes="setup-group-title")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Check Stack", id="btn-check-stack")
+                        yield Button("Install Sensor", id="btn-install-sensor")
+                        yield Button("Install Controller", id="btn-install-controller")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Install Engine", id="btn-install-engine")
+                        yield Button("Lab Up", id="btn-lab-up")
+                        yield Button("Lab Down", id="btn-lab-down")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Lab Reset", id="btn-lab-reset")
+                        yield Button("Lab Status", id="btn-lab-status")
+                        yield Button("Gen Lab Tokens", id="btn-lab-gen")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Open GUI", id="btn-open-gui")
+                    yield Label("", id="backend-status")
+                    yield Label("", id="lab-status")
+                    yield Label("", id="lab-autofill", classes="setup-hint")
+
+                with Container(classes="setup-group"):
                     yield Label("🚀 QUICK SETUP", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
                         yield Button("Demo Bundle", id="btn-quick-demo")
@@ -251,43 +282,15 @@ class SetupScreen(Screen):
                     yield Label("", id="quick-setup-status")
 
                 with Container(classes="setup-group"):
-                    yield Label("🗂️ PROFILES & PRESETS", classes="setup-group-title")
+                    yield Label("📡 INTERFACE AUTOMATION", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
-                        yield Button("Balanced Live", id="btn-preset-balanced-live")
-                        yield Button("SOC Tactical", id="btn-preset-soc-tactical")
-                        yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
-                    with Horizontal(classes="setup-row", id="row-profile-name"):
-                        yield Label("Profile Name", classes="setup-label")
-                        yield Input(
-                            value="",
-                            placeholder="soc-lab, replay-case-01, field-team-a",
-                            id="input-profile-name",
-                            classes="setup-input",
-                            compact=True,
-                        )
-                    with Horizontal(classes="quick-actions"):
-                        yield Button("Save Profile", id="btn-save-profile")
-                        yield Button("Load Profile", id="btn-load-profile")
-                        yield Button("Delete Profile", id="btn-delete-profile")
-                    yield Label("", id="preset-summary")
-                    yield Label("", id="profile-status")
-                    yield Label("", id="profile-inventory", classes="setup-hint")
+                        yield Button("Detect USB/IW", id="btn-detect-iface")
+                        yield Button("Monitor Mode", id="btn-monitor-on")
+                        yield Button("Managed Mode", id="btn-monitor-off")
+                    yield Label("", id="iface-status")
+                    yield Label("", id="iface-summary", classes="setup-hint")
 
-                # Mode Selection
-                with Container(classes="setup-group"):
-                    yield Label("⚡ OPERATION MODE", classes="setup-group-title")
-                    with RadioSet(id="mode-select"):
-                        yield RadioButton(
-                            "(A) Live Combat — Thực chiến", id="mode-live"
-                        )
-                        yield RadioButton(
-                            "(B) Mock / Test Lab", id="mode-mock", value=True
-                        )
-                        yield RadioButton(
-                            "(C) PCAP Replay — Phân tích lại", id="mode-pcap"
-                        )
-
-                # Interface
+                # Core configuration
                 with Container(classes="setup-group"):
                     yield Label("🔌 CONFIGURATION", classes="setup-group-title")
                     with Horizontal(classes="setup-row", id="row-sensor-id"):
@@ -336,6 +339,20 @@ class SetupScreen(Screen):
                             compact=True,
                         )
 
+                # Mode Selection
+                with Container(classes="setup-group"):
+                    yield Label("⚡ OPERATION MODE", classes="setup-group-title")
+                    with RadioSet(id="mode-select"):
+                        yield RadioButton(
+                            "(A) Live Combat — Thực chiến", id="mode-live"
+                        )
+                        yield RadioButton(
+                            "(B) Mock / Test Lab", id="mode-mock", value=True
+                        )
+                        yield RadioButton(
+                            "(C) PCAP Replay — Phân tích lại", id="mode-pcap"
+                        )
+
                 # Toggles
                 with Container(classes="setup-group"):
                     yield Label("🧠 FEATURES", classes="setup-group-title")
@@ -344,6 +361,29 @@ class SetupScreen(Screen):
                     yield Checkbox(
                         "Anonymize MAC/SSID (Quyền riêng tư)", id="chk-anon", value=True
                     )
+
+                with Container(classes="setup-group"):
+                    yield Label("🗂️ PROFILES & PRESETS", classes="setup-group-title")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Balanced Live", id="btn-preset-balanced-live")
+                        yield Button("SOC Tactical", id="btn-preset-soc-tactical")
+                        yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
+                    with Horizontal(classes="setup-row", id="row-profile-name"):
+                        yield Label("Profile Name", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="soc-lab, replay-case-01, field-team-a",
+                            id="input-profile-name",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Save Profile", id="btn-save-profile")
+                        yield Button("Load Profile", id="btn-load-profile")
+                        yield Button("Delete Profile", id="btn-delete-profile")
+                    yield Label("", id="preset-summary")
+                    yield Label("", id="profile-status")
+                    yield Label("", id="profile-inventory", classes="setup-hint")
 
                 # Validation error area
                 yield Label("", id="validation-error")
@@ -358,8 +398,7 @@ class SetupScreen(Screen):
 
     def on_mount(self) -> None:
         """Auto-detect environment on screen load."""
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
         defaults = normalize_tui_settings(app.saved_settings)
         self._advanced_settings = self._extract_advanced_settings(defaults)
         self._available_ifaces = detect_wifi_interfaces()
@@ -413,11 +452,10 @@ class SetupScreen(Screen):
         self._refresh_preflight()
         self._refresh_profile_inventory()
         self._refresh_profile_summary(defaults)
-        self.call_after_refresh(
-            lambda: self.set_focus(self.query_one("#input-sensor-id", Input))
-        )
+        self.call_after_refresh(lambda: self.set_focus(None))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.set_focus(None)
         if event.button.id == "btn-start":
             self.action_start_sensor()
         elif event.button.id == "btn-quick-demo":
@@ -438,6 +476,142 @@ class SetupScreen(Screen):
             self._load_named_profile()
         elif event.button.id == "btn-delete-profile":
             self._delete_named_profile()
+        elif event.button.id == "btn-check-stack":
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#backend-status",
+                "Checking backend stack…",
+                lambda: collect_backend_health(controller_url),
+                self._handle_backend_check,
+            )
+        elif event.button.id == "btn-install-sensor":
+            self._run_setup_task(
+                "#backend-status",
+                "Installing sensor dependencies…",
+                lambda: install_python_component(PROJECT_ROOT, "sensor"),
+                lambda result: self._handle_install_result("Sensor", result),
+            )
+        elif event.button.id == "btn-install-controller":
+            self._run_setup_task(
+                "#backend-status",
+                "Installing controller dependencies…",
+                lambda: install_python_component(PROJECT_ROOT, "controller"),
+                lambda result: self._handle_install_result("Controller", result),
+            )
+        elif event.button.id == "btn-install-engine":
+            self._run_setup_task(
+                "#backend-status",
+                "Installing engine/dashboard dependencies…",
+                lambda: install_python_component(PROJECT_ROOT, "engine"),
+                lambda result: self._handle_install_result("Engine", result),
+            )
+        elif event.button.id == "btn-lab-up":
+            sensor_id = self.query_one("#input-sensor-id", Input).value
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Starting lab stack…",
+                lambda: run_lab_action(
+                    PROJECT_ROOT,
+                    "up",
+                    sensor_id=sensor_id,
+                    controller_url=controller_url,
+                ),
+                self._handle_lab_action,
+            )
+        elif event.button.id == "btn-lab-down":
+            sensor_id = self.query_one("#input-sensor-id", Input).value
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Stopping lab stack…",
+                lambda: run_lab_action(
+                    PROJECT_ROOT,
+                    "down",
+                    sensor_id=sensor_id,
+                    controller_url=controller_url,
+                ),
+                self._handle_lab_action,
+            )
+        elif event.button.id == "btn-lab-reset":
+            sensor_id = self.query_one("#input-sensor-id", Input).value
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Resetting lab stack…",
+                lambda: run_lab_action(
+                    PROJECT_ROOT,
+                    "reset",
+                    sensor_id=sensor_id,
+                    controller_url=controller_url,
+                ),
+                self._handle_lab_action,
+            )
+        elif event.button.id == "btn-lab-status":
+            sensor_id = self.query_one("#input-sensor-id", Input).value
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Checking lab status…",
+                lambda: run_lab_action(
+                    PROJECT_ROOT,
+                    "status",
+                    sensor_id=sensor_id,
+                    controller_url=controller_url,
+                ),
+                self._handle_lab_action,
+            )
+        elif event.button.id == "btn-lab-gen":
+            sensor_id = self.query_one("#input-sensor-id", Input).value
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Generating lab runtime tokens…",
+                lambda: run_lab_action(
+                    PROJECT_ROOT,
+                    "generate_tokens",
+                    sensor_id=sensor_id,
+                    controller_url=controller_url,
+                ),
+                self._handle_lab_action,
+            )
+        elif event.button.id == "btn-open-gui":
+            controller_url = self._controller_url()
+            self._run_setup_task(
+                "#lab-status",
+                "Opening dashboard GUI…",
+                lambda: open_dashboard_gui(controller_url),
+                self._handle_gui_launch,
+            )
+        elif event.button.id == "btn-detect-iface":
+            self._run_setup_task(
+                "#iface-status",
+                "Scanning USB and wireless interfaces…",
+                detect_wireless_inventory,
+                self._handle_interface_inventory,
+            )
+        elif event.button.id == "btn-monitor-on":
+            interface = self.query_one("#input-iface", Input).value.strip()
+            self._run_setup_task(
+                "#iface-status",
+                "Switching interface to monitor mode…",
+                lambda: set_interface_monitor_mode(interface, monitor=True),
+                lambda result: self._handle_interface_mode_change(
+                    "Monitor mode",
+                    result,
+                ),
+            )
+        elif event.button.id == "btn-monitor-off":
+            interface = self.query_one("#input-iface", Input).value.strip()
+            self._run_setup_task(
+                "#iface-status",
+                "Restoring interface to managed mode…",
+                lambda: set_interface_monitor_mode(interface, monitor=False),
+                lambda result: self._handle_interface_mode_change(
+                    "Managed mode",
+                    result,
+                ),
+            )
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "chk-geo":
@@ -448,8 +622,7 @@ class SetupScreen(Screen):
             self._sync_dynamic_rows()
 
     def _refresh_preflight(self) -> None:
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
 
         env_color = "green" if app.env_load_result.loaded else "yellow"
         if app.env_load_result.loaded and app.env_load_result.path is not None:
@@ -497,13 +670,14 @@ class SetupScreen(Screen):
 
     def _collect_settings(self) -> dict[str, Any]:
         settings = normalize_tui_settings(self._advanced_settings)
+        app = self._sentinel_app()
         mode = self._selected_mode()
         iface = self.query_one("#input-iface", Input).value.strip()
         pcap_path = self.query_one("#input-pcap", Input).value
         sensor_id = coerce_sensor_id(
             self.query_one("#input-sensor-id", Input).value,
             os.environ.get("SENSOR_ID")
-            or self.app.saved_settings.get("sensor_id")
+            or app.saved_settings.get("sensor_id")
             or "tui-sensor-01",
         )
         settings.update(
@@ -529,8 +703,7 @@ class SetupScreen(Screen):
         *,
         status_message: str | None = None,
     ) -> None:
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
         app.tui_config = tui_settings
         app.config_path = persist_tui_settings(
             PROJECT_ROOT, app.config_path, app.tui_config
@@ -543,6 +716,9 @@ class SetupScreen(Screen):
             self.query_one("#quick-setup-status", Label).update(status_message)
 
     def _apply_settings_to_inputs(self, settings: dict[str, Any]) -> None:
+        scroll_container = self.query_one("#setup-container", SetupScroll)
+        current_scroll_x = scroll_container.scroll_x
+        current_scroll_y = scroll_container.scroll_y
         merged = normalize_tui_settings({**self._advanced_settings, **settings})
         self._advanced_settings = self._extract_advanced_settings(merged)
 
@@ -568,6 +744,17 @@ class SetupScreen(Screen):
         self.query_one("#mode-pcap", RadioButton).value = merged["mode"] == "pcap"
         self._sync_dynamic_rows()
         self._refresh_profile_summary(merged)
+        self.call_after_refresh(
+            lambda: self.call_later(
+                lambda: scroll_container.scroll_to(
+                    x=current_scroll_x,
+                    y=current_scroll_y,
+                    animate=False,
+                    force=True,
+                    immediate=True,
+                )
+            )
+        )
 
     def _write_runtime_env(
         self,
@@ -587,8 +774,7 @@ class SetupScreen(Screen):
         )
         env_path = upsert_env_file(PROJECT_ROOT / ".env", env_updates)
         os.environ.update(env_updates)
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
         app.env_load_result = EnvLoadResult(
             loaded=True,
             path=env_path,
@@ -619,8 +805,7 @@ class SetupScreen(Screen):
         settings = self._collect_settings()
         profile = "demo" if settings["mode"] == "mock" else "live"
         sensor_token = None
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
         token_source = "local-generated"  # noqa: S105 - status label, not a secret
         try:
             if check_controller_online(settings["controller_url"]):
@@ -762,6 +947,146 @@ class SetupScreen(Screen):
         )
         return {key: normalized[key] for key in keys}
 
+    def _sentinel_app(self) -> "SentinelTUIApp":
+        app = self.app
+        assert isinstance(app, SentinelTUIApp)
+        return app
+
+    def _update_status_label(self, selector: str, markup: str) -> None:
+        self.query_one(selector, Label).update(markup)
+
+    def _run_setup_task(
+        self,
+        selector: str,
+        pending_message: str,
+        worker: Callable[[], Any],
+        on_success: Callable[[Any], None],
+    ) -> None:
+        self._update_status_label(selector, f"[yellow]{pending_message}[/yellow]")
+
+        def task() -> None:
+            app = self._sentinel_app()
+            try:
+                result = worker()
+            except Exception as exc:
+                app.call_from_thread(
+                    self._update_status_label,
+                    selector,
+                    f"[bold red]❌ {exc}[/bold red]",
+                )
+                return
+
+            app.call_from_thread(on_success, result)
+
+        threading.Thread(
+            target=task,
+            daemon=True,
+            name=f"SetupTask-{selector.lstrip('#')}",
+        ).start()
+
+    def _handle_backend_check(self, report: BackendCheckReport) -> None:
+        color = "green" if report.controller_online or report.docker_ready else "yellow"
+        commands_ready = ", ".join(
+            name for name, enabled in report.command_status.items() if enabled
+        ) or "none"
+        self.query_one("#backend-status", Label).update(
+            f"[{color}]Stack:[/{color}] {report.summary} | tools {commands_ready}"
+        )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] Backend check -> {report.summary}"
+        )
+
+    def _handle_install_result(self, label: str, result: CommandResult) -> None:
+        color = "green" if result.ok else "bold red"
+        self.query_one("#backend-status", Label).update(
+            f"[{color}]{label}:[/{color}] {result.summary}"
+        )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] {label} install -> {result.summary}"
+        )
+
+    def _handle_lab_action(self, report: LabActionReport) -> None:
+        color = "green" if report.ok else "bold red"
+        self.query_one("#lab-status", Label).update(
+            f"[{color}]Lab {report.action}:[/{color}] {report.summary}"
+        )
+
+        autofill_message = ""
+        if report.ok and report.suggested_settings:
+            merged_settings = {**self._collect_settings(), **report.suggested_settings}
+            self._apply_settings_to_inputs(merged_settings)
+
+            sensor_token = report.lab_env.get("SENSOR_AUTH_TOKEN")
+            if sensor_token:
+                env_path = self._write_runtime_env(
+                    "live",
+                    str(merged_settings["sensor_id"]),
+                    sensor_token=sensor_token,
+                )
+                autofill_message = f"Synced runtime env from {env_path.name}"
+
+            self._persist_setup_state(self._collect_settings())
+            self._refresh_preflight()
+
+            dashboard_user = report.lab_env.get("DASH_USERNAME")
+            dashboard_password = report.lab_env.get("DASH_PASSWORD")
+            creds_preview = ""
+            if dashboard_user and dashboard_password:
+                creds_preview = (
+                    f" | GUI {dashboard_user}/{dashboard_password}"
+                )
+            autofill_message = (
+                f"Autofilled live fields from lab bootstrap{creds_preview}."
+                if not autofill_message
+                else f"{autofill_message}{creds_preview}"
+            )
+
+        self.query_one("#lab-autofill", Label).update(
+            f"[dim]{autofill_message or report.details[:220]}[/dim]"
+        )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] Lab {report.action} -> {report.summary}"
+        )
+
+    def _handle_gui_launch(self, result: CommandResult) -> None:
+        color = "green" if result.ok else "bold red"
+        self.query_one("#lab-status", Label).update(
+            f"[{color}]GUI:[/{color}] {result.summary}"
+        )
+
+    def _handle_interface_inventory(self, report: WirelessInventoryReport) -> None:
+        if report.selected_interface and report.selected_interface != "(none detected)":
+            self.query_one("#input-iface", Input).value = report.selected_interface
+
+        iface_names = [candidate.name for candidate in report.interfaces]
+        self._available_ifaces = iface_names or ["(none detected)"]
+
+        color = "green" if iface_names else "yellow"
+        self.query_one("#iface-status", Label).update(
+            f"[{color}]Interface:[/{color}] {report.selected_interface or '(none)'}"
+        )
+        self.query_one("#iface-summary", Label).update(f"[dim]{report.summary}[/dim]")
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] Interface detect -> {report.summary}"
+        )
+
+    def _handle_interface_mode_change(
+        self,
+        label: str,
+        result: CommandResult,
+    ) -> None:
+        color = "green" if result.ok else "bold red"
+        self.query_one("#iface-status", Label).update(
+            f"[{color}]{label}:[/{color}] {result.summary}"
+        )
+        if result.stderr:
+            self.query_one("#iface-summary", Label).update(
+                f"[dim]{result.stderr[:220]}[/dim]"
+            )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] {label} -> {result.summary}"
+        )
+
     def action_start_sensor(self) -> None:
         """Gather config, validate, and switch to Dashboard."""
         # ── Pre-flight Validation (Fool-proof) ──
@@ -779,8 +1104,7 @@ class SetupScreen(Screen):
         err_label.update("")  # Clear errors
 
         # Push config into app state
-        app = self.app
-        assert isinstance(app, SentinelTUIApp)
+        app = self._sentinel_app()
         state = app.app_state
         mode = str(tui_settings["mode"])
         iface = str(tui_settings["interface"])

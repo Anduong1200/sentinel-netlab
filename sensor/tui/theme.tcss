@@ -93,6 +93,17 @@ Footer {
     min-height: 2;
 }
 
+#backend-status,
+#lab-status,
+#iface-status {
+    min-height: 2;
+}
+
+#lab-autofill,
+#iface-summary {
+    min-height: 2;
+}
+
 #preset-summary {
     min-height: 2;
     color: #58a6ff;

@@ -13,7 +13,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from common.observability.metrics import create_counter
 
@@ -272,7 +272,7 @@ class SqliteQueue:
             """,
                 (batch_id,),
             )
-            return cursor.fetchone()
+            return cast(sqlite3.Row | None, cursor.fetchone())
 
     def mark_dead(self, batch_id: str, error: str) -> None:
         """Mark batch as dead (non-retryable failure)."""

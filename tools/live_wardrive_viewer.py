@@ -6,7 +6,7 @@ import dash
 import pandas as pd
 import plotly.express as px
 from dash import Input, Output, dcc, html
-from dash.dash_table import DataTable
+from dash.dash_table.DataTable import DataTable
 
 # Configuration
 DATA_FILE = "wardrive_session.json"

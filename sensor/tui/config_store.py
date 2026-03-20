@@ -12,7 +12,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from sensor.tui.setup_wizard import build_upload_url, normalize_controller_url
 

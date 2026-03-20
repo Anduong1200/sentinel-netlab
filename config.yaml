@@ -1,17 +1,20 @@
 sensor:
-  id: tui-sensor-01
+  id: sensor-01
 capture:
   interface: wlan0
-  pcap_file: null
-  method: scapy
+  pcap_file: ''
+  method: tshark
   channels:
   - 1
   - 6
   - 11
-  dwell_ms: 200
-  adaptive_hopping: false
+  - 36
+  - 40
+  - 44
+  dwell_ms: 250
+  adaptive_hopping: true
 api:
-  upload_url: http://127.0.0.1:8080/api/v1/telemetry
+  upload_url: http://127.0.0.1:8080a/api/v1/telemetry
 ml:
   enabled: false
 geo:
@@ -19,12 +22,13 @@ geo:
   sensor_x_m: null
   sensor_y_m: null
 privacy:
-  anonymize_ssid: true
+  anonymize_ssid: false
   scrub_probe_requests: false
 buffer:
-  max_items: 10000
-  drop_policy: oldest
+  max_items: 50000
+  drop_policy: spill_to_disk
 detectors:
-  default_profile: lite_realtime
-tui: {}
-mock_mode: true
+  default_profile: full_wids
+tui:
+  preset_id: soc_tactical
+mock_mode: false

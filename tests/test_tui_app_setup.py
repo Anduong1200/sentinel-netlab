@@ -45,7 +45,7 @@ def _restore_env(snapshot: dict[str, str | None]) -> None:
             os.environ[key] = value
 
 
-def test_setup_screen_focuses_first_input_and_hides_optional_rows(
+def test_setup_screen_starts_unfocused_and_hides_optional_rows(
     monkeypatch, tmp_path: Path
 ):
     snapshot = _snapshot_env()
@@ -73,11 +73,47 @@ def test_setup_screen_focuses_first_input_and_hides_optional_rows(
         async with app.run_test(size=(80, 24)):
             screen = app.screen
             assert type(screen).__name__ == "SetupScreen"
-            assert app.focused is not None
-            assert app.focused.id == "input-sensor-id"
+            assert app.focused is None
             assert screen.query_one("#row-pcap").display is False
             assert screen.query_one("#row-geo-x").display is False
             assert screen.query_one("#row-geo-y").display is False
+
+    try:
+        asyncio.run(run_case())
+    finally:
+        _restore_env(snapshot)
+
+
+def test_quick_demo_bundle_does_not_jump_setup_scroll(
+    monkeypatch, tmp_path: Path
+):
+    snapshot = _snapshot_env()
+
+    async def run_case():
+        monkeypatch.setattr(app_mod, "PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr(app_mod, "detect_wifi_interfaces", lambda: ["wlan0mon"])
+        monkeypatch.setattr(
+            app_mod,
+            "check_controller_online",
+            lambda base_url=None: False,
+        )
+
+        app = app_mod.SentinelTUIApp()
+        app.saved_settings = {}
+        app.config_path = None
+
+        async with app.run_test(size=(110, 34)) as pilot:
+            screen = app.screen
+            assert app.focused is None
+
+            controller_input = screen.query_one("#input-controller-url", Input)
+            assert controller_input.region.y >= 0
+
+            await pilot.click("#btn-quick-demo")
+            await pilot.pause()
+
+            assert screen.query_one("#setup-container").scroll_y == 0
+            assert controller_input.region.y >= 0
 
     try:
         asyncio.run(run_case())

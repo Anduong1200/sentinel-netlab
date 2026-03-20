@@ -3,15 +3,21 @@ from pathlib import Path
 
 import pytest
 
+import sensor.tui.setup_wizard as wizard
 from sensor.tui.setup_wizard import (
+    CommandResult,
     DEFAULT_DEMO_SENSOR_ID,
     DEFAULT_DEMO_SENSOR_TOKEN,
     build_bootstrap_env,
+    collect_backend_health,
     build_quick_profile,
     build_upload_url,
     coerce_live_sensor_id,
+    detect_wireless_inventory,
     normalize_controller_url,
     request_sensor_token,
+    run_lab_action,
+    set_interface_monitor_mode,
     upsert_env_file,
 )
 
@@ -132,3 +138,129 @@ def test_request_sensor_token_uses_controller_api():
 def test_request_sensor_token_requires_admin_token():
     with pytest.raises(RuntimeError, match="Admin token is required"):
         request_sensor_token("http://127.0.0.1:8080", "", "sensor-01")
+
+
+def test_collect_backend_health_summarizes_runtime_readiness(monkeypatch):
+    tools = {
+        "make": "/usr/bin/make",
+        "docker": "/usr/bin/docker",
+        "iw": "/usr/bin/iw",
+        "iwconfig": "/usr/bin/iwconfig",
+        "lsusb": "/usr/bin/lsusb",
+    }
+    modules = {"sensor", "controller", "dashboard", "textual", "yaml", "dotenv"}
+
+    monkeypatch.setattr(
+        wizard.shutil,
+        "which",
+        lambda name: tools.get(name),
+    )
+    monkeypatch.setattr(
+        wizard.importlib.util,
+        "find_spec",
+        lambda name: object() if name in modules else None,
+    )
+    monkeypatch.setattr(
+        wizard,
+        "_run_command",
+        lambda args, **kwargs: CommandResult(
+            ok=True,
+            summary="docker ready",
+            stdout="Server Version: test",
+        ),
+    )
+    monkeypatch.setattr(wizard, "_probe_controller_health", lambda *args, **kwargs: True)
+
+    report = collect_backend_health("http://controller.lab:8080")
+
+    assert report.docker_ready is True
+    assert report.controller_online is True
+    assert report.command_status["iwconfig"] is True
+    assert report.module_status["controller"] is True
+    assert "controller online" in report.summary
+
+
+def test_detect_wireless_inventory_prefers_monitor_interface(monkeypatch):
+    responses = {
+        ("lsusb",): CommandResult(
+            ok=True,
+            summary="usb",
+            stdout="Bus 001 Device 002: ID 0cf3:9271 Atheros Adapter\n",
+        ),
+        ("iw", "dev"): CommandResult(
+            ok=True,
+            summary="iw",
+            stdout=(
+                "phy#0\n"
+                "\tInterface wlan0\n"
+                "\t\ttype managed\n"
+                "\tInterface wlan0mon\n"
+                "\t\ttype monitor\n"
+            ),
+        ),
+        ("iwconfig",): CommandResult(
+            ok=True,
+            summary="iwconfig",
+            stdout=(
+                "wlan0     IEEE 802.11  Mode:Managed\n"
+                "wlan0mon  IEEE 802.11  Mode:Monitor\n"
+            ),
+        ),
+    }
+
+    monkeypatch.setattr(
+        wizard,
+        "_run_command",
+        lambda args, **kwargs: responses[tuple(args)],
+    )
+    monkeypatch.setattr(
+        wizard,
+        "_list_sysfs_wireless_interfaces",
+        lambda: ["wlan0", "wlan0mon"],
+    )
+
+    report = detect_wireless_inventory()
+
+    assert report.selected_interface == "wlan0mon"
+    assert "Atheros" in report.usb_summary
+    assert "wlan0mon:monitor" in report.interface_summary
+
+
+def test_run_lab_action_autofills_live_settings_and_reads_env(
+    monkeypatch, tmp_path: Path
+):
+    ops_dir = tmp_path / "ops"
+    ops_dir.mkdir()
+    (ops_dir / ".env.lab").write_text(
+        "SENSOR_AUTH_TOKEN=lab-sensor-token\n"
+        "DASH_USERNAME=admin\n"
+        "DASH_PASSWORD=lab-pass\n",
+        encoding="utf-8",
+    )
+
+    seen: dict[str, object] = {}
+
+    monkeypatch.setattr(wizard.shutil, "which", lambda name: f"/usr/bin/{name}")
+
+    def fake_run_command(args, **kwargs):
+        seen["args"] = list(args)
+        seen["cwd"] = kwargs.get("cwd")
+        return CommandResult(ok=True, summary="ok", stdout="Lab started")
+
+    monkeypatch.setattr(wizard, "_run_command", fake_run_command)
+
+    report = run_lab_action(
+        tmp_path,
+        "generate_tokens",
+        sensor_id="Field Team A",
+        controller_url="http://controller.lab:8080",
+    )
+
+    assert report.ok is True
+    assert seen["args"] == [
+        "/usr/bin/make",
+        "lab-gen-runtime-tokens",
+        "SENSOR_ID=field-team-a",
+    ]
+    assert seen["cwd"] == tmp_path
+    assert repor
