@@ -36,6 +36,7 @@ from textual.widgets import (
     RadioButton,
     RadioSet,
     RichLog,
+    Select,
 )
 
 from sensor.config import Config, init_config
@@ -136,7 +137,7 @@ def check_controller_online(base_url: str | None = None) -> bool:
         if not url.startswith(("http://", "https://")):
             return False
         resp = urllib.request.urlopen(  # noqa: S310 # nosec B310
-            f"{url}/api/v1/sensors", timeout=1
+            f"{url}/api/v1/health", timeout=2
         )
         return bool(resp.getcode() == 200)
     except Exception:  # noqa: S110
@@ -311,9 +312,17 @@ class SetupScreen(Screen):
                         )
                     with Horizontal(classes="setup-row", id="row-interface"):
                         yield Label("Interface", classes="setup-label")
+                        yield Select(
+                            [("(none detected)", "(none detected)")],
+                            value="(none detected)",
+                            id="select-iface",
+                            classes="setup-input",
+                        )
+                    with Horizontal(classes="setup-row", id="row-iface-custom"):
+                        yield Label("Custom Iface", classes="setup-label")
                         yield Input(
-                            value="wlan0mon",
-                            placeholder="WiFi interface",
+                            value="",
+                            placeholder="Manual override (e.g. wlan1mon)",
                             id="input-iface",
                             classes="setup-input",
                             compact=True,
@@ -517,15 +526,23 @@ class SetupScreen(Screen):
         )
 
         # Auto-fill best interface
+        self._populate_iface_select(self._available_ifaces)
         if defaults.get("interface"):
-            self.query_one("#input-iface", Input).value = str(defaults["interface"])
+            saved_iface = str(defaults["interface"])
+            self.query_one("#input-iface", Input).value = saved_iface
+            try:
+                self.query_one("#select-iface", Select).value = saved_iface
+            except Exception:  # noqa: S110
+                pass
         elif self._available_ifaces[0] != "(none detected)":
-            # Prefer monitor mode interfaces
             best = next(
                 (i for i in self._available_ifaces if "mon" in i),
                 self._available_ifaces[0],
             )
-            self.query_one("#input-iface", Input).value = best
+            try:
+                self.query_one("#select-iface", Select).value = best
+            except Exception:  # noqa: S110
+                pass
 
         self.query_one("#input-sensor-id", Input).value = sensor_id
         self.query_one("#input-pcap", Input).value = str(defaults.get("pcap_path", ""))
@@ -769,7 +786,7 @@ class SetupScreen(Screen):
                 self._handle_interface_inventory,
             )
         elif event.button.id == "btn-monitor-on":
-            interface = self.query_one("#input-iface", Input).value.strip()
+            interface = self._selected_iface()
             self._run_setup_task(
                 "#iface-status",
                 "Switching interface to monitor mode…",
@@ -780,7 +797,7 @@ class SetupScreen(Screen):
                 ),
             )
         elif event.button.id == "btn-monitor-off":
-            interface = self.query_one("#input-iface", Input).value.strip()
+            interface = self._selected_iface()
             self._run_setup_task(
                 "#iface-status",
                 "Restoring interface to managed mode…",
@@ -858,6 +875,32 @@ class SetupScreen(Screen):
             return "pcap"
         return "mock"
 
+    def _selected_iface(self) -> str:
+        """Return the active interface from custom Input or Select dropdown."""
+        custom = self.query_one("#input-iface", Input).value.strip()
+        if custom:
+            return custom
+        try:
+            selected = self.query_one("#select-iface", Select).value
+            if selected and selected != Select.BLANK and selected != "(none detected)":
+                return str(selected)
+        except Exception:  # noqa: S110
+            pass
+        return "wlan0mon"
+
+    def _populate_iface_select(self, interfaces: list[str]) -> None:
+        """Refresh the interface Select dropdown with detected interfaces."""
+        select_widget = self.query_one("#select-iface", Select)
+        if not interfaces or interfaces == ["(none detected)"]:
+            select_widget.set_options([("(none detected)", "(none detected)")])
+            select_widget.value = "(none detected)"
+            return
+        options = [(iface, iface) for iface in interfaces]
+        select_widget.set_options(options)
+        # Prefer monitor mode interface
+        best = next((i for i in interfaces if "mon" in i), interfaces[0])
+        select_widget.value = best
+
     def _controller_url(self) -> str:
         return normalize_controller_url(
             self.query_one("#input-controller-url", Input).value
@@ -867,7 +910,7 @@ class SetupScreen(Screen):
         settings = normalize_tui_settings(self._advanced_settings)
         app = self._sentinel_app()
         mode = self._selected_mode()
-        iface = self.query_one("#input-iface", Input).value.strip()
+        iface = self._selected_iface()
         pcap_path = self.query_one("#input-pcap", Input).value
         sensor_id = coerce_sensor_id(
             self.query_one("#input-sensor-id", Input).value,
@@ -923,6 +966,10 @@ class SetupScreen(Screen):
 
         self.query_one("#input-sensor-id", Input).value = str(merged["sensor_id"])
         self.query_one("#input-iface", Input).value = str(merged["interface"])
+        try:
+            self.query_one("#select-iface", Select).value = str(merged["interface"])
+        except Exception:  # noqa: S110
+            pass
         self.query_one("#input-pcap", Input).value = str(merged["pcap_path"])
         self.query_one("#input-controller-url", Input).value = str(
             merged["controller_url"]
@@ -1038,11 +1085,23 @@ class SetupScreen(Screen):
             settings["sensor_id"],
             sensor_token=sensor_token,
         )
+
+        # Enhanced status with masked token preview
+        env_text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+        key_count = sum(1 for line in env_text.splitlines() if "=" in line and not line.startswith("#"))
+        token_preview = "(none)"  # noqa: S105 - UI label
+        for line in env_text.splitlines():
+            if line.startswith("SENSOR_AUTH_TOKEN="):
+                raw = line.split("=", 1)[1].strip()
+                token_preview = f"{raw[:6]}…{raw[-4:]}" if len(raw) > 12 else "(set)"
+                break
+
         self._persist_setup_state(
             settings,
             status_message=(
-                f"[green]Generated token/keys via {token_source} and updated "
-                f"{env_path.name}.[/green]"
+                f"[green]✅ Token via {token_source} | "
+                f"Token {token_preview} | "
+                f"{key_count} keys in {env_path.name}[/green]"
             ),
         )
         self._refresh_preflight()
@@ -1271,9 +1330,14 @@ class SetupScreen(Screen):
     def _handle_interface_inventory(self, report: WirelessInventoryReport) -> None:
         if report.selected_interface and report.selected_interface != "(none detected)":
             self.query_one("#input-iface", Input).value = report.selected_interface
+            try:
+                self.query_one("#select-iface", Select).value = report.selected_interface
+            except Exception:  # noqa: S110
+                pass
 
         iface_names = [candidate.name for candidate in report.interfaces]
         self._available_ifaces = iface_names or ["(none detected)"]
+        self._populate_iface_select(self._available_ifaces)
 
         color = "green" if iface_names else "yellow"
         self.query_one("#iface-status", Label).update(
@@ -1664,6 +1728,7 @@ class DashboardScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
+        yield Label("", id="dashboard-status")
         with Horizontal(id="dashboard-area"):
             # ── LEFT: System Health ──
             with Vertical(id="left-panel"):
@@ -2246,6 +2311,23 @@ class SentinelTUIApp(App):
         state = self.app_state
         state.update_resources()
         screen = self.screen
+
+        # ── Dashboard Status Banner ──
+        try:
+            if state.running:
+                banner = (
+                    f"[bold green]● SENSOR ACTIVE[/bold green]  "
+                    f"[dim]{state.mode.upper()} | {state.interface} | "
+                    f"{state.sensor_id} | {state.uptime}[/dim]"
+                )
+            else:
+                banner = (
+                    "[bold yellow]○ SENSOR IDLE[/bold yellow]  "
+                    "[dim]Waiting for sensor start…[/dim]"
+                )
+            screen.query_one("#dashboard-status", Label).update(banner)
+        except Exception:  # noqa: S110
+            pass
 
         # ── System Health ──
         try:
