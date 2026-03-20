@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 
 from flask import Blueprint, jsonify, request
 
-from controller.api.auth import Permission, require_permission
+from controller.api.auth import Permission, require_auth
 from controller.api.deps import db
 from controller.db.models import AuditLog, Sensor, SensorKey
 
@@ -54,7 +54,7 @@ def _audit(event_type: str, sensor_id: str, details: dict | None = None):
 
 
 @provisioning_bp.route("/enroll", methods=["POST"])
-@require_permission(Permission.ADMIN)
+@require_auth(Permission.ADMIN)
 def enroll_sensor():
     """
     Enroll a sensor with a unique HMAC key.
@@ -91,11 +91,11 @@ def enroll_sensor():
     plaintext, key_hash = _generate_sensor_key()
 
     if existing:
-        existing.key_hash = key_hash
-        existing.created_at = datetime.now(UTC)
-        existing.rotated_at = None
-        existing.last_used = None
-        existing.is_active = True
+        existing.key_hash = key_hash  # type: ignore[assignment]
+        existing.created_at = datetime.now(UTC)  # type: ignore[assignment]
+        existing.rotated_at = None  # type: ignore[assignment]
+        existing.last_used = None  # type: ignore[assignment]
+        existing.is_active = True  # type: ignore[assignment]
     else:
         sensor_key = SensorKey(
             sensor_id=sensor_id,
@@ -119,7 +119,7 @@ def enroll_sensor():
 
 
 @provisioning_bp.route("/<sensor_id>/rotate-key", methods=["POST"])
-@require_permission(Permission.ADMIN)
+@require_auth(Permission.ADMIN)
 def rotate_key(sensor_id: str):
     """
     Rotate a sensor's HMAC key.
@@ -134,9 +134,9 @@ def rotate_key(sensor_id: str):
     # Generate new key
     plaintext, key_hash = _generate_sensor_key()
 
-    sensor_key.key_hash = key_hash
-    sensor_key.rotated_at = datetime.now(UTC)
-    sensor_key.is_active = True
+    sensor_key.key_hash = key_hash  # type: ignore[assignment]
+    sensor_key.rotated_at = datetime.now(UTC)  # type: ignore[assignment]
+    sensor_key.is_active = True  # type: ignore[assignment]
 
     _audit("sensor.rotate_key", sensor_id, {"previous_hash": sensor_key.key_hash[:8]})
     db.session.commit()
@@ -153,7 +153,7 @@ def rotate_key(sensor_id: str):
 
 
 @provisioning_bp.route("/<sensor_id>/key-status", methods=["GET"])
-@require_permission(Permission.ADMIN)
+@require_auth(Permission.ADMIN)
 def key_status(sensor_id: str):
     """Get key metadata for a sensor (no secrets returned)."""
     sensor_key = db.session.get(SensorKey, sensor_id)
@@ -179,7 +179,7 @@ def key_status(sensor_id: str):
 
 
 @provisioning_bp.route("/<sensor_id>/key", methods=["DELETE"])
-@require_permission(Permission.ADMIN)
+@require_auth(Permission.ADMIN)
 def revoke_key(sensor_id: str):
     """
     Revoke a sensor's HMAC key.
@@ -191,7 +191,7 @@ def revoke_key(sensor_id: str):
     if not sensor_key:
         return jsonify({"error": f"Sensor '{sensor_id}' has no provisioned key"}), 404
 
-    sensor_key.is_active = False
+    sensor_key.is_active = False  # type: ignore[assignment]
 
     _audit("sensor.revoke_key", sensor_id)
     db.session.commit()
