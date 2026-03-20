@@ -331,6 +331,29 @@ def run_lab_action(
     )
 
 
+def run_tests(project_root: Path, python_executable: str | None = None) -> CommandResult:
+    """Run the pytest suite and return a summarized result."""
+    # Ensure pytest is available
+    pytest_bin = shutil.which("pytest") or "pytest"
+    if python_executable:
+        args = [python_executable, "-m", "pytest", "tests/"]
+    else:
+        args = [pytest_bin, "tests/"]
+
+    result = _run_command(args, cwd=project_root, timeout=300)
+    summary = "All tests passed." if result.ok else "Some tests failed or errored."
+    if not result.ok and "collected 0 items" in result.stdout:
+        summary = "No tests found in tests/."
+
+    return CommandResult(
+        ok=result.ok,
+        summary=summary,
+        returncode=result.returncode,
+        stdout=result.stdout,
+        stderr=result.stderr,
+    )
+
+
 def open_dashboard_gui(url: str | None) -> CommandResult:
     """Open the controller/dashboard URL with the platform GUI launcher."""
     target_url = normalize_controller_url(url or DEFAULT_LAB_CONTROLLER_URL)

@@ -71,6 +71,7 @@ from sensor.tui.setup_wizard import (
     open_dashboard_gui,
     request_sensor_token,
     run_lab_action,
+    run_tests,
     set_interface_monitor_mode,
     upsert_env_file,
 )
@@ -380,6 +381,7 @@ class SetupScreen(Screen):
                         yield Button("Lab Status", id="btn-lab-status")
                         yield Button("Gen Lab Tokens", id="btn-lab-gen")
                     with Horizontal(classes="quick-actions"):
+                        yield Button("Run Tests", id="btn-run-tests")
                         yield Button("Open GUI", id="btn-open-gui")
                     yield Label("", id="backend-status")
                     yield Label("", id="lab-status")
@@ -575,6 +577,13 @@ class SetupScreen(Screen):
                 ),
                 self._handle_lab_action,
             )
+        elif event.button.id == "btn-run-tests":
+            self._run_setup_task(
+                "#backend-status",
+                "Running pytest suite…",
+                lambda: run_tests(PROJECT_ROOT),
+                self._handle_test_result,
+            )
         elif event.button.id == "btn-open-gui":
             controller_url = self._controller_url()
             self._run_setup_task(
@@ -612,6 +621,17 @@ class SetupScreen(Screen):
                     result,
                 ),
             )
+
+    def _handle_test_result(self, result: CommandResult) -> None:
+        """Render the pytest outcome to the backend status area."""
+        color = "green" if result.ok else "red"
+        status = f"[{color}]TESTS: {result.summary}[/{color}]"
+        self.query_one("#backend-status", Label).update(status)
+        app = self._sentinel_app()
+        if not result.ok:
+            app.app_state.push_log(f"[Error] Pytest failed:\n{result.stderr or result.stdout}")
+        else:
+            app.app_state.push_log("[System] All tests passed.")
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "chk-geo":
