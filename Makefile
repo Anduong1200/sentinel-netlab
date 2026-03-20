@@ -1,7 +1,7 @@
 # Sentinel NetLab - Makefile
 # Single entry point for all build/test/deploy operations
 
-.PHONY: help install dev test lint security docker clean compose-check
+.PHONY: help install dev test test-local test-replay lint lint-check lint-replay typecheck typecheck-replay-strict format format-check security bandit bandit-check audit docker clean compose-check quality-check ci-replay
 
 PYTHON := python
 VENV := venv
@@ -13,6 +13,15 @@ endif
 PIP := $(VENV_BIN)/pip
 PYTEST := $(VENV_BIN)/pytest
 VENV_PYTHON := $(VENV_BIN)/python
+RUFF := $(shell if [ -x "$(VENV_BIN)/ruff" ]; then echo "$(VENV_BIN)/ruff"; else echo "ruff"; fi)
+MYPY := $(shell if [ -x "$(VENV_BIN)/mypy" ]; then echo "$(VENV_BIN)/mypy"; else echo "mypy"; fi)
+BANDIT := $(shell if [ -x "$(VENV_BIN)/bandit" ]; then echo "$(VENV_BIN)/bandit"; else echo "bandit"; fi)
+PIP_AUDIT := $(shell if [ -x "$(VENV_BIN)/pip-audit" ]; then echo "$(VENV_BIN)/pip-audit"; else echo "pip-audit"; fi)
+# Replay/mock regression files kept strict to guarantee CI-safe, hardware-free validation.
+REPLAY_TYPECHECK_FILES := sensor/capture_driver.py sensor/replay/pcap_reader.py tests/unit/test_capture_driver.py tests/integration/test_scenarios.py tests/detectors/test_pcap_regression.py
+REPLAY_TEST_FILES := tests/unit/test_capture_driver.py tests/integration/test_scenarios.py tests/detectors/test_pcap_regression.py
+REPLAY_SOURCE_DIRS := sensor controller common algos ml dashboard
+REPLAY_BANDIT_EXCLUDES := tests,notebooks,tools,examples
 # Prefer Docker Compose v2 (`docker compose`), fallback to legacy (`docker-compose`).
 DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo ""; fi)
 LAB_ENV_FILE := --env-file .env.lab
@@ -31,15 +40,22 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test         Run all tests"
+	@echo "  make test-local   Run all tests without Docker"
 	@echo "  make test-unit    Run unit tests only"
 	@echo "  make test-int     Run integration tests"
+	@echo "  make test-replay  Run Mock/PCAP replay regression suite"
 	@echo "  make lint         Run linter (ruff)"
+	@echo "  make lint-replay  Lint replay/mock regression files"
 	@echo "  make typecheck    Run mypy type checker"
+	@echo "  make typecheck-replay-strict  Run strict mypy on replay/mock stack"
+	@echo "  make quality-check  Run lint, format, and type checks"
 	@echo ""
 	@echo "Security:"
 	@echo "  make security     Run all security scans"
 	@echo "  make bandit       Run Bandit SAST"
+	@echo "  make bandit-check Run Bandit SAST in fail-fast mode"
 	@echo "  make audit        Run pip-audit"
+	@echo "  make ci-replay    Run the replay/security gate used in CI"
 	@echo ""
 	@echo "Docker:"
 	@echo "  make docker       Build all Docker images"
@@ -76,6 +92,9 @@ requirements-dev.txt:
 test: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/ -v
 
+test-local:
+	$(PYTEST) tests/ -v
+
 test-unit: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/unit -v
 
@@ -85,35 +104,54 @@ test-int: compose-check
 test-cov: compose-check
 	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml run --rm mock-sensor pytest tests/ --cov=. --cov-report=html
 
+test-replay:
+	$(PYTEST) $(REPLAY_TEST_FILES) -q
+
 
 # =============================================================================
 # LINTING
 # =============================================================================
 
 lint:
-	ruff check sensor/ controller/ tools/ --fix
+	$(RUFF) check . --fix
 
 lint-check:
-	ruff check sensor/ controller/ tools/
+	$(RUFF) check .
+
+lint-replay:
+	$(RUFF) check $(REPLAY_TYPECHECK_FILES)
 
 typecheck:
-	mypy sensor/ controller/ --ignore-missing-imports
+	$(MYPY) .
+
+typecheck-replay-strict:
+	$(MYPY) --strict --follow-imports=silent $(REPLAY_TYPECHECK_FILES)
 
 format:
-	ruff format sensor/ controller/ tools/
+	$(RUFF) format .
+
+format-check:
+	$(RUFF) format --check .
+
+quality-check: lint-check format-check typecheck
+
+ci-replay: lint-replay typecheck-replay-strict test-replay bandit-check
 
 # =============================================================================
 # SECURITY
 # =============================================================================
 
-security: bandit audit
+security: bandit-check audit
+
+bandit-check:
+	$(BANDIT) -r $(REPLAY_SOURCE_DIRS) -ll -x $(REPLAY_BANDIT_EXCLUDES)
 
 bandit:
-	bandit -r sensor/ controller/ -f json -o bandit_report.json --severity-level medium
+	$(BANDIT) -r $(REPLAY_SOURCE_DIRS) -f json -o bandit_report.json --severity-level medium -x $(REPLAY_BANDIT_EXCLUDES)
 	@echo "Report: bandit_report.json"
 
 audit:
-	pip-audit -r requirements.txt --format json > pip_audit_report.json || true
+	$(PIP_AUDIT) --format json > pip_audit_report.json || true
 	@echo "Report: pip_audit_report.json"
 
 secret-scan:

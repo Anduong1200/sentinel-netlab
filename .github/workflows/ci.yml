@@ -49,9 +49,7 @@ jobs:
           pip install bandit pip-audit
 
       - name: Run Bandit (expanded)
-        run: |
-          bandit -r controller sensor common algos ml dashboard -ll \
-            -x tests,notebooks,tools,examples
+        run: make bandit-check
 
       - name: Python dependency vuln audit (pip-audit)
         run: |
@@ -91,16 +89,16 @@ jobs:
           pip install ".[dev,controller,sensor,dashboard]"
 
       - name: Ruff lint
-        run: |
-          ruff check --output-format=github .
+        run: make lint-check
 
       - name: Ruff format check
-        run: |
-          ruff format --check .
+        run: make format-check
 
       - name: Mypy type check
-        run: |
-          mypy .
+        run: make typecheck
+
+      - name: Replay strict type gate
+        run: make typecheck-replay-strict
 
       - name: Schema drift check (Alembic)
         run: |
@@ -229,6 +227,9 @@ jobs:
           pytest tests/unit tests/integration \
             --cov=controller --cov=sensor --cov=common --cov=algos \
             --cov-report=xml --cov-report=term-missing
+
+      - name: Replay regression suite
+        run: make test-replay
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

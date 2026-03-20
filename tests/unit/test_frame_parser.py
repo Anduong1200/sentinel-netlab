@@ -116,6 +116,26 @@ class TestFrameParser:
         # After 10 seconds (> 5s default window), should not be duplicate
         assert not parser.is_duplicate(frame2, window_sec=5.0)
 
+    def test_deauth_frames_are_not_deduplicated(self, parser):
+        """Repeated deauths must reach flood detectors unchanged."""
+        frame1 = ParsedFrame(
+            timestamp=1000.0,
+            bssid="AA:BB:CC:DD:EE:FF",
+            dst_addr="FF:FF:FF:FF:FF:FF",
+            seq_num=0,
+            frame_type="deauth",
+        )
+        frame2 = ParsedFrame(
+            timestamp=1000.1,
+            bssid="AA:BB:CC:DD:EE:FF",
+            dst_addr="FF:FF:FF:FF:FF:FF",
+            seq_num=0,
+            frame_type="deauth",
+        )
+
+        assert not parser.is_duplicate(frame1)
+        assert not parser.is_duplicate(frame2)
+
     def _create_mock_beacon(self, bssid: bytes, ssid: bytes) -> bytes:
         """Create simplified mock beacon frame"""
         import struct

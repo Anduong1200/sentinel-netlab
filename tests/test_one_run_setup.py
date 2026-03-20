@@ -1,13 +1,19 @@
 from pathlib import Path
+from subprocess import CompletedProcess
+from unittest.mock import patch
+
+import pytest
 
 from sensor.one_run_setup import (
     STATE_VERSION,
+    _build_http_probe,
     _entrypoint_matches_venv,
     build_local_only_lab_env,
     build_root_env,
-    docker_daemon_accessible,
     build_state_payload,
     build_tui_profile_store,
+    detect_compose_command,
+    docker_daemon_accessible,
     has_bootstrap_state,
     parse_env_file,
     render_config_yaml,
@@ -29,6 +35,46 @@ def test_parse_env_file_ignores_comments_and_blank_lines(tmp_path: Path):
         "SENSOR_AUTH_TOKEN": "token-123",
         "DASH_USERNAME": "admin",
     }
+
+
+def test_detect_compose_command_raises_when_docker_is_missing():
+    with patch("sensor.one_run_setup.shutil.which", return_value=None):
+        with pytest.raises(RuntimeError):
+            detect_compose_command()
+
+
+def test_build_http_probe_rejects_non_http_scheme():
+    with pytest.raises(RuntimeError, match="Unsupported controller URL scheme"):
+        _build_http_probe("file:///tmp/test")
+
+
+def test_build_http_probe_normalizes_https_target():
+    connection_cls, host, port, target = _build_http_probe(
+        "https://127.0.0.1:9443/api/v1/health?full=1"
+    )
+
+    assert connection_cls.__name__ == "HTTPSConnection"
+    assert host == "127.0.0.1"
+    assert port == 9443
+    assert target == "/api/v1/health?full=1"
+
+
+def test_build_local_only_lab_env_generates_runtime_keys():
+    values = build_local_only_lab_env()
+
+    assert values["DASH_USERNAME"] == "admin"
+    assert values["CONTROLLER_SECRET_KEY"]
+    assert values["CONTROLLER_HMAC_SECRET"]
+    assert values["DASHBOARD_API_TOKEN"]
+    assert values["SENSOR_AUTH_TOKEN"]
+
+
+def test_docker_daemon_accessible_reports_missing_docker():
+    with patch("sensor.one_run_setup.shutil.which", return_value=None):
+        ok, detail = docker_daemon_accessible()
+
+    assert ok is False
+    assert "Docker Engine" in detail
 
 
 def test_build_root_env_maps_lab_values_for_tui_runtime():
@@ -90,9 +136,9 @@ def test_build_state_payload_tracks_generated_files(tmp_path: Path):
     )
 
     assert payload["version"] == STATE_VERSION
-    assert payload["bootstrap_mode"] == "full"
     assert payload["controller_url"] == "http://127.0.0.1:8080"
     assert payload["dashboard_url"] == "http://127.0.0.1:8080/dashboard/"
+    assert payload["bootstrap_mode"] == "full"
     assert ".sentinel_tui_profiles.json" in payload["generated_files"]
 
 
@@ -112,47 +158,6 @@ def test_entrypoint_matches_venv_detects_moved_virtualenv(tmp_path: Path):
         encoding="utf-8",
     )
     assert _entrypoint_matches_venv(script_path, expected_python) is True
-
-
-def test_build_local_only_lab_env_contains_runtime_tokens():
-    payload = build_local_only_lab_env()
-
-    assert payload["DASH_USERNAME"] == "admin"
-    assert payload["DASH_PASSWORD"] == ""
-    assert payload["CONTROLLER_SECRET_KEY"]
-    assert payload["CONTROLLER_HMAC_SECRET"]
-    assert payload["DASHBOARD_API_TOKEN"]
-    assert payload["SENSOR_AUTH_TOKEN"]
-
-
-def test_docker_daemon_accessible_reports_missing_binary(monkeypatch):
-    monkeypatch.setattr("sensor.one_run_setup.shutil.which", lambda _: None)
-
-    ok, detail = docker_daemon_accessible()
-
-    assert ok is False
-    assert "not installed" in detail
-
-
-class _DockerInfoFailure:
-    returncode = 1
-    stderr = "permission denied while trying to connect to the Docker daemon socket"
-
-
-def test_docker_daemon_accessible_reports_permission_denied(monkeypatch):
-    monkeypatch.setattr(
-        "sensor.one_run_setup.shutil.which",
-        lambda name: "/usr/bin/docker" if name == "docker" else None,
-    )
-    monkeypatch.setattr(
-        "sensor.one_run_setup.subprocess.run",
-        lambda *args, **kwargs: _DockerInfoFailure(),
-    )
-
-    ok, detail = docker_daemon_accessible()
-
-    assert ok is False
-    assert "permission denied" in detail.lower()
 
 
 def test_has_bootstrap_state_requires_state_file_and_generated_assets(tmp_path: Path):

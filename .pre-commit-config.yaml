@@ -1,26 +1,44 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.7
     hooks:
-      - id: black
-        language_version: python3
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
 
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+  - repo: local
     hooks:
-      - id: isort
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8-docstrings]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-requests]
+      - id: mypy-replay-strict
+        name: mypy replay strict
+        entry: mypy
+        language: system
+        pass_filenames: false
+        args:
+          [
+            "--strict",
+            "--follow-imports=silent",
+            "sensor/capture_driver.py",
+            "sensor/replay/pcap_reader.py",
+            "tests/unit/test_capture_driver.py",
+            "tests/integration/test_scenarios.py",
+            "tests/detectors/test_pcap_regression.py",
+          ]
+      - id: bandit-check
+        name: bandit security scan
+        entry: bandit
+        language: system
+        pass_filenames: false
+        args:
+          [
+            "-r",
+            "sensor",
+            "controller",
+            "common",
+            "algos",
+            "-ll",
+            "-x",
+            "tests,notebooks,tools,examples",
+          ]
 
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.4.0

@@ -11,6 +11,7 @@ Run with: pytest tests/detectors/test_pcap_regression.py -v
 import json
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -30,7 +31,7 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data" / "pcap_annotated"
 
 
 @pytest.fixture
-def evil_twin_detector():
+def evil_twin_detector() -> AdvancedEvilTwinDetector:
     """Create Evil Twin detector with fast confirmation for testing."""
     config = EvilTwinConfig(
         confirmation_window_seconds=0,  # Immediate alerts for testing
@@ -40,7 +41,7 @@ def evil_twin_detector():
 
 
 @pytest.fixture
-def dos_detector():
+def dos_detector() -> DeauthFloodDetector:
     """Create DoS detector with test-friendly settings."""
     return DeauthFloodDetector(
         threshold_per_sec=5.0,
@@ -50,33 +51,33 @@ def dos_detector():
 
 
 @pytest.fixture
-def evil_twin_manifest():
+def evil_twin_manifest() -> dict[str, Any]:
     """Load evil twin manifest."""
     manifest_path = DATA_DIR / "sample_evil_twin_manifest.json"
     if not manifest_path.exists():
         pytest.skip(f"Manifest not found: {manifest_path}")
     with open(manifest_path) as f:
-        return json.load(f)
+        return cast(dict[str, Any], json.load(f))
 
 
 @pytest.fixture
-def deauth_manifest():
+def deauth_manifest() -> dict[str, Any]:
     """Load deauth manifest."""
     manifest_path = DATA_DIR / "sample_deauth_manifest.json"
     if not manifest_path.exists():
         pytest.skip(f"Manifest not found: {manifest_path}")
     with open(manifest_path) as f:
-        return json.load(f)
+        return cast(dict[str, Any], json.load(f))
 
 
 @pytest.fixture
-def benign_manifest():
+def benign_manifest() -> dict[str, Any]:
     """Load benign manifest."""
     manifest_path = DATA_DIR / "sample_benign_manifest.json"
     if not manifest_path.exists():
         pytest.skip(f"Manifest not found: {manifest_path}")
     with open(manifest_path) as f:
-        return json.load(f)
+        return cast(dict[str, Any], json.load(f))
 
 
 # =============================================================================
@@ -88,8 +89,10 @@ class TestEvilTwinRegression:
     """Regression tests for Evil Twin detector using golden PCAPs."""
 
     def test_detects_evil_twin_from_manifest(
-        self, evil_twin_detector, evil_twin_manifest
-    ):
+        self,
+        evil_twin_detector: AdvancedEvilTwinDetector,
+        evil_twin_manifest: dict[str, Any],
+    ) -> None:
         """
         Replay evil twin manifest and verify detector fires.
         Expected: At least one alert with SSID 'CorpNet'.
@@ -121,7 +124,11 @@ class TestEvilTwinRegression:
         assert "DUPLICATE_SSID" in alert.reason_codes
         assert alert.severity in ["MEDIUM", "HIGH", "CRITICAL"]
 
-    def test_no_false_positives_on_benign(self, evil_twin_detector, benign_manifest):
+    def test_no_false_positives_on_benign(
+        self,
+        evil_twin_detector: AdvancedEvilTwinDetector,
+        benign_manifest: dict[str, Any],
+    ) -> None:
         """
         Replay benign manifest and verify NO alerts fire.
         Expected: Zero alerts.
@@ -157,7 +164,11 @@ class TestEvilTwinRegression:
 class TestDeauthFloodRegression:
     """Regression tests for Deauth Flood detector using golden PCAPs."""
 
-    def test_detects_deauth_flood_from_manifest(self, dos_detector, deauth_manifest):
+    def test_detects_deauth_flood_from_manifest(
+        self,
+        dos_detector: DeauthFloodDetector,
+        deauth_manifest: dict[str, Any],
+    ) -> None:
         """
         Replay deauth manifest and verify detector fires.
         Expected: At least one alert.
@@ -199,7 +210,7 @@ class TestManifestIntegrity:
             "sample_benign_manifest.json",
         ],
     )
-    def test_manifest_has_required_fields(self, manifest_name):
+    def test_manifest_has_required_fields(self, manifest_name: str) -> None:
         """Verify manifests have required structure."""
         manifest_path = DATA_DIR / manifest_name
         if not manifest_path.exists():

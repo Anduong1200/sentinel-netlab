@@ -6,6 +6,8 @@ Sentinel NetLab supports generating synthetic attack traffic and replaying PCAP 
 
 The `tests/data/generate_pcap.py` script acts as a mock attack generator. It creates synthetic 802.11 PCAP files containing both baseline (normal) traffic and various attack vectors. The `PcapCaptureDriver` can then mimic a live WiFi interface by reading these frames and feeding them into the Sensor Controller pipeline.
 
+Together with `MockCaptureDriver`, this lets the replay pipeline run end-to-end in CI without requiring monitor mode or physical WiFi hardware. The repository exposes the same checks through `Makefile` targets so local validation and GitHub Actions stay aligned.
+
 ---
 
 ## 1. Generating Mock Attacks (Golden PCAPs)
@@ -42,8 +44,17 @@ python tests/data/generate_pcap.py --scenario beacon_flood --output tests/data/b
 The integration test suite utilizes these generated PCAPs to verify that the detection logic in the `algos/` directory correctly identifies the threats.
 
 ```bash
-# Run all scenario tests
+# Run the full hardware-free replay regression suite
+make test-replay
+
+# Or run the scenario tests directly
 pytest tests/integration/test_scenarios.py -v
+```
+
+For the strict typing gate used by CI on the replay/mock stack:
+
+```bash
+make typecheck-replay-strict
 ```
 
 *(Note: Ensure you have generated the `golden_vectors.pcap` file before running the integration tests, or use the `MockCaptureDriver` depending on the test suite configuration.)*
@@ -65,8 +76,23 @@ capture:
 Then run the sensor:
 
 ```bash
-# Ensure you are using the correct entry point (e.g., sensor_cli.py or cli.py)
-python sensor/sensor_cli.py --config config.yaml
+# Ensure you are using the current CLI entry point
+python sensor/cli.py --config-file config.yaml
 ```
 
 When running in this mode, the sensor will process the synthetic frames exactly as if they were sniffed over the air, allowing you to observe the risk scoring and alert generation in real-time.
+
+## 4. CI Usage
+
+Each pull request can enforce the replay stack without hardware by running:
+
+```bash
+make ci-replay
+```
+
+This bundles:
+
+- `ruff` linting for the replay/mock files
+- `mypy --strict` on the replay/mock stack
+- PCAP regression tests for `PcapCaptureDriver` and `MockCaptureDriver`
+- `bandit` static security scanning

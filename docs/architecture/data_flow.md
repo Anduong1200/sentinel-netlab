@@ -59,3 +59,38 @@ dataflow
 ## 4. Visualization Phase (Dashboard)
 - **API**: Frontend polls `/api/v1/telemetry` and `/api/v1/alerts`.
 - **Metrics**: Prometheus metrics exposed at `/metrics` for operational monitoring.
+
+## 5. Proposed Enterprise Evolution
+
+### Decision Context
+- The current design already separates the edge `Sensor` role from the central `Controller` role.
+- Sensor transport includes local journaling plus exponential backoff, which is a strong baseline for unreliable branch or campus networks.
+- The main scaling pressure now shifts from transport reliability to central ingestion throughput.
+
+### Problem Statement
+- In the current flow, event ingestion is still coupled to the Controller API path.
+- At enterprise scale, the API can become a bottleneck for connection handling, burst absorption, and retry amplification when many sensors reconnect at once.
+
+### Proposed Decision
+- Keep the Controller API focused on control-plane concerns such as sensor registration, policy distribution, heartbeat, and operator workflows.
+- Move the telemetry data plane to an asynchronous ingestion path backed by a durable message broker.
+
+### Recommended Flow
+
+```text
+Sensor -> local durable spool -> message broker -> ingest workers -> analytics/storage
+```
+
+### Rationale
+- A broker absorbs burst traffic better than a synchronous API boundary.
+- Ingest workers can scale horizontally without forcing the control plane to scale at the same rate.
+- Backpressure becomes explicit and measurable through queue depth and consumer lag.
+- Replay is easier when parsers, rules, or enrichment logic change.
+
+### Candidate Platforms
+- **Kafka / Redpanda**: Better fit for high-throughput, replay-heavy pipelines.
+- **RabbitMQ**: Better fit for simpler routing patterns and moderate throughput requirements.
+
+### Reliability Note
+- Claims such as "zero data loss" should be reserved for deployments that combine durable local spooling, clear acknowledgment semantics, and idempotent downstream consumers.
+- Otherwise, the more accurate guarantee is minimized data loss under network disruption.

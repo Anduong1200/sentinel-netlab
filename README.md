@@ -175,8 +175,8 @@ python one_run.py --open-browser
 ```
 
 The bootstrap writes `run_tui.sh`, `open_dashboard.sh`, `.env`, `config.yaml`, and `.sentinel_tui_profiles.json` for you.
+If Docker/Compose is missing, or Docker is installed but your current shell cannot reach the daemon yet, it falls back to a TUI-only mock bootstrap and tells you how to rerun the full lab later.
 After that, your usual entrypoint is `./run_tui.sh` and the dashboard lives at [http://127.0.0.1:8080/dashboard/](http://127.0.0.1:8080/dashboard/).
-If Docker Compose is missing, or Docker is installed but your current shell cannot reach the daemon yet, the bootstrap now falls back to a TUI-only mock setup and tells you how to rerun the full lab later.
 
 📖 **Full Guide**: [docs/lab/quickstart.md](docs/lab/quickstart.md)
 🔧 **Troubleshooting**: [docs/lab/troubleshooting.md](docs/lab/troubleshooting.md)

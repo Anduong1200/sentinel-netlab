@@ -142,12 +142,24 @@ def _parse_sensor_positions(raw_json: str) -> dict[str, dict[str, float]]:
     return parsed
 
 
-def init_config() -> ControllerConfig:
+def init_config(*, strict_production: bool = False) -> ControllerConfig:
     """
     Initialize configuration from environment variables.
+
+    Args:
+        strict_production: When True, raise RuntimeError for missing secrets
+            in production mode even when ``require_secret`` would normally
+            auto-generate fallback values.
     """
     env = os.getenv("ENVIRONMENT", "production").lower()
     is_prod = env == "production"
+
+    if strict_production and is_prod:
+        for key in ("CONTROLLER_SECRET_KEY", "CONTROLLER_HMAC_SECRET"):
+            if not os.getenv(key):
+                raise RuntimeError(
+                    f"CRITICAL: Missing required production secret '{key}'"
+                )
 
     # Load Secrets (Fail-Fast)
     from common.security.secrets import require_secret

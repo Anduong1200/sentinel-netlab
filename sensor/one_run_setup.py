@@ -13,6 +13,7 @@ Goal:
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import secrets
 import shutil
@@ -20,8 +21,7 @@ import subprocess
 import sys
 import textwrap
 import time
-import urllib.error
-import urllib.request
+import urllib.parse
 import webbrowser
 from pathlib import Path
 
@@ -126,19 +126,51 @@ def install_runtime(root: Path, venv_python: Path) -> None:
     )
 
 
+def _build_http_probe(
+    url: str,
+) -> tuple[type[http.client.HTTPConnection], str, int | None, str]:
+    """Normalize a URL into an HTTPConnection target and reject unsafe schemes."""
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise RuntimeError(
+            f"Unsupported controller URL scheme for bootstrap probe: {parsed.scheme or '<empty>'}"
+        )
+    if not parsed.hostname:
+        raise RuntimeError(f"Invalid controller URL for bootstrap probe: {url}")
+
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+
+    connection_cls: type[http.client.HTTPConnection]
+    connection_cls = (
+        http.client.HTTPSConnection
+        if parsed.scheme == "https"
+        else http.client.HTTPConnection
+    )
+    return connection_cls, parsed.hostname, parsed.port, path
+
+
 def wait_for_http(url: str, *, timeout_sec: int = 180, interval_sec: int = 3) -> None:
     """Wait until an HTTP endpoint becomes available."""
+    connection_cls, host, port, target = _build_http_probe(url)
     deadline = time.time() + timeout_sec
     last_error = "not started"
     while time.time() < deadline:
+        connection = None
         try:
-            with urllib.request.urlopen(url, timeout=5) as response:  # noqa: S310
-                if response.status < 500:
-                    return
-        except urllib.error.URLError as exc:
-            last_error = str(exc.reason)
+            connection = connection_cls(host, port, timeout=5)
+            connection.request("GET", target)
+            response = connection.getresponse()
+            response.read()
+            if response.status < 500:
+                return
+            last_error = f"HTTP {response.status}"
         except Exception as exc:  # noqa: BLE001
             last_error = str(exc)
+        finally:
+            if connection is not None:
+                connection.close()
         time.sleep(interval_sec)
 
     raise RuntimeError(f"Timed out waiting for {url}: {last_error}")

@@ -423,6 +423,11 @@ class FrameParser:
 
     def is_duplicate(self, frame: ParsedFrame, window_sec: float = 5.0) -> bool:
         """Check if frame is duplicate within time window"""
+        # Flood-style management attacks intentionally repeat near-identical frames.
+        # Deduplicating them would suppress the very signal our detectors rely on.
+        if frame.frame_type in {"deauth", "disassoc"}:
+            return False
+
         key = f"{frame.bssid}_{frame.seq_num}_{frame.frame_type}_{frame.ssid}"
         now = frame.timestamp
 

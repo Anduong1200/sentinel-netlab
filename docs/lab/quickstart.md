@@ -50,7 +50,7 @@ What this does for you:
 - seeds the demo scenario on the first run
 - generates runtime tokens for the dashboard and TUI
 - writes local helper files: `.env`, `config.yaml`, `.sentinel_tui_profiles.json`, `run_tui.sh`, `open_dashboard.sh`
-- if Docker Compose is unavailable, or Docker is installed but your current shell cannot access the daemon yet, it still prepares a TUI-only mock bundle so you can keep working and rerun the full lab later
+- falls back to a TUI-only mock bootstrap if Docker/Compose is missing or your shell cannot reach the Docker daemon yet
 
 After the first bootstrap, your normal entrypoints are:
 

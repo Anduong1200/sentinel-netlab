@@ -1,0 +1,826 @@
+Trò chuyện với Gemini
+Bạn đã nói
+
+tool nay chay 24/7 hay sao, neu nhu vay co co che nao khac phuc su co bat thuong khi sensor, controller hay thu gi do dung lai khong
+Gemini đã nói
+
+Đúng vậy, hệ thống Sentinel NetLab được thiết kế để chạy liên tục 24/7 và có các cơ chế tự phục hồi (Self-Healing) ở nhiều cấp độ khác nhau để khắc phục sự cố bất thường (như crash, treo, hoặc rớt kết nối mạng/phần cứng):
+
+1. Cấp độ Process / Service (Quản lý tiến trình)
+
+    Sensor (Edge): Được quản lý bởi Systemd với cấu hình tự động khởi động lại khi có lỗi (Restart=on-failure). Để tránh tình trạng khởi động lại liên tục vô tận (restart storms), hệ thống áp dụng cơ chế chờ (RestartSec=5s) và giới hạn số lần khởi động lại (StartLimitIntervalSec=300 và StartLimitBurst=3).
+
+    Controller / Dashboard (Core): Triển khai qua Docker Compose với chính sách restart: unless-stopped cho tất cả các service (API, Worker, Database, Redis, v.v.). Hệ thống cũng tích hợp các Healthchecks (kiểm tra sức khỏe) để phân biệt giữa trạng thái "đang chạy nhưng bị treo" và "đã crash".
+
+2. Cấp độ Ứng dụng (Application-Level / Fail-fast)
+
+    Thay vì chỉ dựa vào OS để khởi động lại tiến trình, ứng dụng Sensor có vòng lặp tự kiểm tra trạng thái hoạt động.
+
+    Nó sẽ liên tục kiểm tra: "Card mạng còn ở chế độ monitor (giám sát) không?" và "Có gói tin nào mới được nhận trong 30 giây qua không?". Nếu lỗi quá số lần cho phép, ứng dụng sẽ chủ động "fail-fast" (thoát tiến trình) để ép Systemd khởi động lại toàn bộ.
+
+3. Cấp độ Phần cứng (USB Watchdog)
+
+    Hệ thống có một module USBWatchdog chạy ngầm để giám sát kết nối của USB WiFi adapter.
+
+    Nếu phát hiện USB bị ngắt kết nối hoặc lỗi, nó có khả năng tự động khôi phục (Auto-recovery) bằng cách thử nạp lại driver mạng (modprobe -r và modprobe) mà không cần sự can thiệp của con người.
+
+4. Khôi phục Dữ liệu (Reliability & Spool)
+
+    Nếu kết nối mạng từ Sensor về Controller bị đứt, dữ liệu sẽ không bị mất. Sentinel sử dụng hàng đợi lưu trữ cố định (Persistent Queue) trên SQLite (Spool) để lưu tạm dữ liệu tại Sensor.
+
+    Nó có cơ chế retry với thời gian chờ tăng dần (exponential backoff) nếu việc gửi dữ liệu thất bại.
+
+    Khi có sự cố crash đột ngột trong lúc đang gửi dữ liệu (trạng thái 'inflight'), hệ thống sẽ tự động khôi phục các gói tin bị kẹt này về trạng thái chờ gửi lại ngay khi khởi động lên.
+
+Bạn đã nói
+
+len ke hoach thiet ke Text-based User Interface cho du an
+Gemini đã nói
+
+Thiết kế một Text-based User Interface (TUI) cho dự án giám sát mạng và wardriving là một bước tiến tuyệt vời, đặc biệt khi hệ thống thường chạy trên các môi trường không có giao diện đồ họa (như Raspberry Pi, máy chủ qua SSH, hoặc các hệ điều hành chuyên dụng cho penetration testing). TUI sẽ mang lại trải nghiệm giám sát theo thời gian thực trực quan ngay trong terminal.
+
+Dưới đây là kế hoạch thiết kế chi tiết cho TUI:
+1. Mục tiêu và Công nghệ cốt lõi
+
+    Mục tiêu: Cung cấp một bảng điều khiển (dashboard) trực tiếp trong terminal để theo dõi trạng thái sensor, lưu lượng mạng bắt được, và các cảnh báo an ninh mà không cần mở trình duyệt web.
+
+    Thư viện đề xuất (Python):
+
+        Textual: Framework hiện đại nhất hiện nay cho TUI bằng Python. Hỗ trợ CSS-like styling, reactive data, và async/await. Rất phù hợp để xây dựng các layout phức tạp (bảng biểu, biểu đồ log).
+
+        Rich: (Tích hợp sẵn trong Textual) Để format text màu sắc, in đậm, tạo bảng đẹp mắt trong console.
+
+2. Thiết kế Layout (Bố cục giao diện)
+
+Giao diện nên được chia thành các vùng (panels) riêng biệt để tối ưu hóa không gian hiển thị của terminal:
+
+[ Header: Thông tin Trạng thái Chung ]
+
+    Tên ứng dụng: Sentinel NetLab - Live Terminal
+
+    Sensor ID: Tên của thiết bị.
+
+    Interface: Card mạng đang sử dụng (VD: wlan0mon).
+
+    Chế độ: Live hoặc Mock Mode.
+
+    Kênh (Channel): Trạng thái channel hopping hiện tại (VD: Ch 6 (Dwell: 300ms)).
+
+[ Panel 1 (Trái): Thống kê & Phân tích (Stats) ]
+
+    Tổng số mạng độc nhất (Unique Networks).
+
+    Tổng số lượt nhìn thấy (Total Sightings).
+
+    Trạng thái Hàng đợi (Spool/Queue Backlog): Cảnh báo nếu dữ liệu chưa gửi được lên Controller.
+
+    Phân bổ bảo mật: Tỷ lệ % (hoặc số lượng) WEP, WPA2, WPA3, Open.
+
+[ Panel 2 (Phải - Rộng nhất): Bảng Dữ liệu Mạng Live ]
+
+    Một bảng (DataTable) cập nhật liên tục 10-20 mạng mới nhất.
+
+    Cột: Thời gian | BSSID | SSID | RSSI (dBm) | Kênh | Bảo mật.
+
+    Mã hóa màu sắc (Color-coding):
+
+        Bảo mật Open/WEP: Màu đỏ (Rủi ro cao).
+
+        Bảo mật WPA2/WPA3: Màu xanh (An toàn).
+
+        Tín hiệu RSSI: Xanh (> -50), Vàng (-50 đến -70), Đỏ (< -70).
+
+[ Panel 3 (Dưới cùng): Log & Cảnh báo An ninh (Alerts) ]
+
+    Khu vực hiển thị log hệ thống hoặc các cảnh báo (Event streams).
+
+    Hiển thị các phát hiện bất thường như Deauth floods, Evil Twin, hoặc lỗi hệ thống (như rớt mạng, lỗi nạp driver từ USB Watchdog).
+
+[ Footer: Phím tắt điều khiển ]
+
+    [Q] Quit | [P] Pause/Resume cập nhật | [C] Chuyển kênh thủ công | [S] Sắp xếp bảng theo RSSI/Thời gian.
+
+3. Luồng Dữ liệu (Data Integration)
+
+TUI cần lấy dữ liệu mà không làm gián đoạn luồng bắt gói tin (packet capture) của sensor chính. Có hai cách tiếp cận:
+
+    Cách 1 (Độc lập - Khuyên dùng): TUI là một tiến trình riêng (hoặc thread riêng). Nó đọc dữ liệu định kỳ (ví dụ mỗi 1 giây) từ tệp wardrive_session.json (giống như cách web dashboard đang làm) hoặc truy vấn vào SQLite Spool database để hiển thị.
+
+    Cách 2 (Tích hợp trực tiếp): Nhúng TUI vào luồng chạy của sensor/cli.py. Khi đó, Sensor Controller sẽ đẩy (push) dữ liệu qua một Queue bộ nhớ trong (in-memory queue) đến tiến trình TUI để render.
+
+4. Lộ trình triển khai (Phased Rollout)
+
+    Giai đoạn 1: Khởi tạo và Layout tĩnh
+
+        Cài đặt textual (pip install textual).
+
+        Xây dựng khung giao diện với Header, Footer và các khung viền (Border) cho các Panels. Ở bước này, dùng dữ liệu giả (mock data) để căn chỉnh kích thước.
+
+    Giai đoạn 2: Tích hợp Dữ liệu Động
+
+        Viết worker chạy ngầm (sử dụng async timer của Textual) để đọc file wardrive_session.json mỗi giây.
+
+        Cập nhật các chỉ số (Stats) và đổ dữ liệu vào DataTable.
+
+    Giai đoạn 3: Màu sắc và Tính tương tác
+
+        Thêm logic tô màu cho cột RSSI và Security.
+
+        Thêm tính năng bắt phím (key bindings) để người dùng có thể cuộn (scroll) bảng dữ liệu hoặc dừng màn hình đang chạy liên tục để xem xét một BSSID cụ thể.
+
+    Giai đoạn 4: Tích hợp Log & Alerts
+
+        Kết nối TUI với hệ thống logging của sensor để hiển thị các dòng log mức INFO và WARNING theo thời gian thực ở Panel dưới cùng.
+
+Cách tiếp cận bằng Textual này sẽ giúp bạn dễ dàng bê nguyên các logic lấy dữ liệu (đã xử lý ở web dashboard) sang môi trường dòng lệnh một cách mượt mà và tiêu tốn cực kỳ ít tài nguyên CPU.
+Bạn đã nói
+
+toi dang co mot van de la, neu setting lai toan bo tu dau se mat cong. va lai thi toi dang muon Text-based User Interface de su dung de hon. giong nhu se cho toi chon 1 trong 2 mode la interactive real time (thuc chien va gui), hien tai toi muon su dung va test toan bo cac tinh nang va theo doi dieu khien bang Text-based User Interface nen nghien cuu thiet ke bao trum toan bo he thong giup toi
+Gemini đã nói
+
+Việc bạn muốn xây dựng một Text-based User Interface (TUI) bao trùm toàn bộ hệ thống để làm một "Control Panel" (Bảng điều khiển trung tâm) là một hướng đi cực kỳ chính xác và chuyên nghiệp. Nó giải quyết triệt để vấn đề phải gõ đi gõ lại các câu lệnh CLI dài ngoằng (--sensor-id, --iface, --mock-mode, v.v.) và giúp bạn bao quát toàn bộ hệ thống (từ cấu hình, test, đến thực chiến) trong một màn hình duy nhất.
+
+Để TUI có thể điều khiển toàn bộ hệ thống mà không làm hỏng cấu trúc code hiện tại, chúng ta sẽ thiết kế nó như một Lớp vỏ bọc (Wrapper/Frontend) chạy đè lên SensorController.
+
+Dưới đây là bản thiết kế kiến trúc và giao diện chi tiết cho ứng dụng TUI toàn diện này (sử dụng framework Textual của Python).
+1. Kiến trúc Tích hợp (Integration Architecture)
+
+Thay vì tạo một file script riêng biệt chỉ để đọc log, TUI sẽ là tiến trình chính (Main Process).
+Trình tự hoạt động:
+
+    Người dùng chạy python -m sensor.tui
+
+    TUI load các file .env và config.yaml mặc định lên giao diện.
+
+    Người dùng tương tác trên TUI để chọn Mode (Thực chiến / Test).
+
+    Khi bấm START, TUI sẽ sinh ra object Config, khởi tạo SensorController(config) và chạy nó trong một Background Thread (Worker Thread) để không làm đơ giao diện.
+
+    SensorController chạy ngầm, đẩy dữ liệu (Logs, Alerts, Stats, Wardrive data) vào các hàng đợi (Queues) dùng chung.
+
+    TUI đọc Queues này mỗi 0.5s và cập nhật lên màn hình.
+
+2. Thiết kế Bố cục Giao diện (Screen Flow & Layout)
+
+Ứng dụng TUI sẽ hoạt động theo cơ chế nhiều màn hình (Multiple Screens).
+Màn hình 1: Khởi tạo & Cấu hình (Setup Screen)
+
+Mục đích: Thay thế hoàn toàn việc gõ CLI flags. Cho phép chọn Mode và thiết lập thông số nhanh chóng.
+
+    Header: Logo ASCII SENTINEL NETLAB
+
+    Radio Buttons chọn Chế độ hoạt động (Operation Mode):
+
+        [ ] Live Combat (Thực chiến): Đòi hỏi nhập Interface thật (VD: wlan0mon). Bật toàn bộ tiến trình chụp gói tin, lưu Spool và gửi lên Controller.
+
+        [ ] Mock / Test Mode: Tự động điền Interface là mock0. Dùng để test luồng dữ liệu, test UI, test DB mà không cần card WiFi thật.
+
+        [ ] PCAP Replay: Hiện ô nhập đường dẫn file .pcap để chạy lại dữ liệu mạng cũ.
+
+    Toggles (Bật/Tắt tính năng):
+
+        [x] Enable ML Boost
+
+        [ ] Enable Geo-Location
+
+        [x] Anonymize MAC/SSID (Quyền riêng tư)
+
+    Action: Nút [ START SENSOR ] (Phím tắt: F5)
+
+Màn hình 2: Bảng Điều Khiển Trung Tâm (Main Dashboard)
+
+Mục đích: Hiển thị khi Sensor đang chạy, cung cấp cái nhìn toàn cảnh về tình trạng hệ thống và mạng.
+
+Được chia làm 4 phân vùng (Panels):
+
+    [Panel Trái] System Health & Spool (Trạng thái Hệ thống):
+
+        CPU/RAM Usage: % sử dụng.
+
+        USB Watchdog: Connected (wlan0mon) hoặc CẢNH BÁO: Mất kết nối!.
+
+        Spool Queue (Hàng đợi lưu trữ): Rất quan trọng để biết dữ liệu có đang bị kẹt không.
+
+            Đang kẹt: 50 batches
+
+            In-flight: 2
+
+            Dropped: 0
+
+    [Panel Giữa - Trên] Live Networks & Wardriving (Giám sát Mạng):
+
+        Bảng DataTable cuộn được hiển thị các mạng bắt được (giống như live_wardrive_viewer.py nhưng ngay trong Terminal).
+
+        Hiển thị BSSID, SSID, Kênh, Mã hóa (WEP/WPA), Tín hiệu (RSSI). Tự động tô màu WEP thành màu Đỏ (rủi ro).
+
+    [Panel Giữa - Dưới] Threat Alerts (Cảnh báo Mối đe dọa):
+
+        Khu vực chớp nháy cảnh báo đỏ khi thuật toán phát hiện tấn công.
+
+        Ví dụ: [10:45:01] 🚨 EVIL TWIN DETECTED - BSSID: AA:BB... hoặc [10:46:00] ⚠️ DEAUTH BURST.
+
+    [Panel Phải] Live Log Stream (Dòng sự kiện):
+
+        Hiển thị log hệ thống thực tế (INFO, WARNING, ERROR) được cấu hình rút gọn. Giúp bạn xem quá trình gửi dữ liệu lên Controller có bị mã lỗi HTTP 401/500 nào không.
+
+Footer: Các Phím Tắt (Hotkeys)
+
+Nằm ở mép dưới cùng màn hình để thao tác nhanh:
+
+    [F1] Xem màn hình cấu hình
+
+    [F2] Chuyển kênh WiFi thủ công (Force Hop)
+
+    [SPACE] Tạm dừng cuộn log
+
+    [Q] Graceful Shutdown (Dừng an toàn, lưu Spool, tắt tiến trình)
+
+3. Cách thức triển khai (Kế hoạch code)
+
+Bạn không cần sửa lại lõi của hệ thống, chỉ cần viết thêm một module TUI.
+
+Bước 1: Cài đặt Textual
+Bash
+
+pip install textual
+
+Bước 2: Cấu trúc thư mục mới
+Bạn nên tạo một thư mục riêng cho TUI trong sensor:
+Plaintext
+
+sensor/
+├── tui/
+│   ├── __init__.py
+│   ├── app.py           (File chạy chính: Textual App)
+│   ├── screens/         (Chứa SetupScreen, DashboardScreen)
+│   ├── widgets/         (Chứa các component như LogStream, StatsPanel)
+│   └── state_manager.py (Nơi chia sẻ dữ liệu giữa Sensor Thread và TUI Thread)
+
+Bước 3: Cơ chế kết nối (State Manager)
+Để SensorController (đang chạy ngầm) có thể báo cáo cho giao diện TUI, bạn tạo một class AppState hoặc dùng queue.Queue.
+Bạn có thể tận dụng luôn module sensor/health.py và sensor/spool.py hiện có. TUI chỉ việc định kỳ gọi health_check.get_status() và spool.stats() để render lên giao diện.
+
+Đối với Log và Wardrive Data:
+
+    Log: Cấu hình logging của Python thêm một QueueHandler để bắn các dòng log vào một Queue. TUI sẽ đọc Queue này và in ra màn hình.
+
+    Wardrive Data: TUI có thể định kỳ đọc thẳng từ file wardrive_session.json (cách dễ nhất) hoặc lấy từ bộ nhớ trong.
+
+Lợi ích của thiết kế này đối với bạn
+
+    Tiết kiệm thời gian cực lớn: Khi bật lên, bạn chỉ cần dùng phím mũi tên chọn "Mock Mode", bấm Start là hệ thống tự chạy. Chuyển sang "Live Mode" chỉ tốn 2 giây.
+
+    Theo dõi được "Nút thắt cổ chai" (Bottlenecks): Nhìn vào Panel Spool Queue, bạn sẽ thấy ngay việc cấu hình Batch Size / Upload Interval hiện tại có làm nghẽn hệ thống không.
+
+    Chuyên nghiệp: Giao diện này rất giống các công cụ Hacking/Security chuyên nghiệp (như Kismet, Metasploit console, k9s), phù hợp để mang đi trình diễn (demo) cho đồ án hoặc show cho người khác xem.
+
+Nếu bạn đồng ý với thiết kế này, tôi có thể cung cấp đoạn mã (boilerplate code) dùng framework Textual để tạo khung màn hình 1 và màn hình 2 để bạn chạy thử ngay lập tức!
+Bạn đã nói
+
+tuy thoi, cang chuyen nghiep cang dep va de su dung cho nguoi moi cang tot, nhung phuc vu muc dich cua toi chu yeu. khong can dua code, chi can dua khung hoat dong
+Gemini đã nói
+
+Dưới đây là Khung hoạt động (Operational Framework) mang phong cách của một "Trung tâm chỉ huy" (Command Center) chuyên nghiệp. Thiết kế này tập trung vào luồng thao tác của người dùng và cách giao diện tương tác với lõi hệ thống mà không cần chạm vào một dòng code nào.
+1. Luồng Trải Nghiệm Người Dùng (User Journey Flow)
+
+Luồng này được thiết kế để một người mới (newbie) có thể chạy hệ thống trong vòng 3 thao tác phím, nhưng vẫn đủ sâu để bạn (chuyên gia) kiểm soát mọi thông số.
+
+    Bước 1: Khởi động (Booting)
+
+        Người dùng gõ lệnh mở TUI.
+
+        Hệ thống tự động quét môi trường: Tìm card WiFi hiện có (ví dụ: wlan0, wlan1), kiểm tra xem Controller có đang online không, đọc cấu hình cũ từ config.yaml.
+
+    Bước 2: Màn hình Cấu hình Nhanh (Pre-flight Check)
+
+        Hiển thị một form điều hướng bằng phím mũi tên.
+
+        Người dùng chọn Profile hoạt động:
+
+            (A) Thực chiến (Live): Tự động chọn card WiFi mạnh nhất, bật ẩn danh MAC.
+
+            (B) Test Lab (Mock): Chạy giả lập, tắt cảnh báo âm thanh, bật debug log.
+
+            (C) Phân tích lại (PCAP): Yêu cầu trỏ đường dẫn file.
+
+        Bấm [ENTER] hoặc [F5] để Khởi động Sensor.
+
+    Bước 3: Màn hình Giám sát (Live Dashboard)
+
+        Giao diện chuyển ngay sang bảng điều khiển 4 phân vùng (Panels).
+
+        Dữ liệu bắt đầu nhảy liên tục theo thời gian thực (Giống hệt cảm giác xem phim hacker).
+
+        Hệ thống tự động phân loại màu sắc: Đỏ (Nguy hiểm/Tấn công), Vàng (Cảnh báo/Kẹt mạng), Xanh (An toàn/Hoạt động tốt).
+
+    Bước 4: Tương tác Nóng (Hot-actions)
+
+        Trong lúc hệ thống đang chạy, người dùng có thể bấm các phím tắt để:
+
+            [SPACE]: Tạm dừng cuộn log để đọc kỹ một lỗi.
+
+            [ M ]: Đánh dấu (Mark) một BSSID khả nghi vào danh sách theo dõi.
+
+            [ C ]: Ép card mạng đổi sang kênh (Channel) khác ngay lập tức nếu nghi ngờ có thiết bị ở kênh đó.
+
+    Bước 5: Dừng an toàn (Graceful Shutdown)
+
+        Bấm [ Q ]. Hệ thống không tắt phụt ngay lập tức.
+
+        Màn hình hiện popup: "Đang xả hàng đợi (Spool)... Đang lưu trạng thái... Đóng card mạng". Sau 2-3 giây mới trả lại terminal sạch sẽ.
+
+2. Sơ đồ Hoạt động Động (Dynamic Execution Framework)
+
+Dưới đây là cách TUI (Lớp vỏ) điều khiển SensorController (Lõi) một cách an toàn:
+Plaintext
+
+[ GIAO DIỆN TUI ]  <=================(Kênh giao tiếp)=================>  [ LÕI HỆ THỐNG (SensorController) ]
+(Chạy ở Main Thread)                                                     (Chạy ở Background Thread)
+
+1. TUI Form -----------------(Gửi tham số: Mode, Card, ML)-------------> Khởi tạo đối tượng Config
+                                                                                 |
+2. Nút Bấm [START] ----------(Lệnh: Bắt đầu tiến trình)----------------> sensor.start() (Bắt gói, Quét mạng)
+                                                                                 |
+3. TUI Timer (mỗi 0.5s) <----(Kéo dữ liệu: Tốc độ RAM, Hàng đợi Spool)-- module Health / Spool
+                        <----(Kéo dữ liệu: Mạng WiFi mới nhất)---------- module Wardrive (Memory/JSON)
+                        <----(Kéo dữ liệu: Log hệ thống / Báo cáo lỗi)-- Queue Logging nội bộ
+                                                                                 |
+4. Bảng Cảnh Báo Đỏ <--------(Đẩy sự kiện: Phát hiện Evil Twin/Deauth)-- module Alert Manager
+                                                                                 |
+5. Nút Bấm [STOP] -----------(Lệnh: Kích hoạt cờ Dừng)-----------------> sensor.stop() -> Lưu dữ liệu
+
+3. Cấu trúc Quản lý Trạng thái (State Management)
+
+Để TUI không bị "đơ" (freeze) khi Sensor xử lý khối lượng gói tin lớn, khung hoạt động sử dụng cơ chế Bất đồng bộ & Hàng đợi (Async & Queues):
+
+    Log Queue: Thay vì in trực tiếp ra màn hình terminal (làm nát giao diện), mọi hàm logger.info() hay logger.error() từ lõi hệ thống sẽ bị "hứng" lại và ném vào một ống nước (Queue). TUI sẽ thong thả hút nước từ ống này lên để in ra khung Log Panel.
+
+    Data Bus (Trạm trung chuyển): TUI duy trì một biến trạng thái bộ nhớ đệm (Memory Cache) lưu 50 mạng WiFi gần nhất. Lõi cứ việc bắt và phân tích, TUI chỉ việc vào lấy bản sao (copy) của biến này để vẽ lên bảng.
+
+4. Điểm Nhấn Chuyên Nghiệp (Professional UX/UI Traits)
+
+Để đạt được mục tiêu "Chuyên nghiệp như dân bảo mật, dễ dùng cho người mới":
+
+    Zero-Configuration (Không cần nhớ lệnh): Người mới hoàn toàn không cần biết mock0 là gì hay cờ --anonymize-ssid viết thế nào. Mọi thứ là các nút gạt (Toggles) On/Off giải thích bằng tiếng Việt/Anh trực quan.
+
+    Ngăn ngừa lỗi thao tác (Fool-proof): Nếu người dùng chọn "Thực chiến" nhưng quên cắm USB WiFi, TUI sẽ báo lỗi đỏ ngay tại màn hình Setup và không cho bấm Start, thay vì văng lỗi Python Traceback dài ngoằng.
+
+    Tập trung vào "Độ tin cậy" (Reliability Focus): Khung giao diện luôn dành một góc trang trọng nhất để hiển thị Spool Queue (Hàng đợi dữ liệu chưa gửi). Điều này giúp bạn (người phát triển) nhìn lướt qua là biết ngay cảm biến có đang bị đứt mạng với Controller hay không.
+
+    Tối giản hóa Cảnh báo (Alert Fatigue Reduction): Trong thực chiến, các thiết bị phát Probe Request liên tục. TUI sẽ gom nhóm (Debounce/Group) các cảnh báo giống nhau. Ví dụ thay vì hiện 100 dòng "Phát hiện Deauth", nó sẽ hiện "⚠️ Deauth Burst - Đang diễn ra (100+ gói)".
+
+Khung hoạt động này biến mớ script chạy nền khô khan thành một công cụ vũ khí (tooling) có hình hài, có thể dùng để đi demo, test thực địa, hoặc đóng gói phát hành cho người khác sử dụng một cách rất tự tin.
+Bạn đã nói
+
+Vậy hệ thống sensor nếu trong thưhc tế được lắp đặt ra sao, nối dây vào một máy tập trung hay nằm nhiều máy, giải quyết bài toán gì
+Gemini đã nói
+
+Dựa vào thiết kế kiến trúc của Sentinel NetLab, hệ thống này được triển khai theo mô hình phân tán (Edge - Core) thay vì tập trung vào một máy tính duy nhất.
+1. Cách thức lắp đặt trong thực tế
+
+    Phân tán nhiều Cảm biến (Sensor) ở rìa (Edge): Ứng dụng Sensor là một tiến trình rất nhẹ, thường được cài đặt trên các thiết bị nhỏ gọn, giá rẻ như Raspberry Pi (ví dụ có thể cấu hình tên là rpi-01), mini PC hoặc thiết bị nhúng. Bạn sẽ lắp đặt nhiều thiết bị này rải rác ở khắp các khu vực vật lý cần giám sát (các tầng của tòa nhà, sảnh, chi nhánh). Mỗi thiết bị sẽ được cắm một hoặc nhiều USB WiFi adapter.
+
+    Một Máy chủ tập trung (Controller/Core): Đóng vai trò là trung tâm đầu não. Máy chủ này thường là một Server mạnh hơn hoặc hạ tầng Cloud, chịu trách nhiệm chạy cụm hệ thống (Database, Worker, Redis, Dashboard, API) thông qua Docker Compose.
+
+    Kết nối qua mạng lưới, không qua cáp trực tiếp: Các Sensor không cần cắm cáp vật lý trực tiếp vào máy chủ Controller. Chúng hoạt động độc lập và đẩy dữ liệu thu thập được (telemetry) qua mạng (LAN/Internet) tới một URL đích của Controller.
+
+    Khả năng chịu lỗi kết nối: Nếu đường truyền mạng giữa Sensor và Controller bị đứt, dữ liệu không bị mất. Sensor tích hợp một hàng đợi cơ sở dữ liệu (Spool bằng SQLite) để lưu trữ tạm thời các gói tin và tự động tìm cách gửi lại (retry) khi mạng có kết nối trở lại.
+
+2. Hệ thống giải quyết bài toán gì?
+
+Việc tách rời thành nhiều Sensor phân tán giúp Sentinel NetLab giải quyết các vấn đề cốt lõi về quy mô và an ninh:
+
+    Xóa bỏ "Điểm mù" vùng phủ sóng: Tín hiệu WiFi có giới hạn vật lý (thường bị chặn bởi tường hoặc chỉ phủ được 30-50m). Một máy tính gắn card WiFi không thể nghe được gói tin tấn công ở đầu kia của tòa nhà. Rải nhiều Sensor giúp bao phủ toàn bộ không gian cần giám sát.
+
+    Tối ưu hóa tài nguyên phần cứng (Resource Optimization): Các thiết bị Sensor thường có CPU và RAM hạn chế, nên chúng chỉ chịu trách nhiệm thu thập, gom cụm dữ liệu (Batching) và nén gửi đi để tiết kiệm tài nguyên. Các tác vụ nặng nề như phân tích học máy (ML Anomaly Detection), xác thực dữ liệu và lưu trữ lịch sử dài hạn được dồn lên vai Controller.
+
+    Phân tích mối đe dọa toàn cảnh: Dữ liệu từ tất cả các điểm mù được gom về một mối. Controller sẽ chạy các quy luật (Rule-Based) và mô hình học máy trên luồng dữ liệu tổng hợp này để phát hiện các cuộc tấn công phức tạp hoặc các mẫu bất thường mà một Sensor đơn lẻ không thể nhìn ra.
+
+    Định vị vật lý (Geo-Location Triangulation): Bằng cách kết hợp dữ liệu tín hiệu từ nhiều Sensor khác nhau (với cờ --enable-geo) khi cùng bắt được một cuộc tấn công, hệ thống có thể tính toán để khoanh vùng vị trí vật lý của kẻ tấn công.
+
+Bạn có muốn tôi phác thảo cấu hình phần cứng tối thiểu cho một thiết bị Sensor (ví dụ Raspberry Pi) để có thể bắt đầu quá trình lắp đặt thử nghiệm không?
+Bạn đã nói
+
+Ai sẽ sử dụng, nếu một công ty sử dụng nhiều access point thì tool này sử dụng ra sao
+Gemini đã nói
+
+Dưới đây là chi tiết về đối tượng sử dụng hệ thống Sentinel NetLab và cách nó giải quyết bài toán trong môi trường doanh nghiệp quy mô lớn:
+1. Những ai sẽ sử dụng công cụ này?
+
+Hệ thống được thiết kế hướng tới các nhóm đối tượng chuyên môn sau:
+
+    Đội ngũ IT & Quản trị viên mạng (Network/System Admins): Sử dụng để bảo vệ hạ tầng mạng không dây của công ty. Họ cần một công cụ giám sát 24/7 để biết liệu có nhân viên nào tự ý cắm bộ phát WiFi lạ vào mạng nội bộ (Rogue AP) hoặc có ai đang cố gắng phá sóng mạng công ty hay không.
+
+    Chuyên gia Bảo mật & Pentester (Red/Blue Teams): Sử dụng trong các đợt đánh giá an ninh (audit). Thay vì cầm laptop đi rà quét thủ công (wardriving) từng tầng, họ có thể triển khai các sensor Sentinel để tự động thu thập thông tin về cấu hình bảo mật, chuẩn mã hóa (WEP/WPA), và phát hiện lỗ hổng của mạng mục tiêu theo thời gian thực.
+
+    Nhà nghiên cứu An toàn thông tin (Researchers): Nhờ việc kết hợp cả thuật toán dò tìm dựa trên luật (Rule-based) và Mô hình học máy (ML Anomaly), hệ thống này là môi trường lý tưởng để phân tích các biến thể tấn công WiFi mới hoặc hành vi mạng bất thường.
+
+2. Cách hệ thống hoạt động trong công ty có nhiều Access Point (AP)
+
+Điều quan trọng nhất cần hiểu là Sentinel NetLab hoạt động như một hệ thống giám sát thụ động (Passive WIDS). Nó không thay thế các Access Point (AP) của công ty (như Cisco, Aruba, Unifi) và cũng không cần kết nối trực tiếp vào giao diện quản lý của các AP đó.
+
+Khi một công ty có nhiều tầng và hàng chục AP, hệ thống sẽ được vận hành theo cơ chế sau:
+
+Lắng nghe thay vì Phát sóng (Monitor Mode)
+Công ty sẽ lắp đặt các thiết bị Sensor nhỏ gọn (có cắm USB WiFi hỗ trợ chế độ Monitor) tại các khu vực trọng yếu. Các card WiFi này không dùng để kết nối internet; chúng liên tục "nhảy kênh" (channel hopping) để quét toàn bộ sóng vô tuyến trong không khí. Chúng sẽ thu thập metadata của mọi gói tin bay qua lại giữa các thiết bị của nhân viên và các AP chính thức.
+
+Xây dựng "Đường cơ sở" (Baseline) của AP hợp lệ
+Để quản lý nhiều AP, Controller của hệ thống sẽ học hoặc được nạp danh sách "Đường cơ sở" (Baseline). Danh sách này bao gồm tên mạng (SSID), địa chỉ MAC (BSSID), chuẩn bảo mật, và kênh phát sóng của toàn bộ các AP chính chủ thuộc công ty.
+
+Từ nền tảng này, hệ thống sẽ giải quyết các kịch bản tấn công điển hình:
+
+    Phát hiện Access Point giả mạo (Evil Twin): Nếu một hacker lẻn vào sảnh công ty, bật một thiết bị phát sóng trùng tên mạng với công ty (ví dụ: Corp_WiFi_Guest) để lừa nhân viên đăng nhập. Các Sensor của Sentinel sẽ ngay lập tức phát hiện ra có một BSSID lạ (địa chỉ MAC không nằm trong Baseline) đang phát cùng tên mạng, hoặc phát ở cường độ sóng bất thường, và lập tức báo động đỏ.
+
+    Chống tấn công từ chối dịch vụ (Deauth Floods): Kẻ tấn công thường gửi hàng loạt gói tin ngắt kết nối (Deauthentication frames) ép các thiết bị hợp lệ rớt khỏi AP chính chủ để bắt chuỗi bắt tay (Handshake) hoặc ép họ kết nối vào Evil Twin. Do rải Sensor khắp các tầng, hệ thống sẽ đo lường được sự gia tăng đột biến của các gói tin quản lý mạng này và cảnh báo ngay lập tức.
+
+    Định vị vật lý kẻ tấn công (Geo-Location): Khi hacker thực hiện tấn công, tín hiệu từ thiết bị của hắn sẽ bị nhiều Sensor ở các góc khác nhau bắt được. Bằng cách so sánh độ mạnh tín hiệu (RSSI) thu được từ các Sensor này, máy chủ Controller có thể tính toán góc tới và khoanh vùng vị trí vật lý của kẻ tấn công (ví dụ: "Nguồn phát sóng độc hại nằm cách Sensor sảnh A 5 mét về hướng Đông").
+
+Tóm lại, trong môi trường nhiều AP, Sentinel NetLab đóng vai trò như một lực lượng "bảo vệ chìm". Các AP của công ty cứ việc lo truyền tải internet, còn Sentinel sẽ tàng hình giám sát toàn bộ không gian sóng điện từ xung quanh để bắt quả tang bất kỳ thiết bị nào có hành vi can thiệp trái phép.
+Bạn đã nói
+
+Lắp đặt ra sao, giải thích đơn giản. Với lại thuật toán thì ước tính tỉ lệ bắt được dựa trên những đánh giá và tham số có sẵn là bao nhiêu
+Gemini đã nói
+
+Dưới đây là cách lắp đặt siêu đơn giản và thống kê về tỉ lệ bắt được (phát hiện tấn công) của thuật toán:
+1. Cách lắp đặt đơn giản (Dành cho người mới)
+
+Việc cài đặt được thiết kế rất dễ dàng, giống như việc thiết lập một "trạm radar" với 4 bước cơ bản:
+
+    Bước 1 - Chuẩn bị: Bạn chỉ cần một máy tính có cài sẵn Python (phiên bản 3.11 trở lên) và tải toàn bộ thư mục mã nguồn về máy.
+
+    Bước 2 - Cài đặt phần mềm: Mở màn hình lệnh (Terminal/Command Prompt), tạo một môi trường ảo cách ly (ví dụ: python -m venv venv) và kích hoạt nó. Sau đó, chạy lệnh pip install ".[dev,sensor,controller,dashboard]" để hệ thống tự động tải và cài đặt toàn bộ công cụ cần thiết (mất khoảng 1-2 phút).
+
+    Bước 3 - Bật hệ thống: Bạn cần mở 2 cửa sổ lệnh riêng biệt. Cửa sổ 1 dùng để chạy Phòng điều hành (Controller) bằng lệnh python controller/api_server.py. Cửa sổ 2 dùng để bật cụm Radar (Sensor) bằng lệnh python sensor/sensor_cli.py.
+
+    Bước 4 - Xem kết quả: Mở trình duyệt web của bạn lên và truy cập vào địa chỉ http://localhost:8050 để xem bảng điều khiển trực quan. Nếu có mạng WiFi nào bị giả mạo, hệ thống sẽ báo động bằng màu đỏ.
+
+2. Ước tính tỉ lệ bắt được của thuật toán
+
+Trong hệ thống này, Recall (Tỉ lệ bắt được) là xác suất mà một cuộc tấn công thực sự xảy ra sẽ bị hệ thống nhận diện thành công. Bên cạnh đó, hệ thống cũng đo lường Precision (Độ chính xác), tức là xác suất mà một cảnh báo được phát ra thực sự là một cuộc tấn công (không phải báo động giả).
+
+Dựa trên kết quả thử nghiệm sơ bộ trong môi trường nghiên cứu, các thuật toán của Sentinel NetLab cho ra các tỉ lệ ước tính như sau:
+
+    Tấn công ngắt kết nối hàng loạt (Deauth Flood):
+
+        Tỉ lệ bắt được (Recall): ~99.1%.
+
+        Độ chính xác (Precision): ~97.8%.
+
+        Thời gian phát hiện (MTTD): Rất nhanh, chỉ mất khoảng 0.8 giây từ lúc cuộc tấn công bắt đầu.
+
+    Trạm phát WiFi giả mạo (Evil Twin):
+
+        Tỉ lệ bắt được (Recall): ~91.5%.
+
+        Độ chính xác (Precision): ~94.2%.
+
+        Thời gian phát hiện (MTTD): Khoảng 2.3 giây.
+
+    Điểm truy cập trái phép (Rogue AP):
+
+        Tỉ lệ bắt được (Recall): ~86.7%.
+
+        Độ chính xác (Precision): ~89.3%.
+
+        Thời gian phát hiện (MTTD): Khoảng 3.1 giây.
+
+    Mạng có lỗ hổng WPS (WPS Enabled):
+
+        Tỉ lệ bắt được (Recall): Đạt mức tuyệt đối 100%.
+
+        Độ chính xác (Precision): 100%.
+
+Lưu ý thêm: Các cảnh báo sai (báo động giả) của thuật toán chủ yếu phát sinh từ việc thiết bị di động chuyển vùng hợp lệ giữa các AP (chiếm 12% số lỗi) hoặc do mạng của hàng xóm có tên SSID quá giống (chiếm 8% số lỗi). Để khắc phục, hệ thống cho phép tùy chỉnh ngưỡng tương đồng (similarity thresholds) và thiết lập danh sách trắng (whitelist).
+Bạn đã nói
+
+Tại sao evil twin cao hơn ap
+Gemini đã nói
+
+Việc thuật toán bắt được Evil Twin (Trạm phát giả mạo) với tỷ lệ cao hơn và thời gian nhanh hơn so với Rogue AP (Điểm truy cập trái phép) xuất phát từ sự khác biệt trong đặc điểm của hai loại tấn công này và cách hệ thống phân tích dấu vết.
+
+Dưới đây là hai lý do cốt lõi giải thích cho kết quả này:
+
+1. Evil Twin có nhiều "sơ hở" rõ ràng để thuật toán đối chiếu (Multi-factor analysis)
+Khi một kẻ tấn công tạo ra Evil Twin, mục tiêu của hắn là sao chép y hệt một mạng WiFi đã có sẵn để đánh lừa người dùng. Nhờ vậy, hệ thống Sentinel NetLab có thể dùng thuật toán phân tích đa yếu tố để đối chiếu chéo mạng bị tình nghi với "đường cơ sở" (baseline - thông số chuẩn của mạng gốc).
+
+Thuật toán tính điểm rủi ro cho Evil Twin (Score_evil_twin) quét qua 4 yếu tố cực kỳ đặc trưng:
+
+    Trùng tên mạng (SSID_match): Tên mạng giống mạng công ty.
+
+    Khác địa chỉ MAC (BSSID_diff): Địa chỉ vật lý của bộ phát giả mạo chắc chắn sẽ khác bộ phát thật.
+
+    Bất thường về sóng (RSSI_anomaly): Cường độ sóng tự nhiên thay đổi đột ngột (thường chênh lệch > 20 dB do kẻ tấn công cố tình phát sóng cực mạnh để "đè" sóng thật).
+
+    Sai lệch bảo mật (Security_mismatch): Mạng thật đang dùng chuẩn mã hóa WPA2/WPA3, nhưng mạng giả mạo lại không có mật khẩu (Open) để dễ lừa người dùng bấm vào.
+
+Bởi vì kẻ tấn công bắt buộc phải bộc lộ các sơ hở này khi sao chép, hệ thống có đủ bằng chứng chắc chắn để đưa ra báo động đỏ lập tức, giúp độ chính xác (Precision) và tỷ lệ bắt được (Recall) lên tới hơn 91-94%.
+
+2. Rogue AP rất dễ bị nhầm lẫn với các sóng WiFi vô hại xung quanh
+Ngược lại, Rogue AP chỉ đơn giản là một bộ phát WiFi lạ được ai đó lén bật lên (ví dụ: nhân viên cắm thêm router ở gầm bàn hoặc bật tính năng chia sẻ 4G trên điện thoại). Kẻ này không cố tình giả mạo mạng của công ty nên tên WiFi sẽ hoàn toàn khác biệt.
+
+Chính điều này làm khó các cụm Radar dò sóng vô tuyến. Khi quét thấy một sóng lạ, hệ thống sẽ rất khó để phân định rạch ròi 100% giữa hai trường hợp:
+
+    Đâu là một Rogue AP độc hại đang cắm trái phép vào mạng LAN của công ty?
+
+    Đâu là sóng WiFi vô hại từ văn phòng hàng xóm phát xuyên qua tường, hoặc điện thoại phát hotspot của một người đi ngang qua sảnh?
+
+Sự nhập nhằng này là nguyên nhân chính sinh ra các báo động giả (False Positives), khiến thuật toán e dè hơn khi phán quyết, làm tỷ lệ phát hiện thành công của Rogue AP bị kéo xuống mức ~86-89% và thời gian kết luận (MTTD) cũng bị kéo dài ra hơn (3.1 giây so với 2.3 giây của Evil Twin).
+Bạn đã nói
+
+Vâyh lắp đặt trong Doanh nghiệp tổ chức sẽ ra sao, line mạng đi như thế nào, controller sẽ nhận được từ sensor bằng đường nào, khu vực có ap sẽ tận dụng ra sao
+Gemini đã nói
+
+Việc triển khai Sentinel NetLab trong môi trường doanh nghiệp quy mô lớn được thiết kế theo mô hình Quản lý ngoài luồng (Out-of-Band). Điều này có nghĩa là hệ thống hoạt động hoàn toàn độc lập, không can thiệp hay làm chậm hệ thống mạng hiện tại của tổ chức.
+
+Dưới đây là sơ đồ giải phẫu cách hệ thống được lắp đặt và cách dữ liệu luân chuyển:
+1. Đường đi của mạng (Network Routing) và Cách truyền dữ liệu
+
+Để giải quyết bài toán "vừa nghe lén tín hiệu, vừa gửi báo cáo", mỗi thiết bị Sensor (ví dụ: một chiếc Raspberry Pi hoặc Mini PC) sẽ được trang bị hai giao diện mạng tách biệt hoàn toàn:
+
+    Giao diện 1 - Giao diện Giám sát (Monitor Interface): Đây là chiếc USB WiFi được cắm vào Sensor, được cấu hình ở chế độ Monitor. Nó không có địa chỉ IP, không kết nối vào mạng WiFi nào cả. Nó chỉ làm nhiệm vụ duy nhất là một cái ăng-ten "hút" mọi tín hiệu vô tuyến bay trong không khí (như nghe radio).
+
+    Giao diện 2 - Giao diện Kết nối (Uplink Interface): Đây là cổng cắm dây mạng cáp quang/LAN (Ethernet) trên thiết bị Sensor, hoặc có thể là một card mạng thứ 2. Cổng này sẽ được cắm dây trực tiếp vào Switch mạng của tòa nhà (thường được đặt vào một VLAN Quản trị bảo mật - Management VLAN). Giao diện này có địa chỉ IP tĩnh.
+
+Đường dữ liệu về Controller:
+Khi Giao diện 1 bắt được tín hiệu bất thường, Sensor sẽ nén dữ liệu lại thành các tệp JSON và đẩy qua Giao diện 2 bằng dây cáp mạng LAN, đi xuyên qua hạ tầng Switch/Router của công ty để đến máy chủ Controller (thường đặt tại phòng Server trung tâm).
+Giao thức gửi là HTTPS (gọi API). Controller nhận dữ liệu thông qua các API Endpoints (ví dụ: https://sentinel.corp.local/api/v1/telemetry), giống hệt cách các ứng dụng di động gửi dữ liệu về máy chủ.
+2. Tận dụng và Quản lý Khu vực có Access Point (AP) hiện hữu
+
+Hệ thống không cần kết nối vào phần mềm quản lý của các AP hiện hữu (như Cisco, Aruba, Unifi) mà sẽ "tận dụng" chúng theo phương thức giám sát không gian vật lý:
+
+    Xây dựng Bộ hồ sơ chuẩn (Baslining): Ở giai đoạn đầu, hệ thống sẽ quét toàn bộ các khu vực có AP hiện hữu để lập một danh sách trắng (Whitelist/Baseline). Nó sẽ ghi nhớ: "Tại tầng 3, AP của công ty tên là Corp_WiFi, địa chỉ vật lý (MAC) là AA:BB:CC, sử dụng mã hóa WPA3 và phát ở Kênh 6".
+
+    Bảo vệ vòng ngoài (Perimeter Defense): Khi bạn đặt Sensor trong cùng khu vực với AP hiện hữu, Sensor sẽ đóng vai trò như một "camera an ninh" soi vào chiếc AP đó.
+
+        Nếu có kẻ gian mang một bộ phát WiFi giả mạo (Evil Twin) có trùng tên Corp_WiFi nhưng địa chỉ MAC khác vào phòng họp, Sensor sẽ đối chiếu với Baseline và báo động ngay lập tức.
+
+        Nếu có nhân viên IT vô tình cấu hình sai, làm AP hiện hữu mất mật khẩu (chuyển sang chế độ Open), Sensor cũng sẽ nhận ra sự thay đổi trạng thái bảo mật của AP và cảnh báo.
+
+    Triển khai theo Lưới (Grid Deployment): Các kỹ sư mạng thường lắp đặt Sensor theo dạng lưới xen kẽ với các AP. Ví dụ: AP thường lắp ở trần nhà giữa phòng làm việc để phát sóng tốt nhất, thì Sensor có thể được giấu ở sảnh lễ tân, góc khuất hành lang, nhà xe, quán cafe tầng trệt — những nơi sóng của AP công ty yếu đi, nhưng lại là chỗ lý tưởng để hacker ngồi dò sóng (wardriving) và thực hiện tấn công.
+
+Cách lắp đặt này đảm bảo nếu mạng WiFi của tổ chức có bị sập hoàn toàn do một cuộc tấn công phá sóng (Jamming/Deauth), đường truyền dữ liệu qua cáp LAN của Sensor về máy chủ Controller vẫn an toàn và báo cáo được tình hình theo thời gian thực.
+Bạn đã nói
+
+Về request probe, nếu người dùng đã đăng nhập vào mạng của công ty rồi, sau đó bị deuath, thì dự án có cơ chế gì liên quan tới phần này không, có cần đăng kí ap bssid hay mac không, dự án đã có chưa
+Gemini đã nói
+
+Có, dự án Sentinel NetLab đã có sẵn cơ chế để giải quyết trọn vẹn kịch bản tấn công chuỗi (Exploit Chain) này. Khi một người dùng đang kết nối hợp lệ nhưng bị hacker dùng Deauth để ép văng ra, thiết bị của họ sẽ tự động gửi đi các gói tin Probe Request (dò tìm lại mạng) để cố gắng kết nối lại, và hacker sẽ chớp thời cơ dùng Evil Twin (trạm phát giả) để dụ thiết bị đó kết nối vào.
+
+Dưới đây là cách hệ thống xử lý và yêu cầu về việc đăng ký:
+1. Có cần đăng ký AP BSSID hay MAC không?
+
+Câu trả lời là Có. Hệ thống sử dụng một khái niệm gọi là Baseline (Đường cơ sở / Danh sách trắng).
+
+    Để hệ thống hoạt động chính xác trong môi trường công ty, quản trị viên mạng phải đăng ký danh sách các Access Point hợp lệ.
+
+    Các thông tin cần đăng ký bao gồm: Tên mạng (SSID), Địa chỉ MAC (BSSID), chuẩn mã hóa (WPA2/WPA3), và kênh phát sóng chuẩn.
+
+2. Dự án đã có cơ chế này chưa?
+
+Dự án đã triển khai sẵn toàn bộ các module này. Khi kịch bản tấn công trên xảy ra, hệ thống Sentinel NetLab sẽ kích hoạt 2 cơ chế phòng vệ nối tiếp nhau:
+
+    Bước 1 - Bắt quả tang hành vi ép ngắt kết nối: Module Deauth Flood Detection (thuật toán dò tìm Deauth) sẽ ngay lập tức phát hiện số lượng gói tin ngắt kết nối tăng đột biến (vượt quá ngưỡng an toàn, ví dụ 10 frames/giây) và phát ra cảnh báo "Deauth Flood".
+
+    Bước 2 - Bắt quả tang hành vi giả mạo (Phản hồi Probe Request): Khi thiết bị của nạn nhân gửi Probe Request và bị một mạng WiFi khác mạo danh công ty trả lời, thuật toán Evil Twin Detection sẽ vào cuộc. Nó sẽ lấy địa chỉ MAC (BSSID) của kẻ đang phát sóng đối chiếu với danh sách Baseline (Known APs) đã đăng ký.
+
+    Phán quyết: Thuật toán nhận thấy Tên mạng (SSID) thì giống nhau trên 80% (hoặc y hệt), nhưng địa chỉ MAC (BSSID) lại không nằm trong danh sách đã đăng ký current_ap.bssid != known.bssid. Ngay lập tức, hệ thống kích hoạt cảnh báo đỏ mức độ Rủi ro Cao (HIGH) cho lỗi "Evil Twin".
+
+Minh chứng trong mã nguồn dự án:
+Việc này đã được lập trình sẵn và thể hiện rõ trong kiến trúc của Sentinel:
+
+    Quản lý danh sách đăng ký: Các file như sensor/baseline.py, controller/baseline/models.py và controller/baseline/store.py.
+
+    Thuật toán phát hiện: algos/evil_twin.py, algos/disassoc_detector.py.
+
+    Phân tích chuỗi tấn công (nối Deauth và Probe/Evil Twin lại với nhau): algos/exploit_chain_analyzer.py.
+
+Bạn đã nói
+
+Cơ chế choonga lại geo mapping và điểm mù của hệ thống này, hạn chế trong doanh nghiệp
+Gemini đã nói
+
+Mặc dù Sentinel NetLab được thiết kế rất tối ưu cho môi trường nghiên cứu và giáo dục, hệ thống này vẫn tồn tại những điểm mù kỹ thuật và hạn chế nhất định khi triển khai trong môi trường doanh nghiệp quy mô lớn. Đặc biệt, cơ chế định vị vật lý (Geo-Mapping) bằng sóng vô tuyến có những lỗ hổng mà kẻ tấn công có thể lợi dụng.
+
+Dưới đây là phân tích chi tiết về các hạn chế này:
+1. Điểm yếu và Cơ chế chống lại Geo-Mapping (Định vị vật lý)
+
+Hệ thống sử dụng cơ chế Trilateration (Phép đo giao hội tam giác) kết hợp với bộ lọc Kalman để tính toán khoảng cách dựa trên cường độ tín hiệu nhận được (RSSI) từ nhiều Sensor. Tuy nhiên, phương pháp đo lường bằng RSSI khá mong manh (fragile) trong thực tế.
+
+Hacker có thể "chống lại" hoặc đánh lừa hệ thống Geo-Mapping bằng các kỹ thuật sau:
+
+    Thay đổi công suất phát sóng (Tx Power Spoofing): Hệ thống Geo-Mapping ngầm định rằng cường độ sóng yếu đi là do khoảng cách xa. Kẻ tấn công có thể chủ động hạ thấp công suất phát sóng của thiết bị WiFi (ví dụ xuống còn 5dBm thay vì 20dBm). Khi đó, hệ thống sẽ tính toán sai và cho rằng hacker đang ở rất xa bên ngoài tòa nhà, trong khi thực tế hắn đang ngồi ngay trong phòng họp.
+
+    Lợi dụng vật cản và sóng phản xạ (Multipath Fading): Trong môi trường doanh nghiệp có nhiều vách ngăn kính, tường bê tông cốt thép hoặc thang máy, sóng WiFi sẽ bị phản xạ và suy hao rất mạnh. Các mô hình tính toán suy hao đường truyền (Path Loss Model) cơ bản của hệ thống sẽ bị sai lệch, dẫn đến việc vẽ biểu đồ nhiệt (Heatmap) chỉ sai vị trí hoặc tạo ra các báo động định vị giả.
+
+    Di chuyển liên tục (Mobility): Hệ thống gặp khó khăn trong việc chốt vị trí nếu kẻ tấn công liên tục di chuyển nhanh (wardriving), vì tín hiệu RSSI thu thập được từ các Sensor sẽ thiếu sự ổn định.
+
+2. Vấn đề "Điểm mù" (Blind Spots) cốt lõi của hệ thống
+
+Hệ thống bị giới hạn bởi các nguyên lý vật lý của sóng vô tuyến và cách card WiFi hoạt động:
+
+    Điểm mù do Nhảy kênh (Channel Hopping Blind Windows): Một card WiFi (Sensor) chỉ có thể "nghe" được một kênh (Channel) tại một thời điểm. Sentinel NetLab khắc phục bằng cách cấu hình nhảy kênh liên tục mỗi 200ms. Tuy nhiên, điều này tạo ra điểm mù thời gian: Nếu hệ thống đang lắng nghe ở Kênh 1, thì nó hoàn toàn "mù và điếc" đối với một cuộc tấn công chớp nhoáng đang diễn ra ở Kênh 11.
+
+    Điểm mù băng tần 5GHz: Sóng 5GHz có tầm phủ hẹp hơn và khả năng xuyên tường kém hơn rất nhiều so với 2.4GHz. Nếu không bố trí mật độ Sensor đủ dày, vùng không gian 5GHz giữa các phòng ban sẽ bị bỏ lọt.
+
+    Bảo vệ khung quản lý (PMF - WPA3): Khi doanh nghiệp nâng cấp lên WPA3 hoặc WiFi 6/6E, các gói tin quản lý (Management frames) sẽ được mã hóa (Protected Management Frames). Hệ thống WIDS thụ động như Sentinel sẽ không thể đọc được nội dung bên trong để phân tích chuyên sâu, làm giảm đi hiệu quả của các thuật toán nhận diện.
+
+3. Hạn chế lớn khi triển khai trong Doanh nghiệp (Enterprise Friction)
+
+Nếu đem so sánh với các giải pháp mạng thương mại chuyên nghiệp (như Cisco Meraki, HPE Aruba), Sentinel vấp phải các rào cản lớn về mặt vận hành:
+
+    Phân mảnh phần cứng (Hardware Overlay Deployment): Các hãng mạng doanh nghiệp thường tích hợp sẵn một "radio giám sát chuyên dụng" (dedicated scanning radio) ẩn ngay bên trong cục phát WiFi (AP) dán trên trần nhà. Ngược lại, Sentinel yêu cầu phải lắp đặt thêm các thiết bị rời (Raspberry Pi gắn USB WiFi). Việc kéo thêm dây mạng, cấp thêm nguồn điện, và quản lý phần cứng ngoại lai này tạo ra chi phí và sự phức tạp lớn cho phòng IT.
+
+    Rủi ro Pháp lý và Ngăn chặn chủ động (Active Defense): Việc tự động tung ra các đòn tấn công ngược (như Deauth để ngắt kết nối Rogue AP) có thể vi phạm pháp luật (ví dụ đạo luật chống can thiệp sóng vô tuyến) nếu vô tình đánh trúng mạng của cư dân hoặc doanh nghiệp hàng xóm. Do đó, tính năng Active Defense của Sentinel được cảnh báo là mang tính thử nghiệm và bị vô hiệu hóa mặc định.
+
+    Thiếu tính năng quản trị Doanh nghiệp: Hệ thống hiện tại thiếu vắng các cơ chế quản lý quy mô lớn như Đăng nhập một lần (SSO), Quản lý quyền truy cập theo vai trò (RBAC) phức tạp, hay quản lý vòng đời thiết bị (nâng cấp firmware đồng loạt cho hàng trăm Sensor).
+
+Tóm lại, trong môi trường doanh nghiệp thực tế, Sentinel NetLab phù hợp nhất để làm một "hệ thống giám sát lớp thứ 2" hoặc dùng để các chuyên gia bảo mật đi rà soát định kỳ (audit/pentest), hơn là thay thế hoàn toàn hạ tầng WIPS được tích hợp sẵn của các hãng thiết bị mạng tỷ đô.
+Bạn đã nói
+
+False positive trong hệ thống sẽ rơi vào đâu
+Gemini đã nói
+
+Theo tài liệu đánh giá của hệ thống, Báo động giả (False Positive) là những trường hợp một luồng dữ liệu hoặc hoạt động mạng hoàn toàn bình thường (benign) lại bị hệ thống nhận diện nhầm là độc hại hoặc tấn công.
+
+Dựa trên kết quả thử nghiệm và báo cáo nghiên cứu của Sentinel NetLab, các trường hợp báo động giả chủ yếu "rơi vào" 3 tình huống vận hành thực tế sau đây:
+
+    Thiết bị chuyển vùng hợp lệ (Legitimate roaming - chiếm khoảng 12% số ca báo động giả): Khi nhân viên cầm điện thoại hoặc laptop di chuyển quanh công ty, thiết bị của họ sẽ liên tục ngắt kết nối khỏi Access Point (AP) cũ và kết nối vào AP mới có sóng mạnh hơn. Sự gia tăng đột ngột các gói tin ngắt kết nối này đôi khi khiến hệ thống nhầm tưởng rằng đang có một cuộc tấn công Deauth Flood.
+
+    Tên WiFi vô tình giống nhau (Similar SSIDs - chiếm khoảng 8% số ca báo động giả): Các văn phòng hàng xóm lân cận có thể thiết lập mạng WiFi với tên (SSID) gần giống hoặc tương tự với mạng của công ty bạn. Thuật toán phân tích sự tương đồng chuỗi có thể nhầm lẫn đây là hành vi cố tình đặt tên giống để lừa đảo (Evil Twin).
+
+    Đặc thù của mạng WiFi Mesh (Mesh networks - chiếm khoảng 5% số ca báo động giả): Trong một hệ thống mạng Mesh, nhiều thiết bị phát sóng (AP) khác nhau sẽ cùng phát ra một tên mạng (SSID) chung. Tuy nhiên, địa chỉ MAC vật lý của chúng lại khác nhau. Thuật toán phát hiện Evil Twin rất dễ báo động nhầm trong trường hợp này nếu hệ thống không được cấu hình đầy đủ.
+
+Giải pháp hạn chế của dự án:
+Để giảm thiểu các báo động giả gây phiền toái cho quản trị viên, Sentinel NetLab xử lý vấn đề này bằng cách cho phép cấu hình tùy chỉnh ngưỡng tương đồng (similarity thresholds) (để phân định rõ mức độ giống nhau của tên WiFi) và hỗ trợ cơ chế Danh sách trắng (whitelist) để khai báo trước toàn bộ các thiết bị chuyển vùng/Mesh hợp lệ trong mạng doanh nghiệp.
+Bạn đã nói
+
+Các file test của dự án có chức năng gì
+Gemini đã nói
+
+Dựa vào cấu trúc thư mục và danh sách mã nguồn của dự án Sentinel NetLab, các file test (kiểm thử) được chia thành nhiều tầng với các chức năng chuyên biệt để đảm bảo hệ thống hoạt động ổn định, chính xác và an toàn.
+
+Dưới đây là chức năng của từng nhóm file test trong dự án:
+
+1. Unit Tests (Kiểm thử Đơn vị)
+
+    Nằm trong thư mục tests/unit/.
+
+    Chức năng: Kiểm tra tính đúng đắn của từng hàm, từng module hoặc từng class nhỏ nhặt một cách độc lập.
+
+    Ví dụ: Dự án có các file test để kiểm tra riêng rẽ việc phân tích gói tin (test_frame_parser.py), quản lý bộ đệm (test_buffer_manager.py), thuật toán nhảy kênh (test_channel_hopper.py), hoặc các thuật toán phát hiện tấn công cụ thể như Evil Twin (test_evil_twin.py), Krack (test_krack_detector.py).
+
+2. Integration Tests (Kiểm thử Tích hợp)
+
+    Nằm trong thư mục tests/integration/.
+
+    Chức năng: Đảm bảo rằng nhiều module nhỏ khi ghép lại với nhau có thể giao tiếp và truyền dữ liệu mượt mà.
+
+    Ví dụ: Kiểm tra luồng gửi dữ liệu từ Sensor lên Controller qua API (test_api_flow.py), kiểm tra giả lập toàn bộ đường ống xử lý dữ liệu (test_mock_pipeline.py), hoặc kiểm tra sự liên kết với giao diện Web Dashboard (test_dashboard_flow.py).
+
+3. System Tests (Kiểm thử Hệ thống tổng thể)
+
+    Nằm trong thư mục tests/system/.
+
+    Chức năng: Đánh giá hệ thống như một người dùng thực tế từ đầu đến cuối (End-to-End).
+
+    Ví dụ: Chạy kịch bản "Smoke test" để xem hệ thống có bật lên thành công không (test_system_smoke.py), kiểm tra khả năng tự phục hồi khi bị đứt mạng hay sập nguồn (test_system_recovery.py), và đánh giá lớp rào chắn bảo mật tổng thể (test_system_security.py).
+
+4. Detector / PCAP Tests (Kiểm thử độ nhạy của Thuật toán)
+
+    Nằm trong thư mục tests/detectors/ và dùng dữ liệu ở tests/data/.
+
+    Chức năng: Sử dụng các file ghi lại sóng WiFi (PCAP files) của các cuộc tấn công đã biết trước (Golden vectors) để bơm vào hệ thống. Mục đích là xem thuật toán phát hiện (Detector) có bắt trúng bệnh không (test_pcap_cases.py), và đảm bảo khi code cập nhật tính năng mới thì không làm hỏng khả năng phát hiện cũ (test_pcap_regression.py).
+
+5. Verification & Benchmark (Kịch bản Xác minh và Đo lường Hiệu năng)
+
+    Nằm rải rác ở gốc thư mục tests/ hoặc thư mục benchmarks/.
+
+    Chức năng: Dùng để đánh giá sức chịu tải và tính đáng tin cậy của các luồng công việc phức tạp.
+
+    Ví dụ: Xác minh tính chính xác của mô hình học máy (verify_ml.py), kiểm tra độ tin cậy của hàng đợi lưu trữ đệm khi rớt mạng (verify_spool.py, verify_reliability.py), hoặc kiểm tra sức chịu tải, độ trễ và độ ổn định của hệ thống Controller (benchmarks/load_test.py, benchmarks/test_latency.py, benchmarks/test_stability.py).
+
+Bạn đã nói
+
+Dedicated scanning radio sẽ có ưu và nhược điểm ra sao so với project
+Gemini đã nói
+
+Dedicated Scanning Radio (Radio quét chuyên dụng) là một bộ ăng-ten (thường là ăng-ten thứ 3 hoặc thứ 4) được tích hợp thẳng vào bên trong các bộ phát WiFi (Access Point - AP) đắt tiền của doanh nghiệp (như Cisco Meraki, HPE Aruba, Juniper Mist). Ăng-ten này không dùng để phát WiFi cho nhân viên mà chỉ làm một nhiệm vụ duy nhất: 24/7 nghe lén không khí để tìm kiếm các mối đe dọa.
+
+Trái ngược với điều đó, dự án Sentinel NetLab sử dụng mô hình Overlay WIDS (Hệ thống giám sát lớp phủ), tức là sử dụng phần cứng rời rạc (Raspberry Pi cắm USB WiFi) lắp thêm vào môi trường.
+
+Sự khác biệt này tạo ra các ưu và nhược điểm rõ rệt như sau:
+1. Ưu điểm của Dedicated Scanning Radio (Nhược điểm của Sentinel NetLab)
+
+    Không cần lắp đặt thêm phần cứng (Zero Deployment Friction): Vì tính năng quét an ninh đã nằm sẵn bên trong cục AP gắn trên trần nhà, doanh nghiệp không cần phải tốn thêm chi phí và công sức để kéo thêm cáp LAN, cấp nguồn điện, hay quản lý một dàn thiết bị rời rạc (Raspberry Pi) như của dự án Sentinel.
+
+    Không có điểm mù thời gian (No Channel Hopping Blind Spots): Sentinel NetLab sử dụng 1 card USB WiFi rời nên phải dùng thuật toán "nhảy kênh" (channel hopping) liên tục để quét các dải tần khác nhau. Điều này tạo ra điểm mù: khi Sentinel đang nghe ở Kênh 1 thì nó sẽ bỏ lỡ cuộc tấn công chớp nhoáng đang xảy ra ở Kênh 11. Ngược lại, radio chuyên dụng của các AP doanh nghiệp có thể quét liên tục (always-on) toàn bộ phổ sóng mà không bị điểm mù này.
+
+    Dễ dàng đối chiếu mạng có dây (Wired Network Correlation): Radio chuyên dụng nằm ngay trong thiết bị mạng của công ty, do đó nó biết chính xác thiết bị nào đang cắm vào Switch mạng. Điều này giúp nó phân biệt được ngay một điểm truy cập trái phép (Rogue AP) đang cắm trộm vào mạng LAN của công ty so với một cục WiFi vô hại của nhà hàng xóm. Sentinel là hệ thống đứng ngoài nên khó có được tầm nhìn xuyên suốt xuống tầng mạng vật lý này.
+
+2. Nhược điểm của Dedicated Scanning Radio (Ưu điểm của Sentinel NetLab)
+
+    Chi phí cực kỳ đắt đỏ & Khóa chặt hệ sinh thái: Để có Dedicated Scanning Radio, bạn phải mua các dòng AP cao cấp của Cisco/Aruba và đóng phí bản quyền (license) hàng năm. Trong khi đó, dự án Sentinel NetLab sử dụng phần cứng đại trà (commodity hardware) vô cùng rẻ. Toàn bộ cụm 3 thiết bị Sensor dùng Raspberry Pi và USB WiFi Alfa chỉ tốn khoảng hơn 300 USD (theo hóa đơn vật tư của dự án).
+
+    Tính "Hộp đen" (Black box) vs. Minh bạch (Transparency): Các giải pháp thương mại là những "hộp đen" đóng kín, bạn không thể biết thuật toán bên trong hoạt động ra sao và không thể tùy biến chúng. Sentinel NetLab là mã nguồn mở, cho phép các chuyên gia bảo mật và nhà nghiên cứu sinh viên tự do can thiệp, kiểm toán (audit) logic phát hiện, và thay đổi trọng số tính điểm rủi ro (Risk scoring) theo ý muốn.
+
+    Sự linh hoạt trong vị trí bẫy (Strategic Placement): AP doanh nghiệp thường bị ép buộc phải lắp ở giữa trần nhà phòng làm việc để phát sóng tốt nhất. Tuy nhiên, hacker thường ngồi dò sóng (wardriving) ở bãi gửi xe, sảnh lễ tân hoặc góc khuất cầu thang bộ. Với Sentinel, bạn có thể đem cục Raspberry Pi giấu ở bất cứ góc tối nào để chủ động "giăng bẫy" kẻ tấn công trước khi sóng của chúng lọt vào khu vực làm việc chính.
+
+Tóm lại:
+Dedicated Scanning Radio là tiêu chuẩn vàng về độ tiện lợi và khả năng bao phủ vô tuyến cho các tập đoàn lớn có ngân sách "khủng". Tuy nhiên, Sentinel NetLab lại là lựa chọn tối ưu cho các phòng lab, trường đại học, chuyên gia Pentest, hoặc doanh nghiệp vừa/nhỏ cần một công cụ giám sát rành mạch, chi phí thấp và tùy biến sâu.
+Bạn đã nói
+
+Hệ thống Có rule based không, config những gì để vận hành
+Gemini đã nói
+
+Có, hệ thống Sentinel NetLab có tích hợp sẵn cơ chế phát hiện dựa trên tập luật (Rule-Based Detection). Cơ chế này sử dụng các logic định sẵn để nhận diện các dấu hiệu tấn công hoặc lỗ hổng bảo mật cụ thể.
+
+Hệ thống cung cấp một module RuleEngine linh hoạt, cho phép định nghĩa các tập luật bằng định dạng JSON đi kèm với hệ thống tính điểm, mức độ nghiêm trọng (Severity), và ánh xạ tới framework MITRE ATT&CK. Một số luật mặc định đã được tích hợp sẵn như:
+
+    Phân tích và phát hiện trạm phát WiFi giả mạo (Evil Twin).
+
+    Phát hiện tấn công từ chối dịch vụ bằng cách gửi ngập lụt các gói tin ngắt kết nối (Deauthentication Flood).
+
+    Cảnh báo các mạng sử dụng chuẩn mã hóa yếu (như WEP hoặc Open), mạng đang bật WPS, mạng có tín hiệu mạnh bất thường, hoặc tên WiFi (SSID) có dấu hiệu lừa đảo.
+
+Để vận hành và tùy chỉnh cơ chế Rule-Based này, bạn cần cấu hình các thông số sau:
+
+1. Cấu hình tính năng trong file config.yaml:
+
+    Bạn có thể bật hoặc tắt trực tiếp các cơ chế phát hiện trong phần detection của file cấu hình chính (ví dụ: evil_twin_enabled: true, deauth_flood_enabled: true).
+
+    Bạn cần cấu hình các ngưỡng (threshold) để kích hoạt luật, chẳng hạn như số lượng gói tin ngắt kết nối tối đa mỗi giây (deauth_threshold: 10) hoặc mức độ giống nhau của tên mạng để bị coi là giả mạo (ssid_similarity_threshold: 0.8).
+
+    Bạn cũng có thể chọn các "profile" hoạt động sẵn có trong phần detectors (như lite_realtime, full_wids, hoặc audit_offline) để hệ thống tự áp dụng các cụm luật tương ứng.
+
+2. Tùy chỉnh danh sách trắng và trọng số trong risk_weights.yaml:
+
+    Để tránh báo động giả, bạn cần khai báo danh sách các nhà sản xuất thiết bị mạng uy tín (trusted_vendors).
+
+    Thiết lập cấu hình các mẫu tên WiFi bị coi là khả nghi (suspicious_patterns) thông qua biểu thức chính quy (regex).
+
+3. Tùy chỉnh tập luật JSON cho Rule Engine:
+
+    Các luật của RuleEngine có thể được tùy chỉnh và tải từ một file JSON bên ngoài. Bạn có thể định nghĩa thêm các luật mới với các điều kiện logic (như ==, >, contains, regex) ánh xạ trực tiếp vào các trường dữ liệu của gói tin WiFi thu thập được.
+
+Bạn đã nói
+
+du an cham diem false positive ra sao, va lam gi de biet duoc day la false positive
+Gemini đã nói
+
+1. Cách chấm điểm và đo lường False Positive (FP)
+
+Báo động giả (False Positive - FP) được định nghĩa là trường hợp một gói tin mạng bình thường (benign frame) bị hệ thống gắn cờ sai là độc hại.
+
+Dự án sử dụng chỉ số FP để tính toán Độ chính xác (Precision) của thuật toán theo công thức Precision = TP / (TP + FP) nhằm xác định xác suất một cảnh báo được phát ra thực sự là một cuộc tấn công. Theo mục tiêu thiết kế của dự án, Tỷ lệ báo động giả (False Positive Rate), được tính bằng số lượng cảnh báo sai trên tổng số cảnh báo, phải được kiểm soát ở mức dưới 5%.
+
+2. Cách nhận biết đâu là False Positive
+
+Trong quá trình đánh giá, dự án thực hiện các mô phỏng tấn công (như Evil Twin, Deauth Flood) bên trong một môi trường phòng lab được cách ly hoàn toàn, không có lưu lượng mạng của bên thứ ba. Do đã kiểm soát chặt chẽ đầu vào, mọi cảnh báo phát ra từ các luồng dữ liệu bình thường đều được hệ thống ghi nhận chính xác là False Positive.
+
+Thông qua việc phân tích dữ liệu, dự án đã chỉ ra 3 nguyên nhân cốt lõi trong thực tế khiến thuật toán bị "đánh lừa" và sinh ra báo động giả:
+
+    Thiết bị chuyển vùng hợp lệ (Legitimate roaming): Chiếm 12% lượng báo động giả. Việc các thiết bị di động ngắt kết nối mạng hiện tại để chuyển sang một điểm phát sóng (AP) khác tạo ra một lượng lớn gói tin ngắt kết nối, khiến hệ thống nhầm tưởng đây là tấn công Deauth Flood.
+
+    Tên WiFi lân cận gần giống nhau (Similar SSIDs): Chiếm 8% lượng báo động giả. Mạng của các văn phòng hàng xóm có tên tương tự khiến thuật toán đánh giá sự tương đồng chuỗi bị sai lệch.
+
+    Mạng lưới Mesh (Mesh networks): Chiếm 5% lượng báo động giả. Một mạng Mesh bao gồm nhiều thiết bị phát sóng có địa chỉ MAC khác nhau nhưng lại dùng chung một tên mạng (SSID) duy nhất. Đặc điểm này trùng khớp với dấu hiệu nhận biết của tấn công trạm phát giả mạo (Evil Twin).
+
+Để khắc phục tình trạng này, hệ thống đã tích hợp tính năng cho phép quản trị viên tùy chỉnh các ngưỡng đo lường sự tương đồng (similarity thresholds) và thiết lập danh sách trắng (whitelist) để bỏ qua các thiết bị mạng hợp lệ đã biết.
+
+1. Triển khai trọn gói cụm Controller (Controller Layer)
+Thay vì phải cài đặt thủ công từng thành phần rời rạc, Docker Compose được sử dụng để "dựng" toàn bộ hạ tầng trung tâm chỉ bằng một lệnh duy nhất (docker compose up). Hạ tầng này bao gồm: API Server, Database (PostgreSQL/SQLite), Task Queue (Redis), Prometheus (thu thập chỉ số), và Web Dashboard. Nhờ đó, hệ thống đảm bảo tính đồng nhất, loại bỏ hoàn toàn lỗi "chạy được trên máy tôi nhưng lên server lại hỏng".
+
+2. Đảm bảo an toàn Dữ liệu và Luồng khởi động (Init Container Pattern)
+Trong môi trường thực tế (Production), Docker được thiết kế để áp dụng mô hình "Safe-by-Default". Dự án sử dụng một container chuyên biệt làm nhiệm vụ migration (cập nhật cấu trúc cơ sở dữ liệu). Cơ chế của Docker Compose sẽ ép các container chính (như API hay Worker) phải "chờ" cho đến khi container migration chạy xong và xác nhận cơ sở dữ liệu đã an toàn thì mới được phép tiếp nhận luồng dữ liệu mạng gửi về.
+
+3. Tự động phục hồi (Self-Healing & Resilience)
+Docker đóng vai trò như một người giám sát tiến trình cấp cao. Thông qua các cấu hình chính sách (như restart: unless-stopped), nếu bất kỳ dịch vụ nào (API, Worker) bị treo hoặc sập do quá tải, Docker sẽ ngay lập tức tự động khởi động lại tiến trình đó để đảm bảo hệ thống giám sát 24/7 không bị gián đoạn. Nó cũng kết hợp với các cổng kiểm tra sức khỏe (Readiness Gates như /readyz) để ngắt điều hướng luồng dữ liệu tới các container đang bị lỗi.
+
+4. Ứng dụng ở tầng Cảm biến (Sensor Layer - Tùy chọn)
+Mặc dù phần mềm dò sóng (Sensor) được khuyến nghị chạy trực tiếp (bare-metal) trên các thiết bị như Raspberry Pi để dễ dàng kiểm soát driver của card WiFi vật lý, dự án vẫn cung cấp sẵn các phiên bản Dockerfile dành riêng cho Sensor. Việc chạy Sensor trong Docker sẽ giúp triển khai hàng loạt dễ dàng hơn, nhưng sẽ yêu cầu cấu hình thêm tính năng "USB Passthrough" để container có thể nhận diện và điều khiển trực tiếp USB WiFi Adapter.
+
+5. Môi trường Nghiên cứu & Giả lập Lab
+Dự án cung cấp nhiều cấu hình song song như docker-compose.dev.yml và docker-compose.lab.yml. Việc này giúp các chuyên gia bảo mật hoặc sinh viên có thể khởi tạo nhanh chóng một môi trường lab hoàn toàn độc lập và sạch sẽ ngay trên laptop cá nhân để thử nghiệm các thuật toán (hoặc chạy lại dữ liệu mạng cũ từ file PCAP) mà không làm ảnh hưởng đến môi trường máy tính gốc.
+Bạn đã nói
+
+con khong
+Gemini đã nói
+
+Dạ còn khá nhiều khía cạnh và tính năng kỹ thuật chuyên sâu khác của Sentinel NetLab mà chúng ta chưa đi sâu vào. Để bạn có cái nhìn toàn cảnh hơn, dưới đây là một số mảnh ghép quan trọng khác của dự án:
+
+1. Lớp Học máy và Phát hiện Bất thường (Machine Learning & Anomaly Detection)
+Bên cạnh cơ chế Rule-based (tập luật định sẵn) dùng để bắt các "bệnh đã biết", dự án còn tích hợp mô hình Học máy (cụ thể là Autoencoder) để phát hiện các "bệnh lạ". Nó sẽ học một "đường cơ sở" (baseline) về lưu lượng mạng bình thường. Nếu có một hành vi phát sóng nào đó không khớp với bất kỳ luật nào nhưng lại có dấu hiệu bất thường về mặt thống kê, mô hình ML này sẽ gắn cờ cảnh báo.
+
+2. Chế độ Wardriving (Giám sát di động & Vẽ bản đồ)
+Hệ thống không chỉ lắp cố định trong tòa nhà. Nó có module wardrive.py kết nối với bộ thu GPS. Bạn có thể mang cục Sensor (Raspberry Pi) bỏ vào balo hoặc gắn lên ô tô, vừa đi vừa quét mạng WiFi khắp thành phố. Dữ liệu bắt được sẽ được gắn tọa độ GPS để vẽ lên biểu đồ bản đồ.
+
+3. Cơ chế Ẩn danh & Bảo vệ quyền riêng tư (Privacy & Anonymization)
+Bởi vì việc thu thập địa chỉ MAC của các thiết bị di động cá nhân có thể vi phạm các luật về quyền riêng tư (như GDPR), hệ thống có tích hợp module Privacy. Khi cấu hình bật tính năng này lên, mọi thông tin nhạy cảm như Tên WiFi (SSID) và địa chỉ MAC của người dùng đều sẽ được băm (hash) ẩn danh ngay tại Sensor trước khi gửi về máy chủ Controller.
+
+4. Tính năng Kiểm toán An ninh (Security Audit)
+Ngoài việc theo dõi kẻ tấn công, dự án còn có tính năng Audit (Kiểm toán) dùng để đánh giá điểm yếu của chính mạng nội bộ. Hệ thống có sẵn các bộ tiêu chuẩn đánh giá cho môi trường Gia đình (Home) hoặc Doanh nghiệp vừa và nhỏ (SME) (ví dụ file audit-home-checklist.json, audit-sme-checklist.json). Nó sẽ chấm điểm bảo mật cho hệ thống mạng của bạn.
+
+5. Phòng thủ Chủ động (Active Defense - Offensive Capabilities)
+Mặc dù bị tắt theo mặc định để đảm bảo an toàn pháp lý, hệ thống thực chất sở hữu các "vũ khí" tấn công ngược. Trong môi trường Lab kín, nếu phát hiện trạm phát giả mạo (Evil Twin), nó có thể sử dụng module ActiveDefense để tự động bắn các gói tin Deauth ép các máy trạm ngắt kết nối khỏi Evil Twin đó để bảo vệ người dùng, hoặc tạo ra các Honeypot (FakeAP) để bẫy kẻ tấn công.
+
+Bạn có muốn tìm hiểu sâu hơn về cách thức hoạt động của Mô hình Học máy (ML), tính năng Wardriving, hay cơ chế Phòng thủ chủ động không?

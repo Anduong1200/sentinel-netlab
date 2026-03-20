@@ -22,10 +22,10 @@ class TestMockCaptureDriver:
     """Unit tests for MockCaptureDriver"""
 
     @pytest.fixture
-    def driver(self):
+    def driver(self) -> MockCaptureDriver:
         return MockCaptureDriver("mock0")
 
-    def test_enable_monitor_mode_success(self, driver):
+    def test_enable_monitor_mode_success(self, driver: MockCaptureDriver) -> None:
         """enable_monitor_mode returns success on mock driver"""
         success, error = driver.enable_monitor_mode()
 
@@ -33,7 +33,7 @@ class TestMockCaptureDriver:
         assert error == ""
         assert driver.is_monitor_mode
 
-    def test_disable_monitor_mode(self, driver):
+    def test_disable_monitor_mode(self, driver: MockCaptureDriver) -> None:
         """disable_monitor_mode restores state"""
         driver.enable_monitor_mode()
         success, error = driver.disable_monitor_mode()
@@ -41,7 +41,7 @@ class TestMockCaptureDriver:
         assert success
         assert not driver.is_monitor_mode
 
-    def test_set_channel_applies(self, driver):
+    def test_set_channel_applies(self, driver: MockCaptureDriver) -> None:
         """set_channel called before read_raw_frame"""
         driver.enable_monitor_mode()
 
@@ -49,7 +49,7 @@ class TestMockCaptureDriver:
 
         assert result
 
-    def test_read_raw_frame_timeout(self, driver):
+    def test_read_raw_frame_timeout(self, driver: MockCaptureDriver) -> None:
         """read_raw_frame returns None if no frame within timeout"""
         driver.enable_monitor_mode()
         driver.start_capture()
@@ -63,7 +63,7 @@ class TestMockCaptureDriver:
         assert elapsed < 0.2  # Should not block too long
         driver.stop_capture()
 
-    def test_mock_driver_emit_frames(self, driver):
+    def test_mock_driver_emit_frames(self, driver: MockCaptureDriver) -> None:
         """Mock yields expected frames when running"""
         driver.enable_monitor_mode()
         driver.start_capture()
@@ -80,7 +80,7 @@ class TestMockCaptureDriver:
 
         driver.stop_capture()
 
-    def test_start_stop_capture(self, driver):
+    def test_start_stop_capture(self, driver: MockCaptureDriver) -> None:
         """Start and stop capture cleanly"""
         driver.enable_monitor_mode()
 
@@ -90,7 +90,7 @@ class TestMockCaptureDriver:
         driver.stop_capture()
         assert not driver._running
 
-    def test_raw_frame_structure(self, driver):
+    def test_raw_frame_structure(self, driver: MockCaptureDriver) -> None:
         """RawFrame has expected fields"""
         driver.enable_monitor_mode()
         driver.start_capture()
@@ -115,7 +115,7 @@ class TestMockCaptureDriver:
 class TestCaptureDriverInterface:
     """Test CaptureDriver abstract interface"""
 
-    def test_abstract_methods_defined(self):
+    def test_abstract_methods_defined(self) -> None:
         """CaptureDriver has required abstract methods"""
         required_methods = [
             "enable_monitor_mode",

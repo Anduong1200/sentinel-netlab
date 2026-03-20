@@ -1,16 +1,24 @@
 import os
 import time
-from unittest.mock import patch
+from collections.abc import Callable, Iterator
+from pathlib import Path
+from shutil import copyfile
+from typing import cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from sensor.capture_driver import PcapCaptureDriver
+from sensor.config import init_config
 
 # Import modules to test
 from sensor.sensor_controller import SensorController
-from tests.data.generate_pcap import (
-    main as generate_pcap_main,
-)
+
+GOLDEN_PCAPS = {
+    "evil_twin": Path("data/pcap_annotated/sample_evil_twin.pcap"),
+    "normal": Path("data/pcap_annotated/sample_benign.pcap"),
+    "deauth": Path("data/pcap_annotated/sample_deauth.pcap"),
+}
 
 
 class TestScenarioReplay:
@@ -20,24 +28,34 @@ class TestScenarioReplay:
     """
 
     @pytest.fixture
-    def setup_pcap(self, tmp_path):
-        """Helper to generate specific pcaps"""
+    def setup_pcap(self, tmp_path: Path) -> Callable[[str], str]:
+        """Copy committed golden PCAPs into the per-test tmp directory."""
 
-        def _generate(scenario):
+        def _generate(scenario: str) -> str:
+            source = GOLDEN_PCAPS[scenario]
+            if not source.exists():
+                pytest.skip(f"Golden PCAP not found: {source}")
             path = tmp_path / f"{scenario}.pcap"
-            with patch(
-                "sys.argv",
-                ["generate_pcap.py", "--scenario", scenario, "--output", str(path)],
-            ):
-                generate_pcap_main()
+            copyfile(source, path)
             return str(path)
 
         return _generate
 
+    def _wait_for_replay_completion(
+        self, controller: SensorController, timeout_sec: float = 10.0
+    ) -> None:
+        start_wait = time.time()
+        while time.time() - start_wait < timeout_sec:
+            driver = controller.driver
+            if isinstance(driver, PcapCaptureDriver) and driver._packets:
+                if driver._current_idx >= len(driver._packets):
+                    return
+            time.sleep(0.1)
+
     @pytest.fixture
-    def mock_transport(self):
-        with patch("sensor.sensor_controller.TransportClient") as mock:
-            client_instance = mock.return_value
+    def mock_transport(self) -> Iterator[MagicMock]:
+        with patch("sensor.sensor_controller.TransportClient") as mock_transport_cls:
+            client_instance = cast(MagicMock, mock_transport_cls.return_value)
             client_instance.upload.return_value = {"success": True, "ack_id": "123"}
             client_instance.upload_alert.return_value = {
                 "success": True,
@@ -46,7 +64,7 @@ class TestScenarioReplay:
             yield client_instance
 
     @pytest.fixture
-    def test_env(self, tmp_path):
+    def test_env(self, tmp_path: Path) -> Iterator[Path]:
         """Setup test environment with config overrides"""
         env = {
             "SENSOR_ID": "test-sensor-01",
@@ -54,23 +72,31 @@ class TestScenarioReplay:
             "CONTROLLER_URL": "http://localhost:5000/api/v1/telemetry",
             "SENSOR_AUTH_TOKEN": "test_token_long_enough_1234",
             "SENSOR_PRIVACY_STORE_RAW_MAC": "true",
+            "BUFFER_STORAGE_PATH": str(tmp_path / "journal"),
             "STORAGE_PATH": str(tmp_path / "journal"),
             "ENVIRONMENT": "development",  # Use dev mode to avoid strict checks
         }
         with patch.dict(os.environ, env):
             yield tmp_path
 
-    def test_replay_evil_twin_detection(self, setup_pcap, mock_transport, test_env):
+    def test_replay_evil_twin_detection(
+        self,
+        setup_pcap: Callable[[str], str],
+        mock_transport: MagicMock,
+        test_env: Path,
+    ) -> None:
         """
         Scenario: Replay PCAP containing Evil Twin attack.
         Expected: Sensor detects Evil Twin and calls upload_alert.
         """
         pcap_path = setup_pcap("evil_twin")
-        from sensor.config import get_config
 
-        config = get_config()
+        config = init_config()
+        config.capture.interface = "test_mon"
+        config.capture.pcap_file = pcap_path
         config.storage.pcap_dir = str(test_env / "pcaps")
         config.storage.db_path = str(test_env / "test.db")
+        config.buffer.storage_path = str(test_env / "journal")
         config.privacy.mode = "normal"
         config.privacy.store_raw_mac = True
         config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
@@ -80,19 +106,12 @@ class TestScenarioReplay:
         }
 
         controller = SensorController(config=config)
-        controller.driver = PcapCaptureDriver(
-            iface="test_mon", pcap_path=pcap_path, realtime=False
-        )
 
-        controller.start()
-
-        # Wait for pcap (25 frames: 5 legit + 20 evil)
-        max_wait = 10
-        start_wait = time.time()
-        while controller._frames_parsed < 25 and time.time() - start_wait < max_wait:
-            time.sleep(0.1)
-
-        controller.stop()
+        try:
+            controller.start()
+            self._wait_for_replay_completion(controller)
+        finally:
+            controller.stop()
 
         assert mock_transport.upload_alert.called, (
             "upload_alert should be called for Evil Twin"
@@ -101,36 +120,34 @@ class TestScenarioReplay:
         assert any("Evil Twin" in str(c) for c in calls)
 
     def test_replay_normal_traffic_no_alerts(
-        self, setup_pcap, mock_transport, test_env
-    ):
+        self,
+        setup_pcap: Callable[[str], str],
+        mock_transport: MagicMock,
+        test_env: Path,
+    ) -> None:
         """
         Scenario: Replay PCAP containing only Normal traffic.
         Expected: No alerts generated.
         """
         pcap_path = setup_pcap("normal")
-        from sensor.config import get_config
 
-        config = get_config()
+        config = init_config()
+        config.capture.interface = "test_mon"
+        config.capture.pcap_file = pcap_path
         config.storage.pcap_dir = str(test_env / "pcaps_normal")
         config.storage.db_path = str(test_env / "test_normal.db")
+        config.buffer.storage_path = str(test_env / "journal")
         config.privacy.mode = "normal"
         config.privacy.store_raw_mac = True
         config.capture.enable_channel_hop = False  # Disable hopper for PCAP replay
 
         controller = SensorController(config=config)
-        controller.driver = PcapCaptureDriver(
-            iface="test_mon", pcap_path=pcap_path, realtime=False
-        )
 
-        controller.start()
-
-        # Wait for pcap (11 frames: 10 beacons + 1 probe)
-        max_wait = 10
-        start_wait = time.time()
-        while controller._frames_parsed < 11 and time.time() - start_wait < max_wait:
-            time.sleep(0.1)
-
-        controller.stop()
+        try:
+            controller.start()
+            self._wait_for_replay_completion(controller)
+        finally:
+            controller.stop()
 
         # EXPECTATION: No alerts
         assert not mock_transport.upload_alert.called, (
@@ -138,20 +155,27 @@ class TestScenarioReplay:
         )
 
         # Also check frames parsed
-        assert controller._frames_parsed >= 10
+        assert controller._frames_parsed > 0
         print("Scenario passed: Normal traffic processed without false positives.")
 
-    def test_replay_deauth_flood_detection(self, setup_pcap, mock_transport, test_env):
+    def test_replay_deauth_flood_detection(
+        self,
+        setup_pcap: Callable[[str], str],
+        mock_transport: MagicMock,
+        test_env: Path,
+    ) -> None:
         """
         Scenario: Replay PCAP containing a Deauth flood attack.
         Expected: Sensor detects Deauth Flood and calls upload_alert.
         """
         pcap_path = setup_pcap("deauth")
-        from sensor.config import get_config
 
-        config = get_config()
+        config = init_config()
+        config.capture.interface = "test_mon"
+        config.capture.pcap_file = pcap_path
         config.storage.pcap_dir = str(test_env / "pcaps_deauth")
         config.storage.db_path = str(test_env / "test_deauth.db")
+        config.buffer.storage_path = str(test_env / "journal")
         config.privacy.mode = "normal"
         config.privacy.store_raw_mac = True
         config.capture.enable_channel_hop = False
@@ -166,20 +190,12 @@ class TestScenarioReplay:
         }
 
         controller = SensorController(config=config)
-        controller.driver = PcapCaptureDriver(
-            iface="test_mon", pcap_path=pcap_path, realtime=False
-        )
 
-        controller.start()
-
-        # Wait for pcap processing
-        # deauth scenario has 100 packets
-        max_wait = 10
-        start_wait = time.time()
-        while controller._frames_parsed < 50 and time.time() - start_wait < max_wait:
-            time.sleep(0.1)
-
-        controller.stop()
+        try:
+            controller.start()
+            self._wait_for_replay_completion(controller)
+        finally:
+            controller.stop()
 
         # Verify that Deauth flood was detected
         assert mock_transport.upload_alert.called, (

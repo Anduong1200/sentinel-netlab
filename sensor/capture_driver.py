@@ -382,7 +382,7 @@ class PcapCaptureDriver(CaptureDriver):
         self.pcap_path = pcap_path
         self.loop = loop
         self.realtime = realtime
-        self._packets = []
+        self._packets: list[tuple[bytes, float]] = []
         self._current_idx = 0
         self._start_time = 0.0
         self._first_pkt_time = 0.0
@@ -401,18 +401,28 @@ class PcapCaptureDriver(CaptureDriver):
 
     def start_capture(self) -> bool:
         try:
-            from scapy.all import rdpcap
+            from scapy.utils import RawPcapReader
 
             if not os.path.exists(self.pcap_path):
                 logger.error(f"PCAP file not found: {self.pcap_path}")
                 return False
 
-            self._packets = rdpcap(self.pcap_path)
+            reader = RawPcapReader(self.pcap_path)
+            try:
+                self._packets = [
+                    (
+                        bytes(packet_bytes),
+                        float(metadata.sec) + (float(metadata.usec) / 1_000_000.0),
+                    )
+                    for packet_bytes, metadata in reader
+                ]
+            finally:
+                reader.close()
             self._current_idx = 0
             self._running = True
             self._start_time = time.monotonic()
             if self._packets:
-                self._first_pkt_time = float(self._packets[0].time)
+                self._first_pkt_time = self._packets[0][1]
 
             logger.info(
                 f"Started PCAP replay: {self.pcap_path} ({len(self._packets)} frames)"
@@ -436,11 +446,11 @@ class PcapCaptureDriver(CaptureDriver):
             else:
                 return None
 
-        pkt = self._packets[self._current_idx]
+        packet_bytes, packet_time = self._packets[self._current_idx]
 
         # Realtime simulation
         if self.realtime:
-            pkt_rel_time = float(pkt.time) - self._first_pkt_time
+            pkt_rel_time = packet_time - self._first_pkt_time
             elapsed = time.monotonic() - self._start_time
 
             if pkt_rel_time > elapsed:
@@ -453,7 +463,7 @@ class PcapCaptureDriver(CaptureDriver):
         self._current_idx += 1
 
         return RawFrame(
-            data=bytes(pkt),
+            data=packet_bytes,
             timestamp=time.monotonic(),
             channel=6,  # Default to valid channel to pass validation
             iface=self.iface,
