@@ -206,16 +206,11 @@ class SensorKey(db.Model):
 
     __tablename__ = "sensor_keys"
 
-    sensor_id = Column(
-        String(64), ForeignKey("sensors.id"), primary_key=True
-    )
+    sensor_id = Column(String(64), ForeignKey("sensors.id"), primary_key=True)
     key_hash = Column(String(64), nullable=False)  # SHA-256 hex digest
-    created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
-    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     rotated_at = Column(DateTime(timezone=True), nullable=True)
     last_used = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
 
     sensor = relationship("Sensor")
-

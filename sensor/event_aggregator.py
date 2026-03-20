@@ -71,9 +71,7 @@ class EventAggregator:
         This groups identical attack frames from the same source.
         """
         event_type = (
-            telemetry.get("event_type")
-            or telemetry.get("frame_type")
-            or "unknown"
+            telemetry.get("event_type") or telemetry.get("frame_type") or "unknown"
         )
         mac = (
             telemetry.get("bssid")
@@ -112,9 +110,7 @@ class EventAggregator:
                     ),
                     "bssid": telemetry.get("bssid", ""),
                     "src_mac": (
-                        telemetry.get("src_addr")
-                        or telemetry.get("source_mac")
-                        or ""
+                        telemetry.get("src_addr") or telemetry.get("source_mac") or ""
                     ),
                     "count": 0,
                     "first_seen": now,
@@ -170,14 +166,16 @@ class EventAggregator:
                 summary = dict(bucket["sample"])
 
                 # Override / add aggregation metadata
-                summary.update({
-                    "aggregated": True,
-                    "agg_count": count,
-                    "agg_rate_per_sec": round(rate, 2),
-                    "agg_window_sec": self.window_sec,
-                    "agg_first_seen": bucket["first_seen"],
-                    "agg_last_seen": bucket["last_seen"],
-                })
+                summary.update(
+                    {
+                        "aggregated": True,
+                        "agg_count": count,
+                        "agg_rate_per_sec": round(rate, 2),
+                        "agg_window_sec": self.window_sec,
+                        "agg_first_seen": bucket["first_seen"],
+                        "agg_last_seen": bucket["last_seen"],
+                    }
+                )
 
                 # Merge latest extra fields
                 summary.update(bucket["extra_fields"])
@@ -207,9 +205,7 @@ class EventAggregator:
                 "total_ingested": self._total_ingested,
                 "total_collapsed": self._total_collapsed,
                 "compression_ratio": (
-                    round(
-                        self._total_collapsed / self._total_ingested, 3
-                    )
+                    round(self._total_collapsed / self._total_ingested, 3)
                     if self._total_ingested > 0
                     else 0
                 ),

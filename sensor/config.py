@@ -168,7 +168,6 @@ class AggregatorConfig:
     max_events_per_key: int = 100
 
 
-
 @dataclass
 class Config:
     """Main configuration container."""

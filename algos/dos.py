@@ -58,9 +58,7 @@ class DeauthFloodDetector:
         self.deauth_history: TTLDict = TTLDict(maxsize=5000, ttl=300.0)
 
         # Cooldown tracking — TTL = 2x cooldown to allow natural expiry
-        self.last_alert: TTLDict = TTLDict(
-            maxsize=5000, ttl=cooldown_seconds * 2
-        )
+        self.last_alert: TTLDict = TTLDict(maxsize=5000, ttl=cooldown_seconds * 2)
         self._load_state()
 
         self.alert_count = 0

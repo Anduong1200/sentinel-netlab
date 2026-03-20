@@ -90,7 +90,9 @@ class TestIntegrationFlow(unittest.TestCase):
                 host="mock-controller", port=80, api_key="test-key", ssl_enabled=False
             ),
             storage=StorageConfig(pcap_dir=self.storage_path),
-            buffer=BufferConfig(storage_path=os.path.join(self.storage_path, "journal")),
+            buffer=BufferConfig(
+                storage_path=os.path.join(self.storage_path, "journal")
+            ),
             privacy=PrivacyConfig(),
             mock_mode=True,
         )

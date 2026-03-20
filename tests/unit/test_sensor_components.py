@@ -260,22 +260,48 @@ class TestTransport:
         # This test was for SecureTransport helper. We'll skip or adapt.
         pass
 
-
     def test_auditor_generate_report_data_sorting(self):
         from sensor.auditor import SecurityAuditor
+
         auditor = SecurityAuditor("test-sensor", profile="home")
 
         from sensor.auditor.models import Finding
-        f1 = Finding(id="1", title="Info Finding", severity="Info", score=0, status="Open", description="", evidence=[])
-        f2 = Finding(id="2", title="Critical Finding", severity="Critical", score=90, status="Open", description="", evidence=[])
-        f3 = Finding(id="3", title="Low Finding", severity="Low", score=10, status="Open", description="", evidence=[])
+
+        f1 = Finding(
+            id="1",
+            title="Info Finding",
+            severity="Info",
+            score=0,
+            status="Open",
+            description="",
+            evidence=[],
+        )
+        f2 = Finding(
+            id="2",
+            title="Critical Finding",
+            severity="Critical",
+            score=90,
+            status="Open",
+            description="",
+            evidence=[],
+        )
+        f3 = Finding(
+            id="3",
+            title="Low Finding",
+            severity="Low",
+            score=10,
+            status="Open",
+            description="",
+            evidence=[],
+        )
 
         auditor.findings = [f1, f2, f3]
 
         data = auditor.generate_report_data(duration_sec=10.0)
-        assert data["findings"][0]["id"] == "2" # Critical
-        assert data["findings"][1]["id"] == "3" # Low
-        assert data["findings"][2]["id"] == "1" # Info
+        assert data["findings"][0]["id"] == "2"  # Critical
+        assert data["findings"][1]["id"] == "3"  # Low
+        assert data["findings"][2]["id"] == "1"  # Info
+
 
 # =============================================================================
 # RUN

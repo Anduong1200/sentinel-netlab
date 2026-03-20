@@ -41,11 +41,13 @@ class TestEventAggregatorBasic:
         """1000 identical events collapse into 1 summary."""
         agg = EventAggregator(window_sec=5.0)
         for _ in range(1000):
-            agg.ingest({
-                "event_type": "deauth",
-                "bssid": "AA:BB:CC:11:22:33",
-                "rssi_dbm": -65,
-            })
+            agg.ingest(
+                {
+                    "event_type": "deauth",
+                    "bssid": "AA:BB:CC:11:22:33",
+                    "rssi_dbm": -65,
+                }
+            )
         summaries = agg.flush()
         assert len(summaries) == 1
         assert summaries[0]["agg_count"] == 1000
@@ -83,13 +85,15 @@ class TestEventAggregatorBasic:
     def test_summary_preserves_sample_fields(self):
         """Summary preserves original fields from the first event."""
         agg = EventAggregator(window_sec=5.0)
-        agg.ingest({
-            "event_type": "deauth",
-            "bssid": "AA:BB:CC:11:22:33",
-            "channel": 6,
-            "rssi_dbm": -65,
-            "custom_field": "preserved",
-        })
+        agg.ingest(
+            {
+                "event_type": "deauth",
+                "bssid": "AA:BB:CC:11:22:33",
+                "channel": 6,
+                "rssi_dbm": -65,
+                "custom_field": "preserved",
+            }
+        )
         summaries = agg.flush()
         assert summaries[0]["custom_field"] == "preserved"
         assert summaries[0]["bssid"] == "AA:BB:CC:11:22:33"
@@ -150,10 +154,12 @@ class TestEventAggregatorThreadSafety:
         def ingester(thread_id):
             try:
                 for _i in range(100):
-                    agg.ingest({
-                        "event_type": "deauth",
-                        "bssid": f"AA:BB:{thread_id:02X}:00:00:00",
-                    })
+                    agg.ingest(
+                        {
+                            "event_type": "deauth",
+                            "bssid": f"AA:BB:{thread_id:02X}:00:00:00",
+                        }
+                    )
             except Exception as e:
                 errors.append(e)
 

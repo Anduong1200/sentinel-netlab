@@ -80,10 +80,12 @@ def enroll_sensor():
     # Check if already enrolled
     existing = db.session.get(SensorKey, sensor_id)
     if existing and existing.is_active:
-        return jsonify({
-            "error": f"Sensor '{sensor_id}' already has an active key. "
-                     "Use rotate-key to generate a new one.",
-        }), 409
+        return jsonify(
+            {
+                "error": f"Sensor '{sensor_id}' already has an active key. "
+                "Use rotate-key to generate a new one.",
+            }
+        ), 409
 
     # Generate key
     plaintext, key_hash = _generate_sensor_key()
@@ -107,11 +109,13 @@ def enroll_sensor():
 
     logger.info(f"Sensor '{sensor_id}' enrolled with per-sensor key")
 
-    return jsonify({
-        "sensor_id": sensor_id,
-        "hmac_key": plaintext,
-        "message": "Store this key securely. It will not be shown again.",
-    }), 201
+    return jsonify(
+        {
+            "sensor_id": sensor_id,
+            "hmac_key": plaintext,
+            "message": "Store this key securely. It will not be shown again.",
+        }
+    ), 201
 
 
 @provisioning_bp.route("/<sensor_id>/rotate-key", methods=["POST"])
@@ -139,11 +143,13 @@ def rotate_key(sensor_id: str):
 
     logger.info(f"Sensor '{sensor_id}' key rotated")
 
-    return jsonify({
-        "sensor_id": sensor_id,
-        "hmac_key": plaintext,
-        "message": "Old key invalidated. Store this new key securely.",
-    }), 200
+    return jsonify(
+        {
+            "sensor_id": sensor_id,
+            "hmac_key": plaintext,
+            "message": "Old key invalidated. Store this new key securely.",
+        }
+    ), 200
 
 
 @provisioning_bp.route("/<sensor_id>/key-status", methods=["GET"])
@@ -154,14 +160,22 @@ def key_status(sensor_id: str):
     if not sensor_key:
         return jsonify({"error": f"Sensor '{sensor_id}' has no provisioned key"}), 404
 
-    return jsonify({
-        "sensor_id": sensor_id,
-        "is_active": sensor_key.is_active,
-        "created_at": sensor_key.created_at.isoformat() if sensor_key.created_at else None,
-        "rotated_at": sensor_key.rotated_at.isoformat() if sensor_key.rotated_at else None,
-        "last_used": sensor_key.last_used.isoformat() if sensor_key.last_used else None,
-        "key_hash_prefix": sensor_key.key_hash[:8] + "...",
-    }), 200
+    return jsonify(
+        {
+            "sensor_id": sensor_id,
+            "is_active": sensor_key.is_active,
+            "created_at": sensor_key.created_at.isoformat()
+            if sensor_key.created_at
+            else None,
+            "rotated_at": sensor_key.rotated_at.isoformat()
+            if sensor_key.rotated_at
+            else None,
+            "last_used": sensor_key.last_used.isoformat()
+            if sensor_key.last_used
+            else None,
+            "key_hash_prefix": sensor_key.key_hash[:8] + "...",
+        }
+    ), 200
 
 
 @provisioning_bp.route("/<sensor_id>/key", methods=["DELETE"])
@@ -184,7 +198,9 @@ def revoke_key(sensor_id: str):
 
     logger.info(f"Sensor '{sensor_id}' key revoked")
 
-    return jsonify({
-        "sensor_id": sensor_id,
-        "message": "Key revoked. Sensor will use shared secret or be blocked.",
-    }), 200
+    return jsonify(
+        {
+            "sensor_id": sensor_id,
+            "message": "Key revoked. Sensor will use shared secret or be blocked.",
+        }
+    ), 200

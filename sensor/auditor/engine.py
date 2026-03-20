@@ -147,8 +147,7 @@ class SecurityAuditor:
         severity_map = {s: i for i, s in enumerate(severity_order)}
 
         sorted_findings = sorted(
-            self.findings,
-            key=lambda f: severity_map.get(f.severity, 99)
+            self.findings, key=lambda f: severity_map.get(f.severity, 99)
         )
 
         # Count by severity

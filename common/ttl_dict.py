@@ -108,7 +108,9 @@ class TTLDict:
             return iter(list(self._store.keys()))
 
     def __repr__(self) -> str:
-        return f"TTLDict(maxsize={self._maxsize}, ttl={self._ttl}, len={len(self._store)})"
+        return (
+            f"TTLDict(maxsize={self._maxsize}, ttl={self._ttl}, len={len(self._store)})"
+        )
 
     # ── dict-compatible methods ─────────────────────────────────────────
 
