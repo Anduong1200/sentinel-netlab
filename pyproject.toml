@@ -291,3 +291,5 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101", "B603", "B607"]
+[tool.ruff.format]
+line-ending = "lf"
