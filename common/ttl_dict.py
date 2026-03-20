@@ -38,13 +38,13 @@ class TTLDict:
         Args:
             maxsize: Maximum number of entries. When exceeded, oldest entries
                      are evicted first (LRU order).
-            ttl: Time-to-live in seconds for each entry. Entries older than
-                 this are treated as expired and lazily removed.
+            ttl: Time-to-live in seconds for each entry. If 0, expiration is disabled.
+                 Entries older than this are treated as expired and lazily removed.
         """
         if maxsize < 1:
             raise ValueError("maxsize must be >= 1")
-        if ttl <= 0:
-            raise ValueError("ttl must be > 0")
+        if ttl < 0:
+            raise ValueError("ttl must be >= 0")
 
         self._store: OrderedDict[Any, Any] = OrderedDict()
         self._timestamps: dict[Any, float] = {}
@@ -220,6 +220,8 @@ class TTLDict:
     # All internal methods assume the lock is already held.
 
     def _is_expired(self, key: Any) -> bool:
+        if self._ttl == 0:
+            return False
         ts = self._timestamps.get(key)
         if ts is None:
             return True
@@ -237,6 +239,8 @@ class TTLDict:
 
     def _purge_expired(self) -> int:
         """Remove all expired entries. Returns count removed."""
+        if self._ttl == 0:
+            return 0
         now = time.monotonic()
         expired_keys = [
             k for k in self._store if now - self._timestamps.get(k, 0) > self._ttl

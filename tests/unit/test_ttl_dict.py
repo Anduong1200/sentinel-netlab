@@ -193,7 +193,17 @@ class TestTTLDictMaxSize:
 
     def test_invalid_ttl(self):
         with pytest.raises(ValueError):
-            TTLDict(maxsize=100, ttl=0)
+            TTLDict(maxsize=100, ttl=-1)
+
+    def test_ttl_zero_no_expiration(self):
+        """ttl=0 should disable expiration."""
+        d = TTLDict(maxsize=100, ttl=0)
+        d["key"] = "value"
+        time.sleep(0.1)
+        assert "key" in d
+        assert d["key"] == "value"
+        assert d.get("key") == "value"
+        assert len(d) == 1
 
 
 class TestTTLDictStats:

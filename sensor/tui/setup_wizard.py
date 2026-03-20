@@ -366,7 +366,9 @@ def run_lab_action(
     )
 
 
-def run_tests(project_root: Path, python_executable: str | None = None) -> CommandResult:
+def run_tests(
+    project_root: Path, python_executable: str | None = None
+) -> CommandResult:
     """Run the pytest suite and return a summarized result."""
     # Ensure pytest is available
     pytest_bin = shutil.which("pytest") or "pytest"
@@ -424,7 +426,7 @@ def probe_health_endpoint(
             with opener(target_url, timeout=2) as response:  # noqa: S310
                 if response.getcode() == 200:
                     return True
-        except Exception:
+        except Exception:  # noqa: S110
             pass
         if attempt < tries - 1 and delay_sec > 0:
             time.sleep(delay_sec)
@@ -850,6 +852,18 @@ def _detect_interface_mode(interface: str) -> str:
     return "unknown"
 
 
+def _needs_sudo() -> bool:
+    """Check if we need sudo for privileged network operations."""
+    return os.getuid() != 0
+
+
+def _privileged_command(args: list[str]) -> list[str]:
+    """Prefix a command with sudo if not running as root."""
+    if _needs_sudo():
+        return ["sudo", *args]
+    return args
+
+
 def set_interface_monitor_mode(
     interface: str,
     *,
@@ -862,25 +876,26 @@ def set_interface_monitor_mode(
 
     desired_mode = "monitor" if monitor else "managed"
     down_result = _run_command(
-        ["ip", "link", "set", normalized_interface, "down"],
+        _privileged_command(["ip", "link", "set", normalized_interface, "down"]),
         timeout=15,
     )
     if not down_result.ok:
+        hint = " (try running with sudo)" if _needs_sudo() else ""
         return CommandResult(
             ok=False,
-            summary=f"Cannot bring down {normalized_interface}: {down_result.summary}",
+            summary=f"Cannot bring down {normalized_interface}: {down_result.summary}{hint}",
             returncode=down_result.returncode,
             stdout=down_result.stdout,
             stderr=down_result.stderr,
         )
 
     switch_result = _run_command(
-        ["iw", "dev", normalized_interface, "set", "type", desired_mode],
+        _privileged_command(["iw", "dev", normalized_interface, "set", "type", desired_mode]),
         timeout=15,
     )
     if not switch_result.ok and shutil.which("iwconfig") is not None:
         switch_result = _run_command(
-            ["iwconfig", normalized_interface, "mode", desired_mode],
+            _privileged_command(["iwconfig", normalized_interface, "mode", desired_mode]),
             timeout=15,
         )
     if not switch_result.ok:
@@ -894,7 +909,7 @@ def set_interface_monitor_mode(
         )
 
     up_result = _run_command(
-        ["ip", "link", "set", normalized_interface, "up"],
+        _privileged_command(["ip", "link", "set", normalized_interface, "up"]),
         timeout=15,
     )
     if not up_result.ok:

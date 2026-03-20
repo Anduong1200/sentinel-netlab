@@ -1,7 +1,7 @@
 sensor:
-  id: lab-sensor-01
+  id: sensor-01
 capture:
-  interface: wlan1
+  interface: wlan0
   method: scapy
   channels:
   - 1
@@ -25,10 +25,10 @@ geo:
   sensor_x_m: null
   sensor_y_m: null
 privacy:
-  anonymize_ssid: true
+  anonymize_ssid: false
   scrub_probe_requests: true
 detectors:
   default_profile: lite_realtime
 mock_mode: false
 tui:
-  profile_name: Lab Demo
+  preset_id: balanced_live

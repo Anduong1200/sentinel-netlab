@@ -60,31 +60,31 @@ from sensor.tui.config_store import (
     validate_tui_settings,
 )
 from sensor.tui.setup_wizard import (
+    DEFAULT_PROD_HEALTH_URL,
     AuditRunReport,
     BackendCheckReport,
     CommandResult,
-    DEFAULT_PROD_HEALTH_URL,
     DeploymentActionReport,
     LabActionReport,
     WirelessInventoryReport,
-    build_pytest_command,
     build_bootstrap_env,
+    build_pytest_command,
     build_quick_profile,
     build_sensor_daemon_command,
     build_upload_url,
     collect_backend_health,
     detect_wireless_inventory,
     install_python_component,
-    normalize_health_url,
     normalize_controller_url,
+    normalize_health_url,
     open_dashboard_gui,
     probe_health_endpoint,
     request_sensor_token,
+    resolve_test_targets,
     run_lab_action,
     run_prod_action,
     run_security_audit,
     run_tests,
-    resolve_test_targets,
     set_interface_monitor_mode,
     upsert_env_file,
 )
@@ -136,10 +136,17 @@ def check_controller_online(base_url: str | None = None) -> bool:
         url = normalize_controller_url(base_url or os.environ.get("CONTROLLER_URL"))
         if not url.startswith(("http://", "https://")):
             return False
-        resp = urllib.request.urlopen(  # noqa: S310 # nosec B310
-            f"{url}/api/v1/health", timeout=2
-        )
-        return bool(resp.getcode() == 200)
+        # Try multiple health paths (lab/prod may differ)
+        for path in ("/api/v1/health", "/health", "/"):
+            try:
+                resp = urllib.request.urlopen(  # noqa: S310 # nosec B310
+                    f"{url}{path}", timeout=2
+                )
+                if resp.getcode() == 200:
+                    return True
+            except Exception:  # noqa: S110
+                continue
+        return False
     except Exception:  # noqa: S110
         return False
 
@@ -253,7 +260,7 @@ class SetupScreen(Screen):
                     with Horizontal(classes="quick-actions"):
                         yield Button("Demo Bundle", id="btn-quick-demo")
                         yield Button("Live Bundle", id="btn-quick-live")
-                        yield Button("Gen Token/Keys", id="btn-gen-secrets")
+                        yield Button("Gen .env Keys", id="btn-gen-secrets")
                     with Horizontal(classes="setup-row", id="row-controller-url"):
                         yield Label("Controller URL", classes="setup-label")
                         yield Input(
@@ -261,7 +268,6 @@ class SetupScreen(Screen):
                             placeholder="http://127.0.0.1:8080",
                             id="input-controller-url",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-admin-token"):
                         yield Label("Admin Token", classes="setup-label")
@@ -271,7 +277,6 @@ class SetupScreen(Screen):
                             password=True,
                             id="input-admin-token",
                             classes="setup-input",
-                            compact=True,
                         )
                     yield Label("", id="quick-setup-status")
 
@@ -281,6 +286,14 @@ class SetupScreen(Screen):
                         yield Button("Balanced Live", id="btn-preset-balanced-live")
                         yield Button("SOC Tactical", id="btn-preset-soc-tactical")
                         yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
+                    with Horizontal(classes="setup-row", id="row-profile-select"):
+                        yield Label("Saved Profiles", classes="setup-label")
+                        yield Select(
+                            [("(no saved profiles)", "")],
+                            value="",
+                            id="select-profile",
+                            classes="setup-input",
+                        )
                     with Horizontal(classes="setup-row", id="row-profile-name"):
                         yield Label("Profile Name", classes="setup-label")
                         yield Input(
@@ -288,12 +301,11 @@ class SetupScreen(Screen):
                             placeholder="soc-lab, replay-case-01, field-team-a",
                             id="input-profile-name",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="quick-actions"):
                         yield Button("Save Profile", id="btn-save-profile")
-                        yield Button("Load Profile", id="btn-load-profile")
-                        yield Button("Delete Profile", id="btn-delete-profile")
+                        yield Button("Load Selected", id="btn-load-profile")
+                        yield Button("Delete Selected", id="btn-delete-profile")
                     yield Label("", id="preset-summary")
                     yield Label("", id="profile-status")
                     yield Label("", id="profile-inventory", classes="setup-hint")
@@ -308,7 +320,6 @@ class SetupScreen(Screen):
                             placeholder="Unique sensor identifier",
                             id="input-sensor-id",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-interface"):
                         yield Label("Interface", classes="setup-label")
@@ -325,7 +336,6 @@ class SetupScreen(Screen):
                             placeholder="Manual override (e.g. wlan1mon)",
                             id="input-iface",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-pcap"):
                         yield Label("PCAP Path", classes="setup-label")
@@ -334,7 +344,6 @@ class SetupScreen(Screen):
                             placeholder="/path/to/capture.pcap",
                             id="input-pcap",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-geo-x"):
                         yield Label("Geo Sensor X", classes="setup-label")
@@ -343,7 +352,6 @@ class SetupScreen(Screen):
                             placeholder="e.g. 12.5",
                             id="input-geo-x",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-geo-y"):
                         yield Label("Geo Sensor Y", classes="setup-label")
@@ -352,7 +360,6 @@ class SetupScreen(Screen):
                             placeholder="e.g. 4.0",
                             id="input-geo-y",
                             classes="setup-input",
-                            compact=True,
                         )
 
                 # Mode Selection
@@ -380,6 +387,10 @@ class SetupScreen(Screen):
 
                 with Container(classes="setup-group"):
                     yield Label("📡 INTERFACE AUTOMATION", classes="setup-group-title")
+                    yield Label(
+                        "[dim]Requires root/sudo for monitor mode switching[/dim]",
+                        classes="setup-hint",
+                    )
                     with Horizontal(classes="quick-actions"):
                         yield Button("Detect USB/IW", id="btn-detect-iface")
                         yield Button("Monitor Mode", id="btn-monitor-on")
@@ -400,7 +411,7 @@ class SetupScreen(Screen):
                     with Horizontal(classes="quick-actions"):
                         yield Button("Lab Reset", id="btn-lab-reset")
                         yield Button("Lab Status", id="btn-lab-status")
-                        yield Button("Gen Lab Tokens", id="btn-lab-gen")
+                        yield Button("Gen Docker Tokens", id="btn-lab-gen")
                     with Horizontal(classes="quick-actions"):
                         yield Button("Run Tests", id="btn-run-tests")
                         yield Button("Open GUI", id="btn-open-gui")
@@ -417,7 +428,6 @@ class SetupScreen(Screen):
                             placeholder="home, sme, enterprise",
                             id="input-audit-profile",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="setup-row", id="row-audit-output"):
                         yield Label("Audit Output", classes="setup-label")
@@ -426,9 +436,10 @@ class SetupScreen(Screen):
                             placeholder="artifacts/audit_report.json",
                             id="input-audit-output",
                             classes="setup-input",
-                            compact=True,
                         )
-                    yield Checkbox("Use Mock Discovery", id="chk-audit-mock", value=True)
+                    yield Checkbox(
+                        "Use Mock Discovery", id="chk-audit-mock", value=True
+                    )
                     with Horizontal(classes="quick-actions"):
                         yield Button("Run Security Audit", id="btn-run-audit")
                         yield Button("Clear Audit", id="btn-clear-audit")
@@ -455,7 +466,9 @@ class SetupScreen(Screen):
                     )
                     yield Checkbox("All Tests", id="chk-tests-all", value=False)
                     with Horizontal(classes="quick-actions"):
-                        yield Button("Run Diagnostics / Tests", id="btn-run-tests-stream")
+                        yield Button(
+                            "Run Diagnostics / Tests", id="btn-run-tests-stream"
+                        )
                         yield Button("Clear Diagnostics", id="btn-clear-tests")
                     yield Label("", id="diag-status")
                     yield RichLog(
@@ -488,7 +501,6 @@ class SetupScreen(Screen):
                             placeholder="http://127.0.0.1/health",
                             id="input-prod-health-url",
                             classes="setup-input",
-                            compact=True,
                         )
                     with Horizontal(classes="quick-actions"):
                         yield Button(
@@ -582,9 +594,9 @@ class SetupScreen(Screen):
         )
 
         mode = defaults.get("mode", "mock")
-        self.query_one("#mode-live", RadioButton).value = mode == "live"
-        self.query_one("#mode-mock", RadioButton).value = mode == "mock"
-        self.query_one("#mode-pcap", RadioButton).value = mode == "pcap"
+        mode_map = {"live": "#mode-live", "pcap": "#mode-pcap", "mock": "#mode-mock"}
+        target_id = mode_map.get(mode, "#mode-mock")
+        self.query_one(target_id, RadioButton).value = True
 
         audit_table = self.query_one("#audit-results", DataTable)
         audit_table.add_columns("Severity", "Title", "Status", "Evidence", "Action")
@@ -815,7 +827,9 @@ class SetupScreen(Screen):
         self.query_one("#backend-status", Label).update(status)
         app = self._sentinel_app()
         if not result.ok:
-            app.app_state.push_log(f"[Error] Pytest failed:\n{result.stderr or result.stdout}")
+            app.app_state.push_log(
+                f"[Error] Pytest failed:\n{result.stderr or result.stdout}"
+            )
         else:
             app.app_state.push_log("[System] All tests passed.")
 
@@ -828,6 +842,12 @@ class SetupScreen(Screen):
         elif event.checkbox.id in {"chk-tests-unit", "chk-tests-integration"}:
             if event.checkbox.value:
                 self.query_one("#chk-tests-all", Checkbox).value = False
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "select-profile":
+            selected = event.value
+            if selected and selected != Select.BLANK:
+                self.query_one("#input-profile-name", Input).value = str(selected)
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.radio_set.id == "mode-select":
@@ -997,9 +1017,9 @@ class SetupScreen(Screen):
         self.query_one("#input-prod-health-url", Input).value = str(
             merged.get("prod_health_url", DEFAULT_PROD_HEALTH_URL)
         )
-        self.query_one("#mode-live", RadioButton).value = merged["mode"] == "live"
-        self.query_one("#mode-mock", RadioButton).value = merged["mode"] == "mock"
-        self.query_one("#mode-pcap", RadioButton).value = merged["mode"] == "pcap"
+        mode_map = {"live": "#mode-live", "pcap": "#mode-pcap", "mock": "#mode-mock"}
+        target_id = mode_map.get(merged["mode"], "#mode-mock")
+        self.query_one(target_id, RadioButton).value = True
         self._sync_dynamic_rows()
         self._refresh_profile_summary(merged)
         self.call_after_refresh(
@@ -1088,7 +1108,11 @@ class SetupScreen(Screen):
 
         # Enhanced status with masked token preview
         env_text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
-        key_count = sum(1 for line in env_text.splitlines() if "=" in line and not line.startswith("#"))
+        key_count = sum(
+            1
+            for line in env_text.splitlines()
+            if "=" in line and not line.startswith("#")
+        )
         token_preview = "(none)"  # noqa: S105 - UI label
         for line in env_text.splitlines():
             if line.startswith("SENSOR_AUTH_TOKEN="):
@@ -1133,7 +1157,15 @@ class SetupScreen(Screen):
         )
 
     def _load_named_profile(self) -> None:
-        name = self.query_one("#input-profile-name", Input).value
+        name = self.query_one("#input-profile-name", Input).value.strip()
+        # Fallback to selected profile from dropdown if name input is empty
+        if not name:
+            try:
+                selected = self.query_one("#select-profile", Select).value
+                if selected and selected != Select.BLANK:
+                    name = str(selected)
+            except Exception:  # noqa: S110
+                pass
         profile = load_tui_profile(PROJECT_ROOT, name)
         if profile is None:
             self.query_one("#profile-status", Label).update(
@@ -1148,8 +1180,16 @@ class SetupScreen(Screen):
         )
 
     def _delete_named_profile(self) -> None:
-        name = self.query_one("#input-profile-name", Input).value
-        if not delete_tui_profile(PROJECT_ROOT, name):
+        name = self.query_one("#input-profile-name", Input).value.strip()
+        # Fallback to selected profile from dropdown if name input is empty
+        if not name:
+            try:
+                selected = self.query_one("#select-profile", Select).value
+                if selected and selected != Select.BLANK:
+                    name = str(selected)
+            except Exception:  # noqa: S110
+                pass
+        if not name or not delete_tui_profile(PROJECT_ROOT, name):
             self.query_one("#profile-status", Label).update(
                 "[bold red]❌ Nothing to delete for that profile name.[/bold red]"
             )
@@ -1161,11 +1201,24 @@ class SetupScreen(Screen):
         self._persist_setup_state(current_settings)
         self._refresh_profile_inventory()
         self.query_one("#profile-status", Label).update(
-            f"[green]Deleted custom profile '{name.strip()}'.[/green]"
+            f"[green]Deleted custom profile '{name}'.[/green]"
         )
 
     def _refresh_profile_inventory(self) -> None:
         saved_profiles = list_saved_tui_profiles(PROJECT_ROOT)
+        # Update the Select dropdown
+        try:
+            select_widget = self.query_one("#select-profile", Select)
+            if saved_profiles:
+                options = [(name, name) for name in saved_profiles]
+                select_widget.set_options(options)
+            else:
+                select_widget.set_options([("(no saved profiles)", "")])
+                select_widget.value = ""
+        except Exception:  # noqa: S110
+            pass
+
+        # Update the inventory label
         if not saved_profiles:
             self.query_one("#profile-inventory", Label).update(
                 "[dim]Saved profiles: none yet.[/dim]"
@@ -1331,7 +1384,9 @@ class SetupScreen(Screen):
         if report.selected_interface and report.selected_interface != "(none detected)":
             self.query_one("#input-iface", Input).value = report.selected_interface
             try:
-                self.query_one("#select-iface", Select).value = report.selected_interface
+                self.query_one(
+                    "#select-iface", Select
+                ).value = report.selected_interface
             except Exception:  # noqa: S110
                 pass
 
@@ -1360,7 +1415,7 @@ class SetupScreen(Screen):
         if result.stderr:
             self.query_one("#iface-summary", Label).update(
                 f"[dim]{result.stderr[:220]}[/dim]"
-        )
+            )
         self._sentinel_app().app_state.push_log(f"[Setup] {label} -> {result.summary}")
 
     def _prod_health_url(self) -> str:
@@ -1453,9 +1508,7 @@ class SetupScreen(Screen):
             "#audit-log",
             f"Completed audit in {report.duration_sec:.1f}s.",
         )
-        self._sentinel_app().app_state.push_log(
-            f"[Setup] Audit -> {report.summary}"
-        )
+        self._sentinel_app().app_state.push_log(f"[Setup] Audit -> {report.summary}")
 
     def _handle_audit_failure(self, message: str) -> None:
         self._audit_running = False
@@ -1548,9 +1601,7 @@ class SetupScreen(Screen):
             if ok
             else f"Diagnostics failed for {target_label} (exit {returncode})."
         )
-        self.query_one("#diag-status", Label).update(
-            f"[{color}]{summary}[/{color}]"
-        )
+        self.query_one("#diag-status", Label).update(f"[{color}]{summary}[/{color}]")
         self._append_rich_log("#diag-log", f"Process exited with code {returncode}.")
         self._sentinel_app().app_state.push_log(f"[Setup] Diagnostics -> {summary}")
 
