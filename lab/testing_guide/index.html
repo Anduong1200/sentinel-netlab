@@ -1,0 +1,2380 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Hướng dẫn Kiểm thử (Testing Guide) từng tính năng - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#huong-dan-kiem-thu-testing-guide-tung-tinh-nang" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Hướng dẫn Kiểm thử (Testing Guide) từng tính năng
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../research/security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/deep-research-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#giai-oan-1-test-he-sinh-thai-cot-loi-controller-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giai đoạn 1: Test Hệ sinh thái cốt lõi (Controller + Dashboard)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giai đoạn 1: Test Hệ sinh thái cốt lõi (Controller + Dashboard)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-test-controller-api-liveness-health" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Test Controller API (Liveness &amp; Health)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-test-giao-dien-dashboard-web-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Test Giao diện Dashboard (Web UI)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#giai-oan-2-test-quy-trinh-nap-du-lieu-gia-lap-mock-data-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giai đoạn 2: Test Quy trình Nạp dữ liệu giả lập (Mock Data Pipeline)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giai đoạn 2: Test Quy trình Nạp dữ liệu giả lập (Mock Data Pipeline)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-khoi-ong-mock-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Khởi động Mock Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-kiem-thu-luong-du-lieu-data-pipeline-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Kiểm thử luồng dữ liệu (Data Pipeline Test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#giai-oan-3-test-kha-nang-bat-goi-tin-mang-that-sensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giai đoạn 3: Test khả năng Bắt Gói Tin Mạng thật (Sensor)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giai đoạn 3: Test khả năng Bắt Gói Tin Mạng thật (Sensor)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-chay-sensor-o-che-o-cli-in-ra-man-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Chạy Sensor ở chế độ CLI In ra màn hình
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-lien-ket-sensor-va-controller-e2e-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Liên kết Sensor và Controller (E2E Test)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#giai-oan-4-test-cac-tinh-nang-chuyen-sau-advanced-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giai đoạn 4: Test các tính năng Chuyên sâu (Advanced Algorithms)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Giai đoạn 4: Test các tính năng Chuyên sâu (Advanced Algorithms)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-test-tan-cong-deauth-denial-of-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Test tấn công Deauth (Denial of Service)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-test-wardriving-ve-ban-o-wifi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Test Wardriving (Vẽ Bản Đồ WiFi)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-test-cong-cu-audit-scan-lo-hong-bao-mat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test công cụ Audit (Scan Lỗ Hổng Bảo Mật)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-test-inh-vi-geo-location-hoc-may-ml-boost-chay-lai-pcap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Test Định Vị (Geo-Location), Học Máy (ML Boost) &amp; Chạy lại PCAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-xu-ly-su-co-thuong-gap-troubleshooting-lab-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Xử lý sự cố thường gặp (Troubleshooting Lab Mode)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Xử lý sự cố thường gặp (Troubleshooting Lab Mode)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-loi-proxy-unhealthy-va-sensor-restarting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Lỗi "Proxy (unhealthy)" và "Sensor (restarting)"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-tai-dashboard-bi-loi-trang-trang-not-found-hoac-unable-to-connect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Tải Dashboard bị lỗi trang trắng "Not Found" hoặc "Unable to connect"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-trinh-duyet-bao-loi-secure-connection-failed-ssl_error_rx_record_too_long" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Trình duyệt báo lỗi "Secure Connection Failed" (SSL_ERROR_RX_RECORD_TOO_LONG)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-loi-failed-to-create-an-image-already-exists-khi-chay-make-lab-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Lỗi "Failed to create an image... already exists" khi chạy make lab-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-loi-scapy-not-installed-du-a-chay-pip-install-thanh-cong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Lỗi "Scapy not installed" (dù đã chạy pip install thành công)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phu-luc-kich-ban-trinh-bay-truoc-hoi-ong-chi-tiet-tung-buoc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phụ lục: Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="huong-dan-kiem-thu-testing-guide-tung-tinh-nang">Hướng dẫn Kiểm thử (Testing Guide) từng tính năng<a class="headerlink" href="#huong-dan-kiem-thu-testing-guide-tung-tinh-nang" title="Permanent link">&para;</a></h1>
+<p>Tài liệu này hướng dẫn bạn cách xác minh và test từng thành phần của Sentinel NetLab, từ những bước cơ bản đến nâng cao.</p>
+<hr />
+<h2 id="giai-oan-1-test-he-sinh-thai-cot-loi-controller-dashboard">Giai đoạn 1: Test Hệ sinh thái cốt lõi (Controller + Dashboard)<a class="headerlink" href="#giai-oan-1-test-he-sinh-thai-cot-loi-controller-dashboard" title="Permanent link">&para;</a></h2>
+<p>Khi bạn khởi động Lab (<code>make lab-up</code> hoặc <code>docker compose ... up -d</code>), hãy kiểm tra xem hệ thống Control Plane có "sống" không.</p>
+<h3 id="1-test-controller-api-liveness-health">1. Test Controller API (Liveness &amp; Health)<a class="headerlink" href="#1-test-controller-api-liveness-health" title="Permanent link">&para;</a></h3>
+<p>Mở terminal và gọi lệnh HTTP GET tới endpoint Health Check:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8080/api/v1/health<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
+</code></pre></div>
+<em>Bạn nên nhận được phản hồi JSON có chứa <code>"status": "ok"</code> và trạng thái kết nối Database/Redis.</em></p>
+<h3 id="2-test-giao-dien-dashboard-web-ui">2. Test Giao diện Dashboard (Web UI)<a class="headerlink" href="#2-test-giao-dien-dashboard-web-ui" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Mở trình duyệt truy cập: <code>http://127.0.0.1:8080/dashboard/</code> (Nếu là Lab Mode)</li>
+<li>Giao diện đăng nhập sẽ hiện ra. Sử dụng tài khoản xuất ra từ script sinh mật khẩu (mặc định user: <code>admin</code>).</li>
+<li>Hệ thống phải tải được trang Sidebar, các biểu đồ (nếu trống dữ liệu thì đồ thị vẫn sẽ vẽ khung).</li>
+</ul>
+<hr />
+<h2 id="giai-oan-2-test-quy-trinh-nap-du-lieu-gia-lap-mock-data-pipeline">Giai đoạn 2: Test Quy trình Nạp dữ liệu giả lập (Mock Data Pipeline)<a class="headerlink" href="#giai-oan-2-test-quy-trinh-nap-du-lieu-gia-lap-mock-data-pipeline" title="Permanent link">&para;</a></h2>
+<p>Nếu bạn không có USB WiFi thật mà vẫn muốn xem Dashboard nhảy số, tính năng Mock Sinh Mock Data chính là thứ để kiểm tra hệ thống Analytics.</p>
+<h3 id="1-khoi-ong-mock-mode">1. Khởi động Mock Mode<a class="headerlink" href="#1-khoi-ong-mock-mode" title="Permanent link">&para;</a></h3>
+<p>Chạy lệnh Nạp Dữ Liệu (Seed Data):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>ops/.env.lab<span class="w"> </span>-f<span class="w"> </span>ops/docker-compose.lab.yml<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>seed
+</code></pre></div></p>
+<h3 id="2-kiem-thu-luong-du-lieu-data-pipeline-test">2. Kiểm thử luồng dữ liệu (Data Pipeline Test)<a class="headerlink" href="#2-kiem-thu-luong-du-lieu-data-pipeline-test" title="Permanent link">&para;</a></h3>
+<p>Sau khi Seed thành công:
+1. Quay lại trang <strong>Dashboard (<code>/dashboard/</code>)</strong>, nhấp vào Tab <strong>"Alerts"</strong>.
+2. Bạn phải nhìn thấy ít nhất <strong>1 cảnh báo Deauth/DoS</strong> hoặc một cảnh báo bảo mật giả lập có điểm Risk Score.
+3. Chuyển sang Tab <strong>"Access Points"</strong> hoặc <strong>"Heatmap"</strong>. Dữ liệu giả lập về các điểm phát WiFi kèm địa chỉ MAC sẽ hiển thị trên nền tảng.</p>
+<hr />
+<h2 id="giai-oan-3-test-kha-nang-bat-goi-tin-mang-that-sensor">Giai đoạn 3: Test khả năng Bắt Gói Tin Mạng thật (Sensor)<a class="headerlink" href="#giai-oan-3-test-kha-nang-bat-goi-tin-mang-that-sensor" title="Permanent link">&para;</a></h2>
+<p><em>(Yêu cầu: Máy có gắn USB WiFi đã được cấu hình sang Monitor Mode, giả sử tên là <code>wlan1</code>)</em></p>
+<h3 id="1-chay-sensor-o-che-o-cli-in-ra-man-hinh">1. Chạy Sensor ở chế độ CLI In ra màn hình<a class="headerlink" href="#1-chay-sensor-o-che-o-cli-in-ra-man-hinh" title="Permanent link">&para;</a></h3>
+<p>Hãy test Sensor độc lập (Không gửi lên phân hệ Controller) để xem nó có thực sự tóm được gói tin của thiết bị xung quanh hay không:</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Trong môi trường Python venv</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Chạy sensor </span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>sudo<span class="w"> </span>python<span class="w"> </span>sentinel.py<span class="w"> </span>monitor<span class="w"> </span>--sensor-id<span class="w"> </span>my-test-sensor<span class="w"> </span>--iface<span class="w"> </span>wlan1
+</code></pre></div>
+<em>Kết quả:</em> Terminal của bạn sẽ nhảy liên tục thông tin: Phát hiện AP <code>MyHomeWiFi</code>, Ghi nhận Client <code>00:11...</code> liên kết. Cứ sau 10 giây (Tùy cấu hình) sẽ có dòng In ra màn hình là đã gom được X frames.</p>
+<h3 id="2-lien-ket-sensor-va-controller-e2e-test">2. Liên kết Sensor và Controller (E2E Test)<a class="headerlink" href="#2-lien-ket-sensor-va-controller-e2e-test" title="Permanent link">&para;</a></h3>
+<p>Trước khi chạy sensor thật, tạo token runtime tự động:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Tạo DASHBOARD_API_TOKEN + SENSOR_AUTH_TOKEN và cập nhật ops/.env.lab</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>make<span class="w"> </span>lab-gen-runtime-tokens<span class="w"> </span><span class="nv">SENSOR_ID</span><span class="o">=</span>lab-sensor-real
+</code></pre></div></p>
+<p><em>Lưu ý:</em> Nếu chưa khởi tạo DB lab thì chạy trước:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>ops/.env.lab<span class="w"> </span>-f<span class="w"> </span>ops/docker-compose.lab.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-T<span class="w"> </span>controller<span class="w"> </span>python<span class="w"> </span>ops/init_lab_db.py
+</code></pre></div></p>
+<p>Sau đó chạy sensor thật với config trỏ vào proxy lab:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Lấy token vừa tạo</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nv">SENSOR_TOKEN</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span><span class="s2">&quot;^SENSOR_AUTH_TOKEN=&quot;</span><span class="w"> </span>ops/.env.lab<span class="w"> </span><span class="p">|</span><span class="w"> </span>cut<span class="w"> </span>-d<span class="o">=</span><span class="w"> </span>-f2-<span class="k">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Tạo config runtime cho sensor thật</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/sensor-real.json<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="s">{</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s">  &quot;sensor&quot;: { &quot;id&quot;: &quot;lab-sensor-real&quot; },</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="s">  &quot;capture&quot;: { &quot;interface&quot;: &quot;wlan1&quot;, &quot;channels&quot;: [1, 6, 11], &quot;dwell_time&quot;: 0.4 },</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="s">  &quot;api&quot;: { &quot;host&quot;: &quot;127.0.0.1&quot;, &quot;port&quot;: 8080, &quot;api_key&quot;: &quot;</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="s">${SENSOR_TOKEN}</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="s">&quot;, &quot;ssl_enabled&quot;: false },</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="s">  &quot;mock_mode&quot;: false,</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="s">  &quot;log_level&quot;: &quot;INFO&quot;</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="s">}</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="s">EOF</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="c1"># Chạy sensor (dùng python trong venv)</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>sudo<span class="w"> </span>.venv/bin/python<span class="w"> </span>sentinel.py<span class="w"> </span>monitor<span class="w"> </span>--config-file<span class="w"> </span>/tmp/sensor-real.json
+</code></pre></div></p>
+<p><em>(Nếu Controller ở máy khác, thay <code>127.0.0.1</code> bằng IP máy chủ Controller.)</em></p>
+<p><em>Xác nhận:</em>
+* Sensor không còn lỗi <code>401 Unauthorized</code> / <code>Invalid signature</code>.
+* API <code>/api/v1/networks</code> tăng <code>count</code> theo thời gian thực.
+* Dashboard hiển thị AP/Alerts mới ở <code>/dashboard/</code>.</p>
+<hr />
+<h2 id="giai-oan-4-test-cac-tinh-nang-chuyen-sau-advanced-algorithms">Giai đoạn 4: Test các tính năng Chuyên sâu (Advanced Algorithms)<a class="headerlink" href="#giai-oan-4-test-cac-tinh-nang-chuyen-sau-advanced-algorithms" title="Permanent link">&para;</a></h2>
+<h3 id="1-test-tan-cong-deauth-denial-of-service">1. Test tấn công Deauth (Denial of Service)<a class="headerlink" href="#1-test-tan-cong-deauth-denial-of-service" title="Permanent link">&para;</a></h3>
+<p>Để kiểm tra thuật toán xem việc phát hiện bị DDoS (Deauthentication flood) có nhạy không:
+* Mở điện thoại, bắt WiFi nhà bạn.
+* Bạn dùng máy tính có gắn Tool (như Kali Linux) bắn lệnh Hủy xác thực (Deauth):
+  <code>sudo aireplay-ng --deauth 10 -a &lt;MAC_CỦA_WIFI_NHÀ_BẠN&gt; -c &lt;MAC_ĐIỆN_THOẠI&gt; wlan1</code>
+* <strong>Kỳ vọng:</strong> Trong chưa đầy 15 giây, Dashboard của NetLab ở mục Alerts sẽ nhá màu đỏ báo hiệu <code>DEAUTH_FLOOD_DETECTED</code> có mức rủi ro CAO.</p>
+<h3 id="2-test-wardriving-ve-ban-o-wifi">2. Test Wardriving (Vẽ Bản Đồ WiFi)<a class="headerlink" href="#2-test-wardriving-ve-ban-o-wifi" title="Permanent link">&para;</a></h3>
+<p>Tính năng này không cần Controller. Bạn xách Laptop/Pi + USB WiFi đi dạo:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>python<span class="w"> </span>sensor/wardrive.py<span class="w"> </span>--iface<span class="w"> </span>wlan1<span class="w"> </span>--output<span class="w"> </span>my_walk.json
+</code></pre></div>
+* <strong>Kỳ vọng:</strong> Khi ngừng chạy, file <code>my_walk.json</code> được sinh ra chứa danh sách toàn bộ WiFi bạn đã quét được trên phố. Nếu bạn cắm thêm cổng GPS (Qua cổng USB COM), các thiết bị này sẽ được ghim tọa độ vật lý.</p>
+<h3 id="3-test-cong-cu-audit-scan-lo-hong-bao-mat">3. Test công cụ Audit (Scan Lỗ Hổng Bảo Mật)<a class="headerlink" href="#3-test-cong-cu-audit-scan-lo-hong-bao-mat" title="Permanent link">&para;</a></h3>
+<p>Tính năng dùng để đánh giá độ an toàn của cấu hình WiFi (Ví dụ: quét xem mạng nhà bạn có đang dùng WPA1 hay WEP yếu đuối không).
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Yêu cầu đã thiết lập file cấu hình profle audit trong mã nguồn</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>python<span class="w"> </span>sensor/audit.py<span class="w"> </span>--profile<span class="w"> </span>home<span class="w"> </span>--output<span class="w"> </span>audit_report.json
+</code></pre></div>
+* <strong>Kỳ vọng:</strong> Công cụ sẽ xuất ra một file JSON báo cáo: "Mạng nhà bạn đạt chuẩn WPA2/WPA3. Không phát hiện lổ hổng OWE thiếu mã hóa PMF, v.v..."</p>
+<h3 id="4-test-inh-vi-geo-location-hoc-may-ml-boost-chay-lai-pcap">4. Test Định Vị (Geo-Location), Học Máy (ML Boost) &amp; Chạy lại PCAP<a class="headerlink" href="#4-test-inh-vi-geo-location-hoc-may-ml-boost-chay-lai-pcap" title="Permanent link">&para;</a></h3>
+<p>Bạn có thể thử nghiệm các tính năng nâng cao trực tiếp từ CLI bằng các cờ đã được tích hợp sẵn:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Test Replay gói tin mẫu (thay thế cho việc dùng USB WiFi thật để phát hiện tấn công)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>sudo<span class="w"> </span>python<span class="w"> </span>sensor/cli.py<span class="w"> </span>--sensor-id<span class="w"> </span>test-pcap<span class="w"> </span>--pcap<span class="w"> </span>tests/data/captured_attack.pcap
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Khởi chạy Sensor kèm hệ thống học máy (ML Anomaly Detection) và vẽ bản đồ nhiệt (Geo Heatmap)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>sudo<span class="w"> </span>python<span class="w"> </span>sensor/cli.py<span class="w"> </span>--sensor-id<span class="w"> </span>test-ml<span class="w"> </span>--iface<span class="w"> </span>wlan1<span class="w"> </span>--enable-ml<span class="w"> </span>--enable-geo
+</code></pre></div>
+* <strong>Kỳ vọng:</strong> Khi chạy cờ <code>--pcap</code>, hệ thống sẽ đọc gói tin từ file <code>.pcap</code> để chấm điểm tấn công thay vì card mạng. Khi chạy với cờ <code>--enable-ml</code> và <code>--enable-geo</code>, màn hình khởi động (Banner) sẽ thông báo rõ <code>ML Boost: ENABLED</code> và <code>Geo Loc: ENABLED</code>, đồng thời Pipeline sẽ móc nối dữ liệu Tọa độ và Máy học vào quá trình chấm điểm Risk Score.</p>
+<hr />
+<h2 id="5-xu-ly-su-co-thuong-gap-troubleshooting-lab-mode">5. Xử lý sự cố thường gặp (Troubleshooting Lab Mode)<a class="headerlink" href="#5-xu-ly-su-co-thuong-gap-troubleshooting-lab-mode" title="Permanent link">&para;</a></h2>
+<p>Trong quá trình khởi chạy Lab bằng <code>docker compose</code>, bạn có thể kiểm tra trạng thái các container bằng lệnh:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>ops/.env.lab<span class="w"> </span>-f<span class="w"> </span>ops/docker-compose.lab.yml<span class="w"> </span>ps
+</code></pre></div></p>
+<h3 id="1-loi-proxy-unhealthy-va-sensor-restarting">1. Lỗi "Proxy (unhealthy)" và "Sensor (restarting)"<a class="headerlink" href="#1-loi-proxy-unhealthy-va-sensor-restarting" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Triệu chứng:</strong> Khi check <code>docker ps</code>, <code>sentinel-lab-proxy</code> báo lỗi <code>unhealthy</code>, còn <code>sentinel-lab-sensor</code> liên tục khởi động lại (restarting).</li>
+<li><strong>Nguyên nhân:</strong> File cấu hình Nginx bị kẹt bản cũ chưa cập nhật đúng, hoặc quyền truy cập Volume bị chặn (nhớ xóa <code>:ro</code> trong <code>docker-compose.lab.yml</code>. </li>
+<li><strong>Cách sửa:</strong> Bạn cần lệnh để thay thế (recreate) bắt buộc các container bị đọng cấu hình cũ:
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--env-file<span class="w"> </span>ops/.env.lab<span class="w"> </span>-f<span class="w"> </span>ops/docker-compose.lab.yml<span class="w"> </span>up<span class="w"> </span>-d<span class="w"> </span>--force-recreate<span class="w"> </span>proxy<span class="w"> </span>sensor
+</code></pre></div></li>
+</ul>
+<h3 id="2-tai-dashboard-bi-loi-trang-trang-not-found-hoac-unable-to-connect">2. Tải Dashboard bị lỗi trang trắng "Not Found" hoặc "Unable to connect"<a class="headerlink" href="#2-tai-dashboard-bi-loi-trang-trang-not-found-hoac-unable-to-connect" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Triệu chứng:</strong> Trình duyệt Firefox/Chrome báo không kết nối được đến <code>127.0.0.1:8080</code> hoặc vào được URL gốc nhưng hiện "Not Found".</li>
+<li><strong>Nguyên nhân:</strong> App Dashboard mặc định phục vụ ở đường dẫn <code>/dashboard/</code>.</li>
+<li><strong>Cách sửa:</strong> URL chuẩn xác để truy cập bảng điều khiển là: <code>http://127.0.0.1:8080/dashboard/</code>. Nếu bạn mới cập nhật Server, hệ thống (Proxy Nginx) sẽ tự chuyển hướng bạn sang đó. Nếu lỗi vẫn tiếp diễn, hãy thử xóa lịch sử/bộ nhớ đệm trình duyệt, hoặc chạy lệnh ép khởi động lại proxy ở lỗi số 1 phía trên.</li>
+</ul>
+<h3 id="3-trinh-duyet-bao-loi-secure-connection-failed-ssl_error_rx_record_too_long">3. Trình duyệt báo lỗi "Secure Connection Failed" (SSL_ERROR_RX_RECORD_TOO_LONG)<a class="headerlink" href="#3-trinh-duyet-bao-loi-secure-connection-failed-ssl_error_rx_record_too_long" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Triệu chứng:</strong> Truy cập trang web màn hình báo lỗi SSL, URL tự động bị gắn chữ <code>https://</code>.</li>
+<li><strong>Nguyên nhân:</strong> Lab Mode của chúng ta được thiết kế chạy nội bộ (localhost) nhẹ và nhanh nên chỉ dùng đường truyền văn bản (HTTP). Các trình duyệt hiện đại (đặc biệt là Firefox) có tính năng tự động nâng cấp bảo mật, ép kết nối qua giao thức mã hóa HTTPS, trong khi cổng 8080 của chúng ta không cấu hình Chứng chỉ Số (SSL/TLS).</li>
+<li><strong>Cách sửa:</strong> Bạn phải gõ lại cực chuẩn xác thanh địa chỉ là <code>http://</code> thay vì <code>https://</code> (Ví dụ: <code>http://127.0.0.1:8080/dashboard/</code>). Trường hợp trình duyệt quá "ngoan cố", hãy mở Cửa sổ Ẩn danh (Private/Incognito Mode - Ctrl+Shift+P trên Firefox) dán lại đúng đường dẫn HTTP là xong.</li>
+</ul>
+<h3 id="4-loi-failed-to-create-an-image-already-exists-khi-chay-make-lab-up">4. Lỗi "Failed to create an image... already exists" khi chạy make lab-up<a class="headerlink" href="#4-loi-failed-to-create-an-image-already-exists-khi-chay-make-lab-up" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Triệu chứng:</strong> Gõ <code>make lab-up</code> bị văng lỗi đỏ lòm báo <code>failed to create an image docker.io/library/sentinel-controller:lab with target... AlreadyExists</code>.</li>
+<li><strong>Nguyên nhân:</strong> Lệnh buildx/compose của Docker đang bị "kẹt" bộ nhớ đệm (cache) hoặc xung đột tag ảnh khi cố đè một image đang được container tạm thời chiếm giữ.</li>
+<li><strong>Cách sửa:</strong> Chạy các lệnh sau để ép Docker xóa sổ ảnh cũ bị lỗi và dọn dẹp cache trước khi build lại:
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Xóa bỏ image bị kẹt một cách triệt để</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>docker<span class="w"> </span>rmi<span class="w"> </span>sentinel-controller:lab<span class="w"> </span>--force
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Dọn dẹp cache builder rác (nếu lệnh trên chưa đủ đô)</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>docker<span class="w"> </span>builder<span class="w"> </span>prune<span class="w"> </span>-f
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="c1"># Khởi động lại lab</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>make<span class="w"> </span>lab-up
+</code></pre></div></li>
+</ul>
+<h3 id="5-loi-scapy-not-installed-du-a-chay-pip-install-thanh-cong">5. Lỗi "Scapy not installed" (dù đã chạy pip install thành công)<a class="headerlink" href="#5-loi-scapy-not-installed-du-a-chay-pip-install-thanh-cong" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Triệu chứng:</strong> Bạn kích hoạt <code>source venv/bin/activate</code> và gõ <code>pip install scapy</code> báo thành công. Nhưng khi chạy Script Wardrive/Sensor thì hệ thống vẫn văng lỗi: <code>Scapy not installed but required for real capture</code>.</li>
+<li><strong>Nguyên nhân:</strong> Có 2 nguyên nhân kinh điển trên các hệ thống Linux:</li>
+<li><strong>Bạn CHƯA dùng lệnh <code>sudo</code> (Trường hợp trong ảnh báo lỗi):</strong> Khi gọi <code>python sensor/wardrive.py</code> bằng user thường, module <code>scapy.all</code> bên dưới sẽ thất bại khi cố gắng nạp các thư viện bắt gói tin mạng ở tầng thấp (do bị OS từ chối quyền - Permission Denied). Lỗi này bị code bắt nhầm thành <code>ImportError</code> khiến nó in ra "Scapy not installed".</li>
+<li><strong>Bạn cố dùng <code>sudo python</code> nhưng bị văng mất môi trường:</strong> Lệnh <code>sudo</code> theo mặc định của Linux sẽ <strong>xóa bỏ toàn bộ biến môi trường PATH</strong> của user. Hệ quả là <code>sudo python</code> sẽ gọi bản Python gốc của toàn hệ thống (bản chưa cài Scapy) thay vì gọi Python trong <code>venv/</code> của bạn!</li>
+<li><strong>Cách sửa chuẩn xác 100%:</strong> Luôn kết hợp quyền Root (<code>sudo</code>) và gọi chính xác đường dẫn tuyệt đối (Absolute Path) tới file thực thi Python nằm <strong>bên trong venv</strong> của bạn:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Kích hoạt venv (nếu chưa bật)</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># [QUAN TRỌNG] Gọi sudo kèm đường dẫn python CỦA VENV thay vì gõ python không!</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>sudo<span class="w"> </span>venv/bin/python<span class="w"> </span>sensor/wardrive.py<span class="w"> </span>--sensor-id<span class="w"> </span>alfa-01<span class="w"> </span>--iface<span class="w"> </span>wlan0<span class="w"> </span>--output<span class="w"> </span>wardrive_session.json
+</code></pre></div>
+<hr />
+<h2 id="phu-luc-kich-ban-trinh-bay-truoc-hoi-ong-chi-tiet-tung-buoc">Phụ lục: Kịch bản Trình bày Trước Hội đồng (Chi tiết Từng bước)<a class="headerlink" href="#phu-luc-kich-ban-trinh-bay-truoc-hoi-ong-chi-tiet-tung-buoc" title="Permanent link">&para;</a></h2>
+<p>Nếu bạn chuẩn bị demo dự án trước hội đồng kiểm định, hãy sử dụng kịch bản thao tác Dashboard sau nhằm phô diễn tối đa các tính năng Real-time và tối ưu luồng dữ liệu:</p>
+<ul>
+<li><strong>Mục đích</strong>: Trình diễn Dashboard cập nhật tự động (Real-time), hệ thống Audit Log và công cụ trực quan hóa vị trí (Heatmap).</li>
+<li><strong>Thao tác</strong>:<ol>
+<li>Mở trình duyệt, truy cập Dashboard: <code>http://localhost:8050/dashboard/</code> (hoặc <code>http://127.0.0.1:8080/dashboard/</code> qua proxy).</li>
+<li>Vào Tab <strong>Overview</strong>, chỉ cho hội đồng xem các thẻ <code>Card</code> (Tổng số mạng, Cảnh báo). Giải thích rằng nhờ cơ chế <code>dcc.Interval</code> trong code, các số này tự động làm mới <strong>mỗi 3 giây</strong> (đứng yên không cần F5 trình duyệt).</li>
+<li>Chuyển sang Tab <strong>Global Map</strong> trên thanh điều hướng bên trái.</li>
+<li>Nhấp vào thanh xổ xuống (Dropdown) góc trên bên phải, chọn lọc <code>"Open / Insecure"</code>.</li>
+<li>Chỉ vào bản đồ: Các đốm màu rải rác thay đổi lập tức, hệ thống tự động lọc ra những mạng WiFi không cài mật khẩu và đánh dấu nổi bật bằng màu viền cảnh báo (<strong>Red chấm đỏ</strong>).</li>
+<li><strong>Nhấn mạnh</strong>: Giao diện được thiết kế UI/UX theo chuẩn Dark Mode chuyên nghiệp dành cho bộ phận giám sát bảo mật (SOC), Plotly xử lý hàng ngàn điểm dữ liệu bản đồ mà không hề gây giật lag trình duyệt.</li>
+<li>Vào Tab <strong>Audit</strong>: Hiển thị bảng chi tiết <strong>System Audit Logs</strong>. Giải thích rằng hệ thống tự động ghi nhận minh bạch các thao tác khởi tạo môi trường, xác thực Sensor hay đẩy Telemetry nhằm đảm bảo tính truy vết (Non-repudiation) trong Security.</li>
+</ol>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

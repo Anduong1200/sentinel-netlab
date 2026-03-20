@@ -1,0 +1,2587 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>DNS Cache Poisoning (Đầu độc bộ nhớ đệm DNS) - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dns-cache-poisoning-au-oc-bo-nho-em-dns" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DNS Cache Poisoning (Đầu độc bộ nhớ đệm DNS)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../lab/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../research/security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../lab/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../research/deep-research-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-thong-tin-ky-thuat-technical-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1) Thông tin kỹ thuật (Technical Information)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1) Thông tin kỹ thuật (Technical Information)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-giao-thuc-lien-quan-dns-la-loi-80211eap-chi-la-lop-truy-cap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Giao thức liên quan (DNS là lõi; 802.11/EAP chỉ là lớp truy cập)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-phan-tich-co-che-hoat-ong-cua-ap-client-iot-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Phân tích cơ chế hoạt động của AP / client / IoT device
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-cong-cu-phan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Công cụ &amp; phần mềm thường dùng (tấn công &amp; phòng thủ) — ở mức khái quát
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-thuat-toan-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2) Thuật toán (Algorithms)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2) Thuật toán (Algorithms)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-thieu-vang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Thuật toán mã hóa/xác thực bị khai thác (hoặc thiếu vắng)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-thuat-toan-tan-cong-khai-niem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Thuật toán tấn công (khái niệm)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-thuat-toan-phong-thu-entropy-based-mldl-va-kiem-soat-cau-hinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Thuật toán phòng thủ (entropy-based, ML/DL, và kiểm soát cấu hình)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3) Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3) Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-phu-thuoc-firmwaredriverhe-ieu-hanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Phụ thuộc firmware/driver/hệ điều hành
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-phu-thuoc-cau-hinh-nguoi-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Phụ thuộc cấu hình người dùng
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-phu-thuoc-ha-tang-mang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Phụ thuộc hạ tầng mạng
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4) Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4) Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-moi-truong-trien-khai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Môi trường triển khai
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-kich-ban-tan-cong-vi-du" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Kịch bản tấn công (ví dụ)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-core-weakness-iem-yeu-cot-loi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5) Core Weakness (điểm yếu cốt lõi)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-cost-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6) Cost &amp; Risk
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6) Cost &amp; Risk">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-chi-phi-trien-khai-tan-cong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Chi phí triển khai tấn công
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-chi-phi-phong-thu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Chi phí phòng thủ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-rui-ro" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Rủi ro
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-control-surface-cac-lop-kiem-soat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7) Control Surface (các lớp kiểm soát)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7) Control Surface (các lớp kiểm soát)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-access-point-router-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Access Point / Router / Gateway
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Client
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-network-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Network Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-policy-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Policy Layer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-chain-value-chuoi-gia-tri-lien-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8) Chain Value (chuỗi giá trị liên quan)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references-kem-source-preference-va-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References (kèm “Source Preference” và URL)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="References (kèm “Source Preference” và URL)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#p1-chuantieu-chuan-tai-lieu-chinh-thuc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P1 — Chuẩn/tiêu chuẩn &amp; tài liệu chính thức
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#p2-huong-dancong-cu-tu-co-quankhung-van-hanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P2 — Hướng dẫn/công cụ từ cơ quan/khung vận hành
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#p3-nghien-cuu-hoc-thuatwhitepaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P3 — Nghiên cứu học thuật/whitepaper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-van-hanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P4 — Vendor/triển khai tham khảo (bổ sung góc nhìn vận hành)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="dns-cache-poisoning-au-oc-bo-nho-em-dns">DNS Cache Poisoning (Đầu độc bộ nhớ đệm DNS)<a class="headerlink" href="#dns-cache-poisoning-au-oc-bo-nho-em-dns" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Phạm vi:</strong> tập trung vào <strong>DNS cache poisoning</strong> (tiêm/cấy bản ghi sai vào cache của recursive resolver/forwarder) để chuyển hướng truy cập, nghe lén hoặc phân phối mã độc.<br />
+<strong>Ghi chú an toàn:</strong> nội dung phục vụ <strong>phòng thủ, đánh giá an ninh được ủy quyền, đào tạo</strong>. Không cung cấp hướng dẫn khai thác dạng step-by-step/command.</p>
+</blockquote>
+<hr />
+<h2 id="1-thong-tin-ky-thuat-technical-information">1) Thông tin kỹ thuật (Technical Information)<a class="headerlink" href="#1-thong-tin-ky-thuat-technical-information" title="Permanent link">&para;</a></h2>
+<h3 id="11-giao-thuc-lien-quan-dns-la-loi-80211eap-chi-la-lop-truy-cap">1.1 Giao thức liên quan (DNS là lõi; 802.11/EAP chỉ là lớp truy cập)<a class="headerlink" href="#11-giao-thuc-lien-quan-dns-la-loi-80211eap-chi-la-lop-truy-cap" title="Permanent link">&para;</a></h3>
+<p><strong>(A) DNS &amp; hạ tầng DNS</strong>
+- <strong>DNS (Domain Name System)</strong>: hệ thống phân giải tên miền ↔ địa chỉ IP, gồm:
+  - <strong>Stub resolver</strong> trên client (OS/app),
+  - <strong>Recursive resolver / caching resolver</strong> (thường do ISP/Doanh nghiệp cung cấp, hoặc chạy trên router/AP gateway),
+  - <strong>Authoritative name server</strong> (nơi “nguồn sự thật” của zone).
+- <strong>DNS over UDP/TCP</strong>: truyền thống dùng UDP (nhanh) và chuyển sang TCP khi phản hồi lớn (ví dụ DNSSEC/zone transfer).
+- <strong>EDNS(0)</strong>: mở rộng DNS, thường làm phản hồi lớn hơn (liên quan tới fallback TCP và một số tình huống phân mảnh).
+- <strong>DNSSEC</strong>: cơ chế <strong>xác thực tính toàn vẹn &amp; tính xác thực</strong> của dữ liệu DNS (ký RRsets), giúp chống cache poisoning ở mức dữ liệu (resolver “validate” chữ ký).</p>
+<p><strong>(B) Encrypted DNS (giảm rủi ro on-path giữa client ↔ resolver)</strong>
+- <strong>DoT (DNS-over-TLS)</strong>: mã hóa truy vấn DNS giữa client và resolver.
+- <strong>DoH (DNS-over-HTTPS)</strong>: DNS chạy qua HTTPS.</p>
+<blockquote>
+<p>Lưu ý: DoH/DoT <strong>không thay thế DNSSEC</strong>. DoH/DoT chủ yếu bảo vệ <strong>tính bí mật &amp; chống sửa đổi trên đường truyền</strong> giữa client và resolver; còn DNSSEC bảo vệ <strong>tính xác thực dữ liệu DNS</strong> từ authoritative.</p>
+</blockquote>
+<p><strong>(C) IEEE 802.11 / WPA / EAP (liên quan theo ngữ cảnh triển khai)</strong>
+- <strong>IEEE 802.11 (Wi‑Fi):</strong> DNS traffic chạy “trên” IP qua Wi‑Fi. Nếu attacker đã vào cùng WLAN/VLAN thì DNS cache poisoning xảy ra ở lớp DNS, <strong>không phụ thuộc trực tiếp</strong> vào AES/SAE của Wi‑Fi.
+- <strong>WPA2/WPA3:</strong> bảo vệ liên kết radio (client ↔ AP).<br />
+- <strong>EAP/802.1X (Enterprise):</strong> giảm khả năng attacker “vào được mạng” (một điều kiện quan trọng cho nhiều kiểu tấn công nội bộ), và hỗ trợ <strong>segment</strong> theo danh tính thiết bị/người dùng.</p>
+<h3 id="12-phan-tich-co-che-hoat-ong-cua-ap-client-iot-device">1.2 Phân tích cơ chế hoạt động của AP / client / IoT device<a class="headerlink" href="#12-phan-tich-co-che-hoat-ong-cua-ap-client-iot-device" title="Permanent link">&para;</a></h3>
+<p><strong>(A) Access Point / Router / IoT Gateway (vai trò DNS forwarder/caching)</strong>
+- Trong thực tế, rất nhiều AP/router chạy <strong>DNS forwarder + cache</strong> (ví dụ dnsmasq/unbound/implementations tương tự) và cấp DNS server cho client qua DHCP.
+- Vì thế, “điểm cache” dễ bị nhắm tới nhất thường là:
+  - <strong>Router/AP gateway</strong> của mạng gia đình/quán café,
+  - <strong>Recursive resolver</strong> nội bộ doanh nghiệp,
+  - <strong>Resolver của ISP</strong> (quy mô lớn).
+- Nếu attacker có vị trí phù hợp (trong cùng LAN hoặc on‑path), họ có thể cố làm resolver <strong>cache</strong> bản ghi sai (A/AAAA/CNAME/NS/glue…) hoặc kéo dài TTL không hợp lý để duy trì ảnh hưởng.</p>
+<p><strong>(B) Client (Windows/macOS/Linux/mobile)</strong>
+Luồng phân giải điển hình:
+1. Ứng dụng gọi stub resolver: “tên miền X → IP?”
+2. Stub gửi query tới DNS server được cấu hình (thường do DHCP cấp).
+3. Recursive resolver:
+   - kiểm tra cache,
+   - nếu cache miss → truy vấn tiếp tới authoritative (theo các bước root → TLD → authoritative).
+4. Nếu resolver nhận/“tin” một phản hồi giả (race/spoof), nó có thể <strong>lưu vào cache</strong>, khiến mọi client sau đó bị chuyển hướng.</p>
+<p><strong>(C) IoT device</strong>
+- IoT thường phụ thuộc nặng vào DNS để gọi cloud endpoints (update, telemetry).
+- Rủi ro hay gặp:
+  - Firmware/stack DNS <strong>cũ</strong> hoặc “simplified” (randomization yếu),
+  - Thiết bị không hỗ trợ DoH/DoT,
+  - Hardcode DNS server hoặc không có cơ chế pinning/certificate hygiene ở tầng ứng dụng.
+- Khi cache poisoning xảy ra ở gateway/resolver, IoT có thể bị:
+  - chuyển hướng tới endpoint giả (command/control),
+  - tải firmware giả (nếu quy trình update không ký/không kiểm tra chặt).</p>
+<h3 id="13-cong-cu-phan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat">1.3 Công cụ &amp; phần mềm thường dùng (tấn công &amp; phòng thủ) — ở mức khái quát<a class="headerlink" href="#13-cong-cu-phan-mem-thuong-dung-tan-cong-phong-thu-o-muc-khai-quat" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Chỉ liệt kê để hiểu hệ sinh thái; không hướng dẫn dùng.</p>
+</blockquote>
+<p><strong>Quan sát/phòng thủ</strong>
+- <strong>Wireshark/tcpdump</strong>: phân tích DNS query/response, TTL bất thường, source port/TxID entropy.
+- <strong>Zeek/Suricata/Snort</strong>: phát hiện “DNS anomalies”, domain bất thường, trả lời không khớp truy vấn.
+- <strong>BIND/Unbound/dnsmasq logs</strong>: querylog, thống kê cache hit/miss, SERVFAIL/NXDOMAIN spikes.
+- <strong>Threat intel/Protective DNS</strong>: sinkhole, blocklist, RPZ (Response Policy Zone) theo chính sách.</p>
+<p><strong>Trong đánh giá an ninh được ủy quyền</strong>
+- Bộ công cụ MITM/packet crafting (ví dụ framework tạo gói), công cụ test hiệu năng (dnsperf), và công cụ audit Wi‑Fi (Kismet/Aircrack‑ng) chỉ đóng vai trò “giúp attacker vào mạng” hoặc quan sát RF — không phải là lõi của DNS poisoning.</p>
+<hr />
+<h2 id="2-thuat-toan-algorithms">2) Thuật toán (Algorithms)<a class="headerlink" href="#2-thuat-toan-algorithms" title="Permanent link">&para;</a></h2>
+<h3 id="21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-thieu-vang">2.1 Thuật toán mã hóa/xác thực bị khai thác (hoặc thiếu vắng)<a class="headerlink" href="#21-thuat-toan-ma-hoaxac-thuc-bi-khai-thac-hoac-thieu-vang" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>DNS truyền thống (không DNSSEC):</strong> gần như <strong>không có xác thực dữ liệu</strong> ở tầng DNS → cache poisoning tập trung vào “forge response đúng định danh truy vấn”.</li>
+<li><strong>DNSSEC:</strong> dùng <strong>chữ ký số</strong> để xác thực RRsets:</li>
+<li>Thuật toán ký thường gặp: <strong>RSA</strong> và <strong>ECDSA</strong> (tùy zone và nhà vận hành).</li>
+<li>Cơ chế chain-of-trust: DS/DNSKEY, validating resolver kiểm tra chữ ký trước khi chấp nhận dữ liệu.</li>
+<li><strong>DoT/DoH (TLS):</strong> dùng thuật toán của TLS (AES-GCM/ChaCha20-Poly1305, ECDHE…) để bảo vệ kênh client↔resolver.</li>
+</ul>
+<h3 id="22-thuat-toan-tan-cong-khai-niem">2.2 Thuật toán tấn công (khái niệm)<a class="headerlink" href="#22-thuat-toan-tan-cong-khai-niem" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Spoofing + race</strong>: gửi phản hồi giả “nhanh hơn” phản hồi thật.</li>
+<li><strong>Brute-force/guessing entropy</strong>:</li>
+<li>đoán <strong>Transaction ID (TxID)</strong> và/hoặc <strong>UDP source port</strong> của truy vấn,</li>
+<li>thành công khi trúng tổ hợp và phản hồi giả đến trước.</li>
+<li><strong>Birthday-style / flooding</strong>: tăng xác suất trúng bằng cách tăng số lượng phản hồi/biến thể.</li>
+<li><strong>Poisoning NS/glue (khái niệm lịch sử):</strong> một số kỹ thuật nhắm đến cấy thông tin máy chủ tên (NS) hoặc glue record để mở rộng ảnh hưởng.</li>
+<li><strong>On‑path manipulation</strong>: nếu attacker ở vị trí on‑path (hoặc kiểm soát router), họ có thể sửa/tiêm phản hồi DNS dễ hơn (nhưng khi đó thường gần với DNS hijacking + MITM).</li>
+</ul>
+<h3 id="23-thuat-toan-phong-thu-entropy-based-mldl-va-kiem-soat-cau-hinh">2.3 Thuật toán phòng thủ (entropy-based, ML/DL, và kiểm soát cấu hình)<a class="headerlink" href="#23-thuat-toan-phong-thu-entropy-based-mldl-va-kiem-soat-cau-hinh" title="Permanent link">&para;</a></h3>
+<p><strong>(A) Tăng entropy / harden resolver (theo các khuyến nghị tiêu chuẩn)</strong>
+- <strong>Source port randomization</strong> (UDP) + <strong>TxID randomization</strong>.
+- <strong>0x20 encoding</strong> (case-randomization cho QNAME) như một lớp “extra entropy” trong một số triển khai.
+- <strong>Giảm khả năng bị lợi dụng qua NAT</strong>: một số NAT làm giảm entropy (port bị cố định/tuần tự) → cần kiểm thử thực tế.</p>
+<p><strong>(B) Xác thực dữ liệu</strong>
+- <strong>DNSSEC validation</strong> (ưu tiên số 1 để chống poisoning ở mức dữ liệu).
+- Kỷ luật quản lý <strong>trust anchors</strong>, xử lý rollover.</p>
+<p><strong>(C) Encrypted DNS &amp; giảm bề mặt on-path</strong>
+- <strong>DoT/DoH</strong> từ client → resolver tin cậy giúp giảm khả năng attacker trên Wi‑Fi công cộng sửa DNS.</p>
+<p><strong>(D) Detection</strong>
+- <strong>Entropy-based detection</strong>:
+  - tần suất truy vấn thất bại/NXDOMAIN tăng đột ngột,
+  - TTL bất thường (quá dài/quá ngắn so với baseline),
+  - thay đổi đột ngột NS/CNAME chain.
+- <strong>ML/DL anomaly detection</strong>:
+  - mô hình hóa hành vi DNS theo user/host (time-series),
+  - phát hiện domain mới/hiếm (rare domains), DGA-like,
+  - phát hiện “resolver behavior drift” (bỗng query tới authoritative lạ).</p>
+<blockquote>
+<p>Nhiều tổ chức dùng ML/DL ở tầng SIEM/EDR/Protective DNS thay vì nhúng trực tiếp vào resolver.</p>
+</blockquote>
+<hr />
+<h2 id="3-dependencies">3) Dependencies<a class="headerlink" href="#3-dependencies" title="Permanent link">&para;</a></h2>
+<h3 id="31-phu-thuoc-firmwaredriverhe-ieu-hanh">3.1 Phụ thuộc firmware/driver/hệ điều hành<a class="headerlink" href="#31-phu-thuoc-firmwaredriverhe-ieu-hanh" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Phần mềm resolver</strong>: BIND, Unbound, PowerDNS Recursor, dnsmasq, Windows DNS Server… (mỗi loại có mặc định/hardening khác nhau).</li>
+<li><strong>Router/AP firmware</strong>: thiết bị consumer có thể:</li>
+<li>chạy resolver cũ, khó vá,</li>
+<li>có NAT làm giảm entropy,</li>
+<li>có bug khiến dễ bị poisoning.</li>
+<li><strong>OS stub resolver</strong>: hành vi retry, cache cục bộ, DoH/DoT support (Windows/macOS/Android/iOS khác nhau).</li>
+</ul>
+<h3 id="32-phu-thuoc-cau-hinh-nguoi-dung">3.2 Phụ thuộc cấu hình người dùng<a class="headerlink" href="#32-phu-thuoc-cau-hinh-nguoi-dung" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Dùng DNS server mặc định (router/ISP) không có DNSSEC/DoH.</li>
+<li>Trên Wi‑Fi: <strong>PSK yếu/WPS bật</strong> → attacker dễ vào cùng mạng (điều kiện để tấn công nội bộ).<br />
+<em>Nhưng lưu ý: đây là điều kiện “vào mạng”, không phải cơ chế poisoning cốt lõi.</em></li>
+<li>Không dùng VPN/không bật encrypted DNS khi ở mạng công cộng.</li>
+</ul>
+<h3 id="33-phu-thuoc-ha-tang-mang">3.3 Phụ thuộc hạ tầng mạng<a class="headerlink" href="#33-phu-thuoc-ha-tang-mang" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mô hình DNS</strong>: recursive resolver nội bộ vs dùng public resolver.</li>
+<li><strong>Anti-spoofing trên mạng</strong>: nếu hạ tầng cho phép spoof IP dễ dàng, off‑path spoofing khả thi hơn.</li>
+<li><strong>Segmentation</strong>: guest Wi‑Fi không cách ly khỏi hạ tầng DNS nội bộ sẽ tăng rủi ro.</li>
+</ul>
+<hr />
+<h2 id="4-context">4) Context<a class="headerlink" href="#4-context" title="Permanent link">&para;</a></h2>
+<h3 id="41-moi-truong-trien-khai">4.1 Môi trường triển khai<a class="headerlink" href="#41-moi-truong-trien-khai" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mạng công cộng</strong>: quán café, sân bay (rủi ro on‑path/rogue gateway, captive portal).</li>
+<li><strong>Doanh nghiệp</strong>: resolver nội bộ phục vụ hàng nghìn máy; poisoning ảnh hưởng diện rộng.</li>
+<li><strong>IoT</strong>: gateway nội bộ, thiết bị khó cập nhật.</li>
+<li><strong>Mesh/home</strong>: router “all-in-one” (DHCP + DNS cache) — điểm yếu phổ biến.</li>
+</ul>
+<h3 id="42-kich-ban-tan-cong-vi-du">4.2 Kịch bản tấn công (ví dụ)<a class="headerlink" href="#42-kich-ban-tan-cong-vi-du" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Café Wi‑Fi</strong>: attacker cùng VLAN guest, tìm cách can thiệp DNS để chuyển hướng người dùng tới trang giả/phishing.</li>
+<li><strong>Doanh nghiệp</strong>: máy nội bộ bị compromise, sau đó tìm cách tác động resolver/forwarder để điều hướng traffic tới hạ tầng attacker.</li>
+<li><strong>IoT</strong>: poisoning làm thiết bị gọi về cloud giả, hoặc chặn update thật để kéo dài thời gian tồn tại.</li>
+</ul>
+<hr />
+<h2 id="5-core-weakness-iem-yeu-cot-loi">5) Core Weakness (điểm yếu cốt lõi)<a class="headerlink" href="#5-core-weakness-iem-yeu-cot-loi" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>DNS truyền thống thiếu xác thực dữ liệu</strong>: resolver chấp nhận phản hồi nếu “trông có vẻ khớp” với truy vấn (TxID/port/QNAME/QTYPE…).</li>
+<li><strong>Cơ chế cache</strong>: một khi bản ghi sai được cache, tác động lan rộng tới nhiều client.</li>
+<li><strong>Entropy không đủ</strong> (TxID/port dự đoán được, NAT làm giảm randomization) → tăng xác suất spoof.</li>
+<li><strong>Hệ sinh thái router/AP/IoT</strong>: firmware cập nhật kém, cấu hình mặc định yếu.</li>
+</ul>
+<hr />
+<h2 id="6-cost-risk">6) Cost &amp; Risk<a class="headerlink" href="#6-cost-risk" title="Permanent link">&para;</a></h2>
+<h3 id="61-chi-phi-trien-khai-tan-cong">6.1 Chi phí triển khai tấn công<a class="headerlink" href="#61-chi-phi-trien-khai-tan-cong" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Thấp → trung bình</strong> tùy vị trí:</li>
+<li><strong>In‑LAN/on‑path</strong>: thường dễ hơn.</li>
+<li><strong>Off‑path</strong>: khó hơn (phụ thuộc spoofing và entropy), nhưng vẫn có lịch sử tấn công thực tế khi cấu hình kém.</li>
+</ul>
+<h3 id="62-chi-phi-phong-thu">6.2 Chi phí phòng thủ<a class="headerlink" href="#62-chi-phi-phong-thu" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Trung bình</strong>: harden resolver (randomization, logging), IDS/Protective DNS.</li>
+<li><strong>Trung bình → cao</strong>: triển khai <strong>DNSSEC validation</strong> diện rộng, quản trị trust anchor/rollover, và triển khai DoH/DoT theo chính sách.</li>
+</ul>
+<h3 id="63-rui-ro">6.3 Rủi ro<a class="headerlink" href="#63-rui-ro" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Mất dữ liệu</strong>: bị chuyển hướng tới server giả (credential theft/malware).</li>
+<li><strong>Gián đoạn dịch vụ</strong>: poisoning có thể gây lỗi truy cập dịch vụ quan trọng.</li>
+<li><strong>Pháp lý/tuân thủ</strong>: nếu gây rò rỉ dữ liệu cá nhân, có thể vi phạm quy định nội bộ/luật.</li>
+</ul>
+<hr />
+<h2 id="7-control-surface-cac-lop-kiem-soat">7) Control Surface (các lớp kiểm soát)<a class="headerlink" href="#7-control-surface-cac-lop-kiem-soat" title="Permanent link">&para;</a></h2>
+<h3 id="71-access-point-router-gateway">7.1 Access Point / Router / Gateway<a class="headerlink" href="#71-access-point-router-gateway" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Update firmware định kỳ; thay thiết bị end-of-life.</li>
+<li>Tắt “DNS proxy/cache” nếu không cần, hoặc thay bằng resolver được harden.</li>
+<li>Với Wi‑Fi: ưu tiên WPA3/WPA2‑Enterprise (802.1X) cho mạng nội bộ; bật client isolation cho guest.</li>
+</ul>
+<h3 id="72-client">7.2 Client<a class="headerlink" href="#72-client" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Bật <strong>DoH/DoT</strong> tới resolver tin cậy (theo chính sách tổ chức) khi phù hợp.</li>
+<li>Dùng <strong>VPN</strong> khi ở mạng công cộng (giảm rủi ro on‑path).</li>
+<li>Cập nhật OS/Browser để bảo vệ TLS/HSTS; chú ý certificate warnings (DNS poisoning thường dẫn tới lỗi chứng chỉ nếu site dùng HTTPS đúng).</li>
+</ul>
+<h3 id="73-network-layer">7.3 Network Layer<a class="headerlink" href="#73-network-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>DNSSEC validating resolver</strong> nội bộ; enforce sử dụng resolver chuẩn (chặn DNS trực tiếp ra Internet nếu cần).</li>
+<li>IDS/IPS/Zeek theo dõi:</li>
+<li>TTL bất thường,</li>
+<li>thay đổi NS/glue,</li>
+<li>SERVFAIL spikes (có thể gợi ý vấn đề DNSSEC/poisoning/DoS).</li>
+<li>Triển khai <strong>anti-spoofing</strong> (ingress/egress filtering) để giảm khả năng giả mạo nguồn IP.</li>
+</ul>
+<h3 id="74-policy-layer">7.4 Policy Layer<a class="headerlink" href="#74-policy-layer" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Chuẩn hóa cấu hình DNS trong tổ chức: resolver tập trung + logging + retention.</li>
+<li>Quy trình IR: playbook khi nghi poisoning (flush cache, pin resolver, kiểm tra chain DNSSEC, so sánh “known good”).</li>
+<li>Đào tạo người dùng: cảnh giác trang HTTPS báo lỗi chứng chỉ, không bỏ qua warning.</li>
+</ul>
+<hr />
+<h2 id="8-chain-value-chuoi-gia-tri-lien-quan">8) Chain Value (chuỗi giá trị liên quan)<a class="headerlink" href="#8-chain-value-chuoi-gia-tri-lien-quan" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Nhà sản xuất phần cứng:</strong> router/AP/gateway, chipset, thiết bị IoT.</li>
+<li><strong>Nhà cung cấp phần mềm:</strong> resolver software (BIND/Unbound…), OS stub resolver, EDR/IDS/SIEM, Protective DNS.</li>
+<li><strong>Doanh nghiệp triển khai:</strong> network/security team vận hành DNS, SOC giám sát, IT hỗ trợ endpoint.</li>
+<li><strong>Người dùng cuối:</strong> phụ thuộc vào DNS để truy cập dịch vụ; hành vi khi gặp cảnh báo HTTPS.</li>
+<li><strong>Kẻ tấn công:</strong> tận dụng vị trí trong mạng hoặc sai cấu hình/entropy yếu.</li>
+<li><strong>Cơ quan quản lý/chuẩn:</strong> IETF (RFC), NIST/CISA (guidance), cơ quan viễn thông/ISP policy.</li>
+</ul>
+<hr />
+<h2 id="references-kem-source-preference-va-url">References (kèm “Source Preference” và URL)<a class="headerlink" href="#references-kem-source-preference-va-url" title="Permanent link">&para;</a></h2>
+<h3 id="p1-chuantieu-chuan-tai-lieu-chinh-thuc">P1 — Chuẩn/tiêu chuẩn &amp; tài liệu chính thức<a class="headerlink" href="#p1-chuantieu-chuan-tai-lieu-chinh-thuc" title="Permanent link">&para;</a></h3>
+<ul>
+<li>RFC 1034 — Domain Names: Concepts and Facilities:<br />
+  https://www.rfc-editor.org/rfc/rfc1034</li>
+<li>RFC 1035 — Domain Names: Implementation and Specification:<br />
+  https://www.rfc-editor.org/rfc/rfc1035</li>
+<li>RFC 5452 — Measures for Making DNS More Resilient against Forged Answers:<br />
+  https://www.rfc-editor.org/rfc/rfc5452</li>
+<li>RFC 4033 — DNS Security Introduction and Requirements (DNSSEC):<br />
+  https://www.rfc-editor.org/rfc/rfc4033</li>
+<li>RFC 4034 — Resource Records for the DNS Security Extensions:<br />
+  https://www.rfc-editor.org/rfc/rfc4034</li>
+<li>RFC 4035 — Protocol Modifications for the DNS Security Extensions:<br />
+  https://www.rfc-editor.org/rfc/rfc4035</li>
+<li>RFC 7858 — DNS over TLS (DoT):<br />
+  https://www.rfc-editor.org/rfc/rfc7858</li>
+<li>RFC 8484 — DNS over HTTPS (DoH):<br />
+  https://www.rfc-editor.org/rfc/rfc8484</li>
+<li>NIST SP 800-81-2 (Final) — Secure DNS Deployment Guide (Revision 2):<br />
+  https://csrc.nist.gov/pubs/sp/800/81/2/final</li>
+<li>NIST SP 800-81r3 (IPD) — Secure DNS Deployment Guide (Revision 3, bản dự thảo công khai):<br />
+  https://csrc.nist.gov/pubs/sp/800/81/r3/ipd</li>
+</ul>
+<h3 id="p2-huong-dancong-cu-tu-co-quankhung-van-hanh">P2 — Hướng dẫn/công cụ từ cơ quan/khung vận hành<a class="headerlink" href="#p2-huong-dancong-cu-tu-co-quankhung-van-hanh" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CISA — Protective DNS Resolver Service:<br />
+  https://www.cisa.gov/resources-tools/services/protective-domain-name-system-dns-resolver</li>
+<li>CISA — Encrypted DNS Implementation Guidance:<br />
+  https://www.cisa.gov/resources-tools/resources/encrypted-dns-implementation-guidance</li>
+<li>BCP38 / anti-spoofing (RFC 2827, cập nhật bởi RFC 3704):<br />
+  https://www.rfc-editor.org/rfc/rfc2827<br />
+  https://www.rfc-editor.org/rfc/rfc3704</li>
+</ul>
+<h3 id="p3-nghien-cuu-hoc-thuatwhitepaper">P3 — Nghiên cứu học thuật/whitepaper<a class="headerlink" href="#p3-nghien-cuu-hoc-thuatwhitepaper" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Herzberg &amp; Shulman — <em>Unilateral Antidotes to DNS Poisoning</em> (arXiv PDF):<br />
+  https://arxiv.org/pdf/1209.1482</li>
+<li>DNS-OARC slide deck (cache poisoning protection math/operational):<br />
+  https://indico.dns-oarc.net/event/43/contributions/917/attachments/883/1640/Cache%20Poisoning%20Protection%20for%20Authoritative%20Queries.pdf</li>
+</ul>
+<h3 id="p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-van-hanh">P4 — Vendor/triển khai tham khảo (bổ sung góc nhìn vận hành)<a class="headerlink" href="#p4-vendortrien-khai-tham-khao-bo-sung-goc-nhin-van-hanh" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Google Security Blog — Public DNS approach to fight cache poisoning:<br />
+  https://security.googleblog.com/2024/03/google-public-dnss-approach-to-fight.html</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

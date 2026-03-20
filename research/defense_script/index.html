@@ -1,0 +1,3069 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Lightweight Hybrid Wireless Intrusion Detection System">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Defense Script & Q&A Guide - Sentinel NetLab Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#defense-script-qa-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-header__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sentinel NetLab Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Defense Script &amp; Q&amp;A Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/ELI5_Guide/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../lab/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Lab Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../prod/deployment/" class="md-tabs__link">
+          
+  
+  
+  Production Mode
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/system-design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../detection/overview/" class="md-tabs__link">
+          
+  
+  
+  Detection Engine
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security_analysis/" class="md-tabs__link">
+          
+  
+  
+  Research
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/api/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Sentinel NetLab Documentation" class="md-nav__button md-logo" aria-label="Sentinel NetLab Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sentinel NetLab Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Anduong1200/sentinel-netlab" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Anduong1200/sentinel-netlab
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/ELI5_Guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Lab Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lab Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/safety/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Safety
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/reset_seed/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reset Seed
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lab/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Mode
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production Mode
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/data_lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../prod/ops-runbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations Runbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/system-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Threat Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/trust_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trust Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/risk_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Detection Engine
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Detection Engine
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/rule_based/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rule Based
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/ml_anomaly/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Anomaly
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../detection/risk_scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk Scoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Research
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security_analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../behavioral_risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Behavioral Risk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deep-research-report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep Research Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_ingest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Ingest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/legal_ethics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legal & Ethics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/proxy-trust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proxy Trust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-tong-quan-ong-gop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Tổng quan &amp; Đóng góp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-thiet-ke-kien-truc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Thiết kế &amp; Kiến trúc
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-capture-engine-parser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Capture Engine &amp; Parser
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#d-risk-scoring-thuat-toan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        D. Risk Scoring / Thuật toán
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e-hieu-nang-benchmarking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E. Hiệu năng &amp; Benchmarking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-bao-mat-van-hanh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F. Bảo mật &amp; Vận hành
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#g-so-sanh-voi-giai-phap-thuong-mai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        G. So sánh với Giải pháp Thương mại
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#h-validation-tests-reproducibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H. Validation, Tests &amp; Reproducibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#i-ethics-legality-disclosure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I. Ethics, Legality &amp; Disclosure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#j-future-work-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        J. Future Work &amp; Research
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#k-cau-hoi-ac-hay-dung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        K. Câu hỏi "Ác" Hay Dùng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#l-phan-bien-hoc-thuat-academic-rigor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        L. Phản biện Học thuật (Academic Rigor)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#m-phan-bien-scope-creep-overclaim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        M. Phản biện Scope Creep &amp; Overclaim
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#n-phan-bien-so-sanh-cong-cu-killer-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        N. Phản biện So sánh Công cụ (Killer Questions)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#o-phan-bien-hieu-nang-phan-cung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        O. Phản biện Hiệu năng &amp; Phần cứng
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#p-phan-bien-forensics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P. Phản biện Forensics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#q-phan-bien-van-hanh-doanh-nghiep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Q. Phản biện Vận hành Doanh nghiệp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#r-phan-bien-kinh-te-au-tu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R. Phản biện Kinh tế &amp; Đầu tư
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#s-phan-bien-bao-mat-chinh-du-an" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        S. Phản biện Bảo mật Chính Dự án
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#t-phan-bien-engineering-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        T. Phản biện Engineering Discipline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#u-phan-bien-ao-uc-trach-nhiem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        U. Phản biện Đạo đức &amp; Trách nhiệm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v-phan-bien-future-work-bay-hua-suong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        V. Phản biện Future Work (Bẫy hứa suông)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#w-cau-hoi-anh-thang-tu-duy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        W. Câu hỏi "Đánh thẳng Tư duy"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-defense-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📋 Pre-Defense Checklist
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📋 Pre-Defense Checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#technical-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fallback-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fallback &amp; Evidence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top-10-cau-hoi-quan-trong-nhat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔥 Top 10 Câu hỏi Quan trọng Nhất
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="defense-script-qa-guide">Defense Script &amp; Q&amp;A Guide<a class="headerlink" href="#defense-script-qa-guide" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Comprehensive preparation for thesis defense / technical interview</p>
+</blockquote>
+<hr />
+<h2 id="a-tong-quan-ong-gop">A. Tổng quan &amp; Đóng góp<a class="headerlink" href="#a-tong-quan-ong-gop" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Dự án này giải quyết vấn đề gì cụ thể?</td>
+<td>Tự động hoá giám sát Wi-Fi (passive), phát hiện dị thường &amp; cung cấp evidence cho forensic; không phải tấn công.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Đóng góp chính so với Wireshark/Kismet?</td>
+<td>Tích hợp sensor→parser→risk scoring→GUI thành pipeline vận hành cho SME &amp; lab.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Phạm vi nghiên cứu bao gồm/không bao gồm?</td>
+<td>Bao: monitoring, metadata analysis, risk scoring. Không: payload decryption, active exploitation.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Vì sao chọn VM + USB passthrough?</td>
+<td>VM cho driver/kernel tương thích tốt, tái hiện dễ; WSL2 có hạn chế driver.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Mục tiêu đánh giá đặt ra?</td>
+<td>Recall ≥ 0.8 so với airodump-ng, latency chấp nhận được, stability 30′ stress test.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="b-thiet-ke-kien-truc">B. Thiết kế &amp; Kiến trúc<a class="headerlink" href="#b-thiet-ke-kien-truc" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6</td>
+<td>Tại sao tách Sensor và Controller?</td>
+<td>Separation of concerns — dễ deploy multi-sensor, giảm quyền cho GUI, edge processing.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Giải thích luồng dữ liệu RF → GUI?</td>
+<td>RF → USB → driver → pcap → capture engine → parser → risk scorer → API → GUI.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Xử lý duplicate/transient AP thế nào?</td>
+<td>Dedupe theo BSSID + TTL window (first_seen/last_seen); threshold cho transient.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Tại sao JSON-over-HTTP thay vì MQTT/Kafka?</td>
+<td>Simplicity cho PoC; message brokers là bước tiếp theo khi mở rộng multi-sensor.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Multi-tenant mở rộng thế nào?</td>
+<td>Message-broker (MQTT/Kafka), central DB/Elasticsearch, mTLS và RBAC.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="c-capture-engine-parser">C. Capture Engine &amp; Parser<a class="headerlink" href="#c-capture-engine-parser" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11</td>
+<td>Tại sao dùng Scapy? Có hiệu năng không?</td>
+<td>Scapy nhanh để prototype; môi trường nhiều gói nên chuyển sang tshark backend.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>RSSI thu được có đáng tin không?</td>
+<td>Tùy driver/adapter; nếu thiếu RSSI thì đánh dấu None, dùng heuristics khác.</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Phát hiện encryption bằng gì?</td>
+<td>Dò RSN IE / WPA vendor IE / capability flags; cần test với PCAP mẫu.</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Phân biệt Evil-Twin vs legit AP?</td>
+<td>So beacon timing, capabilities, chipset OUI, HT/VHT, security inconsistencies.</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Parser có xử lý hidden SSID không?</td>
+<td>Có; hidden SSID trả <code>&lt;hidden&gt;</code>; vendor IE parse tag 221, có cache OUI lookup.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="d-risk-scoring-thuat-toan">D. Risk Scoring / Thuật toán<a class="headerlink" href="#d-risk-scoring-thuat-toan" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>16</td>
+<td>Thuật toán risk scoring là gì?</td>
+<td>Heuristic weighted scoring (encryption, RSSI, SSID pattern, vendor, channel).</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Chứng minh trọng số hợp lý thế nào?</td>
+<td>Expert-driven; cần dataset để calibrate hoặc train logistic regression.</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Có thể gây false positives? Ví dụ?</td>
+<td>Có — guest WPA2 với RSSI mạnh có thể được chấm cao; cần contextual rules.</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Đánh giá performance scoring chưa?</td>
+<td>"Cam kết chạy benchmark recall/precision vs ground-truth trong Evaluation".</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Tại sao không dùng ML ngay?</td>
+<td>Thiếu labeled dataset; heuristic cung cấp explainability; ML là bước mở rộng.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="e-hieu-nang-benchmarking">E. Hiệu năng &amp; Benchmarking<a class="headerlink" href="#e-hieu-nang-benchmarking" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>21</td>
+<td>Benchmark trên phần cứng nào?</td>
+<td>Nêu cấu hình test (CPU, RAM, adapter) hoặc sẽ thực hiện trên laptop/Pi.</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Đo recall so với airodump-ng thế nào?</td>
+<td>Chạy đồng thời, so sánh BSSID sets bằng <code>compare_recall.py</code>.</td>
+</tr>
+<tr>
+<td>23</td>
+<td>Packet loss bao nhiêu? Tối ưu thế nào?</td>
+<td>BPF filters, dwell adaptive, tshark backend, batch parsing.</td>
+</tr>
+<tr>
+<td>24</td>
+<td>Dense environment có scale không?</td>
+<td>PoC cần backend tối ưu + multi-sensor aggregation; hiện tại cần cải tiến.</td>
+</tr>
+<tr>
+<td>25</td>
+<td>Adapter disconnect thì recover thế nào?</td>
+<td>check_driver.py detect, service restart, fallback mock-mode, alert admin.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="f-bao-mat-van-hanh">F. Bảo mật &amp; Vận hành<a class="headerlink" href="#f-bao-mat-van-hanh" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>26</td>
+<td>API HTTP với API key có an toàn không?</td>
+<td>Không đủ; cần TLS/nginx hoặc SSH tunnel; API key đặt env, không hardcode.</td>
+</tr>
+<tr>
+<td>27</td>
+<td>Tại sao không cấp capability cho Python?</td>
+<td>Không cấp cho interpreter; dùng helper setuid hoặc sudoers cho lệnh hạn chế.</td>
+</tr>
+<tr>
+<td>28</td>
+<td>Logs &amp; PCAP chứa PII — quản lý thế nào?</td>
+<td>Encrypt at rest, retention policy, role-based access, sanitize before sharing.</td>
+</tr>
+<tr>
+<td>29</td>
+<td>Có cơ chế audit không?</td>
+<td>Ghi audit logs, lưu event (user/action/timestamp), forward to SIEM.</td>
+</tr>
+<tr>
+<td>30</td>
+<td>Xét đến luật/consent khi sniffing chưa?</td>
+<td>Luôn cần consent; trong báo cáo có mẫu consent form; mock-mode default.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="g-so-sanh-voi-giai-phap-thuong-mai">G. So sánh với Giải pháp Thương mại<a class="headerlink" href="#g-so-sanh-voi-giai-phap-thuong-mai" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>31</td>
+<td>Tại sao SME chọn tool này thay vì WIPS?</td>
+<td>Cost-effective, open-source, customizable, no vendor lock-in.</td>
+</tr>
+<tr>
+<td>32</td>
+<td>Big enterprise có sử dụng không?</td>
+<td>Không trực tiếp; cần HA, SLA, integration — dùng module như PoC internal.</td>
+</tr>
+<tr>
+<td>33</td>
+<td>Chi phí triển khai cho SME?</td>
+<td>1–3 sensors (~$30–150 each) + small VM; ops part-time.</td>
+</tr>
+<tr>
+<td>34</td>
+<td>ROI làm sao tính?</td>
+<td>So cost vs expected avoided incident cost; provide sample scenario.</td>
+</tr>
+<tr>
+<td>35</td>
+<td>Điểm khác biệt nào đáng bán?</td>
+<td>Transparency, ease of integration for pentest, custom heuristics.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="h-validation-tests-reproducibility">H. Validation, Tests &amp; Reproducibility<a class="headerlink" href="#h-validation-tests-reproducibility" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>36</td>
+<td>Kịch bản test đã chạy?</td>
+<td>Parser unit tests, integration E2E (VM+GUI), stress (30min scan).</td>
+</tr>
+<tr>
+<td>37</td>
+<td>Artifact nộp để chứng minh?</td>
+<td>poc.json, gt_csv (airodump), recall_report, pcap samples, CPU logs.</td>
+</tr>
+<tr>
+<td>38</td>
+<td>Peer reviewer reproduce thế nào?</td>
+<td>Clone repo, chạy setup_vm.sh, attach USB adapter or mock-mode, run demo_runbook.md.</td>
+</tr>
+<tr>
+<td>39</td>
+<td>Đã dùng CI chưa?</td>
+<td>Có GitHub Actions chạy pytest + lint.</td>
+</tr>
+<tr>
+<td>40</td>
+<td>Đảm bảo kết quả không "may mắn"?</td>
+<td>Lặp test nhiều lần, nhiều vị trí, report mean/std.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="i-ethics-legality-disclosure">I. Ethics, Legality &amp; Disclosure<a class="headerlink" href="#i-ethics-legality-disclosure" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>41</td>
+<td>"Bạn khuyến khích tấn công mạng?"</td>
+<td>Không; project phục vụ defense, research và training; active exploitation disabled default.</td>
+</tr>
+<tr>
+<td>42</td>
+<td>Demo thấy dữ liệu user, xử lý sao?</td>
+<td>Dừng, sanitize/blur, follow retention &amp; consent policy.</td>
+</tr>
+<tr>
+<td>43</td>
+<td>Risk bị misuse? Làm gì để giảm?</td>
+<td>Document for ethical use, consent templates, disable active modules default.</td>
+</tr>
+<tr>
+<td>44</td>
+<td>Tham khảo policy/pháp lý địa phương chưa?</td>
+<td>Tham khảo best practices; khuyến nghị user kiểm tra luật địa phương.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="j-future-work-research">J. Future Work &amp; Research<a class="headerlink" href="#j-future-work-research" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>45</td>
+<td>6 tháng nữa thêm tính năng gì?</td>
+<td>Multi-sensor aggregation, SIEM/ELK integration, ML anomaly detection, mTLS, RBAC.</td>
+</tr>
+<tr>
+<td>46</td>
+<td>ML có thể giúp gì? Thu thập data thế nào?</td>
+<td>Reducing FP, clustering rogue APs; thu thập labeled PCAPs + manual labels.</td>
+</tr>
+<tr>
+<td>47</td>
+<td>Nâng hệ thống production-ready thế nào?</td>
+<td>Gunicorn+Nginx TLS, non-root service, monitoring, HA aggregator, Postgres/ES.</td>
+</tr>
+<tr>
+<td>48</td>
+<td>Thương mại hoá rào cản lớn nhất?</td>
+<td>Support hardware variety, SLAs, compliance, support model.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="k-cau-hoi-ac-hay-dung">K. Câu hỏi "Ác" Hay Dùng<a class="headerlink" href="#k-cau-hoi-ac-hay-dung" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>49</td>
+<td>Ai đã test code ngoài bạn?</td>
+<td>Nếu có nêu tên; nếu chưa, thừa nhận và trình kế hoạch peer review.</td>
+</tr>
+<tr>
+<td>50</td>
+<td>Nêu 3 hạn chế lớn nhất (thẳng thắn).</td>
+<td>Hardware dependency/USB instability; heuristic not data-driven; not production-ready.</td>
+</tr>
+<tr>
+<td>51</td>
+<td>Chuyên gia RF chê, phản biện sao?</td>
+<td>Thừa nhận giới hạn RF; nhấn mục tiêu operational monitoring, không thay thế chuyên ngành.</td>
+</tr>
+<tr>
+<td>52</td>
+<td>Demo live được không? Fail thì sao?</td>
+<td>Có demo live + recorded demo as fallback — show checklist pre-demo.</td>
+</tr>
+<tr>
+<td>53</td>
+<td>Show worst-case FP example?</td>
+<td>Pre-composed: WPA2 guest "Free_WiFi" chấm medium/high; explain thresholds &amp; plan giảm FP.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="l-phan-bien-hoc-thuat-academic-rigor">L. Phản biện Học thuật (Academic Rigor)<a class="headerlink" href="#l-phan-bien-hoc-thuat-academic-rigor" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>54</td>
+<td>Đây là nghiên cứu hay engineering project?</td>
+<td>Applied security engineering. Đóng góp là systematization of practice (SoP) + evaluation có kiểm soát, không phải thuật toán mới.</td>
+</tr>
+<tr>
+<td>55</td>
+<td>Có trích dẫn chuẩn công trình liên quan không?</td>
+<td>Có cite Kismet, Aircrack-ng docs, và IEEE papers về WIDS. So sánh với Aruba/Cisco ở mức feature-level.</td>
+</tr>
+<tr>
+<td>56</td>
+<td>Tiêu chí đánh giá có statistical significance?</td>
+<td>Chạy test nhiều lần (5+), report mean/std. Confidence interval là improvement tiếp theo.</td>
+</tr>
+<tr>
+<td>57</td>
+<td>Dataset có bias không?</td>
+<td>Có; test ở lab ≠ campus ≠ mall. Acknowledge limitation này trong báo cáo.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="m-phan-bien-scope-creep-overclaim">M. Phản biện Scope Creep &amp; Overclaim<a class="headerlink" href="#m-phan-bien-scope-creep-overclaim" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>58</td>
+<td>Tên đề tài có overclaim không?</td>
+<td>Chỉ đánh giá exposure &amp; misconfiguration, không phải full security posture. Không decrypt payload.</td>
+</tr>
+<tr>
+<td>59</td>
+<td>Đảm bảo user không hiểu nhầm là "phát hiện hacker"?</td>
+<td>Document rõ scope; warning trong README; mock-mode default.</td>
+</tr>
+<tr>
+<td>60</td>
+<td>Dự án có đang làm quá nhiều thứ?</td>
+<td>Acknowledge: Capture, Parse, Risk, GUI, Ops — focus chính là pipeline integration, không sâu từng module.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="n-phan-bien-so-sanh-cong-cu-killer-questions">N. Phản biện So sánh Công cụ (Killer Questions)<a class="headerlink" href="#n-phan-bien-so-sanh-cong-cu-killer-questions" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>61</td>
+<td>Tại sao không dùng Kismet + Grafana?</td>
+<td>Kismet phức tạp cho SME; tool này đơn giản hoá deployment + add risk scoring layer.</td>
+</tr>
+<tr>
+<td>62</td>
+<td>Wireshark đã parse mọi thứ, tại sao parser riêng?</td>
+<td>Wireshark là GUI tool; cần programmatic parsing cho automation + risk scoring pipeline.</td>
+</tr>
+<tr>
+<td>63</td>
+<td>Airodump-ng đã có, tại sao viết lại?</td>
+<td>Airodump-ng là CLI output; tool này cung cấp REST API + persistent storage + GUI.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="o-phan-bien-hieu-nang-phan-cung">O. Phản biện Hiệu năng &amp; Phần cứng<a class="headerlink" href="#o-phan-bien-hieu-nang-phan-cung" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>64</td>
+<td>USB adapter là bottleneck — xử lý sao?</td>
+<td>USB 2.0 + single radio là limitation. Mitigation: adaptive dwell, tshark backend.</td>
+</tr>
+<tr>
+<td>65</td>
+<td>RSSI từ driver có đáng tin?</td>
+<td>Không hoàn toàn; normalize và dùng relative comparison, không absolute values.</td>
+</tr>
+<tr>
+<td>66</td>
+<td>&gt;100 AP environment có scale không?</td>
+<td>PoC hiện tại struggle; cần batched parsing + pagination trong API.</td>
+</tr>
+<tr>
+<td>67</td>
+<td>Ai xác nhận kết quả "đúng"?</td>
+<td>Benchmark với airodump-ng (ground truth); manual verification với Wireshark.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="p-phan-bien-forensics">P. Phản biện Forensics<a class="headerlink" href="#p-phan-bien-forensics" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>68</td>
+<td>PCAP có đủ giá trị pháp lý không?</td>
+<td>Cần chain of custody, timestamp sync, hash integrity. Hiện chỉ ở mức evidence collection.</td>
+</tr>
+<tr>
+<td>69</td>
+<td>Có đảm bảo forensic soundness không?</td>
+<td>Passive capture không thay đổi môi trường; active scan contaminate evidence — disabled default.</td>
+</tr>
+<tr>
+<td>70</td>
+<td>PCAP bị leak thì sao?</td>
+<td>Encrypt at rest, retention policy, access control. Acknowledge risk trong docs.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="q-phan-bien-van-hanh-doanh-nghiep">Q. Phản biện Vận hành Doanh nghiệp<a class="headerlink" href="#q-phan-bien-van-hanh-doanh-nghiep" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>71</td>
+<td>Ai sẽ vận hành hệ thống?</td>
+<td>Target SME IT staff; không cần SOC. Cần basic training.</td>
+</tr>
+<tr>
+<td>72</td>
+<td>Alert lên, ai xử lý?</td>
+<td>Cần playbook; hiện chỉ là dashboard, chưa có workflow engine.</td>
+</tr>
+<tr>
+<td>73</td>
+<td>False positive nhiều thì sao?</td>
+<td>Alert fatigue risk; mitigation: tunable thresholds, whitelist feature.</td>
+</tr>
+<tr>
+<td>74</td>
+<td>SME hiểu risk score không?</td>
+<td>Cần documentation; training cost là limitation.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="r-phan-bien-kinh-te-au-tu">R. Phản biện Kinh tế &amp; Đầu tư<a class="headerlink" href="#r-phan-bien-kinh-te-au-tu" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>75</td>
+<td>TCO 1 năm bao nhiêu?</td>
+<td>HW ~$100, Ops ~2h/month, Training ~4h. Total estimate ~$500-1000/year.</td>
+</tr>
+<tr>
+<td>76</td>
+<td>ROI đo thế nào?</td>
+<td>So với 1 incident cost (~$5k-50k for SME); prevention &gt; response cost.</td>
+</tr>
+<tr>
+<td>77</td>
+<td>Có trùng với firewall + IDS không?</td>
+<td>Không; firewall = wired, IDS = host-based; tool này = wireless layer visibility.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="s-phan-bien-bao-mat-chinh-du-an">S. Phản biện Bảo mật Chính Dự án<a class="headerlink" href="#s-phan-bien-bao-mat-chinh-du-an" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>78</td>
+<td>Attacker compromise sensor VM thì sao?</td>
+<td>Pivot risk; mitigation: isolated network, least privilege, monitoring.</td>
+</tr>
+<tr>
+<td>79</td>
+<td>API key bị lộ?</td>
+<td>Rate limit, IP whitelist, rotate keys. Acknowledge risk.</td>
+</tr>
+<tr>
+<td>80</td>
+<td>Có threat model cho hệ thống chưa?</td>
+<td>Basic STRIDE analysis; full threat model là future work.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="t-phan-bien-engineering-discipline">T. Phản biện Engineering Discipline<a class="headerlink" href="#t-phan-bien-engineering-discipline" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>81</td>
+<td>Tại sao không có CI/CD?</td>
+<td>Có GitHub Actions với pytest + lint.</td>
+</tr>
+<tr>
+<td>82</td>
+<td>Coding style nhất quán không?</td>
+<td>PEP8 + flake8 trong CI; có log levels consistent.</td>
+</tr>
+<tr>
+<td>83</td>
+<td>Capture crash lúc demo thì sao?</td>
+<td>Recorded video fallback + mock-mode option.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="u-phan-bien-ao-uc-trach-nhiem">U. Phản biện Đạo đức &amp; Trách nhiệm<a class="headerlink" href="#u-phan-bien-ao-uc-trach-nhiem" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>84</td>
+<td>Tool bị dùng do thám cá nhân?</td>
+<td>Consent requirement trong docs; mock-mode default; ethical use guidelines.</td>
+</tr>
+<tr>
+<td>85</td>
+<td>Rủi ro privacy (MAC tracking)?</td>
+<td>Acknowledgement: MAC addresses là PII; cần anonymization cho production.</td>
+</tr>
+<tr>
+<td>86</td>
+<td>SV dùng scan hàng xóm thì sao?</td>
+<td>Disclaimer trong README; legal warning; author không chịu trách nhiệm misuse.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="v-phan-bien-future-work-bay-hua-suong">V. Phản biện Future Work (Bẫy hứa suông)<a class="headerlink" href="#v-phan-bien-future-work-bay-hua-suong" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>87</td>
+<td>ML có thật sự khả thi?</td>
+<td>Có nếu có labeled dataset; cần ~1000+ samples; label manual hoặc crowdsource.</td>
+</tr>
+<tr>
+<td>88</td>
+<td>Multi-sensor có giải quyết root problem?</td>
+<td>Giúp coverage; root problem (accuracy) cần ML; multi-sensor là operational improvement.</td>
+</tr>
+<tr>
+<td>89</td>
+<td>Làm lại từ đầu, bỏ gì?</td>
+<td>GUI complexity; focus pure API + CLI first.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="w-cau-hoi-anh-thang-tu-duy">W. Câu hỏi "Đánh thẳng Tư duy"<a class="headerlink" href="#w-cau-hoi-anh-thang-tu-duy" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Câu hỏi</th>
+<th>Gợi ý trả lời</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>90</td>
+<td>Nếu cấm dùng USB adapter ngoài, đề tài còn sống?</td>
+<td>Có; dùng PCAP replay mode để demonstrate parsing + risk scoring logic.</td>
+</tr>
+<tr>
+<td>91</td>
+<td>Yêu cầu hoàn toàn passive &amp; không PCAP?</td>
+<td>Có thể; API chỉ expose metadata, không lưu PCAP. Configurable via settings.</td>
+</tr>
+<tr>
+<td>92</td>
+<td>"Đây chỉ là lab exercise" — phản biện sao?</td>
+<td>Lab exercise có evaluation rigor, comparison, và reproducibility = valid engineering research.</td>
+</tr>
+<tr>
+<td>93</td>
+<td><strong>Một câu: vì sao đề tài này xứng đáng thông qua?</strong></td>
+<td>Giải quyết pain point thực (Wi-Fi visibility cho SME), có implementation working, có evaluation data, có documentation đầy đủ.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="pre-defense-checklist">📋 Pre-Defense Checklist<a class="headerlink" href="#pre-defense-checklist" title="Permanent link">&para;</a></h2>
+<h3 id="technical-setup">Technical Setup<a class="headerlink" href="#technical-setup" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Clone repo mới trên máy demo</li>
+<li>[ ] Run <code>setup_vm.sh</code> thành công</li>
+<li>[ ] USB adapter hoạt động (lsusb, iw dev)</li>
+<li>[ ] API server chạy (<code>/health</code> OK)</li>
+<li>[ ] GUI kết nối thành công</li>
+</ul>
+<h3 id="fallback-evidence">Fallback &amp; Evidence<a class="headerlink" href="#fallback-evidence" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Recorded video demo sẵn sàng</li>
+<li>[ ] PCAP samples trong artifacts/</li>
+<li>[ ] Recall report generated</li>
+<li>[ ] Screenshots của GUI</li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] Consent form template ready</li>
+<li>[ ] Printed Q&amp;A guide (this doc)</li>
+<li>[ ] Slides loaded</li>
+</ul>
+<hr />
+<h2 id="top-10-cau-hoi-quan-trong-nhat">🔥 Top 10 Câu hỏi Quan trọng Nhất<a class="headerlink" href="#top-10-cau-hoi-quan-trong-nhat" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Đóng góp chính là gì?</strong> → Pipeline integration + evaluation</li>
+<li><strong>Tại sao không dùng Kismet?</strong> → Simplicity + risk scoring layer</li>
+<li><strong>Recall bao nhiêu?</strong> → ≥80% vs airodump-ng</li>
+<li><strong>3 hạn chế lớn nhất?</strong> → USB dependency, heuristic not data-driven, not prod-ready</li>
+<li><strong>RSSI có đáng tin?</strong> → Không hoàn toàn, dùng relative comparison</li>
+<li><strong>False positive thế nào?</strong> → Có; cần tunable thresholds</li>
+<li><strong>Ai test code ngoài bạn?</strong> → CI/CD + self-review; peer review là improvement</li>
+<li><strong>Future work khả thi?</strong> → ML + multi-sensor</li>
+<li><strong>Ethical use?</strong> → Consent required, mock-mode default</li>
+<li><strong>Xứng đáng thông qua?</strong> → Working system + evaluation + documentation</li>
+</ol>
+<hr />
+<p><em>Good luck with your defense! 🛡️</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
