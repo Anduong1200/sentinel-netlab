@@ -52,6 +52,9 @@ class EvilTwinConfig:
     threshold_high: int = 60
     threshold_medium: int = 40
 
+    # Resource limits (prevent OOM on edge devices)
+    max_tracked_aps: int = 10000
+
     # MITRE mapping
     mitre_technique: str = "T1557.002"
     mitre_tactic: str = "Credential Access"
@@ -576,6 +579,21 @@ class AdvancedEvilTwinDetector:
         ]
         for ssid in empty_ssids:
             del self.ssid_to_bssids[ssid]
+
+        # Hard cap: if still over max_tracked_aps, evict oldest by last_seen
+        max_aps = self.config.max_tracked_aps
+        if len(self.ap_profiles) > max_aps:
+            by_last_seen = sorted(
+                self.ap_profiles.items(), key=lambda kv: kv[1].last_seen
+            )
+            to_remove = len(self.ap_profiles) - max_aps
+            for bssid, _ in by_last_seen[:to_remove]:
+                del self.ap_profiles[bssid]
+                for _, bssids in self.ssid_to_bssids.items():
+                    bssids.discard(bssid)
+            # Re-clean empty SSIDs after eviction
+            for ssid in [s for s, bs in self.ssid_to_bssids.items() if not bs]:
+                del self.ssid_to_bssids[ssid]
 
         # Expire pending alerts
         expired = [

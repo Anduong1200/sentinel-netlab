@@ -15,8 +15,13 @@ def make_celery():
         "sentinel",
         broker=broker_url,
         backend=backend_url,
-        include=["controller.tasks"],
+        include=["controller.tasks", "controller.tasks_retention"],
     )
+
+    # Retention interval from env (default 6 hours)
+    import os
+
+    retention_interval = int(os.getenv("RETENTION_INTERVAL_HOURS", "6")) * 3600
 
     app.conf.update(
         task_always_eager=config.environment == "testing",
@@ -26,6 +31,12 @@ def make_celery():
         result_serializer="json",
         timezone="UTC",
         enable_utc=True,
+        beat_schedule={
+            "prune-old-data": {
+                "task": "controller.tasks_retention.prune_old_data",
+                "schedule": retention_interval,
+            },
+        },
     )
 
     return app

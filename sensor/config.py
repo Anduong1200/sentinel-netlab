@@ -160,6 +160,16 @@ class DetectorsConfig:
 
 
 @dataclass
+class AggregatorConfig:
+    """Event aggregator settings for rate-limiting high-EPS traffic."""
+
+    enabled: bool = True
+    window_sec: float = 5.0
+    max_events_per_key: int = 100
+
+
+
+@dataclass
 class Config:
     """Main configuration container."""
 
@@ -174,6 +184,7 @@ class Config:
     geo: GeoConfig = field(default_factory=GeoConfig)
     upload: UploadConfig = field(default_factory=UploadConfig)
     detectors: DetectorsConfig = field(default_factory=DetectorsConfig)
+    aggregator: AggregatorConfig = field(default_factory=AggregatorConfig)
     mock_mode: bool = False  # Use mock data when hardware unavailable
     log_level: str = "INFO"
 

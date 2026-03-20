@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
+from common.ttl_dict import TTLDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,10 +93,13 @@ class PMKIDAttackDetector:
         self.config = config or PMKIDConfig()
 
         # Per-AP state: BSSID -> APAttackState
-        self.ap_states: dict[str, APAttackState] = defaultdict(APAttackState)
+        # Bounded to prevent OOM on edge devices (Pi 1-2GB RAM)
+        self.ap_states: TTLDict = TTLDict(maxsize=5000, ttl=300.0)
 
         # Cooldown tracking: BSSID -> last alert timestamp
-        self.last_alert_time: dict[str, float] = {}
+        self.last_alert_time: TTLDict = TTLDict(
+            maxsize=5000, ttl=(config or PMKIDConfig()).cooldown_seconds * 2
+        )
 
         self.alert_count = 0
 
@@ -123,7 +128,10 @@ class PMKIDAttackDetector:
         if isinstance(now, str):
             now = time.time()
 
-        state = self.ap_states[bssid]
+        state = self.ap_states.get(bssid)
+        if state is None:
+            state = APAttackState()
+            self.ap_states[bssid] = state
 
         # ─── Layer 1: EAPOL Tracking ──────────────────────────────────
         if self._is_eapol(ftype, subtype, frame):
@@ -154,6 +162,9 @@ class PMKIDAttackDetector:
                     state.auth_timestamps, now, self.config.auth_time_window
                 )
 
+        # Write back state to refresh TTL
+        self.ap_states[bssid] = state
+
         # ─── Evaluate ─────────────────────────────────────────────────
         return self._evaluate(bssid, state, now)
 
@@ -174,8 +185,9 @@ class PMKIDAttackDetector:
         """Evaluate current state and decide if an alert should fire."""
 
         # Check cooldown
-        if bssid in self.last_alert_time:
-            if now - self.last_alert_time[bssid] < self.config.cooldown_seconds:
+        last = self.last_alert_time.get(bssid)
+        if last is not None:
+            if now - last < self.config.cooldown_seconds:
                 return None
 
         # Count indicators

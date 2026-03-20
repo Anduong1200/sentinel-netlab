@@ -11,6 +11,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from common.ttl_dict import TTLDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,10 +55,13 @@ class DeauthFloodDetector:
         self.state_file = state_file
 
         # Track deauth frames: (bssid, client) -> [timestamps]
-        self.deauth_history: dict[tuple[str, str], list[float]] = defaultdict(list)
+        # Bounded to prevent OOM on edge devices (Pi 1-2GB RAM)
+        self.deauth_history: TTLDict = TTLDict(maxsize=5000, ttl=300.0)
 
-        # Cooldown tracking
-        self.last_alert: dict[tuple[str, str], float] = {}
+        # Cooldown tracking — TTL = 2x cooldown to allow natural expiry
+        self.last_alert: TTLDict = TTLDict(
+            maxsize=5000, ttl=cooldown_seconds * 2
+        )
         self._load_state()
 
         self.alert_count = 0
@@ -71,8 +76,10 @@ class DeauthFloodDetector:
         now = time.time()
         key = (bssid, client_mac)
 
-        # Add timestamp
-        self.deauth_history[key].append(now)
+        # Add timestamp (setdefault returns existing list or creates new)
+        history = self.deauth_history.setdefault(key, [])
+        history.append(now)
+        self.deauth_history[key] = history  # refresh TTL
 
         # Clean old entries
         self._cleanup(key, now)
@@ -82,8 +89,13 @@ class DeauthFloodDetector:
 
     def _cleanup(self, key: tuple[str, str], now: float):
         """Remove entries outside the window"""
+        history = self.deauth_history.get(key, [])
         cutoff = now - self.window_seconds * 2  # Keep 2x window for analysis
-        self.deauth_history[key] = [t for t in self.deauth_history[key] if t >= cutoff]
+        filtered = [t for t in history if t >= cutoff]
+        if filtered:
+            self.deauth_history[key] = filtered
+        elif key in self.deauth_history:
+            del self.deauth_history[key]
 
     def _check_flood(
         self,
@@ -95,13 +107,15 @@ class DeauthFloodDetector:
     ) -> DeauthFloodAlert | None:
         """Check if current rate exceeds threshold"""
         # Check cooldown
-        if key in self.last_alert:
-            if now - self.last_alert[key] < self.cooldown_seconds:
+        last = self.last_alert.get(key)
+        if last is not None:
+            if now - last < self.cooldown_seconds:
                 return None
 
         # Count frames in window
         window_start = now - self.window_seconds
-        frames_in_window = [t for t in self.deauth_history[key] if t >= window_start]
+        history = self.deauth_history.get(key, [])
+        frames_in_window = [t for t in history if t >= window_start]
         count = len(frames_in_window)
 
         # Calculate rate
