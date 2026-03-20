@@ -149,7 +149,7 @@ class TestEventAggregatorThreadSafety:
 
         def ingester(thread_id):
             try:
-                for i in range(100):
+                for _i in range(100):
                     agg.ingest({
                         "event_type": "deauth",
                         "bssid": f"AA:BB:{thread_id:02X}:00:00:00",

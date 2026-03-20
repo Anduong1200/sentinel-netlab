@@ -13,7 +13,6 @@ summary: {"event_type": "deauth", "bssid": "AA:BB:CC", "count": 1000,
 import logging
 import threading
 import time
-from collections import defaultdict
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -162,7 +161,7 @@ class EventAggregator:
             summaries: list[dict[str, Any]] = []
             now = time.monotonic()
 
-            for key, bucket in self._buckets.items():
+            for _key, bucket in self._buckets.items():
                 count = bucket["count"]
                 duration = max(bucket["last_seen"] - bucket["first_seen"], 0.001)
                 rate = count / duration if duration > 0 else float(count)

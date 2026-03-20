@@ -1,5 +1,5 @@
-from pathlib import Path
 import runpy
+from pathlib import Path
 
 
 def test_lab_smoke_uses_proxy_urls() -> None:

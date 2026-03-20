@@ -15,7 +15,6 @@ References:
 
 import logging
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any

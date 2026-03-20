@@ -262,7 +262,7 @@ class TestTransport:
 
 
     def test_auditor_generate_report_data_sorting(self):
-        from sensor.auditor import NetworkInfo, SecurityAuditor
+        from sensor.auditor import SecurityAuditor
         auditor = SecurityAuditor("test-sensor", profile="home")
 
         from sensor.auditor.models import Finding

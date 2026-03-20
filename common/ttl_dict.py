@@ -17,8 +17,8 @@ Usage:
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Iterator
-
+from collections.abc import Iterator
+from typing import Any
 
 _SENTINEL = object()
 
