@@ -11,6 +11,8 @@ import glob
 import logging
 import os
 import queue
+import subprocess  # nosec B404
+import sys
 import threading
 import time
 from collections.abc import Callable
@@ -57,21 +59,31 @@ from sensor.tui.config_store import (
     validate_tui_settings,
 )
 from sensor.tui.setup_wizard import (
+    AuditRunReport,
     BackendCheckReport,
     CommandResult,
+    DEFAULT_PROD_HEALTH_URL,
+    DeploymentActionReport,
     LabActionReport,
     WirelessInventoryReport,
+    build_pytest_command,
     build_bootstrap_env,
     build_quick_profile,
+    build_sensor_daemon_command,
     build_upload_url,
     collect_backend_health,
     detect_wireless_inventory,
     install_python_component,
+    normalize_health_url,
     normalize_controller_url,
     open_dashboard_gui,
+    probe_health_endpoint,
     request_sensor_token,
     run_lab_action,
+    run_prod_action,
+    run_security_audit,
     run_tests,
+    resolve_test_targets,
     set_interface_monitor_mode,
     upsert_env_file,
 )
@@ -387,6 +399,99 @@ class SetupScreen(Screen):
                     yield Label("", id="lab-status")
                     yield Label("", id="lab-autofill", classes="setup-hint")
 
+                with Container(classes="setup-group"):
+                    yield Label("🔎 SECURITY AUDIT", classes="setup-group-title")
+                    with Horizontal(classes="setup-row", id="row-audit-profile"):
+                        yield Label("Audit Profile", classes="setup-label")
+                        yield Input(
+                            value="home",
+                            placeholder="home, sme, enterprise",
+                            id="input-audit-profile",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="setup-row", id="row-audit-output"):
+                        yield Label("Audit Output", classes="setup-label")
+                        yield Input(
+                            value="artifacts/audit_report.json",
+                            placeholder="artifacts/audit_report.json",
+                            id="input-audit-output",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    yield Checkbox("Use Mock Discovery", id="chk-audit-mock", value=True)
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Run Security Audit", id="btn-run-audit")
+                        yield Button("Clear Audit", id="btn-clear-audit")
+                    yield Label("", id="audit-status")
+                    yield Label("", id="audit-summary", classes="setup-hint")
+                    audit_table: DataTable = DataTable(id="audit-results")
+                    audit_table.cursor_type = "row"
+                    audit_table.zebra_stripes = True
+                    yield audit_table
+                    yield RichLog(
+                        id="audit-log",
+                        max_lines=120,
+                        highlight=True,
+                        markup=True,
+                    )
+
+                with Container(classes="setup-group"):
+                    yield Label("🧪 DIAGNOSTICS", classes="setup-group-title")
+                    yield Checkbox("Unit Tests", id="chk-tests-unit", value=True)
+                    yield Checkbox(
+                        "Integration Tests",
+                        id="chk-tests-integration",
+                        value=True,
+                    )
+                    yield Checkbox("All Tests", id="chk-tests-all", value=False)
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Run Diagnostics / Tests", id="btn-run-tests-stream")
+                        yield Button("Clear Diagnostics", id="btn-clear-tests")
+                    yield Label("", id="diag-status")
+                    yield RichLog(
+                        id="diag-log",
+                        max_lines=160,
+                        highlight=True,
+                        markup=False,
+                    )
+
+                with Container(classes="setup-group"):
+                    yield Label(
+                        "🏭 OPERATIONS & DEPLOYMENT",
+                        classes="setup-group-title",
+                    )
+                    with Horizontal(classes="quick-actions"):
+                        yield Button(
+                            "Start Background Daemon",
+                            id="btn-start-daemon",
+                        )
+                        yield Button(
+                            "Stop Background Daemon",
+                            id="btn-stop-daemon",
+                        )
+                    yield Label("", id="daemon-status")
+                    yield Label("", id="daemon-details", classes="setup-hint")
+                    with Horizontal(classes="setup-row", id="row-prod-health-url"):
+                        yield Label("Prod Health URL", classes="setup-label")
+                        yield Input(
+                            value=DEFAULT_PROD_HEALTH_URL,
+                            placeholder="http://127.0.0.1/health",
+                            id="input-prod-health-url",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="quick-actions"):
+                        yield Button(
+                            "Deploy Production Controller",
+                            id="btn-prod-up",
+                        )
+                        yield Button("Stop Prod Stack", id="btn-prod-down")
+                        yield Button("Prod Status", id="btn-prod-status")
+                    yield Label("", id="prod-status")
+                    yield Label("", id="prod-health", classes="setup-hint")
+                    yield Label("", id="prod-details", classes="setup-hint")
+
                 # Validation error area
                 yield Label("", id="validation-error")
 
@@ -401,6 +506,8 @@ class SetupScreen(Screen):
     def on_mount(self) -> None:
         """Auto-detect environment on screen load."""
         app = self._sentinel_app()
+        self._audit_running = False
+        self._diagnostics_running = False
         defaults = normalize_tui_settings(app.saved_settings)
         self._advanced_settings = self._extract_advanced_settings(defaults)
         self._available_ifaces = detect_wifi_interfaces()
@@ -439,10 +546,22 @@ class SetupScreen(Screen):
         self.query_one("#input-geo-y", Input).value = str(
             defaults.get("geo_sensor_y_m", "")
         )
+        self.query_one("#input-audit-profile", Input).value = str(
+            defaults.get("audit_profile", "home")
+        )
+        self.query_one("#input-audit-output", Input).value = str(
+            defaults.get("audit_output", "artifacts/audit_report.json")
+        )
+        self.query_one("#input-prod-health-url", Input).value = str(
+            defaults.get("prod_health_url", DEFAULT_PROD_HEALTH_URL)
+        )
         self.query_one("#chk-ml", Checkbox).value = bool(defaults.get("ml_enabled"))
         self.query_one("#chk-geo", Checkbox).value = bool(defaults.get("geo_enabled"))
         self.query_one("#chk-anon", Checkbox).value = bool(
             defaults.get("anonymize", True)
+        )
+        self.query_one("#chk-audit-mock", Checkbox).value = bool(
+            defaults.get("audit_use_mock", defaults.get("mode", "mock") != "live")
         )
 
         mode = defaults.get("mode", "mock")
@@ -450,10 +569,15 @@ class SetupScreen(Screen):
         self.query_one("#mode-mock", RadioButton).value = mode == "mock"
         self.query_one("#mode-pcap", RadioButton).value = mode == "pcap"
 
+        audit_table = self.query_one("#audit-results", DataTable)
+        audit_table.add_columns("Severity", "Title", "Status", "Evidence", "Action")
+
         self._sync_dynamic_rows()
         self._refresh_preflight()
         self._refresh_profile_inventory()
         self._refresh_profile_summary(defaults)
+        self._refresh_runtime_operations()
+        self.set_interval(4.0, self._refresh_runtime_operations)
         self.call_after_refresh(lambda: self.set_focus(None))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -584,6 +708,51 @@ class SetupScreen(Screen):
                 lambda: run_tests(PROJECT_ROOT),
                 self._handle_test_result,
             )
+        elif event.button.id == "btn-run-audit":
+            self._launch_security_audit()
+        elif event.button.id == "btn-clear-audit":
+            self._clear_audit_results()
+        elif event.button.id == "btn-run-tests-stream":
+            self._launch_diagnostics_run()
+        elif event.button.id == "btn-clear-tests":
+            self._clear_diagnostics()
+        elif event.button.id == "btn-start-daemon":
+            self._start_background_daemon()
+        elif event.button.id == "btn-stop-daemon":
+            self._stop_background_daemon()
+        elif event.button.id == "btn-prod-up":
+            self._run_setup_task(
+                "#prod-status",
+                "Deploying production compose stack…",
+                lambda: run_prod_action(
+                    PROJECT_ROOT,
+                    "up",
+                    health_url=self._prod_health_url(),
+                ),
+                self._handle_prod_action,
+            )
+        elif event.button.id == "btn-prod-down":
+            self._run_setup_task(
+                "#prod-status",
+                "Stopping production compose stack…",
+                lambda: run_prod_action(
+                    PROJECT_ROOT,
+                    "down",
+                    health_url=self._prod_health_url(),
+                ),
+                self._handle_prod_action,
+            )
+        elif event.button.id == "btn-prod-status":
+            self._run_setup_task(
+                "#prod-status",
+                "Checking production compose stack…",
+                lambda: run_prod_action(
+                    PROJECT_ROOT,
+                    "status",
+                    health_url=self._prod_health_url(),
+                ),
+                self._handle_prod_action,
+            )
         elif event.button.id == "btn-open-gui":
             controller_url = self._controller_url()
             self._run_setup_task(
@@ -636,6 +805,12 @@ class SetupScreen(Screen):
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "chk-geo":
             self._sync_dynamic_rows()
+        elif event.checkbox.id == "chk-tests-all" and event.checkbox.value:
+            self.query_one("#chk-tests-unit", Checkbox).value = False
+            self.query_one("#chk-tests-integration", Checkbox).value = False
+        elif event.checkbox.id in {"chk-tests-unit", "chk-tests-integration"}:
+            if event.checkbox.value:
+                self.query_one("#chk-tests-all", Checkbox).value = False
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.radio_set.id == "mode-select":
@@ -713,6 +888,10 @@ class SetupScreen(Screen):
                 "geo_sensor_y_m": self.query_one("#input-geo-y", Input).value.strip(),
                 "anonymize": self.query_one("#chk-anon", Checkbox).value,
                 "profile_name": self.query_one("#input-profile-name", Input).value,
+                "audit_profile": self.query_one("#input-audit-profile", Input).value,
+                "audit_output": self.query_one("#input-audit-output", Input).value,
+                "audit_use_mock": self.query_one("#chk-audit-mock", Checkbox).value,
+                "prod_health_url": self._prod_health_url(),
             }
         )
         return normalize_tui_settings(settings)
@@ -759,6 +938,18 @@ class SetupScreen(Screen):
         self.query_one("#chk-ml", Checkbox).value = bool(merged["ml_enabled"])
         self.query_one("#chk-geo", Checkbox).value = bool(merged["geo_enabled"])
         self.query_one("#chk-anon", Checkbox).value = bool(merged["anonymize"])
+        self.query_one("#input-audit-profile", Input).value = str(
+            merged.get("audit_profile", "home")
+        )
+        self.query_one("#input-audit-output", Input).value = str(
+            merged.get("audit_output", "artifacts/audit_report.json")
+        )
+        self.query_one("#chk-audit-mock", Checkbox).value = bool(
+            merged.get("audit_use_mock", merged["mode"] != "live")
+        )
+        self.query_one("#input-prod-health-url", Input).value = str(
+            merged.get("prod_health_url", DEFAULT_PROD_HEALTH_URL)
+        )
         self.query_one("#mode-live", RadioButton).value = merged["mode"] == "live"
         self.query_one("#mode-mock", RadioButton).value = merged["mode"] == "mock"
         self.query_one("#mode-pcap", RadioButton).value = merged["mode"] == "pcap"
@@ -1105,8 +1296,323 @@ class SetupScreen(Screen):
         if result.stderr:
             self.query_one("#iface-summary", Label).update(
                 f"[dim]{result.stderr[:220]}[/dim]"
-            )
+        )
         self._sentinel_app().app_state.push_log(f"[Setup] {label} -> {result.summary}")
+
+    def _prod_health_url(self) -> str:
+        return normalize_health_url(
+            self.query_one("#input-prod-health-url", Input).value
+        )
+
+    def _refresh_runtime_operations(self) -> None:
+        if self.app.screen is not self:
+            return
+
+        app = self._sentinel_app()
+        daemon_snapshot = app.sensor_daemon_snapshot()
+        daemon_color = (
+            "green"
+            if daemon_snapshot["running"]
+            else ("red" if "Exited" in daemon_snapshot["status"] else "yellow")
+        )
+        self.query_one("#daemon-status", Label).update(
+            f"Daemon: [{daemon_color}]{daemon_snapshot['status']}[/{daemon_color}]"
+        )
+        if daemon_snapshot["details"]:
+            self.query_one("#daemon-details", Label).update(
+                f"[dim]{daemon_snapshot['details']}[/dim]"
+            )
+
+        health_url = self._prod_health_url()
+        health_ok = probe_health_endpoint(health_url)
+        health_color = "green" if health_ok else "yellow"
+        health_text = "ONLINE" if health_ok else "OFFLINE"
+        self.query_one("#prod-health", Label).update(
+            f"[{health_color}]Health:[/{health_color}] {health_text} | {health_url}"
+        )
+
+    def _append_rich_log(self, selector: str, message: str) -> None:
+        text = message.rstrip("\n")
+        widget = self.query_one(selector, RichLog)
+        widget.write(text if text else "")
+
+    @staticmethod
+    def _display_path(path: Path) -> str:
+        try:
+            return str(path.relative_to(PROJECT_ROOT))
+        except ValueError:
+            return str(path)
+
+    def _clear_audit_results(self) -> None:
+        self.query_one("#audit-results", DataTable).clear(columns=False)
+        self.query_one("#audit-log", RichLog).clear()
+        self.query_one("#audit-status", Label).update("")
+        self.query_one("#audit-summary", Label).update("")
+
+    def _handle_audit_result(self, report: AuditRunReport) -> None:
+        self._audit_running = False
+        counts = report.report_data["summary"]["counts"]
+        has_severe = counts.get("critical", 0) > 0 or counts.get("high", 0) > 0
+        has_findings = any(counts.values())
+        status_color = "red" if has_severe else ("yellow" if has_findings else "green")
+
+        table = self.query_one("#audit-results", DataTable)
+        table.clear(columns=False)
+        findings = report.report_data.get("findings", [])
+        if findings:
+            for finding in findings:
+                table.add_row(
+                    str(finding.get("severity", "Info")).upper(),
+                    str(finding.get("title", "Untitled")),
+                    str(finding.get("status", "Open")),
+                    str(finding.get("evidence_summary", "—")),
+                    str(finding.get("remediation_summary", "—")),
+                )
+        else:
+            table.add_row(
+                "PASS",
+                "No findings",
+                "Closed",
+                "No security issues detected.",
+                "No action required.",
+            )
+
+        self.query_one("#audit-status", Label).update(
+            f"[{status_color}]Audit complete:[/{status_color}] {report.summary}"
+        )
+        self.query_one("#audit-summary", Label).update(
+            f"[dim]Profile {report.profile.upper()} | "
+            f"Duration {report.duration_sec:.1f}s | "
+            f"Saved {self._display_path(report.output_path)}[/dim]"
+        )
+        self._append_rich_log(
+            "#audit-log",
+            f"Completed audit in {report.duration_sec:.1f}s.",
+        )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] Audit -> {report.summary}"
+        )
+
+    def _handle_audit_failure(self, message: str) -> None:
+        self._audit_running = False
+        self.query_one("#audit-status", Label).update(
+            f"[bold red]Audit failed:[/bold red] {message}"
+        )
+        self.query_one("#audit-summary", Label).update("")
+        self._append_rich_log("#audit-log", f"ERROR: {message}")
+        self._sentinel_app().app_state.push_log(f"[Setup] Audit failed -> {message}")
+
+    def _launch_security_audit(self) -> None:
+        if self._audit_running:
+            self.query_one("#audit-status", Label).update(
+                "[yellow]Audit already running…[/yellow]"
+            )
+            return
+
+        settings = self._collect_settings()
+        profile = self.query_one("#input-audit-profile", Input).value.strip() or "home"
+        output_path = (
+            self.query_one("#input-audit-output", Input).value.strip()
+            or "artifacts/audit_report.json"
+        )
+        sensor_id = str(settings["sensor_id"])
+        iface = str(settings["interface"])
+        use_mock = self.query_one("#chk-audit-mock", Checkbox).value
+
+        self._clear_audit_results()
+        self._audit_running = True
+        self.query_one("#audit-status", Label).update(
+            "[yellow]Running security audit…[/yellow]"
+        )
+        self.query_one("#audit-summary", Label).update(
+            f"[dim]Profile {profile} | Output {output_path}[/dim]"
+        )
+
+        def task() -> None:
+            app = self._sentinel_app()
+
+            def emit(message: str) -> None:
+                app.call_from_thread(self._append_rich_log, "#audit-log", message)
+
+            try:
+                report = run_security_audit(
+                    PROJECT_ROOT,
+                    profile=profile,
+                    output_path=output_path,
+                    sensor_id=sensor_id,
+                    iface=iface,
+                    use_mock=use_mock,
+                    progress=emit,
+                )
+            except Exception as exc:
+                app.call_from_thread(self._handle_audit_failure, str(exc))
+                return
+
+            app.call_from_thread(self._handle_audit_result, report)
+
+        threading.Thread(
+            target=task,
+            daemon=True,
+            name="SetupAuditRunner",
+        ).start()
+
+    def _clear_diagnostics(self) -> None:
+        self.query_one("#diag-log", RichLog).clear()
+        self.query_one("#diag-status", Label).update("")
+
+    def _finish_diagnostics_run(
+        self,
+        returncode: int | None,
+        targets: tuple[str, ...],
+        error: str | None = None,
+    ) -> None:
+        self._diagnostics_running = False
+        target_label = ", ".join(targets)
+        if error is not None:
+            self.query_one("#diag-status", Label).update(
+                f"[bold red]Diagnostics failed:[/bold red] {error}"
+            )
+            self._sentinel_app().app_state.push_log(
+                f"[Setup] Diagnostics failed -> {error}"
+            )
+            return
+
+        ok = returncode == 0
+        color = "green" if ok else "red"
+        summary = (
+            f"Diagnostics passed for {target_label}."
+            if ok
+            else f"Diagnostics failed for {target_label} (exit {returncode})."
+        )
+        self.query_one("#diag-status", Label).update(
+            f"[{color}]{summary}[/{color}]"
+        )
+        self._append_rich_log("#diag-log", f"Process exited with code {returncode}.")
+        self._sentinel_app().app_state.push_log(f"[Setup] Diagnostics -> {summary}")
+
+    def _launch_diagnostics_run(self) -> None:
+        if self._diagnostics_running:
+            self.query_one("#diag-status", Label).update(
+                "[yellow]Diagnostics already running…[/yellow]"
+            )
+            return
+
+        targets = resolve_test_targets(
+            include_unit=self.query_one("#chk-tests-unit", Checkbox).value,
+            include_integration=self.query_one(
+                "#chk-tests-integration",
+                Checkbox,
+            ).value,
+            include_all=self.query_one("#chk-tests-all", Checkbox).value,
+        )
+        command = build_pytest_command(targets, python_executable=sys.executable)
+
+        self._clear_diagnostics()
+        self._diagnostics_running = True
+        self.query_one("#diag-status", Label).update(
+            f"[yellow]Running diagnostics for {', '.join(targets)}…[/yellow]"
+        )
+
+        def task() -> None:
+            app = self._sentinel_app()
+            app.call_from_thread(
+                self._append_rich_log,
+                "#diag-log",
+                f"$ {' '.join(command)}",
+            )
+            try:
+                process = subprocess.Popen(
+                    command,
+                    cwd=str(PROJECT_ROOT),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )  # noqa: S603,S607
+                assert process.stdout is not None
+                for raw_line in process.stdout:
+                    app.call_from_thread(
+                        self._append_rich_log,
+                        "#diag-log",
+                        raw_line.rstrip("\n"),
+                    )
+                returncode = process.wait()
+            except Exception as exc:
+                app.call_from_thread(
+                    self._finish_diagnostics_run,
+                    None,
+                    targets,
+                    str(exc),
+                )
+                return
+
+            app.call_from_thread(
+                self._finish_diagnostics_run,
+                returncode,
+                targets,
+                None,
+            )
+
+        threading.Thread(
+            target=task,
+            daemon=True,
+            name="SetupDiagnosticsRunner",
+        ).start()
+
+    def _start_background_daemon(self) -> None:
+        tui_settings = self._collect_settings()
+        validation_error = validate_tui_settings(
+            tui_settings,
+            available_ifaces=self._available_ifaces,
+            file_exists=os.path.isfile,
+        )
+        if validation_error:
+            self.query_one("#daemon-details", Label).update(
+                f"[bold red]{validation_error}[/bold red]"
+            )
+            return
+
+        self._persist_setup_state(tui_settings)
+        result = self._sentinel_app().launch_sensor_daemon(tui_settings)
+        color = "green" if result.ok else "bold red"
+        self.query_one("#daemon-details", Label).update(
+            f"[{color}]{result.summary}[/{color}]"
+        )
+        self._refresh_runtime_operations()
+
+    def _stop_background_daemon(self) -> None:
+        result = self._sentinel_app().stop_sensor_daemon()
+        color = "green" if result.ok else "bold red"
+        self.query_one("#daemon-details", Label).update(
+            f"[{color}]{result.summary}[/{color}]"
+        )
+        self._refresh_runtime_operations()
+
+    def _handle_prod_action(self, report: DeploymentActionReport) -> None:
+        color = (
+            "green"
+            if report.ok and (report.action != "up" or report.health_ok)
+            else ("yellow" if report.ok else "bold red")
+        )
+        self.query_one("#prod-status", Label).update(
+            f"[{color}]Prod {report.action}:[/{color}] {report.summary}"
+        )
+        env_text = (
+            self._display_path(report.env_file)
+            if report.env_file is not None
+            else "env missing"
+        )
+        self.query_one("#prod-details", Label).update(
+            f"[dim]Env {env_text} | {report.details[:220]}[/dim]"
+        )
+        health_color = "green" if report.health_ok else "yellow"
+        health_text = "ONLINE" if report.health_ok else "OFFLINE"
+        self.query_one("#prod-health", Label).update(
+            f"[{health_color}]Health:[/{health_color}] {health_text} | {report.health_url}"
+        )
+        self._sentinel_app().app_state.push_log(
+            f"[Setup] Prod {report.action} -> {report.summary}"
+        )
 
     def action_start_sensor(self) -> None:
         """Gather config, validate, and switch to Dashboard."""
@@ -1316,6 +1822,13 @@ class SentinelTUIApp(App):
         self._tui_handler: TUILogHandler | None = None
         self._stop_event = threading.Event()
         self._shutdown_complete = threading.Event()
+        self._external_sensor_process: subprocess.Popen[str] | None = None
+        self._external_sensor_log_handle: Any | None = None
+        self._external_sensor_log_path = (
+            PROJECT_ROOT / "artifacts" / "tui-sensor-daemon.log"
+        )
+        self._external_sensor_last_exit: int | None = None
+        self._external_sensor_command: list[str] = []
         # Alert debouncing: track recent alert keys to group duplicates
         self._alert_debounce: dict[str, int] = {}
         self._debounce_window = 10.0  # seconds
@@ -1568,6 +2081,131 @@ class SentinelTUIApp(App):
 
     def is_shutdown_complete(self) -> bool:
         return self._shutdown_complete.is_set()
+
+    def _cleanup_external_sensor_handle(self) -> None:
+        handle = self._external_sensor_log_handle
+        if handle is not None:
+            try:
+                handle.flush()
+                handle.close()
+            except Exception:
+                logger.debug("Failed to close sensor daemon log handle", exc_info=True)
+        self._external_sensor_log_handle = None
+
+    def sensor_daemon_snapshot(self) -> dict[str, Any]:
+        process = self._external_sensor_process
+        log_path = self._external_sensor_log_path
+
+        if process is not None:
+            returncode = process.poll()
+            if returncode is None:
+                details = f"PID {process.pid} | log {log_path.name}"
+                return {"running": True, "status": "Running", "details": details}
+
+            self._external_sensor_last_exit = returncode
+            self._external_sensor_process = None
+            self._cleanup_external_sensor_handle()
+            return {
+                "running": False,
+                "status": f"Exited ({returncode})",
+                "details": f"Last log {log_path.name}",
+            }
+
+        if self._external_sensor_last_exit is not None:
+            return {
+                "running": False,
+                "status": f"Exited ({self._external_sensor_last_exit})",
+                "details": f"Last log {log_path.name}",
+            }
+
+        return {
+            "running": False,
+            "status": "Stopped",
+            "details": f"Log {log_path.name} will be created on launch.",
+        }
+
+    def launch_sensor_daemon(self, settings: dict[str, Any]) -> CommandResult:
+        snapshot = self.sensor_daemon_snapshot()
+        if snapshot["running"]:
+            return CommandResult(
+                ok=False,
+                summary=f"Sensor daemon is already running ({snapshot['details']}).",
+                returncode=1,
+            )
+
+        command = build_sensor_daemon_command(
+            settings,
+            config_path=self.config_path,
+            python_executable=sys.executable,
+        )
+        log_path = self._external_sensor_log_path
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_handle = log_path.open("a", encoding="utf-8")
+        log_handle.write(
+            f"\n[{datetime.now().isoformat()}] Launching: {' '.join(command)}\n"
+        )
+        log_handle.flush()
+
+        try:
+            process = subprocess.Popen(
+                command,
+                cwd=str(PROJECT_ROOT),
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
+                text=True,
+                start_new_session=True,
+            )  # noqa: S603,S607
+        except Exception as exc:
+            log_handle.write(f"[launcher-error] {exc}\n")
+            log_handle.flush()
+            log_handle.close()
+            return CommandResult(
+                ok=False,
+                summary=f"Failed to start sensor daemon: {exc}",
+                returncode=1,
+            )
+
+        self._external_sensor_process = process
+        self._external_sensor_log_handle = log_handle
+        self._external_sensor_last_exit = None
+        self._external_sensor_command = command
+        self.app_state.push_log(
+            f"[System] Background daemon launched (pid={process.pid}) -> {log_path.name}"
+        )
+        return CommandResult(
+            ok=True,
+            summary=f"Sensor daemon started (pid {process.pid}). Log: {log_path.name}",
+            returncode=0,
+        )
+
+    def stop_sensor_daemon(self) -> CommandResult:
+        process = self._external_sensor_process
+        if process is None or process.poll() is not None:
+            self.sensor_daemon_snapshot()
+            return CommandResult(
+                ok=False,
+                summary="Sensor daemon is not running.",
+                returncode=1,
+            )
+
+        process.terminate()
+        try:
+            returncode = process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            returncode = process.wait(timeout=5)
+
+        self._external_sensor_last_exit = returncode
+        self._external_sensor_process = None
+        self._cleanup_external_sensor_handle()
+        self.app_state.push_log(
+            f"[System] Background daemon stopped (exit={returncode})."
+        )
+        return CommandResult(
+            ok=True,
+            summary=f"Sensor daemon stopped (exit {returncode}).",
+            returncode=returncode,
+        )
 
     # ─── Alert Debouncing ────────────────────────────────────────────────
     def _debounce_alert(self, alert: AlertEntry) -> AlertEntry | None:

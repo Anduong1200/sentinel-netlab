@@ -167,13 +167,13 @@ docker:
 	docker build -t sentinel-sensor:latest -f ops/Dockerfile.sensor .
 
 docker-up: compose-check
-	cd ops && $(DOCKER_COMPOSE) up -d
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 
 docker-down: compose-check
-	cd ops && $(DOCKER_COMPOSE) down
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml down
 
 docker-logs: compose-check
-	cd ops && $(DOCKER_COMPOSE) logs -f
+	cd ops && $(DOCKER_COMPOSE) -f docker-compose.dev.yml logs -f
 
 # =============================================================================
 # LAB (SAFE MODE)

@@ -95,12 +95,20 @@ Footer {
 
 #backend-status,
 #lab-status,
-#iface-status {
+#iface-status,
+#audit-status,
+#diag-status,
+#daemon-status,
+#prod-status {
     min-height: 2;
 }
 
 #lab-autofill,
-#iface-summary {
+#iface-summary,
+#audit-summary,
+#daemon-details,
+#prod-health,
+#prod-details {
     min-height: 2;
 }
 
@@ -232,6 +240,17 @@ RichLog {
     background: #0d1117;
     scrollbar-background: #0d1117;
     scrollbar-color: #30363d;
+}
+
+#audit-results {
+    height: 12;
+    margin-top: 1;
+}
+
+#audit-log,
+#diag-log {
+    height: 10;
+    margin-top: 1;
 }
 
 RadioButton {

@@ -133,8 +133,10 @@ sentinel-netlab/
 │   └── adr/                   # Architecture decision records
 │
 ├── ops/                        # ⚙️ Operations & Docker
+│   ├── docker-compose.lab.yml  # Local lab stack (mock sensor + proxy)
+│   ├── docker-compose.dev.yml  # Development stack
 │   ├── docker-compose.prod.yml # Hardened production stack
-│   ├── docker-compose.yml     # Development stack
+│   ├── docker-compose.light.yml # Lightweight stack
 │   ├── Dockerfile.controller  # Controller image
 │   ├── Dockerfile.sensor      # Sensor image
 │   └── systemd/               # Sentinel Systemd units
@@ -216,8 +218,14 @@ python -m pip install ".[dev]"         # For Development (Tests, Linting)
 cp .env.example .env
 nano .env
 
-# Start stack
-docker compose -f ops/docker-compose.yml up -d
+# Development stack
+docker compose -f ops/docker-compose.dev.yml up -d
+
+# Lab stack (recommended for demos / local evaluation)
+docker compose --env-file ops/.env.lab -f ops/docker-compose.lab.yml up -d --build
+
+# Production stack
+docker compose -f ops/docker-compose.prod.yml up -d
 ```
 
 > [!CAUTION]

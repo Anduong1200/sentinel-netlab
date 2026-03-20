@@ -22,4 +22,5 @@ Common,common/metrics.py,Prometheus metrics Definitions
 Docs,docs/architecture/,System design docs
 Docs,docs/detection/,Detection pipeline docs
 Docs,docs/research/,Research papers and notes
-Ops,ops/docker-compose.yml,Main deployment manifest
+Ops,ops/docker-compose.dev.yml,Development deployment manifest
+Ops,ops/docker-compose.lab.yml,Local lab deployment manifest

@@ -14,7 +14,12 @@ from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
-from sensor.tui.setup_wizard import build_upload_url, normalize_controller_url
+from sensor.tui.setup_wizard import (
+    DEFAULT_PROD_HEALTH_URL,
+    build_upload_url,
+    normalize_controller_url,
+    normalize_health_url,
+)
 
 DEFAULT_CONFIG_FILENAMES = ("config.yaml", "config.yml", "config.example.yaml")
 DEFAULT_SENSOR_ID = "tui-sensor-01"
@@ -130,6 +135,10 @@ def default_tui_settings() -> dict[str, Any]:
         "detector_profile": DEFAULT_DETECTOR_PROFILE,
         "profile_name": "",
         "preset_id": "",
+        "audit_profile": "home",
+        "audit_output": "artifacts/audit_report.json",
+        "audit_use_mock": True,
+        "prod_health_url": DEFAULT_PROD_HEALTH_URL,
     }
 
 
@@ -175,6 +184,14 @@ def normalize_tui_settings(settings: Mapping[str, Any] | None = None) -> dict[st
     ).strip()
     merged["profile_name"] = _normalize_profile_name(merged.get("profile_name"))
     merged["preset_id"] = _normalize_preset_id(merged.get("preset_id"))
+    merged["audit_profile"] = str(merged.get("audit_profile") or "home").strip()
+    merged["audit_output"] = str(
+        merged.get("audit_output") or "artifacts/audit_report.json"
+    ).strip()
+    merged["audit_use_mock"] = bool(merged.get("audit_use_mock", True))
+    merged["prod_health_url"] = normalize_health_url(
+        merged.get("prod_health_url") or DEFAULT_PROD_HEALTH_URL
+    )
     return merged
 
 
@@ -260,6 +277,13 @@ def load_saved_tui_settings(config_path: Path | None) -> dict[str, Any]:
             ),
             "profile_name": tui.get("profile_name", ""),
             "preset_id": tui.get("preset_id", ""),
+            "audit_profile": tui.get("audit_profile", "home"),
+            "audit_output": tui.get("audit_output", "artifacts/audit_report.json"),
+            "audit_use_mock": tui.get("audit_use_mock", mode != "live"),
+            "prod_health_url": tui.get(
+                "prod_health_url",
+                DEFAULT_PROD_HEALTH_URL,
+            ),
         }
     )
 
@@ -375,6 +399,23 @@ def persist_tui_settings(
         tui["preset_id"] = preset_id
     else:
         tui.pop("preset_id", None)
+
+    audit_profile = str(normalized.get("audit_profile", "")).strip()
+    if audit_profile:
+        tui["audit_profile"] = audit_profile
+    else:
+        tui.pop("audit_profile", None)
+
+    audit_output = str(normalized.get("audit_output", "")).strip()
+    if audit_output:
+        tui["audit_output"] = audit_output
+    else:
+        tui.pop("audit_output", None)
+
+    tui["audit_use_mock"] = bool(normalized.get("audit_use_mock", True))
+    tui["prod_health_url"] = normalize_health_url(
+        normalized.get("prod_health_url") or DEFAULT_PROD_HEALTH_URL
+    )
 
     _write_config(target, data)
     return target

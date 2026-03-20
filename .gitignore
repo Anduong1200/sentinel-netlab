@@ -86,6 +86,10 @@ site/
 *.iso
 *.output
 run_sensor_local.sh
+test_*.db
+test_*.logs
+test_*.json
+test_*.txt
 
 # TUI / Textual
 .textual/
@@ -94,6 +98,7 @@ sentinel_tui.tcss
 run_tui.sh
 open_dashboard.sh
 .sentinel_one_run_state.json
+temp.txts
 
 # Wardrive Sessions
 wardrive_session*.json
