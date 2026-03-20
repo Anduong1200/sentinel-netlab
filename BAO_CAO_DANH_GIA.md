@@ -32,7 +32,13 @@
 ## 2. Tiêu chí Hiệu năng Phát hiện (Detection Performance Metrics)
 
 ### 📌 Nhận định từ Mã nguồn
-*   **Kiến trúc Thuật toán Chuyên sâu**: Khác với các công cụ đơn giản chỉ đếm gói tin, thuật toán của NetLab (`algos/evil_twin.py`, `algos/dos.py`) sử dụng cơ chế **Trượt thời gian (Sliding Window)** và **Điểm số Tích lũy (Weighted Scoring)**.
+*   **Hệ sinh thái 11-Detector (11 Thuật toán cốt lõi)**: Khác với các công cụ đơn giản chỉ đếm gói tin, thư mục `algos/` của NetLab chứa một tập hợp đầy đủ 11 thuật toán chuyên biệt bao trùm các kỹ thuật tấn công WiFi phức tạp nhất hiện nay:
+    *   **Tấn công Mạng (Network Attacks)**: `evil_twin.py` (Trạm phát giả mạo), `karma_detector.py` (Tấn công Karma/Pineapple).
+    *   **Từ chối dịch vụ (DoS/Jamming)**: `dos.py` (Deauth Flood), `disassoc_detector.py`, `beacon_flood_detector.py`, `jamming_detector.py` (Phá sóng RF).
+    *   **Khai thác Mật mã (Cryptographic Exploits)**: `krack_detector.py` (Khai thác WPA2 KRACK), `pmkid_detector.py` (Đánh cắp Hash PMKID), `wep_iv_detector.py`.
+    *   **Trinh sát (Reconnaissance)**: `wardrive_detector.py` (Phát hiện thiết bị đang đi quét mạng).
+*   **Cơ chế Phân tích Chuỗi (Exploit Chain Analyzer)**: File `algos/exploit_chain_analyzer.py` đóng vai trò móc nối các sự kiện đơn lẻ thành một cuộc tấn công có chủ đích (APT). Ví dụ: Phát hiện 1 Deauth Flood đi kèm 1 Evil Twin sẽ kích hoạt cảnh báo cực kỳ nghiêm trọng.
+*   **Kiến trúc Thuật toán Chuyên sâu**: Thuật toán của NetLab sử dụng cơ chế **Trượt thời gian (Sliding Window)** và **Điểm số Tích lũy (Weighted Scoring)**.
     *   Ví dụ ở Evil Twin: Hệ thống không vội vàng cảnh báo chỉ vì có 2 trạm phát cùng tên (SSID). Nó yêu cầu hội đủ điểm (Score > 80) thông qua việc xét chênh lệch sóng (RSSI Delta), độ trễ báo hiệu (Beacon Jitter), mã OUI của thiết bị và có thời gian xác nhận (Confirmation Window) để loại bỏ hoàn toàn báo động giả (False Positives).
 *   **Hỗ trợ Học máy lai (Hybrid ML)**: Cơ sở tính điểm Rủi ro (`algos/risk.py`) không chỉ dựa trên luật cứng (Rule-based) mà còn hỗ trợ đẩy vector thuộc tính vào một mô hình Autoencoder (`ml/anomaly_model.py`) để cộng thêm "điểm bất thường", giúp phát hiện những kiểu tấn công Zero-day hoặc hành vi lạ chưa có chữ ký (Signature).
 
@@ -197,9 +203,14 @@
     *   *Lệnh thực thi*: `python sensor/wardrive.py --iface wlan0mon --output session.json`
     *   *Kết quả kỳ vọng*: File `session.json` sinh ra với danh sách các mạng, toạ độ, chuẩn mã hóa. File này có thể import lên giao diện Live Viewer (`live_wardrive_viewer.py`) để quan sát ngoại tuyến.
 
-*   **E. Công cụ Kiểm toán Bảo mật (Audit)**:
-    *   *Lệnh thực thi*: `python sensor/audit.py --profile home --output report.json`
-    *   *Kết quả kỳ vọng*: Console báo lỗi màu vàng (Warning) cảnh báo mạng WEP/WPA (tkip) đang dùng cấu hình yếu, xuất báo cáo HTML/JSON rõ ràng.
+*   **E. Phân tích Khai thác Mã hóa (KRACK / PMKID)**:
+    *   *Mục đích*: Chứng minh hệ thống bắt được các cuộc tấn công đánh cắp mật khẩu hiện đại nhất.
+    *   *Cách làm*: Bơm file PCAP giả lập tấn công WPA2 PMKID Roaming: `pytest tests/integration/test_scenarios.py::TestScenarioReplay::test_replay_pmkid_attack` (nếu có) hoặc xem code logic `algos/pmkid_detector.py`.
+    *   *Kết quả kỳ vọng*: Hệ thống phát hiện gói tin EAPOL chứa tag `RSN PMKID` bất thường gửi từ một Client chưa từng xác thực trước đó, bung ra thông báo `PMKID_HARVESTING_ATTACK`.
+
+*   **F. Công cụ Kiểm toán Bảo mật (Security Auditor)**:
+    *   *Lệnh thực thi*: `python sensor/audit.py --profile strict --output report.json`
+    *   *Kết quả kỳ vọng*: Hệ thống Sensor.Auditor quét 12 bộ Policy khắt khe đánh giá tiêu chuẩn mã hóa. Console báo lỗi màu vàng (Warning) cảnh báo mạng WEP/WPA (tkip) đang dùng cấu hình yếu, xuất báo cáo HTML/JSON rõ ràng.
 
 ---
 
@@ -280,32 +291,40 @@ Dưới đây là một danh sách đồ sộ các câu hỏi hóc búa hội đ
     3.  **Kết quả**: Ngay giây thứ 2 sau khi cuộc tấn công bắt đầu, Dashboard của NetLab chớp đỏ liên hồi: **"Cảnh báo: Tấn công Deauth Flood. Mục tiêu: [MAC_Laptop]. Tốc độ: 150 gói/giây"**.
     4.  **Kết luận**: NetLab chứng minh nó đóng vai trò như một chiếc "Hệ thống báo trộm vô hình", ngay khi sóng WiFi bị can thiệp phá hoại, bảo vệ hoặc chủ nhà lập tức nhận được cảnh báo để kiểm tra hiện trường.
 
-### 🌟 Bài Test 3: Rà soát Định kỳ và Lập bản đồ Bảo mật (Wardriving & Audit)
-*   **Ngữ cảnh thực tế**: Công ty mới thuê một tòa nhà làm văn phòng. Giám đốc IT muốn biết xung quanh tòa nhà có những mạng WiFi nào, có mạng nào của hàng xóm đang xài chuẩn WEP cũ (rất dễ bị hack mật khẩu trong 5 phút) và vô tình làm lộ lọt dữ liệu nội bộ hay không.
+### 🌟 Bài Test 3: Rà soát Định kỳ và Đánh giá Cấu hình (Wardriving & Security Audit)
+*   **Ngữ cảnh thực tế**: Công ty mới thuê một tòa nhà làm văn phòng. Giám đốc IT muốn biết xung quanh tòa nhà có những mạng WiFi nào, có mạng nào của hàng xóm đang xài chuẩn WEP cũ (rất dễ bị hack mật khẩu trong 5 phút) và nhân viên công ty vô tình kết nối vào làm lộ lọt dữ liệu nội bộ hay không.
 *   **Cách Sentinel NetLab giải quyết (Thực hành)**:
-    1.  Mang laptop chạy NetLab đi một vòng quanh hành lang công ty, gõ lệnh `python sensor/wardrive.py --iface wlan0mon`.
-    2.  Sau 10 phút, chạy lệnh kiểm toán `python sensor/audit.py --output report.json`.
-    3.  **Kết quả**: Hệ thống tự động vẽ ra bản đồ vị trí các điểm phát sóng (Geo-Mapping) và xuất 1 file báo cáo chỉ đích danh: "Mạng WiFi tầng 3 đang dùng mã hóa TKIP lỗi thời, rủi ro cao bị bẻ khóa".
-    4.  **Kết luận**: Hệ thống không chỉ ngồi đợi hacker tới tấn công (Bị động), mà còn cung cấp công cụ để kỹ sư IT chủ động rà soát, dọn dẹp các "lỗ hổng" bảo mật xung quanh không gian làm việc.
+    1.  Mang laptop chạy NetLab đi một vòng quanh hành lang công ty, gõ lệnh rà quét: `python sensor/wardrive.py --iface wlan0mon`.
+    2.  Sau 10 phút, hệ thống gom được 100 điểm mạng WiFi quanh đó. Tiếp tục gõ lệnh kiểm toán: `python sensor/audit.py --profile strict --output report.html`.
+    3.  **Kết quả**: Module Auditor (với 12 bộ luật Policy kiểm tra Mật mã, Quyền riêng tư, Lỗ hổng) tự động xuất 1 file báo cáo HTML màu đỏ chỉ đích danh: "Mạng WiFi `Cong_Ty_Tang_3` đang dùng mã hóa TKIP lỗi thời, rủi ro cao bị bẻ khóa mật khẩu".
+    4.  **Kết luận**: Hệ thống Sentinel NetLab chứng minh giá trị của một công cụ Đánh giá Chủ động (Proactive Security), giúp kỹ sư IT dọn dẹp "lỗ hổng" môi trường thay vì chỉ ngồi đợi hacker tới đánh phá (Bị động).
+
+### 🌟 Bài Test 4: Chống Tấn công Khai thác Chuỗi (Exploit Chain / APT)
+*   **Ngữ cảnh thực tế**: Hacker chuyên nghiệp hiếm khi dùng 1 kỹ thuật tấn công duy nhất. Hacker sẽ dùng 1 máy tính để Jamming (phá sóng) mạng WiFi gốc của công ty, đồng thời mở 1 máy tính thứ 2 giả dạng Evil Twin cùng tên để dụ thiết bị kết nối vào.
+*   **Cách Sentinel NetLab giải quyết (Thực hành)**:
+    1.  Cơ chế `Exploit Chain Analyzer` của hệ thống liên tục "nghe ngóng" các cảnh báo đơn lẻ.
+    2.  Hệ thống phát hiện có 1 cuộc tấn công Deauth Flood. Chỉ 5 giây sau, thuật toán Evil Twin lại phát hiện 1 AP lạ mọc lên.
+    3.  **Kết quả**: Bộ Correlator (tương quan) của NetLab nhận ra ngay đây là một "Tấn công chuỗi" (Multi-stage Attack). Nó tự động gộp 2 sự kiện rời rạc này thành 1 cảnh báo duy nhất ở mức độ **CRITICAL** (Nghiêm trọng nhất): `MULTI_STAGE_APT_DETECTED`.
+    4.  **Kết luận**: Tính năng này giúp phòng SOC không bị choáng ngợp bởi hàng trăm thông báo rác lặp đi lặp lại. Nó chứng minh hệ thống có tư duy thông minh của một chuyên gia phân tích an ninh thực thụ (Threat Hunter).
 
 ---
 
 ## 12. Cơ chế Độ tin cậy và Tự động Khôi phục (Reliability & Auto-Recovery)
 Bên cạnh việc phát hiện chính xác, một hệ thống an ninh mạng cấp doanh nghiệp cần phải có tính kiên cường (Resilience). Dưới đây là 4 lớp bảo vệ mà dự án đã triển khai để chống lại lỗi phần mềm và sự cố môi trường:
 
-### 11.1. Cấp độ Quản lý Tiến trình (Process/Service)
+### 12.1. Cấp độ Quản lý Tiến trình (Process/Service)
 *   **Sensor (Edge)**: Được quản lý bởi dịch vụ hệ điều hành `Systemd` với cấu hình tự động khởi động lại khi có lỗi (`Restart=on-failure`). Để tránh tình trạng khởi động lại liên tục vô tận gây tốn tài nguyên (restart storms), hệ thống áp dụng cơ chế chờ (`RestartSec=5s`) và giới hạn số lần khởi động lại khắt khe (`StartLimitIntervalSec=300` và `StartLimitBurst=3`).
 *   **Controller / Dashboard (Core)**: Lớp lõi được triển khai qua hệ sinh thái Docker Compose với chính sách `restart: unless-stopped` cho tất cả các service (API, Worker, Database, Redis, v.v.). Hệ thống cũng tích hợp các cơ chế `Healthchecks` chuyên sâu để phân biệt giữa trạng thái "đang chạy nhưng bị treo" và "đã crash hẳn", từ đó có biện pháp xử lý phù hợp.
 
-### 11.2. Cấp độ Ứng dụng (Application-Level / Fail-fast)
+### 12.2. Cấp độ Ứng dụng (Application-Level / Fail-fast)
 *   Thay vì phó mặc sinh mệnh cho Hệ điều hành (OS) quyết định khởi động lại tiến trình, ứng dụng Sensor sở hữu vòng lặp tự kiểm tra trạng thái hoạt động bên trong (Health-loop).
 *   Vòng lặp này sẽ liên tục tự đặt câu hỏi: *"Card mạng còn đang ở chế độ giám sát (Monitor mode) không?"* và *"Có gói tin nào mới được nhận trong 30 giây qua không?"*. Nếu bất kỳ câu trả lời nào là không và lặp lại quá số lần cho phép, ứng dụng sẽ chủ động chọn chiến lược **"Fail-fast"** (Tự tử tiến trình/Thoát ngay lập tức) để ép Systemd phải khởi động lại toàn bộ chu trình một cách sạch sẽ.
 
-### 11.3. Cấp độ Phần cứng (Hardware / USB Watchdog)
+### 12.3. Cấp độ Phần cứng (Hardware / USB Watchdog)
 *   Hệ thống có trang bị một module `USBWatchdog` chạy ngầm, chuyên nhiệm vụ giám sát kết nối vật lý của chiếc USB WiFi adapter.
 *   Nếu phát hiện USB bị lỏng, ngắt kết nối đột ngột hoặc xảy ra lỗi Firmware, nó có khả năng tự động khôi phục (Auto-recovery) bằng cách thử tháo gỡ và nạp lại driver mạng (thông qua lệnh `modprobe -r` và `modprobe`) mà hoàn toàn không cần sự can thiệp thủ công của con người (IT Admin).
 
-### 11.4. Khôi phục Dữ liệu (Reliability & Spooling)
+### 12.4. Khôi phục Dữ liệu (Reliability & Spooling)
 *   **Persistent Queue**: Nếu kết nối mạng đường dài từ điểm đặt Sensor về trung tâm Controller bị đứt, dữ liệu bắt được sẽ không bao giờ bị mất. Sentinel NetLab sử dụng hàng đợi lưu trữ cố định (Persistent Queue) ghi thẳng xuống cơ sở dữ liệu nội bộ SQLite (Spool) để lưu tạm dữ liệu ngay tại bộ nhớ của Sensor.
 *   **Exponential Backoff**: Nó sở hữu cơ chế thử gửi lại dữ liệu (retry) với thời gian chờ tăng dần theo cấp số nhân (exponential backoff) nếu việc tải lên thất bại, tránh việc spam làm sập thêm mạng.
 *   **In-flight Recovery**: Trong trường hợp tồi tệ nhất là cúp điện hoặc crash đột ngột ngay trong lúc gói tin đang bay trên đường truyền (trạng thái 'inflight'), hệ thống được thiết kế vòng đời giao dịch thông minh để tự động khôi phục các gói tin bị kẹt này về lại trạng thái chờ gửi (pending) ngay trong lần khởi động tiếp theo.
