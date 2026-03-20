@@ -9,7 +9,9 @@ capture:
   - 11
   dwell_ms: 250
   adaptive_hopping: false
-  pcap_file: null
+  pcap_file: /run/media/m1nkvpm/A2CC3E66CC3E353F/sentinel-netlab/data/pcap_annotated/sample_beacon_flood.pcap
+  pcap_loop: true
+  pcap_realtime: true
 buffer:
   max_items: 12000
   drop_policy: oldest

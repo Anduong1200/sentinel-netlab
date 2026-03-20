@@ -35,6 +35,8 @@ class CaptureConfig:
     scan_duration: int = 10  # seconds for single scan
     packet_filter: str = "type mgt"  # Scapy BPF filter
     pcap_file: str | None = None
+    pcap_loop: bool = False
+    pcap_realtime: bool = False
 
 
 @dataclass
@@ -325,6 +327,12 @@ class ConfigManager:
             "SENSOR_CONTROLLER_PORT": ("api", "port", int),
             "SENSOR_STORAGE_DB_PATH": ("storage", "db_path"),
             "SENSOR_STORAGE_PCAP_DIR": ("storage", "pcap_dir"),
+            "SENSOR_PCAP_LOOP": ("capture", "pcap_loop", lambda x: x.lower() == "true"),
+            "SENSOR_PCAP_REALTIME": (
+                "capture",
+                "pcap_realtime",
+                lambda x: x.lower() == "true",
+            ),
             "BUFFER_STORAGE_PATH": ("buffer", "storage_path"),
             "STORAGE_PATH": ("buffer", "storage_path"),
             "WIFI_SCANNER_PORT": ("api", "port", int),

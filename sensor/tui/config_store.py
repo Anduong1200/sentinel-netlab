@@ -133,6 +133,9 @@ def default_tui_settings() -> dict[str, Any]:
         "buffer_drop_policy": DEFAULT_BUFFER_DROP_POLICY,
         "scrub_probe_requests": False,
         "detector_profile": DEFAULT_DETECTOR_PROFILE,
+        "det_profile": DEFAULT_DETECTOR_PROFILE,
+        "pcap_loop": True,
+        "pcap_realtime": True,
         "profile_name": "",
         "preset_id": "",
         "audit_profile": "home",
@@ -182,6 +185,11 @@ def normalize_tui_settings(settings: Mapping[str, Any] | None = None) -> dict[st
     merged["detector_profile"] = str(
         merged.get("detector_profile") or DEFAULT_DETECTOR_PROFILE
     ).strip()
+    merged["det_profile"] = str(
+        merged.get("det_profile") or merged["detector_profile"]
+    ).strip()
+    merged["pcap_loop"] = bool(merged.get("pcap_loop", True))
+    merged["pcap_realtime"] = bool(merged.get("pcap_realtime", True))
     merged["profile_name"] = _normalize_profile_name(merged.get("profile_name"))
     merged["preset_id"] = _normalize_preset_id(merged.get("preset_id"))
     merged["audit_profile"] = str(merged.get("audit_profile") or "home").strip()
@@ -275,6 +283,9 @@ def load_saved_tui_settings(config_path: Path | None) -> dict[str, Any]:
             "detector_profile": detectors.get(
                 "default_profile", DEFAULT_DETECTOR_PROFILE
             ),
+            "det_profile": detectors.get("default_profile", DEFAULT_DETECTOR_PROFILE),
+            "pcap_loop": bool(capture.get("pcap_loop", True)),
+            "pcap_realtime": bool(capture.get("pcap_realtime", True)),
             "profile_name": tui.get("profile_name", ""),
             "preset_id": tui.get("preset_id", ""),
             "audit_profile": tui.get("audit_profile", "home"),
@@ -381,7 +392,9 @@ def persist_tui_settings(
     geo["sensor_y_m"] = parse_geo_coordinate(normalized.get("geo_sensor_y_m"))
     privacy["anonymize_ssid"] = bool(normalized["anonymize"])
     privacy["scrub_probe_requests"] = bool(normalized["scrub_probe_requests"])
-    detectors["default_profile"] = str(normalized["detector_profile"])
+    detectors["default_profile"] = str(normalized["det_profile"])
+    capture["pcap_loop"] = bool(normalized["pcap_loop"])
+    capture["pcap_realtime"] = bool(normalized["pcap_realtime"])
 
     controller_url = normalize_controller_url(normalized.get("controller_url"))
     api["upload_url"] = build_upload_url(controller_url)

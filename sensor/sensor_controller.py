@@ -71,7 +71,12 @@ class SensorController:
 
         # Initialize components
         if getattr(config.capture, "pcap_file", None):
-            self.driver = PcapCaptureDriver(self.iface, config.capture.pcap_file)
+            self.driver = PcapCaptureDriver(
+                self.iface,
+                config.capture.pcap_file,
+                loop=getattr(config.capture, "pcap_loop", False),
+                realtime=getattr(config.capture, "pcap_realtime", False),
+            )
         elif config.mock_mode:
             self.driver = MockCaptureDriver(self.iface)
         else:
@@ -345,6 +350,9 @@ class SensorController:
         )
         self._heartbeat_thread.start()
 
+        # Send initial heartbeat immediately to show up on dashboard
+        threading.Thread(target=self._send_initial_heartbeat, daemon=True).start()
+
         # Start lightweight self-check loop for live capture.
         if not self.config.mock_mode and not getattr(
             self.config.capture, "pcap_file", None
@@ -611,6 +619,24 @@ class SensorController:
 
             except Exception as e:
                 logger.debug(f"Heartbeat error: {e}")
+
+    def _send_initial_heartbeat(self) -> None:
+        """Send a heartbeat immediately on startup."""
+        try:
+            full_status = self.status()
+            heartbeat_payload = {
+                "sensor_id": self.sensor_id,
+                "status": "online",
+                "metrics": {
+                    "frames_captured": full_status.get("frames_captured", 0),
+                    "frames_parsed": full_status.get("frames_parsed", 0),
+                    "uptime_seconds": full_status.get("uptime_seconds", 0),
+                },
+            }
+            self.transport.heartbeat(heartbeat_payload)
+            logger.info(f"Initial heartbeat sent for sensor {self.sensor_id}")
+        except Exception as e:
+            logger.debug(f"Initial heartbeat error: {e}")
 
     def _handle_alert(self, alert_dict: dict[str, Any]) -> None:
         """Process an alert, check for chains, and upload"""

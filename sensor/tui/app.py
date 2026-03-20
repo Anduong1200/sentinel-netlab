@@ -346,6 +346,10 @@ class SetupScreen(Screen):
                             id="input-pcap",
                             classes="setup-input",
                         )
+                    with Horizontal(classes="setup-row", id="row-pcap-opts"):
+                        yield Label("PCAP Options", classes="setup-label")
+                        yield Checkbox("Loop Replay", id="chk-pcap-loop", value=True)
+                        yield Checkbox("Realtime", id="chk-pcap-realtime", value=True)
                     with Horizontal(classes="setup-row", id="row-geo-x"):
                         yield Label("Geo Sensor X", classes="setup-label")
                         yield Input(
@@ -380,6 +384,18 @@ class SetupScreen(Screen):
                 # Toggles
                 with Container(classes="setup-group"):
                     yield Label("🧠 FEATURES", classes="setup-group-title")
+                    with Horizontal(classes="setup-row", id="row-det-profile"):
+                        yield Label("Detector Profile", classes="setup-label")
+                        yield Select(
+                            [
+                                ("Lite Realtime (Fast)", "lite_realtime"),
+                                ("Full WIDS (Heavy)", "full_wids"),
+                                ("Audit/Offline Replay", "audit_offline"),
+                            ],
+                            value="lite_realtime",
+                            id="select-det-profile",
+                            classes="setup-input",
+                        )
                     yield Checkbox("Enable ML Boost", id="chk-ml", value=False)
                     yield Checkbox("Enable Geo-Location", id="chk-geo", value=False)
                     yield Checkbox(
@@ -858,6 +874,7 @@ class SetupScreen(Screen):
             selected = event.value
             if selected and selected != Select.BLANK:
                 self.query_one("#input-profile-name", Input).value = str(selected)
+                self._load_named_profile()
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         if event.radio_set.id == "mode-select":
@@ -899,7 +916,9 @@ class SetupScreen(Screen):
         mode = self._selected_mode()
         geo_enabled = self.query_one("#chk-geo", Checkbox).value
         pcap_row = self.query_one("#row-pcap", Horizontal)
+        pcap_opts_row = self.query_one("#row-pcap-opts", Horizontal)
         pcap_row.display = mode == "pcap"
+        pcap_opts_row.display = mode == "pcap"
         if mode == "pcap":
             pcap_label = pcap_row.query_one(".setup-label", Label)
             pcap_val = self.query_one("#input-pcap", Input).value.strip()
@@ -973,6 +992,9 @@ class SetupScreen(Screen):
                 "geo_sensor_x_m": self.query_one("#input-geo-x", Input).value.strip(),
                 "geo_sensor_y_m": self.query_one("#input-geo-y", Input).value.strip(),
                 "anonymize": self.query_one("#chk-anon", Checkbox).value,
+                "det_profile": self.query_one("#select-det-profile", Select).value,
+                "pcap_loop": self.query_one("#chk-pcap-loop", Checkbox).value,
+                "pcap_realtime": self.query_one("#chk-pcap-realtime", Checkbox).value,
                 "profile_name": self.query_one("#input-profile-name", Input).value,
                 "audit_profile": self.query_one("#input-audit-profile", Input).value,
                 "audit_output": self.query_one("#input-audit-output", Input).value,
@@ -1028,6 +1050,15 @@ class SetupScreen(Screen):
         self.query_one("#chk-ml", Checkbox).value = bool(merged["ml_enabled"])
         self.query_one("#chk-geo", Checkbox).value = bool(merged["geo_enabled"])
         self.query_one("#chk-anon", Checkbox).value = bool(merged["anonymize"])
+        self.query_one("#select-det-profile", Select).value = str(
+            merged.get("det_profile", "lite_realtime")
+        )
+        self.query_one("#chk-pcap-loop", Checkbox).value = bool(
+            merged.get("pcap_loop", True)
+        )
+        self.query_one("#chk-pcap-realtime", Checkbox).value = bool(
+            merged.get("pcap_realtime", True)
+        )
         self.query_one("#input-audit-profile", Input).value = str(
             merged.get("audit_profile", "home")
         )
@@ -2080,12 +2111,17 @@ class SentinelTUIApp(App):
         else:
             config.capture.interface = cfg.get("interface", config.capture.interface)
         config.capture.pcap_file = cfg.get("pcap_path") if mode == "pcap" else None
+        config.capture.pcap_loop = bool(cfg.get("pcap_loop", True))
+        config.capture.pcap_realtime = bool(cfg.get("pcap_realtime", True))
         config.api.upload_url = build_upload_url(cfg.get("controller_url"))
         config.ml.enabled = bool(cfg.get("ml_enabled"))
         config.geo.enabled = bool(cfg.get("geo_enabled"))
         config.geo.sensor_x_m = parse_geo_coordinate(cfg.get("geo_sensor_x_m"))
         config.geo.sensor_y_m = parse_geo_coordinate(cfg.get("geo_sensor_y_m"))
         config.privacy.anonymize_ssid = bool(cfg.get("anonymize"))
+        config.detectors.default_profile = str(
+            cfg.get("det_profile", "lite_realtime")
+        )
         if hasattr(config.capture, "method"):
             config.capture.method = str(
                 cfg.get("capture_method", config.capture.method)
