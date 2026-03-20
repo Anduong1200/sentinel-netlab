@@ -72,6 +72,7 @@ def test_sensor_export_calls_geo_hook_and_keeps_buffer_path():
     controller.baseline = _DummyBaseline()
     controller.risk_engine = _DummyRiskEngine()
     controller._frames_captured = 1
+    controller.on_network = None
 
     parsed = SimpleNamespace(channel=6)
 
