@@ -144,11 +144,11 @@ class SecurityAuditor:
         """Generate report data structure for template rendering"""
         # Sort findings by severity
         severity_order = ["Critical", "High", "Medium", "Low", "Info"]
+        severity_map = {s: i for i, s in enumerate(severity_order)}
+
         sorted_findings = sorted(
             self.findings,
-            key=lambda f: (
-                severity_order.index(f.severity) if f.severity in severity_order else 99
-            ),
+            key=lambda f: severity_map.get(f.severity, 99)
         )
 
         # Count by severity
