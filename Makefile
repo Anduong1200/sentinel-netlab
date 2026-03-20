@@ -5,8 +5,14 @@
 
 PYTHON := python
 VENV := venv
-PIP := $(VENV)/Scripts/pip
-PYTEST := $(VENV)/Scripts/pytest
+ifeq ($(OS),Windows_NT)
+VENV_BIN := $(VENV)/Scripts
+else
+VENV_BIN := $(VENV)/bin
+endif
+PIP := $(VENV_BIN)/pip
+PYTEST := $(VENV_BIN)/pytest
+VENV_PYTHON := $(VENV_BIN)/python
 # Prefer Docker Compose v2 (`docker compose`), fallback to legacy (`docker-compose`).
 DOCKER_COMPOSE := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo ""; fi)
 LAB_ENV_FILE := --env-file .env.lab
@@ -54,11 +60,11 @@ venv:
 	$(PYTHON) -m venv $(VENV)
 
 install: venv
-	$(PIP) install -r requirements.txt
+	$(VENV_PYTHON) -m pip install --upgrade pip setuptools wheel
+	$(VENV_PYTHON) -m pip install -e ".[sensor,controller,dashboard,ml]"
 
 dev: install
-	$(PIP) install -r requirements-dev.txt
-	$(PIP) install -e .
+	$(VENV_PYTHON) -m pip install -e ".[dev]"
 
 requirements-dev.txt:
 	@echo "pytest\npytest-cov\npytest-asyncio\nruff\nmypy\nbandit\nsafety\npip-audit" > requirements-dev.txt
