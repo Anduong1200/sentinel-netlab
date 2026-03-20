@@ -38,6 +38,7 @@ from textual.widgets import (
     RichLog,
     Select,
 )
+import os
 
 from sensor.config import Config, init_config
 from sensor.sensor_controller import SensorController
@@ -387,10 +388,19 @@ class SetupScreen(Screen):
 
                 with Container(classes="setup-group"):
                     yield Label("📡 INTERFACE AUTOMATION", classes="setup-group-title")
-                    yield Label(
-                        "[dim]Requires root/sudo for monitor mode switching[/dim]",
-                        classes="setup-hint",
-                    )
+                    is_root = os.getuid() == 0
+                    if not is_root:
+                        yield Label(
+                            "[bold red]⚠ NOT RUNNING AS ROOT[/bold red]\n"
+                            "[dim]Interface automation requires sudo without password or running with sudo python -m sensor.tui[/dim]",
+                            classes="setup-hint",
+                            id="root-warning",
+                        )
+                    else:
+                        yield Label(
+                            "[green]✓ Running with root privileges[/green]",
+                            classes="setup-hint",
+                        )
                     with Horizontal(classes="quick-actions"):
                         yield Button("Detect USB/IW", id="btn-detect-iface")
                         yield Button("Monitor Mode", id="btn-monitor-on")
@@ -853,6 +863,10 @@ class SetupScreen(Screen):
         if event.radio_set.id == "mode-select":
             self._sync_dynamic_rows()
 
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "input-pcap":
+            self._sync_dynamic_rows()
+
     def _refresh_preflight(self) -> None:
         app = self._sentinel_app()
 
@@ -884,7 +898,16 @@ class SetupScreen(Screen):
     def _sync_dynamic_rows(self) -> None:
         mode = self._selected_mode()
         geo_enabled = self.query_one("#chk-geo", Checkbox).value
-        self.query_one("#row-pcap", Horizontal).display = mode == "pcap"
+        pcap_row = self.query_one("#row-pcap", Horizontal)
+        pcap_row.display = mode == "pcap"
+        if mode == "pcap":
+            pcap_label = pcap_row.query_one(".setup-label", Label)
+            pcap_val = self.query_one("#input-pcap", Input).value.strip()
+            if not pcap_val:
+                pcap_label.update("PCAP Path [b red]*[/b red]")
+            else:
+                pcap_label.update("PCAP Path [green]✓[/green]")
+
         self.query_one("#row-geo-x", Horizontal).display = geo_enabled
         self.query_one("#row-geo-y", Horizontal).display = geo_enabled
 
@@ -1413,9 +1436,13 @@ class SetupScreen(Screen):
             f"[{color}]{label}:[/{color}] {result.summary}"
         )
         if result.stderr:
+            # Clean up and wrap stderr for better display
+            clean_err = result.stderr.replace("\n", " ").strip()
             self.query_one("#iface-summary", Label).update(
-                f"[dim]{result.stderr[:220]}[/dim]"
+                f"[dim]Details: {clean_err[:300]}[/dim]"
             )
+        else:
+            self.query_one("#iface-summary", Label).update("")
         self._sentinel_app().app_state.push_log(f"[Setup] {label} -> {result.summary}")
 
     def _prod_health_url(self) -> str:
@@ -1741,6 +1768,10 @@ class SetupScreen(Screen):
         )
         if validation_error:
             err_label.update(f"[bold red]❌ {validation_error}[/bold red]")
+            if "PCAP mode" in validation_error:
+                self.query_one("#input-pcap", Input).focus()
+            elif "Geo-Location" in validation_error:
+                self.query_one("#input-geo-x", Input).focus()
             return
 
         err_label.update("")  # Clear errors

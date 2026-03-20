@@ -865,6 +865,30 @@ def _privileged_command(args: list[str]) -> list[str]:
     return args
 
 
+def _unmanage_interface(interface: str, managed: bool = False) -> CommandResult:
+    """Set NetworkManager management state for an interface."""
+    if shutil.which("nmcli") is None:
+        return CommandResult(ok=True, summary="nmcli not found, skipping.")
+
+    state = "yes" if managed else "no"
+    return _run_command(
+        _privileged_command(["nmcli", "device", "set", interface, "managed", state]),
+        timeout=10,
+    )
+
+
+def _unblock_interface(interface: str) -> CommandResult:
+    """Ensure the interface is not soft-blocked by rfkill."""
+    if shutil.which("rfkill") is None:
+        return CommandResult(ok=True, summary="rfkill not found, skipping.")
+
+    # Try to unblock wifi specifically or the interface name if possible
+    return _run_command(
+        _privileged_command(["rfkill", "unblock", "wifi"]),
+        timeout=10,
+    )
+
+
 def set_interface_monitor_mode(
     interface: str,
     *,
@@ -874,6 +898,12 @@ def set_interface_monitor_mode(
     normalized_interface = str(interface).strip()
     if not normalized_interface:
         return CommandResult(ok=False, summary="Interface is required.", returncode=2)
+
+    # 0. Pre-conditions: Ensure unblocked and unmanaged by NetworkManager
+    _unblock_interface(normalized_interface)
+    if monitor:
+        # Only unmanage when going into monitor mode to avoid NM interference
+        _unmanage_interface(normalized_interface, managed=False)
 
     desired_mode = "monitor" if monitor else "managed"
     down_result = _run_command(
@@ -917,6 +947,11 @@ def set_interface_monitor_mode(
         _privileged_command(["ip", "link", "set", normalized_interface, "up"]),
         timeout=15,
     )
+
+    # Restore management if we just switched back to managed mode
+    if not monitor:
+        _unmanage_interface(normalized_interface, managed=True)
+
     if not up_result.ok:
         return CommandResult(
             ok=False,

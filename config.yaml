@@ -32,3 +32,8 @@ detectors:
 mock_mode: false
 tui:
   preset_id: balanced_live
+  profile_name: anduong
+  audit_profile: home
+  audit_output: artifacts/audit_report.json
+  audit_use_mock: false
+  prod_health_url: http://127.0.0.1/health
