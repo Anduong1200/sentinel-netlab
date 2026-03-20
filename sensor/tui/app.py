@@ -235,26 +235,6 @@ class SetupScreen(Screen):
                     yield Label("", id="pf-controller")
 
                 with Container(classes="setup-group"):
-                    yield Label("⚙️ BACKEND & LAB", classes="setup-group-title")
-                    with Horizontal(classes="quick-actions"):
-                        yield Button("Check Stack", id="btn-check-stack")
-                        yield Button("Install Sensor", id="btn-install-sensor")
-                        yield Button("Install Controller", id="btn-install-controller")
-                    with Horizontal(classes="quick-actions"):
-                        yield Button("Install Engine", id="btn-install-engine")
-                        yield Button("Lab Up", id="btn-lab-up")
-                        yield Button("Lab Down", id="btn-lab-down")
-                    with Horizontal(classes="quick-actions"):
-                        yield Button("Lab Reset", id="btn-lab-reset")
-                        yield Button("Lab Status", id="btn-lab-status")
-                        yield Button("Gen Lab Tokens", id="btn-lab-gen")
-                    with Horizontal(classes="quick-actions"):
-                        yield Button("Open GUI", id="btn-open-gui")
-                    yield Label("", id="backend-status")
-                    yield Label("", id="lab-status")
-                    yield Label("", id="lab-autofill", classes="setup-hint")
-
-                with Container(classes="setup-group"):
                     yield Label("🚀 QUICK SETUP", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
                         yield Button("Demo Bundle", id="btn-quick-demo")
@@ -282,13 +262,27 @@ class SetupScreen(Screen):
                     yield Label("", id="quick-setup-status")
 
                 with Container(classes="setup-group"):
-                    yield Label("📡 INTERFACE AUTOMATION", classes="setup-group-title")
+                    yield Label("🗂️ PROFILES & PRESETS", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
-                        yield Button("Detect USB/IW", id="btn-detect-iface")
-                        yield Button("Monitor Mode", id="btn-monitor-on")
-                        yield Button("Managed Mode", id="btn-monitor-off")
-                    yield Label("", id="iface-status")
-                    yield Label("", id="iface-summary", classes="setup-hint")
+                        yield Button("Balanced Live", id="btn-preset-balanced-live")
+                        yield Button("SOC Tactical", id="btn-preset-soc-tactical")
+                        yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
+                    with Horizontal(classes="setup-row", id="row-profile-name"):
+                        yield Label("Profile Name", classes="setup-label")
+                        yield Input(
+                            value="",
+                            placeholder="soc-lab, replay-case-01, field-team-a",
+                            id="input-profile-name",
+                            classes="setup-input",
+                            compact=True,
+                        )
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Save Profile", id="btn-save-profile")
+                        yield Button("Load Profile", id="btn-load-profile")
+                        yield Button("Delete Profile", id="btn-delete-profile")
+                    yield Label("", id="preset-summary")
+                    yield Label("", id="profile-status")
+                    yield Label("", id="profile-inventory", classes="setup-hint")
 
                 # Core configuration
                 with Container(classes="setup-group"):
@@ -363,27 +357,33 @@ class SetupScreen(Screen):
                     )
 
                 with Container(classes="setup-group"):
-                    yield Label("🗂️ PROFILES & PRESETS", classes="setup-group-title")
+                    yield Label("📡 INTERFACE AUTOMATION", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
-                        yield Button("Balanced Live", id="btn-preset-balanced-live")
-                        yield Button("SOC Tactical", id="btn-preset-soc-tactical")
-                        yield Button("PCAP Forensics", id="btn-preset-pcap-forensics")
-                    with Horizontal(classes="setup-row", id="row-profile-name"):
-                        yield Label("Profile Name", classes="setup-label")
-                        yield Input(
-                            value="",
-                            placeholder="soc-lab, replay-case-01, field-team-a",
-                            id="input-profile-name",
-                            classes="setup-input",
-                            compact=True,
-                        )
+                        yield Button("Detect USB/IW", id="btn-detect-iface")
+                        yield Button("Monitor Mode", id="btn-monitor-on")
+                        yield Button("Managed Mode", id="btn-monitor-off")
+                    yield Label("", id="iface-status")
+                    yield Label("", id="iface-summary", classes="setup-hint")
+
+                with Container(classes="setup-group"):
+                    yield Label("⚙️ BACKEND & LAB", classes="setup-group-title")
                     with Horizontal(classes="quick-actions"):
-                        yield Button("Save Profile", id="btn-save-profile")
-                        yield Button("Load Profile", id="btn-load-profile")
-                        yield Button("Delete Profile", id="btn-delete-profile")
-                    yield Label("", id="preset-summary")
-                    yield Label("", id="profile-status")
-                    yield Label("", id="profile-inventory", classes="setup-hint")
+                        yield Button("Check Stack", id="btn-check-stack")
+                        yield Button("Install Sensor", id="btn-install-sensor")
+                        yield Button("Install Controller", id="btn-install-controller")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Install Engine", id="btn-install-engine")
+                        yield Button("Lab Up", id="btn-lab-up")
+                        yield Button("Lab Down", id="btn-lab-down")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Lab Reset", id="btn-lab-reset")
+                        yield Button("Lab Status", id="btn-lab-status")
+                        yield Button("Gen Lab Tokens", id="btn-lab-gen")
+                    with Horizontal(classes="quick-actions"):
+                        yield Button("Open GUI", id="btn-open-gui")
+                    yield Label("", id="backend-status")
+                    yield Label("", id="lab-status")
+                    yield Label("", id="lab-autofill", classes="setup-hint")
 
                 # Validation error area
                 yield Label("", id="validation-error")
@@ -917,7 +917,9 @@ class SetupScreen(Screen):
             if preset_id in BUILTIN_TUI_PRESETS
             else "Custom"
         )
-        scrub_status = "scrub probes" if normalized["scrub_probe_requests"] else "keep probes"
+        scrub_status = (
+            "scrub probes" if normalized["scrub_probe_requests"] else "keep probes"
+        )
         adaptive_status = (
             "adaptive hop" if normalized["adaptive_hopping"] else "fixed hop"
         )
@@ -986,9 +988,12 @@ class SetupScreen(Screen):
 
     def _handle_backend_check(self, report: BackendCheckReport) -> None:
         color = "green" if report.controller_online or report.docker_ready else "yellow"
-        commands_ready = ", ".join(
-            name for name, enabled in report.command_status.items() if enabled
-        ) or "none"
+        commands_ready = (
+            ", ".join(
+                name for name, enabled in report.command_status.items() if enabled
+            )
+            or "none"
+        )
         self.query_one("#backend-status", Label).update(
             f"[{color}]Stack:[/{color}] {report.summary} | tools {commands_ready}"
         )
@@ -1032,9 +1037,7 @@ class SetupScreen(Screen):
             dashboard_password = report.lab_env.get("DASH_PASSWORD")
             creds_preview = ""
             if dashboard_user and dashboard_password:
-                creds_preview = (
-                    f" | GUI {dashboard_user}/{dashboard_password}"
-                )
+                creds_preview = f" | GUI {dashboard_user}/{dashboard_password}"
             autofill_message = (
                 f"Autofilled live fields from lab bootstrap{creds_preview}."
                 if not autofill_message
@@ -1083,9 +1086,7 @@ class SetupScreen(Screen):
             self.query_one("#iface-summary", Label).update(
                 f"[dim]{result.stderr[:220]}[/dim]"
             )
-        self._sentinel_app().app_state.push_log(
-            f"[Setup] {label} -> {result.summary}"
-        )
+        self._sentinel_app().app_state.push_log(f"[Setup] {label} -> {result.summary}")
 
     def action_start_sensor(self) -> None:
         """Gather config, validate, and switch to Dashboard."""
@@ -1406,7 +1407,9 @@ class SentinelTUIApp(App):
         config.geo.sensor_y_m = parse_geo_coordinate(cfg.get("geo_sensor_y_m"))
         config.privacy.anonymize_ssid = bool(cfg.get("anonymize"))
         if hasattr(config.capture, "method"):
-            config.capture.method = str(cfg.get("capture_method", config.capture.method))
+            config.capture.method = str(
+                cfg.get("capture_method", config.capture.method)
+            )
         if hasattr(config.capture, "channels"):
             config.capture.channels = parse_channel_list(
                 cfg.get("capture_channels", config.capture.channels)
@@ -1423,9 +1426,7 @@ class SentinelTUIApp(App):
                 cfg.get("buffer_drop_policy", config.buffer.drop_policy)
             )
         if hasattr(config.privacy, "scrub_probe_requests"):
-            config.privacy.scrub_probe_requests = bool(
-                cfg.get("scrub_probe_requests")
-            )
+            config.privacy.scrub_probe_requests = bool(cfg.get("scrub_probe_requests"))
         config.detectors.default_profile = str(
             cfg.get("detector_profile", config.detectors.default_profile)
         )

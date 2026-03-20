@@ -253,9 +253,7 @@ def load_saved_tui_settings(config_path: Path | None) -> dict[str, Any]:
             "dwell_ms": dwell_ms if dwell_ms is not None else DEFAULT_DWELL_MS,
             "adaptive_hopping": bool(capture.get("adaptive_hopping")),
             "buffer_max_items": buffer.get("max_items", DEFAULT_BUFFER_MAX_ITEMS),
-            "buffer_drop_policy": buffer.get(
-                "drop_policy", DEFAULT_BUFFER_DROP_POLICY
-            ),
+            "buffer_drop_policy": buffer.get("drop_policy", DEFAULT_BUFFER_DROP_POLICY),
             "scrub_probe_requests": bool(privacy.get("scrub_probe_requests")),
             "detector_profile": detectors.get(
                 "default_profile", DEFAULT_DETECTOR_PROFILE
@@ -596,10 +594,13 @@ def _write_profile_store(
     payload = {
         "version": 1,
         "profiles": {
-            name: normalize_tui_settings(settings) for name, settings in profiles.items()
+            name: normalize_tui_settings(settings)
+            for name, settings in profiles.items()
         },
     }
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def _normalize_profile_name(raw_value: Any) -> str:

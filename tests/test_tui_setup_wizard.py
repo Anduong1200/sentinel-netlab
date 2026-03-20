@@ -5,19 +5,18 @@ import pytest
 
 import sensor.tui.setup_wizard as wizard
 from sensor.tui.setup_wizard import (
-    CommandResult,
     DEFAULT_DEMO_SENSOR_ID,
     DEFAULT_DEMO_SENSOR_TOKEN,
+    CommandResult,
     build_bootstrap_env,
-    collect_backend_health,
     build_quick_profile,
     build_upload_url,
     coerce_live_sensor_id,
+    collect_backend_health,
     detect_wireless_inventory,
     normalize_controller_url,
     request_sensor_token,
     run_lab_action,
-    set_interface_monitor_mode,
     upsert_env_file,
 )
 
@@ -169,7 +168,9 @@ def test_collect_backend_health_summarizes_runtime_readiness(monkeypatch):
             stdout="Server Version: test",
         ),
     )
-    monkeypatch.setattr(wizard, "_probe_controller_health", lambda *args, **kwargs: True)
+    monkeypatch.setattr(
+        wizard, "_probe_controller_health", lambda *args, **kwargs: True
+    )
 
     report = collect_backend_health("http://controller.lab:8080")
 
@@ -263,4 +264,7 @@ def test_run_lab_action_autofills_live_settings_and_reads_env(
         "SENSOR_ID=field-team-a",
     ]
     assert seen["cwd"] == tmp_path
-    assert repor
+    assert report.summary == "Lab generate_tokens completed."
+    assert report.lab_env["SENSOR_AUTH_TOKEN"] == "lab-sensor-token"
+    assert report.suggested_settings["sensor_id"] == "field-team-a"
+    assert report.suggested_settings["controller_url"] == "http://controller.lab:8080"

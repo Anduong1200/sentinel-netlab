@@ -136,7 +136,9 @@ def _run_command(
 
     stdout = completed.stdout.strip()
     stderr = completed.stderr.strip()
-    summary = stdout.splitlines()[-1] if stdout else stderr.splitlines()[-1] if stderr else ""
+    summary = (
+        stdout.splitlines()[-1] if stdout else stderr.splitlines()[-1] if stderr else ""
+    )
     return CommandResult(
         ok=completed.returncode == 0,
         summary=summary or f"Command exited with {completed.returncode}",
@@ -218,7 +220,9 @@ def collect_backend_health(
     controller_online = _probe_controller_health(normalized_url, opener=opener)
 
     missing_modules = [
-        name.title() for name in ("sensor", "controller", "dashboard") if not module_status[name]
+        name.title()
+        for name in ("sensor", "controller", "dashboard")
+        if not module_status[name]
     ]
     summary_parts = [
         "docker ready" if docker_ready else "docker offline",
@@ -302,7 +306,9 @@ def run_lab_action(
     if normalized_action not in command_map:
         raise ValueError(f"Unknown lab action: {action}")
 
-    result = _run_command(command_map[normalized_action], cwd=project_root, timeout=1800)
+    result = _run_command(
+        command_map[normalized_action], cwd=project_root, timeout=1800
+    )
     lab_env = parse_env_file(project_root / "ops" / ".env.lab")
     suggested_settings = {}
     if result.ok and normalized_action != "down":
@@ -328,7 +334,11 @@ def run_lab_action(
 def open_dashboard_gui(url: str | None) -> CommandResult:
     """Open the controller/dashboard URL with the platform GUI launcher."""
     target_url = normalize_controller_url(url or DEFAULT_LAB_CONTROLLER_URL)
-    launchers = (["xdg-open", target_url], ["gio", "open", target_url], ["open", target_url])
+    launchers = (
+        ["xdg-open", target_url],
+        ["gio", "open", target_url],
+        ["open", target_url],
+    )
     for launcher in launchers:
         if shutil.which(launcher[0]) is None:
             continue
@@ -455,10 +465,7 @@ def detect_wireless_inventory() -> WirelessInventoryReport:
         preferred = monitor_first or preferred
 
     interface_summary = (
-        ", ".join(
-            f"{candidate.name}:{candidate.mode}"
-            for candidate in candidates[:6]
-        )
+        ", ".join(f"{candidate.name}:{candidate.mode}" for candidate in candidates[:6])
         if candidates
         else "No wireless interfaces detected."
     )

@@ -84,9 +84,7 @@ def test_setup_screen_starts_unfocused_and_hides_optional_rows(
         _restore_env(snapshot)
 
 
-def test_quick_demo_bundle_does_not_jump_setup_scroll(
-    monkeypatch, tmp_path: Path
-):
+def test_quick_demo_bundle_does_not_jump_setup_scroll(monkeypatch, tmp_path: Path):
     snapshot = _snapshot_env()
 
     async def run_case():

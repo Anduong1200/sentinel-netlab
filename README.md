@@ -169,6 +169,9 @@ bash scripts/sentinel-setup.sh
 
 # Option 2: Manual Makefile (Advanced)
 make lab-up
+
+# Option 3: One-run bootstrap (fresh clone -> TUI/dashboard ready)
+python one_run.py --open-browser
 ```
 
 Then open [http://127.0.0.1:8050](http://127.0.0.1:8050) in your browser.
