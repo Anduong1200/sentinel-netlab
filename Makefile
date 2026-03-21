@@ -10,9 +10,9 @@ VENV_BIN := $(VENV)/Scripts
 else
 VENV_BIN := $(VENV)/bin
 endif
-PIP := $(VENV_BIN)/pip
-PYTEST := $(VENV_BIN)/pytest
-VENV_PYTHON := $(VENV_BIN)/python
+PIP := $(shell if [ -x "$(VENV_BIN)/pip" ]; then echo "$(VENV_BIN)/pip"; else echo "pip"; fi)
+PYTEST := $(shell if [ -x "$(VENV_BIN)/pytest" ]; then echo "$(VENV_BIN)/pytest"; else echo "python -m pytest"; fi)
+VENV_PYTHON := $(shell if [ -x "$(VENV_BIN)/python" ]; then echo "$(VENV_BIN)/python"; else echo "python"; fi)
 RUFF := $(shell if [ -x "$(VENV_BIN)/ruff" ]; then echo "$(VENV_BIN)/ruff"; else echo "ruff"; fi)
 MYPY := $(shell if [ -x "$(VENV_BIN)/mypy" ]; then echo "$(VENV_BIN)/mypy"; else echo "mypy"; fi)
 BANDIT := $(shell if [ -x "$(VENV_BIN)/bandit" ]; then echo "$(VENV_BIN)/bandit"; else echo "bandit"; fi)

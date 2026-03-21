@@ -7,6 +7,7 @@ def test_init_config_reads_yaml_sections(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("ENVIRONMENT", "development")
     monkeypatch.delenv("SENSOR_INTERFACE", raising=False)
     monkeypatch.delenv("SENSOR_ID", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
 
     config_path = tmp_path / "sensor-config.yaml"
     config_path.write_text(
