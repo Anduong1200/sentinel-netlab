@@ -10,6 +10,7 @@ Many attack tools (mdk3/mdk4, aireplay-ng) use both frame types.
 MITRE ATT&CK: T1499.001 - Endpoint Denial of Service: OS Exhaustion Flood
 """
 
+import bisect
 import logging
 import time
 from collections import defaultdict
@@ -108,7 +109,9 @@ class DisassocFloodDetector:
     def _cleanup(self, key: tuple[str, str], now: float):
         """Remove entries outside the analysis window."""
         cutoff = now - self.config.window_seconds * 2
-        self.frame_history[key] = [t for t in self.frame_history[key] if t >= cutoff]
+        history = self.frame_history[key]
+        idx = bisect.bisect_left(history, cutoff)
+        self.frame_history[key] = history[idx:]
 
     def _check_flood(
         self,
@@ -125,8 +128,9 @@ class DisassocFloodDetector:
 
         # Count frames in window
         window_start = now - self.config.window_seconds
-        frames_in_window = [t for t in self.frame_history[key] if t >= window_start]
-        count = len(frames_in_window)
+        history = self.frame_history[key]
+        idx = bisect.bisect_left(history, window_start)
+        count = len(history) - idx
 
         # Calculate rate
         rate = count / self.config.window_seconds

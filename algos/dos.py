@@ -3,6 +3,7 @@
 Sentinel NetLab - Deauth Flood Detector
 """
 
+import bisect
 import json
 import logging
 import os
@@ -88,7 +89,9 @@ class DeauthFloodDetector:
         """Remove entries outside the window"""
         history = self.deauth_history.get(key, [])
         cutoff = now - self.window_seconds * 2  # Keep 2x window for analysis
-        filtered = [t for t in history if t >= cutoff]
+        # Use O(log N) bisect since timestamps are naturally sorted
+        idx = bisect.bisect_left(history, cutoff)
+        filtered = history[idx:]
         if filtered:
             self.deauth_history[key] = filtered
         elif key in self.deauth_history:
@@ -112,8 +115,9 @@ class DeauthFloodDetector:
         # Count frames in window
         window_start = now - self.window_seconds
         history = self.deauth_history.get(key, [])
-        frames_in_window = [t for t in history if t >= window_start]
-        count = len(frames_in_window)
+        # Use O(log N) bisect since timestamps are naturally sorted
+        idx = bisect.bisect_left(history, window_start)
+        count = len(history) - idx
 
         # Calculate rate
         rate = count / self.window_seconds
