@@ -51,6 +51,7 @@ def test_persist_tui_settings_creates_project_config(tmp_path: Path):
             "anonymize": True,
             "scrub_probe_requests": False,
             "detector_profile": "full_wids",
+            "det_profile": "full_wids",
             "preset_id": "soc_tactical",
         },
     )
@@ -98,6 +99,7 @@ def test_load_saved_tui_settings_round_trip(tmp_path: Path):
             "buffer_drop_policy": "spill_to_disk",
             "scrub_probe_requests": False,
             "detector_profile": "full_wids",
+            "det_profile": "full_wids",
             "profile_name": "SOC Tactical Lab",
             "preset_id": "soc_tactical",
         },

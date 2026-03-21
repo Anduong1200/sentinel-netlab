@@ -10,7 +10,9 @@ pytestmark = pytest.mark.skipif(
 
 # Only import dashboard.app if we're actually going to run the tests
 if os.environ.get("DASH_USERNAME"):
-    from dashboard.app import update_metrics
+    # Must import app first to initialize Dash, otherwise register_page fails
+    from dashboard.app import app  # noqa: F401
+    from dashboard.pages.overview import update_metrics
 else:
     update_metrics = None  # Placeholder
 

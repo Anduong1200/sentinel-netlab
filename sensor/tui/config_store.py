@@ -62,6 +62,7 @@ BUILTIN_TUI_PRESETS: dict[str, dict[str, Any]] = {
             "buffer_drop_policy": "spill_to_disk",
             "scrub_probe_requests": False,
             "detector_profile": "full_wids",
+            "det_profile": "full_wids",
             "ml_enabled": True,
             "anonymize": False,
         },

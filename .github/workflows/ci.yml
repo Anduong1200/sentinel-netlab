@@ -134,6 +134,7 @@ jobs:
             --exclude "fcc.gov/general/jammer-enforcement"
             --exclude "community.cisco.com/t5/wireless-mobility-knowledge-base/the-significance-of-beacon-frames-and-how-to-configure-the/ta-p/3132525"
             --exclude "thuvienphapluat.vn"
+            --exclude "cisco.com/c/en/us/td/docs/wireless/controller/technotes"
             "README.md"
             "docs/**/*.md"
           fail: true
