@@ -2118,9 +2118,7 @@ class SentinelTUIApp(App):
         config.geo.sensor_x_m = parse_geo_coordinate(cfg.get("geo_sensor_x_m"))
         config.geo.sensor_y_m = parse_geo_coordinate(cfg.get("geo_sensor_y_m"))
         config.privacy.anonymize_ssid = bool(cfg.get("anonymize"))
-        config.detectors.default_profile = str(
-            cfg.get("det_profile", "lite_realtime")
-        )
+        config.detectors.default_profile = str(cfg.get("det_profile", "lite_realtime"))
         if hasattr(config.capture, "method"):
             config.capture.method = str(
                 cfg.get("capture_method", config.capture.method)
