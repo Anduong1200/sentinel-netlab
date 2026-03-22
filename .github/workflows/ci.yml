@@ -126,6 +126,7 @@ jobs:
             --exclude "doi.org/10.1177/1550147718795838"
             --exclude "docs.fcc.gov"
             --exclude "fptshop.com.vn"
+            --exclude "thuvienphapluat.vn"
             --exclude "cisa.gov/resources-tools/resources/understanding-denial-service-attacks"
             --exclude "jumpcloud.com/blog/vlan-hopping-attack"
             --exclude "juniper.net/documentation/us/en/software/junos/vlan-l2/topics/concept/l2-vlan-tagging-understanding.html"
