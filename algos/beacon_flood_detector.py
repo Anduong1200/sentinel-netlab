@@ -14,6 +14,7 @@ Detection approach:
 MITRE ATT&CK: T1498.001 - Network Denial of Service: Direct Network Flood
 """
 
+import bisect
 import logging
 import time
 from dataclasses import dataclass, field
@@ -113,10 +114,10 @@ class BeaconFloodDetector:
             ssid: ts for ssid, ts in self.state.ssid_timestamps.items() if ts >= cutoff
         }
 
-        # Cleanup beacon timestamps
-        self.state.beacon_timestamps = [
-            t for t in self.state.beacon_timestamps if t >= cutoff
-        ]
+        # Cleanup beacon timestamps using O(log N) bisect
+        idx = bisect.bisect_left(self.state.beacon_timestamps, cutoff)
+        if idx > 0:
+            self.state.beacon_timestamps = self.state.beacon_timestamps[idx:]
 
     def _evaluate(self, now: float) -> dict[str, Any] | None:
         """Evaluate current state against thresholds."""
