@@ -317,7 +317,7 @@ class MockCaptureDriver(CaptureDriver):
         chance = random.random()  # nosec B311
         if chance > 0.6:
             return None
-        
+
         if chance < 0.15:
             # Generate mock attack frame (Deauth/Disassoc)
             mock_data = self._generate_mock_deauth()
@@ -381,17 +381,17 @@ class MockCaptureDriver(CaptureDriver):
         frame = bytearray(b"\x00\x00\x08\x00\x00\x00\x00\x00")
         frame.extend(b"\xc0\x00")  # Frame Control: Deauth
         frame.extend(b"\x00\x00")  # Duration
-        
+
         # Addresses
         target = bytes([random.randint(0, 255) for _ in range(6)])
         ap = b"\x00\x11\x22\x33\x44\x55"
         frame.extend(target)  # RA
         frame.extend(ap)      # TA
         frame.extend(ap)      # BSSID
-        
+
         frame.extend(b"\x00\x00")  # Sequence
         frame.extend(b"\x07\x00")  # Reason code 7 (Class 3 frame received from nonassociated STA)
-        
+
         return bytes(frame)
 
 
