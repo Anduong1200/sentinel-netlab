@@ -15,6 +15,7 @@ MITRE ATT&CK: T1557.002 - Adversary-in-the-Middle: ARP Cache Poisoning
                (closest mapping for WiFi key reinstallation)
 """
 
+import bisect
 import logging
 import time
 from collections import defaultdict
@@ -139,10 +140,22 @@ class KRACKDetector:
     def _cleanup(self, state: HandshakeState, now: float):
         """Remove entries outside the analysis window."""
         cutoff = now - self.config.time_window
-        state.m1_timestamps = [t for t in state.m1_timestamps if t >= cutoff]
-        state.m2_timestamps = [t for t in state.m2_timestamps if t >= cutoff]
-        state.m3_timestamps = [t for t in state.m3_timestamps if t >= cutoff]
-        state.m4_timestamps = [t for t in state.m4_timestamps if t >= cutoff]
+
+        if state.m1_timestamps:
+            idx = bisect.bisect_left(state.m1_timestamps, cutoff)
+            state.m1_timestamps = state.m1_timestamps[idx:]
+
+        if state.m2_timestamps:
+            idx = bisect.bisect_left(state.m2_timestamps, cutoff)
+            state.m2_timestamps = state.m2_timestamps[idx:]
+
+        if state.m3_timestamps:
+            idx = bisect.bisect_left(state.m3_timestamps, cutoff)
+            state.m3_timestamps = state.m3_timestamps[idx:]
+
+        if state.m4_timestamps:
+            idx = bisect.bisect_left(state.m4_timestamps, cutoff)
+            state.m4_timestamps = state.m4_timestamps[idx:]
 
     def _evaluate(
         self,

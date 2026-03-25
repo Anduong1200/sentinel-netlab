@@ -38,7 +38,6 @@ from textual.widgets import (
     RichLog,
     Select,
 )
-import os
 
 from sensor.config import Config, init_config
 from sensor.sensor_controller import SensorController
