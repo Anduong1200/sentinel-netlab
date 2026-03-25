@@ -133,6 +133,8 @@ jobs:
             --exclude "cs.umd.edu/~waa/rc4_ksaproc.pdf"
             --exclude "fcc.gov/general/jammer-enforcement"
             --exclude "community.cisco.com/t5/wireless-mobility-knowledge-base/the-significance-of-beacon-frames-and-how-to-configure-the/ta-p/3132525"
+            --exclude "thuvienphapluat.vn/van-ban/Cong-nghe-thong-tin/Luat-an-ninh-mang-2018-351416.aspx"
+            --exclude "cisco.com/c/en/us/support/docs/ip/access-lists/13608-21.html#anc11"
             "README.md"
             "docs/**/*.md"
           fail: true
