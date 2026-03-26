@@ -5,3 +5,7 @@
 ## 2026-03-20 - O(N) complexity bug in `generate_report_data` from `list.index()` during sort
 **Learning:** In `sensor/auditor/engine.py`, the `generate_report_data` method sorted `self.findings` using `severity_order.index(f.severity)` as the lambda sort key. For a list of N findings and M severity levels, this makes the comparison operation O(M), bringing the sorting time up to O(M * N log N), which can become a bottleneck when N is large.
 **Action:** Always prefer O(1) dictionary lookups for sort rank keys instead of dynamically invoking `list.index()`. By computing a `severity_map = {s: i for i, s in enumerate(severity_order)}` before sorting and using `severity_map.get(f.severity)`, we reduce sort complexity strictly back to O(N log N).
+
+## 2026-03-26 - O(N) complexity bug in `JammingDetector.ingest` from `list.pop(0)`
+**Learning:** In `algos/jamming_detector.py`, the `JammingDetector.ingest` method maintained a fixed-size list for `rssi_samples` by checking `if len(st.rssi_samples) > 100:` and then calling `st.rssi_samples.pop(0)`. Because `pop(0)` on a Python list requires shifting all subsequent elements, this operation is O(N) and creates a performance bottleneck in high-frequency packet ingestion loops.
+**Action:** Replaced the `list` with a `collections.deque(maxlen=100)`. `deque` is implemented as a doubly-linked list, making append and pop operations O(1), and the `maxlen` parameter automatically handles eviction of the oldest elements without requiring manual length checks, ensuring ingestion stays extremely fast.
