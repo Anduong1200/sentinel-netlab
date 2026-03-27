@@ -45,6 +45,7 @@ class JammingStats:
     retry_frames: int = 0
     rts_cts_count: int = 0
     avg_rssi: float = -100.0
+    # ⚡ Bolt Optimization: Use deque(maxlen=100) instead of list for O(1) sliding window eviction
     rssi_samples: deque[int] = field(default_factory=lambda: deque(maxlen=100))
 
 
