@@ -653,7 +653,7 @@
 ### References
 - **P1:** Wi‑Fi Alliance – PMF overview: https://www.wi-fi.org/security  
 - **P4:** Aruba – PMF tech docs: https://arubanetworking.hpe.com/techdocs/aos/wifi-design-deploy/security/features/pmf/  
-- **P4:** Cisco – 802.11w/PMF deployment guide (PDF): https://www.cisco.com/c/en/us/td/docs/wireless/controller/technotes/5700/software/release/ios_xe_33/11rkw_DeploymentGuide/b_802point11rkw_deployment_guide_cisco_ios_xe_release33/b_802point11rkw_deployment_guide_cisco_ios_xe_release33_chapter_0100.pdf  
+- **P4:** Cisco – 802.11w/PMF deployment guide: https://www.cisco.com/c/en/us/td/docs/wireless/controller/technotes/5700/software/release/ios_xe_33/11rkw_DeploymentGuide/b_802point11rkw_deployment_guide_cisco_ios_xe_release33.html
 
 ---
 

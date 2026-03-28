@@ -117,12 +117,16 @@ class BeaconFloodDetector:
         # Cleanup beacon timestamps
         if self.state.beacon_timestamps:
             idx = bisect.bisect_left(self.state.beacon_timestamps, cutoff)
-            self.state.beacon_timestamps = self.state.beacon_timestamps[idx:]
+            if idx > 0:
+                del self.state.beacon_timestamps[:idx]
 
     def _evaluate(self, now: float) -> dict[str, Any] | None:
         """Evaluate current state against thresholds."""
         # Cooldown check
-        if now - self.last_alert_time < self.config.cooldown_seconds:
+        if (
+            self.last_alert_time > 0
+            and now - self.last_alert_time < self.config.cooldown_seconds
+        ):
             return None
 
         unique_ssids = len(self.state.ssid_timestamps)
