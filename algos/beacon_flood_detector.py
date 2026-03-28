@@ -123,7 +123,10 @@ class BeaconFloodDetector:
     def _evaluate(self, now: float) -> dict[str, Any] | None:
         """Evaluate current state against thresholds."""
         # Cooldown check
-        if self.last_alert_time > 0 and now - self.last_alert_time < self.config.cooldown_seconds:
+        if (
+            self.last_alert_time > 0
+            and now - self.last_alert_time < self.config.cooldown_seconds
+        ):
             return None
 
         unique_ssids = len(self.state.ssid_timestamps)
