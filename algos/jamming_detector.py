@@ -6,6 +6,7 @@ Identifies potential RF jamming and interference based on packet statistics.
 
 import logging
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -44,7 +45,7 @@ class JammingStats:
     retry_frames: int = 0
     rts_cts_count: int = 0
     avg_rssi: float = -100.0
-    rssi_samples: list[int] = field(default_factory=list)
+    rssi_samples: deque[int] = field(default_factory=lambda: deque(maxlen=100))
 
 
 class JammingDetector:
@@ -101,8 +102,6 @@ class JammingDetector:
         rssi = frame.get("rssi_dbm")
         if rssi is not None:
             st.rssi_samples.append(rssi)
-            if len(st.rssi_samples) > 100:
-                st.rssi_samples.pop(0)
             st.avg_rssi = sum(st.rssi_samples) / len(st.rssi_samples)
 
         # Check interval for detection
