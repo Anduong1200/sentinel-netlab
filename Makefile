@@ -11,7 +11,7 @@ else
 VENV_BIN := $(VENV)/bin
 endif
 PIP := $(VENV_BIN)/pip
-PYTEST := $(VENV_BIN)/pytest
+PYTEST := $(shell if [ -x "$(VENV_BIN)/pytest" ]; then echo "$(VENV_BIN)/pytest"; else echo "python -m pytest"; fi)
 VENV_PYTHON := $(VENV_BIN)/python
 RUFF := $(shell if [ -x "$(VENV_BIN)/ruff" ]; then echo "$(VENV_BIN)/ruff"; else echo "ruff"; fi)
 MYPY := $(shell if [ -x "$(VENV_BIN)/mypy" ]; then echo "$(VENV_BIN)/mypy"; else echo "mypy"; fi)
