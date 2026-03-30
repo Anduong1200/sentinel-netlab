@@ -113,7 +113,10 @@ class DisassocFloodDetector:
         if not history:
             return
         idx = bisect.bisect_left(history, cutoff)
-        self.frame_history[key] = history[idx:]
+        if idx == len(history):
+            del self.frame_history[key]
+        elif idx > 0:
+            del self.frame_history[key][:idx]
 
     def _check_flood(
         self,
