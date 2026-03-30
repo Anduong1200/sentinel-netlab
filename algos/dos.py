@@ -93,12 +93,12 @@ class DeauthFloodDetector:
             return
 
         idx = bisect.bisect_left(history, cutoff)
-        filtered = history[idx:]
 
-        if filtered:
-            self.deauth_history[key] = filtered
-        elif key in self.deauth_history:
-            del self.deauth_history[key]
+        if idx == len(history):
+            if key in self.deauth_history:
+                del self.deauth_history[key]
+        elif idx > 0:
+            del self.deauth_history[key][:idx]
 
     def _check_flood(
         self,

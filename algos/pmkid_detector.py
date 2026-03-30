@@ -285,9 +285,12 @@ class PMKIDAttackDetector:
     @staticmethod
     def _cleanup_timestamps(timestamps: list[float], now: float, window: int) -> None:
         """Remove timestamps older than the time window (in-place)."""
+        import bisect
+
         cutoff = now - window
-        while timestamps and timestamps[0] < cutoff:
-            timestamps.pop(0)
+        idx = bisect.bisect_left(timestamps, cutoff)
+        if idx > 0:
+            del timestamps[:idx]
 
     def get_stats(self) -> dict[str, Any]:
         """Get detector statistics."""
