@@ -13,6 +13,7 @@ References:
 - MITRE ATT&CK T1110.002 (Password Cracking)
 """
 
+import bisect
 import logging
 import time
 from dataclasses import dataclass, field
@@ -286,8 +287,10 @@ class PMKIDAttackDetector:
     def _cleanup_timestamps(timestamps: list[float], now: float, window: int) -> None:
         """Remove timestamps older than the time window (in-place)."""
         cutoff = now - window
-        while timestamps and timestamps[0] < cutoff:
-            timestamps.pop(0)
+        # ⚡ Bolt: Optimize batch removal using bisect and slice deletion O(log N + N) instead of O(K * N) from .pop(0)
+        idx = bisect.bisect_left(timestamps, cutoff)
+        if idx > 0:
+            del timestamps[:idx]
 
     def get_stats(self) -> dict[str, Any]:
         """Get detector statistics."""

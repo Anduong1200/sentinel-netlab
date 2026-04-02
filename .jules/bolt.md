@@ -5,3 +5,7 @@
 ## 2026-03-20 - O(N) complexity bug in `generate_report_data` from `list.index()` during sort
 **Learning:** In `sensor/auditor/engine.py`, the `generate_report_data` method sorted `self.findings` using `severity_order.index(f.severity)` as the lambda sort key. For a list of N findings and M severity levels, this makes the comparison operation O(M), bringing the sorting time up to O(M * N log N), which can become a bottleneck when N is large.
 **Action:** Always prefer O(1) dictionary lookups for sort rank keys instead of dynamically invoking `list.index()`. By computing a `severity_map = {s: i for i, s in enumerate(severity_order)}` before sorting and using `severity_map.get(f.severity)`, we reduce sort complexity strictly back to O(N log N).
+
+## 2026-03-22 - O(N) complexity bug in sliding window cleanup due to `.pop(0)`
+**Learning:** In high-frequency ingestion algorithms like `algos/pmkid_detector.py`, using a `while` loop that calls `timestamps.pop(0)` to remove old items from a sliding time-window acts as an O(N) operation per element deleted. For a batch of K old elements within a list of N total elements, this takes O(K * N) time and severely degrades batch removal performance during event floods.
+**Action:** When filtering or cleaning up sorted chronological arrays, use `bisect.bisect_left` to find the cutoff index and perform slice deletion (`del lst[:idx]`). This achieves O(log N + N) batch removal, significantly boosting speed for high-volume sliding windows.
