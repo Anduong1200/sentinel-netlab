@@ -13,6 +13,7 @@ References:
 - MITRE ATT&CK T1110.002 (Password Cracking)
 """
 
+import bisect
 import logging
 import time
 from dataclasses import dataclass, field
@@ -148,7 +149,7 @@ class PMKIDAttackDetector:
                 state.eapol_m2_count += 1
                 # Remove one M1 from the orphan tracker (paired)
                 if state.eapol_m1_timestamps:
-                    state.eapol_m1_timestamps.pop(0)
+                    del state.eapol_m1_timestamps[0]
                 return None
 
         # ─── Layer 2: Auth/Assoc Flood Tracking ───────────────────────
@@ -285,9 +286,12 @@ class PMKIDAttackDetector:
     @staticmethod
     def _cleanup_timestamps(timestamps: list[float], now: float, window: int) -> None:
         """Remove timestamps older than the time window (in-place)."""
+        # ⚡ Bolt: Use bisect and slice deletion for O(log N + N) batch removal.
+        # This prevents O(K * N) overhead seen with repeated pop(0) in high-frequency sliding windows.
         cutoff = now - window
-        while timestamps and timestamps[0] < cutoff:
-            timestamps.pop(0)
+        idx = bisect.bisect_left(timestamps, cutoff)
+        if idx > 0:
+            del timestamps[:idx]
 
     def get_stats(self) -> dict[str, Any]:
         """Get detector statistics."""

@@ -58,7 +58,7 @@ class BeaconFloodDetector:
     def __init__(self, config: BeaconFloodConfig | None = None):
         self.config = config or BeaconFloodConfig()
         self.state = BeaconFloodState()
-        self.last_alert_time: float = 0.0
+        self.last_alert_time: float = float("-inf")
         self.alert_count = 0
 
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
@@ -117,7 +117,7 @@ class BeaconFloodDetector:
         # Cleanup beacon timestamps
         if self.state.beacon_timestamps:
             idx = bisect.bisect_left(self.state.beacon_timestamps, cutoff)
-            self.state.beacon_timestamps = self.state.beacon_timestamps[idx:]
+            del self.state.beacon_timestamps[:idx]
 
     def _evaluate(self, now: float) -> dict[str, Any] | None:
         """Evaluate current state against thresholds."""
@@ -191,5 +191,5 @@ class BeaconFloodDetector:
     def reset(self):
         """Reset all state."""
         self.state = BeaconFloodState()
-        self.last_alert_time = 0.0
+        self.last_alert_time = float("-inf")
         self.alert_count = 0
