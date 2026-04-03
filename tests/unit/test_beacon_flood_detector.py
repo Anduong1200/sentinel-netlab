@@ -60,7 +60,6 @@ class TestBeaconFloodDetector:
 
     def test_cooldown_prevents_spam(self):
         """Cooldown should prevent rapid re-alerting."""
-        import time
         from unittest.mock import patch
 
         config = BeaconFloodConfig(
@@ -71,21 +70,21 @@ class TestBeaconFloodDetector:
         alerts = []
 
         # We need to simulate time passing so that the first ingest doesn't look like it's all happening at the exact same time
-        with patch('time.monotonic', return_value=1000.0):
+        with patch("time.monotonic", return_value=1000.0):
             for i in range(20):
                 bssid = f"DE:AD:{i:02X}:00:00:00"
                 r = det.ingest(self._make_beacon(ssid=f"Net-{i}", bssid=bssid))
                 if r:
                     alerts.append(r)
 
-        with patch('time.monotonic', return_value=1005.0):
+        with patch("time.monotonic", return_value=1005.0):
             for i in range(20, 40):
                 bssid = f"DE:AD:{i:02X}:00:00:00"
                 r = det.ingest(self._make_beacon(ssid=f"Net-{i}", bssid=bssid))
                 if r:
                     alerts.append(r)
 
-        with patch('time.monotonic', return_value=1010.0):
+        with patch("time.monotonic", return_value=1010.0):
             for i in range(40, 60):
                 bssid = f"DE:AD:{i:02X}:00:00:00"
                 r = det.ingest(self._make_beacon(ssid=f"Net-{i}", bssid=bssid))
