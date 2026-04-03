@@ -58,7 +58,7 @@ class BeaconFloodDetector:
     def __init__(self, config: BeaconFloodConfig | None = None):
         self.config = config or BeaconFloodConfig()
         self.state = BeaconFloodState()
-        self.last_alert_time: float = 0.0
+        self.last_alert_time: float = float("-inf")
         self.alert_count = 0
 
     def ingest(self, frame: dict[str, Any]) -> dict[str, Any] | None:
