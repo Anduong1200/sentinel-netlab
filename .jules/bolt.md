@@ -5,3 +5,7 @@
 ## 2026-03-20 - O(N) complexity bug in `generate_report_data` from `list.index()` during sort
 **Learning:** In `sensor/auditor/engine.py`, the `generate_report_data` method sorted `self.findings` using `severity_order.index(f.severity)` as the lambda sort key. For a list of N findings and M severity levels, this makes the comparison operation O(M), bringing the sorting time up to O(M * N log N), which can become a bottleneck when N is large.
 **Action:** Always prefer O(1) dictionary lookups for sort rank keys instead of dynamically invoking `list.index()`. By computing a `severity_map = {s: i for i, s in enumerate(severity_order)}` before sorting and using `severity_map.get(f.severity)`, we reduce sort complexity strictly back to O(N log N).
+
+## 2024-05-24 - Optimization for array cleanup using `del lst[:idx]`
+**Learning:** During sliding window updates, using list slice reassignment `lst = lst[idx:]` after a `bisect` requires a new O(N) allocation of the remaining elements. For large arrays with high-frequency operations, this leads to significant memory churn and degraded performance.
+**Action:** Replace slice assignments (`lst = lst[idx:]`) with in-place slice deletions (`del lst[:idx]`). This modifies the existing array in-place, preventing memory re-allocation and consistently halving execution time in hot loops while avoiding garbage collection overhead.
