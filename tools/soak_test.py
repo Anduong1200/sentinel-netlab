@@ -27,7 +27,7 @@ class SoakSensor:
         self.running = True
         # ⚡ Bolt Optimization: Using `deque` instead of `list` for backlog to enable
         # O(1) removals via `popleft()` rather than O(N) re-indexing from `pop(0)`.
-        self.backlog = deque()
+        self.backlog: deque = deque()
         self.network_up = True
 
     def sign(self, method, path, timestamp, sensor_id, encoding, payload):
