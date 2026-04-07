@@ -61,7 +61,7 @@ def prune_old_data(self):
         # 1. Prune old telemetry
         try:
             telemetry_cutoff = now - timedelta(days=config["telemetry_days"])
-            result: CursorResult = db.session.execute(  # type: ignore[assignment]
+            result: CursorResult = db.session.execute(
                 delete(Telemetry).where(Telemetry.ingested_at < telemetry_cutoff)
             )
             telemetry_deleted = result.rowcount
@@ -78,7 +78,7 @@ def prune_old_data(self):
         # 2. Prune completed ingest jobs
         try:
             jobs_cutoff = now - timedelta(days=config["jobs_days"])
-            result = db.session.execute(  # type: ignore[assignment]
+            result = db.session.execute(
                 delete(IngestJob).where(
                     and_(
                         IngestJob.status == "done",
@@ -100,7 +100,7 @@ def prune_old_data(self):
         # 3. Prune old audit logs
         try:
             audit_cutoff = now - timedelta(days=config["audit_days"])
-            result = db.session.execute(  # type: ignore[assignment]
+            result = db.session.execute(
                 delete(AuditLog).where(AuditLog.timestamp < audit_cutoff)
             )
             audit_deleted = result.rowcount
@@ -119,7 +119,7 @@ def prune_old_data(self):
             from controller.db.models import Alert
 
             alerts_cutoff = now - timedelta(days=config["alerts_days"])
-            result = db.session.execute(  # type: ignore[assignment]
+            result = db.session.execute(
                 delete(Alert).where(
                     and_(
                         Alert.status == "resolved",

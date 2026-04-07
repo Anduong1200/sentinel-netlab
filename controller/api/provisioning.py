@@ -91,11 +91,11 @@ def enroll_sensor():
     plaintext, key_hash = _generate_sensor_key()
 
     if existing:
-        existing.key_hash = key_hash  # type: ignore[assignment]
-        existing.created_at = datetime.now(UTC)  # type: ignore[assignment]
-        existing.rotated_at = None  # type: ignore[assignment]
-        existing.last_used = None  # type: ignore[assignment]
-        existing.is_active = True  # type: ignore[assignment]
+        existing.key_hash = key_hash
+        existing.created_at = datetime.now(UTC)
+        existing.rotated_at = None
+        existing.last_used = None
+        existing.is_active = True
     else:
         sensor_key = SensorKey(
             sensor_id=sensor_id,
@@ -134,9 +134,9 @@ def rotate_key(sensor_id: str):
     # Generate new key
     plaintext, key_hash = _generate_sensor_key()
 
-    sensor_key.key_hash = key_hash  # type: ignore[assignment]
-    sensor_key.rotated_at = datetime.now(UTC)  # type: ignore[assignment]
-    sensor_key.is_active = True  # type: ignore[assignment]
+    sensor_key.key_hash = key_hash
+    sensor_key.rotated_at = datetime.now(UTC)
+    sensor_key.is_active = True
 
     _audit("sensor.rotate_key", sensor_id, {"previous_hash": sensor_key.key_hash[:8]})
     db.session.commit()
@@ -191,7 +191,7 @@ def revoke_key(sensor_id: str):
     if not sensor_key:
         return jsonify({"error": f"Sensor '{sensor_id}' has no provisioned key"}), 404
 
-    sensor_key.is_active = False  # type: ignore[assignment]
+    sensor_key.is_active = False
 
     _audit("sensor.revoke_key", sensor_id)
     db.session.commit()
