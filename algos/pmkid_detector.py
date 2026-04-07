@@ -149,7 +149,7 @@ class PMKIDAttackDetector:
                 state.eapol_m2_count += 1
                 # Remove one M1 from the orphan tracker (paired)
                 if state.eapol_m1_timestamps:
-                    state.eapol_m1_timestamps.pop(0)
+                    del state.eapol_m1_timestamps[0]
                 return None
 
         # ─── Layer 2: Auth/Assoc Flood Tracking ───────────────────────

@@ -102,7 +102,7 @@ class JammingDetector:
         if rssi is not None:
             st.rssi_samples.append(rssi)
             if len(st.rssi_samples) > 100:
-                st.rssi_samples.pop(0)
+                del st.rssi_samples[0]
             st.avg_rssi = sum(st.rssi_samples) / len(st.rssi_samples)
 
         # Check interval for detection
