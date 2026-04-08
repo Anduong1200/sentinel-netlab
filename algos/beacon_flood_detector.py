@@ -117,7 +117,7 @@ class BeaconFloodDetector:
         # Cleanup beacon timestamps
         if self.state.beacon_timestamps:
             idx = bisect.bisect_left(self.state.beacon_timestamps, cutoff)
-            self.state.beacon_timestamps = self.state.beacon_timestamps[idx:]
+            del self.state.beacon_timestamps[:idx]
 
     def _evaluate(self, now: float) -> dict[str, Any] | None:
         """Evaluate current state against thresholds."""
