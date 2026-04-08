@@ -143,19 +143,19 @@ class KRACKDetector:
 
         if state.m1_timestamps:
             idx = bisect.bisect_left(state.m1_timestamps, cutoff)
-            state.m1_timestamps = state.m1_timestamps[idx:]
+            del state.m1_timestamps[:idx]
 
         if state.m2_timestamps:
             idx = bisect.bisect_left(state.m2_timestamps, cutoff)
-            state.m2_timestamps = state.m2_timestamps[idx:]
+            del state.m2_timestamps[:idx]
 
         if state.m3_timestamps:
             idx = bisect.bisect_left(state.m3_timestamps, cutoff)
-            state.m3_timestamps = state.m3_timestamps[idx:]
+            del state.m3_timestamps[:idx]
 
         if state.m4_timestamps:
             idx = bisect.bisect_left(state.m4_timestamps, cutoff)
-            state.m4_timestamps = state.m4_timestamps[idx:]
+            del state.m4_timestamps[:idx]
 
     def _evaluate(
         self,
